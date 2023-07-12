@@ -21,10 +21,10 @@ object CoreLibReflection {
         mkMethod(clazz, "$bar$bar", Array[Class[_]](classOf[SigmaProp])) { (obj, args) =>
           obj.asInstanceOf[SigmaProp].$bar$bar(args(0).asInstanceOf[SigmaProp])
         },
-        mkMethod(clazz, "isValid", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "isValid", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[SigmaProp].isValid
         },
-        mkMethod(clazz, "propBytes", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "propBytes", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[SigmaProp].propBytes
         },
         mkMethod(clazz, "$amp$amp", Array[Class[_]](classOf[SigmaProp])) { (obj, args) =>
@@ -149,26 +149,26 @@ object CoreLibReflection {
           obj.asInstanceOf[AvlTree].update(args(0).asInstanceOf[Coll[(Coll[Byte], Coll[Byte])]],
             args(1).asInstanceOf[Coll[Byte]])
         },
-        mkMethod(clazz, "keyLength", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "keyLength", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[AvlTree].keyLength
         },
-        mkMethod(clazz, "enabledOperations", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "enabledOperations", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[AvlTree].enabledOperations
         },
         mkMethod(clazz, "updateDigest", Array[Class[_]](classOf[Coll[_]])) { (obj, args) =>
           obj.asInstanceOf[AvlTree].updateDigest(args(0).asInstanceOf[Coll[Byte]])
         },
-        mkMethod(clazz, "digest", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "digest", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[AvlTree].digest
         },
         mkMethod(clazz, "insert", Array[Class[_]](classOf[Coll[_]], classOf[Coll[_]])) { (obj, args) =>
           obj.asInstanceOf[AvlTree].insert(args(0).asInstanceOf[Coll[(Coll[Byte], Coll[Byte])]],
             args(1).asInstanceOf[Coll[Byte]])
         },
-        mkMethod(clazz, "isRemoveAllowed", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "isRemoveAllowed", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[AvlTree].isRemoveAllowed
         },
-        mkMethod(clazz, "valueLengthOpt", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "valueLengthOpt", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[AvlTree].valueLengthOpt
         },
         mkMethod(clazz, "get", Array[Class[_]](classOf[Coll[_]], classOf[Coll[_]])) { (obj, args) =>
@@ -182,10 +182,10 @@ object CoreLibReflection {
           obj.asInstanceOf[AvlTree].contains(args(0).asInstanceOf[Coll[Byte]],
             args(1).asInstanceOf[Coll[Byte]])
         },
-        mkMethod(clazz, "isUpdateAllowed", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "isUpdateAllowed", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[AvlTree].isUpdateAllowed
         },
-        mkMethod(clazz, "isInsertAllowed", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "isInsertAllowed", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[AvlTree].isInsertAllowed
         }
       )
@@ -195,28 +195,28 @@ object CoreLibReflection {
   { val clazz = classOf[Box]
     registerClassEntry(clazz,
       methods = Map(
-        mkMethod(clazz, "value", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "value", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Box].value
         },
-        mkMethod(clazz, "id", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "id", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Box].id
         },
-        mkMethod(clazz, "creationInfo", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "creationInfo", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Box].creationInfo
         },
-        mkMethod(clazz, "bytes", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "bytes", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Box].bytes
         },
-        mkMethod(clazz, "tokens", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "tokens", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Box].tokens
         },
         mkMethod(clazz, "getReg", Array[Class[_]](classOf[Int], classOf[RType[_]])) { (obj, args) =>
           obj.asInstanceOf[Box].getReg(args(0).asInstanceOf[Int])(args(1).asInstanceOf[RType[_]])
         },
-        mkMethod (clazz, "bytesWithoutRef", Array[Class[_]]()) { (obj, args) =>
+        mkMethod (clazz, "bytesWithoutRef", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Box].bytesWithoutRef
         },
-        mkMethod(clazz, "propositionBytes", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "propositionBytes", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Box].propositionBytes
         }
       )
@@ -226,37 +226,37 @@ object CoreLibReflection {
   { val clazz = classOf[Context]
     registerClassEntry(clazz,
       methods = Map(
-        mkMethod(clazz, "LastBlockUtxoRootHash", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "LastBlockUtxoRootHash", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Context].LastBlockUtxoRootHash
         },
-        mkMethod(clazz, "dataInputs", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "dataInputs", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Context].dataInputs
         },
-        mkMethod(clazz, "selfBoxIndex", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "selfBoxIndex", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Context].selfBoxIndex
         },
-        mkMethod(clazz, "INPUTS", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "INPUTS", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Context].INPUTS
         },
-        mkMethod(clazz, "minerPubKey", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "minerPubKey", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Context].minerPubKey
         },
-        mkMethod(clazz, "HEIGHT", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "HEIGHT", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Context].HEIGHT
         },
-        mkMethod(clazz, "OUTPUTS", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "OUTPUTS", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Context].OUTPUTS
         },
-        mkMethod(clazz, "SELF", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "SELF", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Context].SELF
         },
-        mkMethod(clazz, "preHeader", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "preHeader", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Context].preHeader
         },
         mkMethod(clazz, "getVar", Array[Class[_]](classOf[Byte], classOf[RType[_]])) { (obj, args) =>
           obj.asInstanceOf[Context].getVar(args(0).asInstanceOf[Byte])(args(1).asInstanceOf[RType[_]])
         },
-        mkMethod(clazz, "headers", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "headers", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Context].headers
         }
       )
@@ -272,10 +272,10 @@ object CoreLibReflection {
         mkMethod(clazz, "multiply", Array[Class[_]](classOf[GroupElement])) { (obj, args) =>
           obj.asInstanceOf[GroupElement].multiply(args(0).asInstanceOf[GroupElement])
         },
-        mkMethod(clazz, "getEncoded", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "getEncoded", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[GroupElement].getEncoded
         },
-        mkMethod(clazz, "negate", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "negate", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[GroupElement].negate
         }
       )
@@ -285,49 +285,49 @@ object CoreLibReflection {
   { val clazz = classOf[Header]
     registerClassEntry(clazz,
       methods = Map(
-        mkMethod(clazz, "minerPk", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "minerPk", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Header].minerPk
         },
-        mkMethod(clazz, "powNonce", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "powNonce", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Header].powNonce
         },
-        mkMethod(clazz, "transactionsRoot", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "transactionsRoot", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Header].transactionsRoot
         },
-        mkMethod(clazz, "powOnetimePk", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "powOnetimePk", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Header].powOnetimePk
         },
-        mkMethod(clazz, "nBits", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "nBits", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Header].nBits
         },
-        mkMethod(clazz, "votes", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "votes", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Header].votes
         },
-        mkMethod(clazz, "id", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "id", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Header].id
         },
-        mkMethod(clazz, "version", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "version", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Header].version
         },
-        mkMethod(clazz, "parentId", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "parentId", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Header].parentId
         },
-        mkMethod(clazz, "timestamp", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "timestamp", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Header].timestamp
         },
-        mkMethod(clazz, "height", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "height", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Header].height
         },
-        mkMethod(clazz, "extensionRoot", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "extensionRoot", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Header].extensionRoot
         },
-        mkMethod(clazz, "ADProofsRoot", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "ADProofsRoot", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Header].ADProofsRoot
         },
-        mkMethod(clazz, "stateRoot", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "stateRoot", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Header].stateRoot
         },
-        mkMethod(clazz, "powDistance", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "powDistance", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Header].powDistance
         }
       )
@@ -337,25 +337,25 @@ object CoreLibReflection {
   { val clazz = classOf[PreHeader]
     registerClassEntry(clazz,
       methods = Map(
-        mkMethod(clazz, "minerPk", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "minerPk", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[PreHeader].minerPk
         },
-        mkMethod(clazz, "votes", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "votes", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[PreHeader].votes
         },
-        mkMethod(clazz, "nBits", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "nBits", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[PreHeader].nBits
         },
-        mkMethod(clazz, "version", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "version", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[PreHeader].version
         },
-        mkMethod(clazz, "timestamp", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "timestamp", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[PreHeader].timestamp
         },
-        mkMethod(clazz, "parentId", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "parentId", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[PreHeader].parentId
         },
-        mkMethod(clazz, "height", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "height", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[PreHeader].height
         }
       )

@@ -14,6 +14,7 @@ class Nullable[+T](val x: T) extends AnyVal {
   @inline final def getOrElse[B >: T](default: =>B): B = if (x != null) x else default
   @inline final def toList: List[T] = if (x == null) Nil else x :: Nil
   @inline final def toOption: Option[T] = if (x == null) None else Some(x)
+  override def toString = if (x == null) "None" else s"Nullable($x)"
 }
 object Nullable {
   final val None: Nullable[Null] = new Nullable(null)

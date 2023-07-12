@@ -1,5 +1,7 @@
 package scalan.reflection
 
+import sigmastate.RuntimePlatform
+
 import scala.collection.concurrent.TrieMap
 
 /** Platform dependent implementation of reflection methods. */
@@ -13,16 +15,6 @@ object Platform {
   /** Thread-safe storage of class information. */
   private val classes = TrieMap.empty[Class[_], JRClass[_]]
 
-  /** Check class registration. Should be used only for debugging. */
-  private def checkRegisteredClass[T](clazz: Class[T]): Unit = {
-    CommonReflection.classes.get(clazz) match {
-      case Some(c) =>
-        assert(c.clazz == clazz)
-      case _ =>
-        sys.error(s"Cannot find RClass data for $clazz")
-    }
-  }
-
   /** Returns an RClass instance for the given class.
     *
     * @param clazz The class for which to retrieve an RClass instance.
@@ -35,6 +27,15 @@ object Platform {
     val cls = memoize(classes)(clazz, new JRClass[T](clazz)).asInstanceOf[JRClass[T]]
     // Uncomment the following lines to collect missing reflection data and generate Scala code for it
     // Should be used only for debugging and never in production.
+//    /** Check class registration. Should be used only for debugging. */
+//    def checkRegisteredClass[T](clazz: Class[T]): Unit = {
+//      CommonReflection.classes.get(clazz) match {
+//        case Some(c) =>
+//          assert(c.clazz == clazz)
+//        case _ =>
+//          sys.error(s"Cannot find RClass data for $clazz")
+//      }
+//    }
 //    try {
 //      checkRegisteredClass(clazz)
 //    } catch {
@@ -62,4 +63,27 @@ object Platform {
       */
     def getOrElseUpdate(key: K, value: => V): V = map.getOrElseUpdate(key, value)
   }
+
+  /** Special character in the name. */
+  private def isSpecialChar(c: Char): Boolean = {
+    ('0' <= c && c <= '9') || c == '$'
+  }
+
+  /** Safe version of `getSimpleName` that works around a bug in Scala compilers 2.11, 2.12.
+    * This method is only used for debugging and testing purposes.
+    *
+    * @see https://github.com/scala/bug/issues/5425
+    */
+  def safeSimpleName(cl: Class[_]): String = {
+    if (cl.getEnclosingClass == null) return cl.getSimpleName
+    val simpleName = cl.getName.substring(cl.getEnclosingClass.getName.length)
+    val length = simpleName.length
+    var index = 0
+    while (index < length && isSpecialChar(simpleName.charAt(index))) {index += 1 }
+    // Eventually, this is the empty string iff this is an anonymous class
+    simpleName.substring(index)
+  }
+
+  /** Returns current runtime platform descriptor. */
+  def runtimePlatform: RuntimePlatform = RuntimePlatform.JVM
 }

@@ -1,7 +1,5 @@
 package org.ergoplatform
 
-import java.util
-
 import scorex.utils.Ints
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import scorex.crypto.hash.{Digest32, Blake2b256}

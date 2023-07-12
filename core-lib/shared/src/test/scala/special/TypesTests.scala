@@ -15,10 +15,6 @@ class TypesTests extends BaseTests {
   }
 
   test("RType implements equality") {
-    def test[A: RType, B: RType] = {
-      val x = RType[A]; val y = RType[B]
-      assert(x == y)
-    }
 
     def tuple = tupleRType(Array(RType[Int], RType[Long]))
     assert(tuple == tuple, "compare two different but equal instances")

@@ -131,7 +131,7 @@ class ReducingInterpreter(params: ErgoLikeParameters) extends ErgoLikeInterprete
       require(util.Arrays.equals(unsignedInput.boxId, inputBox.box.id))
 
       val context = new ErgoLikeContext(
-        AvlTreeData.avlTreeFromDigest(stateContext.previousStateDigest),
+        AvlTreeData.avlTreeFromDigest(ADDigest @@ stateContext.previousStateDigest.toArray),
         stateContext.sigmaLastHeaders,
         stateContext.sigmaPreHeader,
         transactionContext.dataBoxes,

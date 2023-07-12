@@ -1,26 +1,21 @@
 package sigmastate.lang
 
-import java.math.BigInteger
-
-import org.ergoplatform.ErgoBox
+import debox.cfor
 import org.ergoplatform.ErgoBox.RegisterId
-import sigmastate.SCollection.{SIntArray, SByteArray}
+import scalan.Nullable
+import sigmastate.SCollection.{SByteArray, SIntArray}
+import sigmastate.SOption.SIntOption
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.lang.Constraints._
-import sigmastate.lang.Terms._
-import sigmastate.exceptions.ConstraintFailed
-import sigmastate.serialization.OpCodes
-import sigmastate.utxo._
-import scalan.Nullable
-import sigmastate.SOption.SIntOption
 import sigmastate.eval._
-import sigmastate.basics.CryptoConstants.EcPointType
-import special.collection.Coll
-import sigmastate.lang.Terms.STypeSubst
+import sigmastate.exceptions.ConstraintFailed
+import sigmastate.lang.Constraints._
+import sigmastate.lang.Terms.{STypeSubst, _}
+import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
-import special.sigma.{AvlTree, SigmaProp, GroupElement}
-import debox.cfor
+import sigmastate.utxo._
+import special.collection.Coll
+import special.sigma.AnyValue
 
 import scala.util.DynamicVariable
 
@@ -227,70 +222,17 @@ abstract class SigmaBuilder {
 
   /** Created a new Value instance with an appropriate type derived from the given data `obj`.
     * If `obj` is already Value, then it is returned as result.
-    * Uses scalan.Nullable instead of scala.Option to avoid allocation on consensus hot path.
+    * Uses [[scalan.Nullable]] instead of [[Option]] to avoid allocation on consensus hot path.
     */
   def liftAny(obj: Any): Nullable[SValue] = obj match {
     case v: SValue => Nullable(v)
+    case av: AnyValue if Environment.current.isJVM =>
+      // on JVM we must use the wrapped value directly
+      Platform.liftToConstant(av.value, this)
     case _ =>
-      liftToConstant(obj)
+      Platform.liftToConstant(obj, this)
   }
 
-  /** Created a new Constant instance with an appropriate type derived from the given data `obj`.
-    * Uses scalan.Nullable instead of scala.Option to avoid allocation on consensus hot path.
-    */
-  def liftToConstant(obj: Any): Nullable[Constant[SType]] = obj match {
-    case arr: Array[Boolean] => Nullable(mkCollectionConstant[SBoolean.type](arr, SBoolean))
-    case arr: Array[Byte] => Nullable(mkCollectionConstant[SByte.type](arr, SByte))
-    case arr: Array[Short] => Nullable(mkCollectionConstant[SShort.type](arr, SShort))
-    case arr: Array[Int] => Nullable(mkCollectionConstant[SInt.type](arr, SInt))
-    case arr: Array[Long] => Nullable(mkCollectionConstant[SLong.type](arr, SLong))
-    case arr: Array[BigInteger] => Nullable(mkCollectionConstant[SBigInt.type](arr.map(SigmaDsl.BigInt(_)), SBigInt))
-    case arr: Array[String] => Nullable(mkCollectionConstant[SString.type](arr, SString))
-    case v: Byte => Nullable(mkConstant[SByte.type](v, SByte))
-    case v: Short => Nullable(mkConstant[SShort.type](v, SShort))
-    case v: Int => Nullable(mkConstant[SInt.type](v, SInt))
-    case v: Long => Nullable(mkConstant[SLong.type](v, SLong))
-
-    case v: BigInteger => Nullable(mkConstant[SBigInt.type](SigmaDsl.BigInt(v), SBigInt))
-    case n: special.sigma.BigInt => Nullable(mkConstant[SBigInt.type](n, SBigInt))
-
-    case ge: GroupElement => Nullable(mkConstant[SGroupElement.type](ge, SGroupElement))
-
-    case b: Boolean => Nullable(if(b) TrueLeaf else FalseLeaf)
-    case v: String => Nullable(mkConstant[SString.type](v, SString))
-
-    // The Box lifting was broken in v4.x. `SigmaDsl.Box(b)` was missing which means the
-    // isCorrectType requirement would fail in ConstantNode constructor.
-    // This method is used as part of consensus in SubstConstants operation, however
-    // ErgoBox cannot be passed as argument as it is never valid value during evaluation.
-    // Thus we can use activation-based versioning and fix this code when v5.0 is activated.
-    case b: ErgoBox =>
-      if (VersionContext.current.isJitActivated)
-        Nullable(mkConstant[SBox.type](SigmaDsl.Box(b), SBox))  // fixed in v5.0
-      else
-        Nullable(mkConstant[SBox.type](b, SBox))  // same as in v4.x, i.e. broken
-
-    // this case is added in v5.0 and it can be useful when the box value comes from a
-    // register or a context variable is passed to SubstConstants.
-    case b: special.sigma.Box =>
-      if (VersionContext.current.isJitActivated)
-        Nullable(mkConstant[SBox.type](b, SBox))
-      else
-        Nullable.None  // return the same result as in v4.x when there was no this case
-
-    case avl: AvlTreeData => Nullable(mkConstant[SAvlTree.type](SigmaDsl.avlTree(avl), SAvlTree))
-    case avl: AvlTree => Nullable(mkConstant[SAvlTree.type](avl, SAvlTree))
-
-    case sb: SigmaBoolean => Nullable(mkConstant[SSigmaProp.type](SigmaDsl.SigmaProp(sb), SSigmaProp))
-    case p: SigmaProp => Nullable(mkConstant[SSigmaProp.type](p, SSigmaProp))
-
-    case coll: Coll[a] =>
-      val tpeItem = Evaluation.rtypeToSType(coll.tItem)
-      Nullable(mkCollectionConstant(coll.asInstanceOf[SCollection[SType]#WrappedType], tpeItem))
-
-    case _ =>
-      Nullable.None
-  }
 }
 
 /** Standard implementation of [[SigmaBuilder]] interface in which most of the operations

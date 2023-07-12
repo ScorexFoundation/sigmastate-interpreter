@@ -29,7 +29,6 @@ class DataJsonEncoderSpecification extends SerializationSpecification {
     implicit val wWrapped = wrappedTypeGen(tpe)
     implicit val tT = Evaluation.stypeToRType(tpe)
     implicit val tagT = tT.classTag
-    implicit val tAny = RType.AnyType
     forAll { xs: Array[T#WrappedType] =>
       roundtrip[SCollection[T]](xs.toColl, SCollection(tpe))
       roundtrip[SType](xs.toColl.map(x => (x, x)).asWrappedType, SCollection(STuple(tpe, tpe)))
@@ -65,19 +64,19 @@ class DataJsonEncoderSpecification extends SerializationSpecification {
     implicit val tT = Evaluation.stypeToRType(tpe)
     implicit val tAny = RType.AnyType
     forAll { in: T#WrappedType =>
-      val x = CAnyValue(in, tT)
+      val x = CAnyValue(in)
       val json = JsonCodecs.anyValueEncoder(x)
       val y = JsonCodecs.anyValueDecoder.decodeJson(json).right.get
       x shouldBe y
       
-      val tTup = Evaluation.stypeToRType(STuple(tpe, tpe)).asInstanceOf[RType[(T#WrappedType, T#WrappedType)]]
-      val xTup = CAnyValue((in, in), tTup)
+      implicit val tTup = Evaluation.stypeToRType(STuple(tpe, tpe)).asInstanceOf[RType[(T#WrappedType, T#WrappedType)]]
+      val xTup = CAnyValue((in, in))
       val jsonTup = JsonCodecs.anyValueEncoder(xTup)
       val yTup = JsonCodecs.anyValueDecoder.decodeJson(jsonTup).right.get
       xTup shouldBe yTup
 
-      val tColl = Evaluation.stypeToRType(SCollection(tpe))
-      val xColl = CAnyValue(SigmaDsl.Colls.fromItems(in, in), tColl)
+      implicit val tColl = Evaluation.stypeToRType(SCollection(tpe))
+      val xColl = CAnyValue(SigmaDsl.Colls.fromItems(in, in))
       val jsonColl = JsonCodecs.anyValueEncoder(xColl)
       val yColl = JsonCodecs.anyValueDecoder.decodeJson(jsonColl).right.get
       xColl shouldBe yColl

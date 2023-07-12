@@ -2,8 +2,10 @@ package sigmastate.utils
 
 import io.circe.Decoder
 import org.ergoplatform.settings.ErgoAlgos
+import scalan.{OverloadHack, RType}
 import scorex.utils.Ints
-import sigmastate.eval.{Colls, SigmaDsl}
+import sigmastate.Environment
+import sigmastate.eval.{CAnyValue, Colls, SigmaDsl}
 import sigmastate.basics.CryptoConstants.EcPointType
 import special.collection.Coll
 import special.sigma.GroupElement
@@ -160,6 +162,22 @@ object Helpers {
     }
     res
   }
+
+  /** Encapsulate platform-specific logic of ensuring the value carries its precise type.
+    * For JVM this is identity function.
+    * For JS it can transform to AnyValue, if the type is numeric
+    */
+  def ensureTypeCarringValue(v: Any, tT: RType[Any]): Any =
+    if (Environment.current.isJVM) v
+    else { // JS
+      v match {
+        case _: Byte | _: Short | _: Int =>
+          // this is necessary for JS where Byte, Short, Int have the same runtime class
+          // and hence we need to pass the type information explicitly
+          CAnyValue(v)(tT, OverloadHack.overloaded1)
+        case _ => v
+      }
+    }
 }
 
 object Overloading {
