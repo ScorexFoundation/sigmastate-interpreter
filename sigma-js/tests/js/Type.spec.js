@@ -1,4 +1,4 @@
-const { TypeObj } = require("sigmastate-js");
+const { TypeObj } = require("sigmastate-js/main");
 
 describe("Smoke tests for Types", () => {
 
