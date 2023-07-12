@@ -13,7 +13,6 @@ docs/spec/out/
 test-out/
 flamegraphs/
 node_modules/
-package-lock.json
 sigma-js/.npmrc
 sigma-js/dist/
 
