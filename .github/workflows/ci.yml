@@ -88,8 +88,8 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
-          working-directory: ./sigma-js
-          run: npm ci
+      - run: npm ci
+        working-directory: ./sigma-js
 
       - name: Setup Java and Scala
         uses: olafurpg/setup-scala@v10
@@ -122,15 +122,13 @@ jobs:
         run: sbt -jvm-opts ci/ci.jvmopts ++${{ matrix.scala }} scJS/fastOptJS
 
       - name: Runs JS tests
-        working-directory: ./sigma-js
         run: num run test
-
-      - name: Set JS snapshot version
         working-directory: ./sigma-js
-        run: npm run ci:snapshot
 
       - name: Publish JS snapshot ${{ github.ref }}
+        run: npm run ci:snapshot
         working-directory: ./sigma-js
-        run: npm publish --tag snapshot
+      - run: npm publish --tag snapshot
+        working-directory: ./sigma-js
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
