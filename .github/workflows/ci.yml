@@ -128,6 +128,6 @@ jobs:
       - name: Publish JS snapshot ${{ github.ref }}
         working-directory: ./sigma-js
         run: npm run ci:snapshot
-        run: npm publish
+        run: npm publish --tag snapshot
         env: 
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
