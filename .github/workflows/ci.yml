@@ -89,6 +89,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           registry-url: https://registry.npmjs.org/
+          cache: npm
 
       - name: Install NPM dependencies
         run: npm ci
@@ -121,7 +122,7 @@ jobs:
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
 
-      - name: Build to JS
+      - name: JS Build
         run: sbt -jvm-opts ci/ci.jvmopts ++${{ matrix.scala }} scJS/fastOptJS
 
       - name: Runs JS tests
