@@ -36,11 +36,11 @@ jobs:
         with:
           node-version: 20
           registry-url: https://registry.npmjs.org/
+          cache: npm
 
       - name: Install NPM dependencies
-        run: npm ci
-        working-directory: ./sigma-js
-      # Ensure latest npm version to be installed for npm provenance support
+        run: npm ci --prefix sigma-js
+        # Ensure latest npm version to be installed for npm provenance support
       - run: npm install -g npm
 
       - name: Import GPG key
