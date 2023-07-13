@@ -14,58 +14,58 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
-  # build:
-  #   name: Test and publish a snapshot
-  #   env:
-  #     HAS_SECRETS: ${{ secrets.SONATYPE_PASSWORD != '' }}
-  #   strategy:
-  #     matrix:
-  #       os: [ubuntu-latest]
-  #       scala: [2.13.11, 2.12.18, 2.11.12]
-  #       java: [adopt@1.8]
-  #   runs-on: ${{ matrix.os }}
-  #   steps:
-  #     - name: Checkout current branch (full)
-  #       uses: actions/checkout@v2
-  #       with:
-  #         fetch-depth: 0
+  build:
+    name: Test and publish a snapshot
+    env:
+      HAS_SECRETS: ${{ secrets.SONATYPE_PASSWORD != '' }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        scala: [2.13.11, 2.12.18, 2.11.12]
+        java: [adopt@1.8]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout current branch (full)
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
 
-  #     - name: Setup Java and Scala
-  #       uses: olafurpg/setup-scala@v10
-  #       with:
-  #         java-version: ${{ matrix.java }}
+      - name: Setup Java and Scala
+        uses: olafurpg/setup-scala@v10
+        with:
+          java-version: ${{ matrix.java }}
 
-  #     - name: Cache sbt
-  #       uses: actions/cache@v2
-  #       with:
-  #         path: |
-  #           ~/.sbt
-  #           ~/.ivy2/cache
-  #           ~/.coursier/cache/v1
-  #           ~/.cache/coursier/v1
-  #           ~/AppData/Local/Coursier/Cache/v1
-  #           ~/Library/Caches/Coursier/v1
-  #         key: ${{ runner.os }}-sbt-cache-v2-${{ hashFiles('**/*.sbt') }}-${{ hashFiles('project/build.properties') }}
+      - name: Cache sbt
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.sbt
+            ~/.ivy2/cache
+            ~/.coursier/cache/v1
+            ~/.cache/coursier/v1
+            ~/AppData/Local/Coursier/Cache/v1
+            ~/Library/Caches/Coursier/v1
+          key: ${{ runner.os }}-sbt-cache-v2-${{ hashFiles('**/*.sbt') }}-${{ hashFiles('project/build.properties') }}
 
-  #     - name: Runs tests
-  #       run: sbt -jvm-opts ci/ci.jvmopts ++${{ matrix.scala }} test
+      - name: Runs tests
+        run: sbt -jvm-opts ci/ci.jvmopts ++${{ matrix.scala }} test
 
-  #     # - name: Upload coverage report
-  #     #   run: sbt ++${{ matrix.scala }} coverageReport coverageAggregate coveralls
-  #     #   env:
-  #     #     COVERALLS_REPO_TOKEN: $${{ secrets.COVERALLS_REPO_TOKEN }}
+      # - name: Upload coverage report
+      #   run: sbt ++${{ matrix.scala }} coverageReport coverageAggregate coveralls
+      #   env:
+      #     COVERALLS_REPO_TOKEN: $${{ secrets.COVERALLS_REPO_TOKEN }}
 
-  #     #      - name: Upload coverage report to Codecov
-  #     #        uses: codecov/codecov-action@v1
-  #     #        with:
-  #     #          fail_ci_if_error: false
+      #      - name: Upload coverage report to Codecov
+      #        uses: codecov/codecov-action@v1
+      #        with:
+      #          fail_ci_if_error: false
 
-  #     - name: Publish a snapshot ${{ github.ref }}
-  #       if: env.HAS_SECRETS == 'true'
-  #       run: sbt ++${{ matrix.scala }} publish
-  #       env:
-  #         SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-  #         SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+      - name: Publish a snapshot ${{ github.ref }}
+        if: env.HAS_SECRETS == 'true'
+        run: sbt ++${{ matrix.scala }} publish
+        env:
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
 
   buildJs:
     name: JS - Test and publish snapshots
@@ -76,7 +76,7 @@ jobs:
         os: [ubuntu-latest]
         scala: [2.13.11]
         java: [adopt@1.8]
-        node-version: [16.x]
+        node-version: [20]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout current branch (full)
@@ -89,7 +89,9 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           registry-url: https://registry.npmjs.org/
-      - run: npm ci
+
+      - name: Install NPM dependencies
+        run: npm ci
         working-directory: ./sigma-js
 
       - name: Setup Java and Scala
@@ -109,15 +111,15 @@ jobs:
             ~/Library/Caches/Coursier/v1
           key: ${{ runner.os }}-sbt-cache-v2-${{ hashFiles('**/*.sbt') }}-${{ hashFiles('project/build.properties') }}
 
-      # - name: Runs tests and collect coverage
-      #   run: sbt -jvm-opts ci/ci.jvmopts ++${{ matrix.scala }} commonJS/test corelibJS/test interpreterJS/test graphirJS/test sdkJS/test
+      - name: Runs tests and collect coverage
+        run: sbt -jvm-opts ci/ci.jvmopts ++${{ matrix.scala }} commonJS/test corelibJS/test interpreterJS/test graphirJS/test sdkJS/test
 
-      # - name: Publish a JVM snapshot ${{ github.ref }}
-      #   if: env.HAS_SECRETS == 'true'
-      #   run: sbt ++${{ matrix.scala }} sdkJS/publish
-      #   env:
-      #     SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-      #     SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+      - name: Publish a JVM snapshot ${{ github.ref }}
+        if: env.HAS_SECRETS == 'true'
+        run: sbt ++${{ matrix.scala }} sdkJS/publish
+        env:
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
 
       - name: Build to JS
         run: sbt -jvm-opts ci/ci.jvmopts ++${{ matrix.scala }} scJS/fastOptJS
@@ -126,10 +128,12 @@ jobs:
         run: npm run test
         working-directory: ./sigma-js
 
-      - name: Publish JS snapshot ${{ github.ref }}
+      - name: Setup JS snapshot
         run: npm run ci:snapshot
         working-directory: ./sigma-js
-      - run: npm publish --tag snapshot
+
+      - name: Publish JS snapshot ${{ github.ref }}
+        run: npm publish --tag snapshot
         working-directory: ./sigma-js
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
