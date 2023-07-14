@@ -30,7 +30,8 @@
     "test": "jest",
     "clean": "shx rm -rf ./dist/*",
     "copy-output": "shx mkdir -p ./dist/ && cp -r ../sc/js/target/scala-2.13/sc-fastopt/* ./dist/",
-    "prepublishOnly": "npm run clean && npm run copy-output"
+    "prepublishOnly": "npm run clean && npm run copy-output",
+    "ci:snapshot": "node ./scripts/setSnapshotVersion"
   },
   "dependencies": {
     "@noble/hashes": "1.1.4",
