@@ -81,7 +81,7 @@ class SigmaPPrintSpec extends SigmaDslTesting {
     test(t1,
       """AvlTreeData(
         |  ADDigest @@ (
-        |    ErgoAlgos.decodeUnsafe("000183807f66b301530120ff7fc6bd6601ff01ff7f7d2bedbbffff00187fe89094")
+        |    Helpers.decodeBytes("000183807f66b301530120ff7fc6bd6601ff01ff7f7d2bedbbffff00187fe89094")
         |  ),
         |  AvlTreeFlags(false, true, true),
         |  1,
