@@ -50,16 +50,6 @@ jobs:
       - name: Runs tests
         run: sbt -jvm-opts ci/ci.jvmopts ++${{ matrix.scala }} test
 
-      # - name: Upload coverage report
-      #   run: sbt ++${{ matrix.scala }} coverageReport coverageAggregate coveralls
-      #   env:
-      #     COVERALLS_REPO_TOKEN: $${{ secrets.COVERALLS_REPO_TOKEN }}
-
-      #      - name: Upload coverage report to Codecov
-      #        uses: codecov/codecov-action@v1
-      #        with:
-      #          fail_ci_if_error: false
-
       - name: Publish a snapshot ${{ github.ref }}
         if: env.HAS_SECRETS == 'true'
         run: sbt ++${{ matrix.scala }} publish

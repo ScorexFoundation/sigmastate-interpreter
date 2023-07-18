@@ -1,7 +1,5 @@
 package sigmastate
 
-import scalan.reflection.Platform
-
 /** Describes the current execution environment. */
 sealed abstract class Environment {
   /** Runtime platform for the current environment. */

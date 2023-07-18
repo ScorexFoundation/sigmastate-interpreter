@@ -10,6 +10,7 @@ import special.sigma.{AnyValue, AvlTree, GroupElement, SigmaProp}
 
 import java.math.BigInteger
 
+/** JVM specific implementations */
 object Platform {
   /** Creates a new Constant instance with an appropriate type derived from the given data `obj`.
     * Uses scalan.Nullable instead of scala.Option to avoid allocation on consensus hot path.

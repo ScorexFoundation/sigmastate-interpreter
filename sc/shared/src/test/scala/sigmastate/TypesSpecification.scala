@@ -20,105 +20,108 @@ class TypesSpecification extends SigmaTestingData {
   import TestData._
 
   property("SType.isValueOfType test vectors") {
-    def assertTrue(x: Any, t: SType) = {
+    def assertValidType(x: Any, t: SType) = {
       withClue(s"x = $x, t = $t: ") {
         isValueOfType(x, t) shouldBe true
       }
     }
-    def assertFalse(x: Any, t: SType) = {
+    def assertInvalidType(x: Any, t: SType) = {
       withClue(s"x = $x, t = $t: ") {
         isValueOfType(x, t) shouldBe false
       }
     }
     
-    assertTrue(true, SBoolean)
-    assertTrue(false, SBoolean)
-    assertFalse(true, SByte)
+    assertValidType(true, SBoolean)
+    assertValidType(false, SBoolean)
+    assertInvalidType(true, SByte)
     
-    assertTrue(0.toByte, SByte)
+    assertValidType(0.toByte, SByte)
 
     if (Environment.current.isJVM) {
-      assertFalse(0.toByte, SShort)
-    } else { // JS
-      assertTrue(0.toByte, SShort)
+      assertInvalidType(0.toByte, SShort)
+    } else {
+      // Note difference in JS behavior
+      assertValidType(0.toByte, SShort)
     }
 
-    assertTrue(0.toShort, SShort)
+    assertValidType(0.toShort, SShort)
 
     if (Environment.current.isJVM) {
-      assertFalse(0.toShort, SInt)
-    } else { // JS
-      assertTrue(0.toShort, SInt)
+      assertInvalidType(0.toShort, SInt)
+    } else {
+      // Note difference in JS behavior
+      assertValidType(0.toShort, SInt)
     }
 
-    assertTrue(0, SInt)
+    assertValidType(0, SInt)
     
     if (Environment.current.isJVM) {
-      assertFalse(0, SShort)
-    } else { // JS
-      assertTrue(0, SShort)
+      assertInvalidType(0, SShort)
+    } else {
+      // Note difference in JS behavior
+      assertValidType(0, SShort)
     }
 
-    assertTrue(0L, SLong)
-    assertFalse(0L, SShort)
+    assertValidType(0L, SLong)
+    assertInvalidType(0L, SShort)
 
-    assertTrue(BigIntZero, SBigInt)
-    assertFalse(BigIntZero, SShort)
+    assertValidType(BigIntZero, SBigInt)
+    assertInvalidType(BigIntZero, SShort)
 
-    assertTrue(ge1, SGroupElement)
-    assertFalse(ge1, SShort)
+    assertValidType(ge1, SGroupElement)
+    assertInvalidType(ge1, SShort)
 
-    assertTrue(CSigmaProp(create_dlog()), SSigmaProp)
-    assertFalse(CSigmaProp(create_dlog()), SShort)
+    assertValidType(CSigmaProp(create_dlog()), SSigmaProp)
+    assertInvalidType(CSigmaProp(create_dlog()), SShort)
 
-    assertTrue(b1, SBox)
-    assertFalse(b1, SShort)
+    assertValidType(b1, SBox)
+    assertInvalidType(b1, SShort)
 
     val coll = Coll[Int](1, 2)
-    assertTrue(coll, SCollection(SInt))
-    assertFalse(coll, SShort)
-    assertTrue(Coll[Long](1L), SCollection(SInt)) // because type check is shallow
+    assertValidType(coll, SCollection(SInt))
+    assertInvalidType(coll, SShort)
+    assertValidType(Coll[Long](1L), SCollection(SInt)) // because type check is shallow
 
-    assertTrue(None, SOption(SInt))
-    assertTrue(Some(10), SOption(SInt))
-    assertTrue(Some(10), SOption(SLong)) // because type check is shallow
-    assertFalse(None, SShort)
-    assertFalse(Some(10), SShort)
+    assertValidType(None, SOption(SInt))
+    assertValidType(Some(10), SOption(SInt))
+    assertValidType(Some(10), SOption(SLong)) // because type check is shallow
+    assertInvalidType(None, SShort)
+    assertInvalidType(Some(10), SShort)
 
     val ctx = fakeContext.toSigmaContext()
-    assertTrue(ctx, SContext)
-    assertFalse(ctx, SShort)
+    assertValidType(ctx, SContext)
+    assertInvalidType(ctx, SShort)
 
-    assertTrue(t1, SAvlTree)
-    assertFalse(t1, SShort)
+    assertValidType(t1, SAvlTree)
+    assertInvalidType(t1, SShort)
 
-    assertTrue(CostingSigmaDslBuilder, SGlobal)
-    assertFalse(CostingSigmaDslBuilder, SShort)
+    assertValidType(CostingSigmaDslBuilder, SGlobal)
+    assertInvalidType(CostingSigmaDslBuilder, SShort)
 
-    assertTrue(h1, SHeader)
-    assertFalse(h1, SShort)
+    assertValidType(h1, SHeader)
+    assertInvalidType(h1, SShort)
 
-    assertTrue(preH1, SPreHeader)
-    assertFalse(preH1, SShort)
+    assertValidType(preH1, SPreHeader)
+    assertInvalidType(preH1, SShort)
 
-    assertTrue((1, 1L), STuple(SInt, SLong))
-    assertTrue((1, 1L), STuple(SInt, SInt)) // because type check is shallow
-    assertTrue((1, Some(1)), STuple(SInt, SOption(SLong))) // because type check is shallow
+    assertValidType((1, 1L), STuple(SInt, SLong))
+    assertValidType((1, 1L), STuple(SInt, SInt)) // because type check is shallow
+    assertValidType((1, Some(1)), STuple(SInt, SOption(SLong))) // because type check is shallow
     assertExceptionThrown(
-      assertTrue((1, 1L, Some(1)), STuple(SInt, SLong, SOption(SInt))),
+      assertValidType((1, 1L, Some(1)), STuple(SInt, SLong, SOption(SInt))),
       exceptionLike[RuntimeException](s"Unsupported tuple type")
     )
 
-    assertTrue((x: Any) => x, SFunc(SInt, SLong))  // note, arg and result types not checked
-    assertFalse((x: Any) => x, STuple(SInt, SLong))
-    assertFalse(1, SFunc(SInt, SLong))
+    assertValidType((x: Any) => x, SFunc(SInt, SLong))  // note, arg and result types not checked
+    assertInvalidType((x: Any) => x, STuple(SInt, SLong))
+    assertInvalidType(1, SFunc(SInt, SLong))
     assertExceptionThrown(
-      assertTrue((x: Any) => x, SFunc(Array(SInt, SLong), SOption(SInt))),
+      assertValidType((x: Any) => x, SFunc(Array(SInt, SLong), SOption(SInt))),
       exceptionLike[RuntimeException](s"Unsupported function type")
     )
 
     assertExceptionThrown(
-      assertTrue("", SString),
+      assertValidType("", SString),
       exceptionLike[RuntimeException](s"Unknown type")
     )
   }

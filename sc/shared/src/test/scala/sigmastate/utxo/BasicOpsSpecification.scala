@@ -47,6 +47,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
     (byteVar1, ByteConstant(1)), (byteVar2, ByteConstant(2)),
     (bigIntVar1, BigIntConstant(BigInt(10).underlying())), (bigIntVar2, BigIntConstant(BigInt(20).underlying())),
     (booleanVar, TrueLeaf))
+  // to support both JVM and JS we need to wrap numeric values into CAnyValue
   val env = Map(
     "intVar1" -> CAnyValue(intVar1), "intVar2" -> CAnyValue(intVar2),
     "byteVar1" -> CAnyValue(byteVar1), "byteVar2" -> CAnyValue(byteVar2), "byteVar3" -> CAnyValue(byteVar3),

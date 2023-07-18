@@ -130,7 +130,6 @@ object JRConstructor {
 /**
   * Implements [[RMethod]] using Java reflection.
   *
-  * @param declaringClass The JRClass that declares this method.
   * @param value          The [[java.lang.reflect.Method]] instance that this JRMethod represents.
   */
 class JRMethod private (val value: Method) extends RMethod {
