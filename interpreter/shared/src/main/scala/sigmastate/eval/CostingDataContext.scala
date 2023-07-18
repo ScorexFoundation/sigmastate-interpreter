@@ -1,7 +1,7 @@
 package sigmastate.eval
 
 import debox.cfor
-import org.ergoplatform.validation.ValidationRules
+import org.ergoplatform.validation.{SigmaValidationSettings, ValidationRules}
 import org.ergoplatform.{ErgoBox, SigmaConstants}
 import scalan.OverloadHack.Overloaded1
 import scalan.RType
@@ -193,17 +193,17 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
 
   override def valueLengthOpt: Option[Int] = treeData.valueLengthOpt
 
-  override def digest: Coll[Byte] = Colls.fromArray(treeData.digest)
+  override def digest: Coll[Byte] = treeData.digest
 
   override def updateDigest(newDigest: Coll[Byte]): AvlTree = {
-    val td = treeData.copy(digest = ADDigest @@ newDigest.toArray)
+    val td = treeData.copy(digest = newDigest)
     this.copy(treeData = td)
   }
 
   override def createVerifier(proof: Coll[Byte]): AvlTreeVerifier = {
     val adProof = SerializedAdProof @@ proof.toArray
     val bv = new CAvlTreeVerifier(
-      treeData.digest, adProof, treeData.keyLength, treeData.valueLengthOpt)
+      ADDigest @@ treeData.digest.toArray, adProof, treeData.keyLength, treeData.valueLengthOpt)
     bv
   }
 
@@ -491,7 +491,7 @@ object CHeader {
   * @see [[SigmaDslBuilder]] for detailed descriptions
   */
 class CostingSigmaDslBuilder extends SigmaDslBuilder { dsl =>
-  implicit val validationSettings = ValidationRules.currentSettings
+  implicit val validationSettings: SigmaValidationSettings = ValidationRules.currentSettings
 
   // manual fix
   override val Colls: CollBuilder = new CollOverArrayBuilder
@@ -522,7 +522,7 @@ class CostingSigmaDslBuilder extends SigmaDslBuilder { dsl =>
     * @see AvlTreeData for details
     */
   override def avlTree(operationFlags: Byte, digest: Coll[Byte], keyLength: Int, valueLengthOpt: Option[Int]): CAvlTree = {
-    val treeData = AvlTreeData(ADDigest @@ digest.toArray, AvlTreeFlags(operationFlags), keyLength, valueLengthOpt)
+    val treeData = AvlTreeData(digest, AvlTreeFlags(operationFlags), keyLength, valueLengthOpt)
     CAvlTree(treeData)
   }
 
@@ -712,6 +712,7 @@ case class CostingDataContext(
   }
 
   override def getVar[T](id: Byte)(implicit tT: RType[T]): Option[T] = {
+    @unused // avoid warning about unused ctA
     implicit val tag: ClassTag[T] = tT.classTag
     if (id < 0 || id >= vars.length) return None
     val value = vars(id)

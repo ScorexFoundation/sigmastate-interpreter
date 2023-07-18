@@ -2,21 +2,22 @@ package sigmastate.utxo.examples
 
 import scorex.utils.Longs
 import org.ergoplatform.ErgoBox.RegisterId
-import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Lookup, Insert}
-import scorex.crypto.authds.{ADValue, ADKey}
+import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
+import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval._
 import sigmastate.lang.Terms._
-import sigmastate.helpers.{ErgoLikeTestInterpreter, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, CompilerTestingCommons}
+import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import org.ergoplatform._
-import org.ergoplatform.dsl.{StdContracts, ContractSpec, TestContractSpec, SigmaContractSyntax}
+import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, TestContractSpec}
 import sigmastate.basics.CryptoConstants
 import sigmastate.crypto.CryptoFacade
-import sigmastate.interpreter.Interpreter.{emptyEnv, ScriptNameProp}
+import sigmastate.eval.Extensions.ArrayOps
+import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.utxo._
 import special.sigma.Context
 import sigmastate.utils.Helpers._
@@ -117,8 +118,7 @@ class OracleExamplesSpecification extends CompilerTestingCommons
     avlProver.generateProof()
 
     val lastBlockUtxoDigest = avlProver.digest
-
-    val treeData = new AvlTreeData(lastBlockUtxoDigest, AvlTreeFlags.ReadOnly, 32, None)
+    val treeData = new AvlTreeData(lastBlockUtxoDigest.toColl, AvlTreeFlags.ReadOnly, 32, None)
 
     def extract[T <: SType](Rn: RegisterId)(implicit tT: T) =
       ExtractRegisterAs[T](GetVarBox(22: Byte).get, Rn)(tT).get

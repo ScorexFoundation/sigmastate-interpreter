@@ -90,7 +90,7 @@ object Isos {
     override def to(x: AvlTree): sigma.AvlTree = {
       CAvlTree(
         AvlTreeData(
-          digest = ADDigest @@ isoStringToArray.to(x.digest),
+          digest = isoStringToArray.to(x.digest).toColl,
           treeFlags = AvlTreeFlags(x.insertAllowed, x.updateAllowed, x.removeAllowed),
           x.keyLength,
           valueLengthOpt = isoUndefOr(Iso.identityIso[Int]).to(x.valueLengthOpt),

@@ -116,7 +116,7 @@ object GenSerializers extends SpecGen {
   def printSerScopeSlots(serScope: SerScope) = {
     val rows = StringBuilder.newBuilder
     openRow = false
-    serScope.children.map { case (name, scope) =>
+    serScope.children.map { case (_, scope) =>
        printScope(scope, 0, rows)
     }
     rows.result()
@@ -138,7 +138,7 @@ object GenSerializers extends SpecGen {
       val desc = opInfo.map(_.description)
       val opRef = opRow
         .filterNot { case (d,_,_) => d == PropertyCall || d == MethodCall }
-        .opt { case (d, m, f) =>
+        .opt { case (_, m, f) =>
           m.fold(f.opt { f =>
             val refName = f.docInfo.opTypeName
             val opName = f.name.replace("%", "\\%")

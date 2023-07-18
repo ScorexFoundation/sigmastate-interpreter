@@ -18,7 +18,7 @@ object GenPredefFuncsApp extends SpecGen {
     val funcRows = StringBuilder.newBuilder
     val sections = StringBuilder.newBuilder
 
-    for (row @ (d, f, info) <- opInfos) {
+    for ((d, f, info) <- opInfos) {
       val opCode = toDisplayCode(d.opCode)
       val mnemonic = d.typeName
       val opName = toTexName(f.name)

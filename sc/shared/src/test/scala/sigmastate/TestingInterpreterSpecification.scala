@@ -20,7 +20,7 @@ import scala.util.Random
 
 class TestingInterpreterSpecification extends CompilerTestingCommons
   with CompilerCrossVersionProps with BeforeAndAfterAll {
-  implicit lazy val IR = new TestingIRContext
+  implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   lazy val prover = new ErgoLikeTestProvingInterpreter() {
   }
@@ -28,7 +28,7 @@ class TestingInterpreterSpecification extends CompilerTestingCommons
   lazy val verifier = new ErgoLikeTestInterpreter {
   }
 
-  implicit val soundness = CryptoConstants.soundnessBits
+  implicit val soundness: Int = CryptoConstants.soundnessBits
   
   def testingContext(h: Int) =
     ErgoLikeContextTesting(h,

@@ -2,22 +2,19 @@ package org.ergoplatform.sdk.utils
 
 import org.ergoplatform.ErgoBox
 import scalan.RType
-import scalan.RType.{BooleanType, ByteType, FuncType, IntType, LongType, OptionType, PairType, ShortType, UnitType}
+import scalan.RType._
 import scorex.crypto.authds.avltree.batch.BatchAVLProver
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ModifierId
-import sigmastate.{AvlTreeData, AvlTreeFlags, TrivialProp}
 import sigmastate.Values.ErgoTree
 import sigmastate.basics.CryptoConstants
-import sigmastate.eval.{CAvlTree, CBigInt, CGroupElement, CHeader, CPreHeader, CSigmaProp, Colls, CostingBox, CostingDataContext}
+import sigmastate.eval._
+import sigmastate.{AvlTreeData, AvlTreeFlags, TrivialProp}
 import special.Types.TupleType
 import special.collection.{Coll, CollType}
-import special.sigma.{AvlTree, AvlTreeRType, BigInt, BigIntRType, Box, BoxRType, Context, ContextRType, GroupElement, GroupElementRType, Header, HeaderRType, PreHeader, PreHeaderRType, SigmaDslBuilder, SigmaDslBuilderRType, SigmaProp, SigmaPropRType}
+import special.sigma.{AvlTree, AvlTreeRType, BigInt, BigIntRType, Box, BoxRType, GroupElement, GroupElementRType, SigmaProp, SigmaPropRType}
 
 import java.math.BigInteger
-import scalan.RType._
-import sigmastate.eval._
-import special.sigma._
 import scala.language.implicitConversions
 
 /**
@@ -58,7 +55,7 @@ object Zero extends ZeroLowPriority {
   implicit val AvlTreeIsZero: Zero[AvlTree] = CZero({
     val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
     val digest = avlProver.digest
-    val treeData = new AvlTreeData(digest, AvlTreeFlags.AllOperationsAllowed, 32, None)
+    val treeData = new AvlTreeData(Colls.fromArray(digest), AvlTreeFlags.AllOperationsAllowed, 32, None)
     CAvlTree(treeData)
   })
   implicit val sigmaPropIsZero: Zero[SigmaProp] = CZero(CSigmaProp(TrivialProp.FalseProp))

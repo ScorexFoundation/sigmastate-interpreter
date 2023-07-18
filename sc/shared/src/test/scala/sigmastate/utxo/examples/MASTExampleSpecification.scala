@@ -7,7 +7,8 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, CompilerTestingCommons}
+import sigmastate.eval.Extensions.ArrayOps
+import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.lang.Terms._
 import sigmastate.interpreter.Interpreter._
@@ -28,7 +29,7 @@ import scala.util.Random
   */
 class MASTExampleSpecification extends CompilerTestingCommons
   with CompilerCrossVersionProps {
-  implicit lazy val IR = new TestingIRContext
+  implicit lazy val IR: TestingIRContext = new TestingIRContext
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
   /**
@@ -90,7 +91,7 @@ class MASTExampleSpecification extends CompilerTestingCommons
     val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
     treeElements.foreach(s => avlProver.performOneOperation(Insert(s._1, s._2)))
     avlProver.generateProof()
-    val treeData = SigmaDsl.avlTree(new AvlTreeData(avlProver.digest, AvlTreeFlags.ReadOnly, 32, None))
+    val treeData = SigmaDsl.avlTree(new AvlTreeData(avlProver.digest.toColl, AvlTreeFlags.ReadOnly, 32, None))
 
     val merklePathToScript = OptionIsDefined(
       IR.builder.mkMethodCall(

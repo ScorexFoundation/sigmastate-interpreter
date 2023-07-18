@@ -76,7 +76,7 @@ class FsmExampleSpecification extends CompilerTestingCommons
     avlProver.performOneOperation(Insert(ADKey @@ (transition30 ++ script4Hash), ADValue @@ Array.emptyByteArray))
     avlProver.generateProof()
 
-    val digest = avlProver.digest
+    val digest = Colls.fromArray(avlProver.digest)
     val treeData = SigmaDsl.avlTree(new AvlTreeData(digest, AvlTreeFlags.ReadOnly, 34, Some(0)))
 
     val fsmDescRegister = ErgoBox.nonMandatoryRegisters.head

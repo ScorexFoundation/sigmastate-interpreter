@@ -158,7 +158,7 @@ class AVLTreeScriptsSpecification extends CompilerTestingCommons
     val (_, avlProver) = createAvlTree(AvlTreeFlags.AllOperationsAllowed, key -> value, genKey("key2") -> genValue("value2"))
     avlProver.performOneOperation(Lookup(genKey("key")))
 
-    val digest = avlProver.digest
+    val digest = avlProver.digest.toColl
     val proof = avlProver.generateProof().toColl
     val treeData = SigmaDsl.avlTree(new AvlTreeData(digest, AvlTreeFlags.ReadOnly, 32, None))
 
@@ -197,7 +197,7 @@ class AVLTreeScriptsSpecification extends CompilerTestingCommons
     val digest = avlProver.digest
     val proof = avlProver.generateProof()
 
-    val treeData = new AvlTreeData(digest, AvlTreeFlags.ReadOnly, 32, None)
+    val treeData = new AvlTreeData(digest.toColl, AvlTreeFlags.ReadOnly, 32, None)
 
     val env = Map("key" -> key, "proof" -> proof)
     val prop = compile(env, """SELF.R4[AvlTree].get.contains(key, proof)""").asBoolValue.toSigmaProp
@@ -235,7 +235,7 @@ class AVLTreeScriptsSpecification extends CompilerTestingCommons
     val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
     treeElements.foreach(s => avlProver.performOneOperation(Insert(s._1, s._2)))
     avlProver.generateProof()
-    val treeData = new AvlTreeData(avlProver.digest, AvlTreeFlags.ReadOnly, 32, None)
+    val treeData = new AvlTreeData(avlProver.digest.toColl, AvlTreeFlags.ReadOnly, 32, None)
     val proofId = 0: Byte
     val elementId = 1: Byte
 
@@ -299,7 +299,7 @@ class AVLTreeScriptsSpecification extends CompilerTestingCommons
     val digest = avlProver.digest
     val proof = avlProver.generateProof()
 
-    val treeData = SigmaDsl.avlTree(new AvlTreeData(digest, AvlTreeFlags.ReadOnly, 32, None))
+    val treeData = SigmaDsl.avlTree(new AvlTreeData(digest.toColl, AvlTreeFlags.ReadOnly, 32, None))
 
     val proofId = 31: Byte
 
@@ -366,7 +366,7 @@ class AVLTreeScriptsSpecification extends CompilerTestingCommons
     val verifier = new ErgoLikeTestInterpreter
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val treeData = SigmaDsl.avlTree(new AvlTreeData(digest, AvlTreeFlags.ReadOnly, 32, None))
+    val treeData = SigmaDsl.avlTree(new AvlTreeData(digest.toColl, AvlTreeFlags.ReadOnly, 32, None))
 
     val env = Map("proofId" -> proofId.toLong,
                   "keys" -> ConcreteCollection.fromItems(genKey("3"), genKey("4"), genKey("5")))

@@ -37,7 +37,7 @@ class AssetsAtomicExchangeErgoTests extends CompilerTestingCommons { suite =>
     val (ergHolder, tokenHolder) = contract.startExchange(txCtx.block, buyerBox, sellerBox, 100, Token(contract.tokenId, 60))
 
     // setup spending transaction
-    val (buyerTokens, sellerErgs) = contract.finishExchange(txCtx.block, ergHolder, tokenHolder)
+    val (buyerTokens, _) = contract.finishExchange(txCtx.block, ergHolder, tokenHolder)
 
     // ASSERT
     val input0 = buyerTokens.tx.inputs(0)

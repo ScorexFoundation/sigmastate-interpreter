@@ -179,7 +179,7 @@ trait SigmaTestingData extends TestingCommons with ObjectGenerators {
 
     val t1_instances = new CloneSet(1000, CAvlTree(
       AvlTreeData(
-        ADDigest @@ ErgoAlgos.decodeUnsafe("000183807f66b301530120ff7fc6bd6601ff01ff7f7d2bedbbffff00187fe89094"),
+        ErgoAlgos.decodeUnsafe("000183807f66b301530120ff7fc6bd6601ff01ff7f7d2bedbbffff00187fe89094").toColl,
         AvlTreeFlags(false, true, true),
         1,
         Some(1)
@@ -192,7 +192,7 @@ trait SigmaTestingData extends TestingCommons with ObjectGenerators {
 
     val t2: AvlTree = CAvlTree(
       AvlTreeData(
-        ADDigest @@ ErgoAlgos.decodeUnsafe("ff000d937f80ffd731ed802d24358001ff8080ff71007f00ad37e0a7ae43fff95b"),
+        ErgoAlgos.decodeUnsafe("ff000d937f80ffd731ed802d24358001ff8080ff71007f00ad37e0a7ae43fff95b").toColl,
         AvlTreeFlags(false, false, false),
         32,
         Some(64)
@@ -201,7 +201,7 @@ trait SigmaTestingData extends TestingCommons with ObjectGenerators {
 
     val t3: AvlTree = CAvlTree(
       AvlTreeData(
-        ADDigest @@ ErgoAlgos.decodeUnsafe("3100d2e101ff01fc047c7f6f00ff80129df69a5090012f01ffca99f5bfff0c8036"),
+        ErgoAlgos.decodeUnsafe("3100d2e101ff01fc047c7f6f00ff80129df69a5090012f01ffca99f5bfff0c8036").toColl,
         AvlTreeFlags(true, false, false),
         128,
         None
@@ -302,9 +302,7 @@ trait SigmaTestingData extends TestingCommons with ObjectGenerators {
     val preH2: PreHeader = create_preH1().asInstanceOf[CPreHeader].copy(height = 2)
 
     def createAvlTreeData() = AvlTreeData(
-      ADDigest @@ (
-          ErgoAlgos.decodeUnsafe("010180017f7f7b7f720c00007f7f7f0f01e857a626f37f1483d06af8077a008080")
-          ),
+      ErgoAlgos.decodeUnsafe("010180017f7f7b7f720c00007f7f7f0f01e857a626f37f1483d06af8077a008080").toColl,
       AvlTreeFlags(false, true, false),
       728138553,
       Some(2147483647)

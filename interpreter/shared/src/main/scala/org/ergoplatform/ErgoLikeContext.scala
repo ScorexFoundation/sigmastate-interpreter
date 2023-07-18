@@ -85,11 +85,11 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
   Examined ergo code: all that leads to ErgoLikeContext creation.
  */
   require(boxesToSpend.isDefinedAt(selfIndex), s"Self box if defined should be among boxesToSpend")
-  require(headers.toArray.headOption.forall(h => java.util.Arrays.equals(h.stateRoot.digest.toArray, lastBlockUtxoRoot.digest)), "Incorrect lastBlockUtxoRoot")
+  require(headers.isEmpty || headers(0).stateRoot.digest == lastBlockUtxoRoot.digest, "Incorrect lastBlockUtxoRoot")
   cfor(0)(_ < headers.length, _ + 1) { i =>
     if (i > 0) require(headers(i - 1).parentId == headers(i).id, s"Incorrect chain: ${headers(i - 1).parentId},${headers(i).id}")
   }
-  require(headers.toArray.headOption.forall(_.id == preHeader.parentId), s"preHeader.parentId should be id of the best header")
+  require(headers.isEmpty || headers(0).id == preHeader.parentId, s"preHeader.parentId should be id of the best header")
   /* NOHF PROOF:
   Added: assert that dataBoxes corresponds to spendingTransaction.dataInputs
   Motivation: to fail early, rather than when going into evaluation

@@ -11,9 +11,9 @@ import sigmastate.VersionContext._
 import sigmastate.eval.{CostingBox, Evaluation, Profiler}
 import sigmastate.exceptions.{CostLimitException, InterpreterException}
 import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}
-import sigmastate.interpreter.ErgoTreeEvaluator
+import sigmastate.interpreter.{ErgoTreeEvaluator, EvalSettings}
 import sigmastate.interpreter.Interpreter.ReductionResult
-import sigmastate.lang.SourceContext
+import sigmastate.lang.{CompilerSettings, SourceContext}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.utils.Helpers.TryOps
@@ -419,9 +419,9 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
     }
   }
 
-  implicit def IR = new TestingIRContext
-  implicit def cs = compilerSettingsInTests
-  implicit def es = evalSettings
+  implicit def IR: TestingIRContext = new TestingIRContext
+  implicit def cs: CompilerSettings = compilerSettingsInTests
+  implicit def es: EvalSettings = evalSettings
 
   property("Apply with 0 arguments") {
     val expr = Apply(FuncValue(Vector(), IntConstant(1)), IndexedSeq())
