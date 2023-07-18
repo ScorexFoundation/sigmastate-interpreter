@@ -1,38 +1,35 @@
 package sigmastate.eval
 
-import scorex.utils.{Ints, Longs}
-
-import java.math.BigInteger
-import java.util.Arrays
-import org.ergoplatform.{ErgoBox, SigmaConstants}
+import debox.cfor
 import org.ergoplatform.validation.ValidationRules
+import org.ergoplatform.{ErgoBox, SigmaConstants}
 import scalan.OverloadHack.Overloaded1
+import scalan.RType
+import scalan.util.Extensions.BigIntegerOps
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue, SerializedAdProof}
-import sigmastate.SCollection.SByteArray
-import sigmastate._
-import sigmastate.Values.{ConstantNode, ErgoTree, EvaluatedValue, SValue, SigmaBoolean}
-import sigmastate.basics.CryptoConstants.EcPointType
-import sigmastate.interpreter.Interpreter
-import special.collection._
-import special.sigma._
-import sigmastate.eval.Extensions._
-import debox.cfor
-
-import scala.util.{Failure, Success}
-import scalan.util.Extensions.BigIntegerOps
-import scalan.{Nullable, RType}
 import scorex.crypto.hash.{Blake2b256, Digest32, Sha256}
+import scorex.utils.{Ints, Longs}
+import sigmastate.SCollection.SByteArray
 import sigmastate.Values.ErgoTree.EmptyConstants
+import sigmastate.Values.{ConstantNode, ErgoTree, EvaluatedValue, SValue, SigmaBoolean}
+import sigmastate._
+import sigmastate.basics.CryptoConstants.EcPointType
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.{CryptoConstants, ProveDHTuple}
 import sigmastate.crypto.{CryptoFacade, Ecp}
-import sigmastate.lang.TransformingSigmaBuilder
+import sigmastate.eval.Extensions._
+import sigmastate.interpreter.Interpreter
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.{GroupElementSerializer, SigmaSerializer}
+import special.collection._
+import special.sigma._
 
+import java.math.BigInteger
+import java.util.Arrays
 import scala.annotation.unused
 import scala.reflect.ClassTag
+import scala.util.{Failure, Success}
 
 /** Interface implmented by wrappers to provide access to the underlying wrapped value. */
 trait WrapperOf[T] {

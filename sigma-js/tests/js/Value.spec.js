@@ -1,4 +1,4 @@
-const { TypeObj, ValueObj } = require("sigmastate-js");
+const { TypeObj, ValueObj } = require("sigmastate-js/main");
 
 function testRange(factory, min, max) {
   expect(factory(max).data).toEqual(max);

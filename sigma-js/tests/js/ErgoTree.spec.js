@@ -1,4 +1,4 @@
-const { ErgoTree, ErgoTreeObj } = require("sigmastate-js");
+const { ErgoTree, ErgoTreeObj } = require("sigmastate-js/main");
 
 describe("Smoke tests for API exporting", () => {
   it("Should export ErgoTree object", () => {
