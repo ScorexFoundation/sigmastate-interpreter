@@ -1,28 +1,31 @@
 declare module "sigmastate-js/main" {
   type SigmaCompilerNamedConstantsMap = { [key: string]: Value };
   type HexString = string;
+  type ByteArray = { u: Int8Array };
 
-  class ErgoTree {
+  export declare class ErgoTree {
     toHex(): HexString;
-    bytes(): { u: Uint8Array };
+    bytes(): ByteArray;
     header(): number;
     version(): number;
     isConstantSegregation(): boolean;
     hasSize(): boolean;
     constants(): Value[];
+    template(): ByteArray;
+    templateHex(): HexString;
     toString(): string;
   }
 
-  class ErgoTreeObj {
+  export declare class ErgoTreeObj {
     static fromHex(value: HexString): ErgoTree;
   }
 
-  class Type {
+  export declare class Type {
     name: string;
     toString(): string;
   }
 
-  class TypeObj {
+  export declare class TypeObj {
     static Byte: Type;
     static Short: Type;
     static Int: Type;
@@ -40,13 +43,13 @@ declare module "sigmastate-js/main" {
     static collType(elemType: Type): Type;
   }
 
-  class Value<T = unknown> {
+  export declare class Value<T = unknown> {
     data: T;
     tpe: Type;
     toHex(): HexString;
   }
 
-  class ValueObj {
+  export declare class ValueObj {
     static ofByte(value: number): Value<number>;
     static ofShort(value: number): Value<number>;
     static ofInt(value: number): Value<number>;
@@ -57,7 +60,7 @@ declare module "sigmastate-js/main" {
     static fromHex<T>(hex: HexString): Value<T>;
   }
 
-  class SigmaCompiler {
+  export declare class SigmaCompiler {
     compile(
       namedConstants: SigmaCompilerNamedConstantsMap,
       segregateConstants: boolean,
@@ -66,7 +69,7 @@ declare module "sigmastate-js/main" {
     ): ErgoTree;
   }
 
-  class SigmaCompilerObj {
+  export declare class SigmaCompilerObj {
     static forMainnet(): SigmaCompiler;
     static forTestnet(): SigmaCompiler;
   }

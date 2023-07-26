@@ -15,26 +15,22 @@ The modules published here can be used directly from JavaScript.
 
 # Getting Started
 
-Add the following dependency to your `package.json`:
+Run following command to add Sigma.JS as a project dependency:
 
-```json
-{
-  "dependencies": {
-    "sigmastate-js": "0.1.1"
-  }
-}
+```bash
+npm install sigmastate-js
 ```
-Then run `npm install`.
 
 # Examples
 
 ### How to create Sigma type descriptors
 
 Import `TypeObj` module, then use:
+
 - fields to create simple types (e.g. `TypeObj.Int`)
 - method `TypeObj.pairType` (e.g. `TypeObj.pairType(TypeObj.Int, TypeObj.Long)`)
 - method `TypeObj.collType` (e.g. `TypeObj.collType(TypeObj.Int)`)
- 
+
 See examples in tests [Type.spec.js](https://github.com/ScorexFoundation/sigmastate-interpreter/blob/933acd7a3753725c8b41994c2126a20279b6809b/sigma-js/tests/js/Type.spec.js)
 
 ### How to create Sigma values
@@ -51,4 +47,3 @@ See examples in tests [ErgoTree.spec.js](https://github.com/ScorexFoundation/sig
 
 Import `SigmaCompilerObj` module and `SigmaCompiler` class, then use its methods.
 See compiler tests in [SigmaCompiler.spec.js](https://github.com/ScorexFoundation/sigmastate-interpreter/blob/933acd7a3753725c8b41994c2126a20279b6809b/sigma-js/tests/js/SigmaCompiler.spec.js)
-
