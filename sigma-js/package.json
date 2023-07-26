@@ -2,16 +2,17 @@
   "name": "sigmastate-js",
   "version": "0.2.1",
   "description": "Sigma.js library",
-  "main": "dist/main.js",
   "files": [
     "dist/",
     "sigmastate-js.d.ts",
     "README.md"
   ],
-  "types": "./sigmastate-js.d.ts",
   "exports": {
     "./internal-*": null,
-    "./*": "./dist/*.js"
+    "./main": {
+      "types": "./sigmastate-js.d.ts",
+      "default": "./dist/main.js"
+    }
   },
   "license": "MIT",
   "publishConfig": {
