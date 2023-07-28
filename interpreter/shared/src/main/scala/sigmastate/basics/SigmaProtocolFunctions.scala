@@ -1,5 +1,6 @@
 package sigmastate.basics
 
+import sigmastate.SigmaLeaf
 import supertagged.TaggedType
 
 /*
@@ -50,10 +51,7 @@ trait SigmaProtocol[SP <: SigmaProtocol[SP]] {
 }
 
 
-trait SigmaProtocolCommonInput[SP <: SigmaProtocol[SP]] {
-}
-
-trait SigmaProtocolPrivateInput[SP <: SigmaProtocol[SP], CI <: SigmaProtocolCommonInput[SP]] {
+trait SigmaProtocolPrivateInput[CI <: SigmaLeaf] {
   def publicImage: CI
 }
 
