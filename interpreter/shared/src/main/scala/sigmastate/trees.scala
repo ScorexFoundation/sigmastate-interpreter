@@ -32,12 +32,21 @@ import scala.collection.mutable.ArrayBuffer
   */
 trait SigmaConjecture extends SigmaBoolean {
   def children: Seq[SigmaBoolean]
+
+  override def collectLeaves(buf: mutable.ArrayBuffer[SigmaLeaf]): Unit = {
+    cfor(0)(_ < children.length, _ + 1) { i =>
+      children(i).collectLeaves(buf)
+    }
+  }
 }
 
 /**
   * Basic trait for leafs of crypto-trees, such as ProveDlog and ProveDiffieHellman instances
   */
-trait SigmaLeaf extends SigmaBoolean
+trait SigmaLeaf extends SigmaBoolean {
+  override def collectLeaves(buf: mutable.ArrayBuffer[SigmaLeaf]): Unit =
+    buf += this
+}
 
 
 /**
@@ -130,6 +139,7 @@ case class CTHRESHOLD(k: Int, children: Seq[SigmaBoolean]) extends SigmaConjectu
 abstract class TrivialProp(val condition: Boolean) extends SigmaBoolean with Product1[Boolean] {
   override def _1: Boolean = condition
   override def canEqual(that: Any): Boolean = that != null && that.isInstanceOf[TrivialProp]
+  override def collectLeaves(buf: mutable.ArrayBuffer[SigmaLeaf]): Unit = () // not a leaf
 }
 object TrivialProp {
   // NOTE: the corresponding unapply is missing because any implementation (even using Nullable)

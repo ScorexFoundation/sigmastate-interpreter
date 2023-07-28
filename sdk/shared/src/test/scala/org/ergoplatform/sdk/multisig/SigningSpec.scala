@@ -1,15 +1,15 @@
 package org.ergoplatform.sdk.multisig
 
 import org.ergoplatform.sdk.Extensions.DoubleOps
-import org.ergoplatform.sdk.NetworkType.Mainnet
 import org.ergoplatform.sdk.wallet.protocol.context.BlockchainStateContext
 import org.ergoplatform.sdk._
-import org.ergoplatform.{ErgoAddress, ErgoTreePredef}
+import org.ergoplatform.{ErgoAddress, ErgoTreePredef, P2PKAddress}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import scalan.util.CollectionUtil.AnyOps
-import sigmastate.TestsBase
+import scorex.util.ModifierId
+import sigmastate.{SigmaLeaf, TestsBase}
 import sigmastate.Values.{Constant, ErgoTree}
 import special.sigma.SigmaTestingData
 
@@ -42,6 +42,19 @@ class SigningSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matcher
       sigmaPreHeader = preHeader
     )
   )
+
+  case class Signer(prover: SigmaProver) {
+    def masterAddress: P2PKAddress = prover.getP2PKAddress
+
+    def eip3Addresses: Seq[P2PKAddress] = prover.getEip3Addresses
+
+    def startCosigning(reduced: ReducedTransaction): SigningSession = {
+      SigningSession(reduced)
+    }
+  }
+
+  object Signer {
+  }
 
   def createSigner(secret: String): Signer = Signer(
     ProverBuilder.forMainnet(mainnetParameters)
@@ -125,24 +138,44 @@ class SigningSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matcher
     }
   }
 
-  class SigningSession(
-      val reduced: ReducedTransaction
-  )
-  object SigningSession {
-    def apply(reduced: ReducedTransaction): SigningSession = {
+  case class SigningSession(
+      reduced: ReducedTransaction
+  ) {
+    def txId: ModifierId = reduced.ergoTx.unsignedTx.id
+
+    /** Returns a set of public keys (leaf sigma propositions) for each input. */
+    def participants: Seq[Set[SigmaLeaf]] = {
       val inputs = reduced.ergoTx.reducedInputs
-      val participants = inputs.zipWithIndex.map { case (reducedInput, i) =>
+      inputs.map { reducedInput =>
         val sb = reducedInput.reductionResult.value
-        sb
+        sb.distinctLeaves
       }
-      new SigningSession(reduced)
     }
+  }
+
+  object SigningSession {
   }
 
   class CosigningServer(
       val addressBook: AddressBook
-  )
-  
+  ) {
+    val sessions: mutable.Map[String, SigningSession] = mutable.Map.empty
+
+    def addSession(session: SigningSession): Unit = {
+      require(!sessions.contains(session.txId), s"Session for tx ${session.txId} already exists")
+      sessions.put(session.txId, session)
+    }
+
+    def getSessionsFor(signer: Signer): Seq[SigningSession] = {
+      sessions.values.toSeq
+    }
+  }
+  object CosigningServer {
+    def apply(addressBook: AddressBook): CosigningServer = {
+      new CosigningServer(addressBook)
+    }
+  }
+
   property("Signing workflow") {
     val cosigners = Seq(alice, bob, carol)
     val inputs = cosigners.map(createInput(ctx, _))
@@ -150,7 +183,7 @@ class SigningSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matcher
 
     reduced shouldNot be(null)
 
-    // neither of cosigners can sign the transaction
+    // none of cosigners can sign the transaction
     cosigners.foreach(signer =>
       assertExceptionThrown(
         signer.prover.signReduced(reduced),
@@ -163,7 +196,15 @@ class SigningSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matcher
       addressBook.get(s.masterAddress) shouldBe Some(s)
     )
 
-    val session = new SigningSession(reduced)
+    val server = CosigningServer(addressBook)
+
+    // anyone can start a session (e.g. Alice)
+    server.addSession(alice.startCosigning(reduced))
+
+    // participants can retrieve the session
+    {
+      val session = server.getSessionsFor(alice).head
+    }
 
   }
 }

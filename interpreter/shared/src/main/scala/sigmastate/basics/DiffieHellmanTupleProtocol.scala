@@ -1,16 +1,17 @@
 package sigmastate.basics
 
 import java.math.BigInteger
-
 import sigmastate.crypto.BigIntegers
 import sigmastate.Values.Value.PropositionCode
 import sigmastate._
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.eval.SigmaDsl
 import CryptoConstants.EcPointType
-import sigmastate.serialization.{OpCodes, GroupElementSerializer}
+import sigmastate.serialization.{GroupElementSerializer, OpCodes}
 import sigmastate.serialization.OpCodes.OpCode
 import special.sigma.SigmaProp
+
+import scala.collection.mutable
 
 
 trait DiffieHellmanTupleProtocol extends SigmaProtocol[DiffieHellmanTupleProtocol] {
