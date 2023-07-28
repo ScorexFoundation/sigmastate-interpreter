@@ -45,19 +45,29 @@ class SigmaProtocolSpecification extends SigmaTestingData with ScalaCheckPropert
     val th = CTHRESHOLD(1, Seq(dlog1, dht1))
     val th2 = CTHRESHOLD(2, Seq(TrueProp, and, or, th, dlog1, dht1))
 
+    def position(path: Int*): NodePosition = NodePosition.CryptoTreePrefix ++ path
+
     val table = Table(("proposition", "leafs"),
       (TrueProp, Seq()),
       (FalseProp, Seq()),
-      (dlog1, Seq(dlog1)),
-      (dht1, Seq(dht1)),
-      (and, Seq(dlog1, dlog2)),
-      (or, Seq(dlog1, dlog2)),
-      (th, Seq(dlog1, dht1)),
-      (th2, Seq(dlog1, dlog2, dlog1, dlog2, dlog1, dht1, dlog1, dht1))
+      (dlog1, Seq(PositionedLeaf(NodePosition.CryptoTreePrefix, dlog1))),
+      (dht1, Seq(PositionedLeaf(NodePosition.CryptoTreePrefix, dht1))),
+      (and, Seq(PositionedLeaf(position(0), dlog1), PositionedLeaf(position(1), dlog2))),
+      (or, Seq(PositionedLeaf(position(0), dlog1), PositionedLeaf(position(1), dlog2))),
+      (th, Seq(PositionedLeaf(position(0), dlog1), PositionedLeaf(position(1), dht1))),
+      (th2, Seq(
+        PositionedLeaf(position(1, 0), dlog1),
+        PositionedLeaf(position(1, 1), dlog2),
+        PositionedLeaf(position(2, 0), dlog1),
+        PositionedLeaf(position(2, 1), dlog2),
+        PositionedLeaf(position(3, 0), dlog1),
+        PositionedLeaf(position(3, 1), dht1),
+        PositionedLeaf(position(4), dlog1),
+        PositionedLeaf(position(5), dht1)))
     )
-    forAll(table) { (prop: SigmaBoolean, leafs: Seq[SigmaLeaf]) =>
+    forAll(table) { (prop: SigmaBoolean, leafs: Seq[PositionedLeaf]) =>
       prop.leaves shouldBe leafs
     }
-    th2.leaves.iterator.distinct.toSet shouldBe Set(dlog1, dlog2, dht1)
+    th2.distinctLeaves shouldBe Set(dlog1, dlog2, dht1)
   }
 }
