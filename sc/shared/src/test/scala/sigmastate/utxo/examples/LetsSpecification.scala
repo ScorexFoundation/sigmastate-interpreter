@@ -7,6 +7,7 @@ import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.{AvlTreeData, AvlTreeFlags, CompilerCrossVersionProps, TrivialProp}
 import sigmastate.Values.{AvlTreeConstant, ByteArrayConstant, LongConstant, SigmaPropConstant}
+import sigmastate.eval.Extensions.ArrayOps
 import sigmastate.eval.{Colls, Digest32Coll, IRContext, SigmaDsl}
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter}
 import sigmastate.helpers.TestingHelpers._
@@ -282,7 +283,7 @@ class LetsSpecification extends CompilerTestingCommons with CompilerCrossVersion
   property("adding new member") {
     val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
     val digest = avlProver.digest
-    val initTreeData = new AvlTreeData(digest, AvlTreeFlags.InsertOnly, 32, None)
+    val initTreeData = new AvlTreeData(digest.toColl, AvlTreeFlags.InsertOnly, 32, None)
 
     val managementTree = mkTestErgoTree(managementScript)
     val projectBoxBefore = testBox(10, managementTree, 0,
@@ -296,7 +297,7 @@ class LetsSpecification extends CompilerTestingCommons with CompilerCrossVersion
     avlProver.performOneOperation(Insert(ADKey @@@ userTokenId.toArray, ADValue @@ Array.emptyByteArray))
 
     val proof = avlProver.generateProof()
-    val endTree = new AvlTreeData(avlProver.digest, AvlTreeFlags.InsertOnly, 32, None)
+    val endTree = new AvlTreeData(avlProver.digest.toColl, AvlTreeFlags.InsertOnly, 32, None)
 
     val projectBoxAfter = testBox(9, managementTree, 0,
       Seq(letsTokenId -> 1L),
@@ -334,7 +335,7 @@ class LetsSpecification extends CompilerTestingCommons with CompilerCrossVersion
     avlProver.performOneOperation(Insert(ADKey @@@ userTokenId1.toArray, ADValue @@ Array.emptyByteArray))
     val digest = avlProver.digest
     avlProver.generateProof()
-    val initTreeData = new AvlTreeData(digest, AvlTreeFlags.InsertOnly, 32, None)
+    val initTreeData = new AvlTreeData(digest.toColl, AvlTreeFlags.InsertOnly, 32, None)
 
     avlProver.performOneOperation(Lookup(ADKey @@@ userTokenId0.toArray))
     avlProver.performOneOperation(Lookup(ADKey @@@ userTokenId1.toArray))

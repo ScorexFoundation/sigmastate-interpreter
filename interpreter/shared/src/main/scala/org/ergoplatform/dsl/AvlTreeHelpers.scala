@@ -20,7 +20,7 @@ object AvlTreeHelpers {
     if (!ok) throw new Exception("Test tree generation failed")
     val _ = avlProver.generateProof()
     val digest = avlProver.digest
-    val treeData = new AvlTreeData(digest, flags, 32, None)
+    val treeData = new AvlTreeData(Colls.fromArray(digest), flags, 32, None)
     (CAvlTree(treeData), avlProver)
   }
 

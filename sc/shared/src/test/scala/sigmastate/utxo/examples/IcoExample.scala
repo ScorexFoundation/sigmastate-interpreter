@@ -11,9 +11,10 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.basics.CryptoConstants
+import sigmastate.eval.Extensions.ArrayOps
 import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, CompilerTestingCommons}
+import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.interpreter.Interpreter
 import sigmastate.lang.Terms._
@@ -382,7 +383,7 @@ class IcoExample extends CompilerTestingCommons
 
   property("simple ico example - fundraising stage only") {
     val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
-    val digest = avlProver.digest
+    val digest = avlProver.digest.toColl
     val initTreeData = SigmaDsl.avlTree(new AvlTreeData(digest, AvlTreeFlags.AllOperationsAllowed, 32, None))
 
     val fundingTree = mkTestErgoTree(fundingScript)
@@ -406,7 +407,7 @@ class IcoExample extends CompilerTestingCommons
     }
 
     val proof = avlProver.generateProof()
-    val endTree = SigmaDsl.avlTree(new AvlTreeData(avlProver.digest, AvlTreeFlags.AllOperationsAllowed, 32, None))
+    val endTree = SigmaDsl.avlTree(new AvlTreeData(avlProver.digest.toColl, AvlTreeFlags.AllOperationsAllowed, 32, None))
 
     val projectBoxAfter = testBox(funderBoxCount * 10 - 1, fundingTree, 0, Seq(),
       Map(R4 -> ByteArrayConstant(Array.fill(1)(0: Byte)), R5 -> AvlTreeConstant(endTree)))
@@ -435,14 +436,14 @@ class IcoExample extends CompilerTestingCommons
   property("simple ico example - issuance stage") {
     val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
     val digest = avlProver.digest
-    val openTreeData = SigmaDsl.avlTree(new AvlTreeData(digest, AvlTreeFlags.AllOperationsAllowed, 32, None))
+    val openTreeData = SigmaDsl.avlTree(new AvlTreeData(digest.toColl, AvlTreeFlags.AllOperationsAllowed, 32, None))
 
     val issuanceTree = mkTestErgoTree(issuanceScript)
     val projectBoxBeforeClosing = testBox(10, issuanceTree, 0, Seq(),
       Map(R4 -> ByteArrayConstant(Array.emptyByteArray), R5 -> AvlTreeConstant(openTreeData)))
 
     val tokenId = Digest32Coll @@@ Colls.fromArray(projectBoxBeforeClosing.id)
-    val closedTreeData = SigmaDsl.avlTree(new AvlTreeData(digest, AvlTreeFlags.RemoveOnly, 32, None))
+    val closedTreeData = SigmaDsl.avlTree(new AvlTreeData(digest.toColl, AvlTreeFlags.RemoveOnly, 32, None))
 
     val projectBoxAfterClosing = testBox(1, withdrawalTree, 0,
       Seq(tokenId -> projectBoxBeforeClosing.value),
@@ -485,7 +486,7 @@ class IcoExample extends CompilerTestingCommons
       avlProver.performOneOperation(Insert(ADKey @@@ k, ADValue @@ v))
     }
     val digest = avlProver.digest
-    val fundersTree = new AvlTreeData(digest, AvlTreeFlags.RemoveOnly, 32, None)
+    val fundersTree = new AvlTreeData(digest.toColl, AvlTreeFlags.RemoveOnly, 32, None)
 
     val withdrawalsCount = 8
     val withdrawals = funderKvs.take(withdrawalsCount)
@@ -502,7 +503,7 @@ class IcoExample extends CompilerTestingCommons
     }
     val removalProof = avlProver.generateProof()
 
-    val finalTree = new AvlTreeData(avlProver.digest, AvlTreeFlags.RemoveOnly, 32, None)
+    val finalTree = new AvlTreeData(avlProver.digest.toColl, AvlTreeFlags.RemoveOnly, 32, None)
 
     val tokenId = Digest32Coll @@ Colls.fromArray(Array.fill(32)(Random.nextInt(100).toByte))
 

@@ -131,7 +131,7 @@ class ReducingInterpreter(params: BlockchainParameters) extends ErgoLikeInterpre
       require(util.Arrays.equals(unsignedInput.boxId, inputBox.box.id))
 
       val context = new ErgoLikeContext(
-        AvlTreeData.avlTreeFromDigest(ADDigest @@ stateContext.previousStateDigest.toArray),
+        AvlTreeData.avlTreeFromDigest(stateContext.previousStateDigest),
         stateContext.sigmaLastHeaders,
         stateContext.sigmaPreHeader,
         transactionContext.dataBoxes,

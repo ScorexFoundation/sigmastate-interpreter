@@ -40,7 +40,7 @@ class AvlTreeSpecification extends SerializationSpecification {
 
     val digest = avlProver.digest
     val flags = AvlTreeFlags(true, false, false)
-    val treeData = new AvlTreeData(digest, flags, 32, None)
+    val treeData = new AvlTreeData(Colls.fromArray(digest), flags, 32, None)
     val tree = SigmaDsl.avlTree(treeData)
 
     val k = Blake2b256.hash("1")

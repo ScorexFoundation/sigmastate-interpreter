@@ -41,6 +41,9 @@ object BenchmarkUtil {
     (res, end - start)
   }
 
+  /** Runs `n` instances of the given block in parallel, await completion and measure the
+    * total time. The time is printed to the console.
+    */
   def runTasks(nTasks: Int)(block: Int => Unit) = {
     val (_, total) = measureTime {
       val tasks = (1 to nTasks).map(iTask => Future(block(iTask)))

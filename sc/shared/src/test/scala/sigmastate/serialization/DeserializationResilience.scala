@@ -406,7 +406,7 @@ class DeserializationResilience extends DeserializationResilienceTesting {
     val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
     val digest = avlProver.digest
     val flags = AvlTreeFlags(true, false, false)
-    val treeData = new AvlTreeData(digest, flags, -1, None)
+    val treeData = new AvlTreeData(digest.toColl, flags, -1, None)
     val tree = SigmaDsl.avlTree(treeData)
     val k = Blake2b256.hash("1")
     val v = k

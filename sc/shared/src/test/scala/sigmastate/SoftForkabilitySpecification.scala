@@ -26,7 +26,7 @@ class SoftForkabilitySpecification extends SigmaTestingData
     with CompilerTestingCommons
     with BeforeAndAfterAll {
 
-  implicit lazy val IR = new TestingIRContext
+  implicit lazy val IR: TestingIRContext = new TestingIRContext
   lazy val prover = new ErgoLikeTestProvingInterpreter()
   lazy val verifier = new ErgoLikeTestInterpreter
   val deadline = 100

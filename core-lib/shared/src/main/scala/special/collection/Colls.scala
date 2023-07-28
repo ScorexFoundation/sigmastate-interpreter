@@ -2,7 +2,10 @@ package special.collection
 
 import scalan._
 
-/** Indexed (zero-based) collection of elements of type `A`
+/** Indexed (zero-based) collection of elements of type `A`.
+  * NOTE: declaring it `abstract class` makes some performance benefits, but doesn't work
+  * well with specialization.
+  *
   * @define Coll `Coll`
   * @define coll collection
   * @define colls collections
@@ -290,6 +293,11 @@ trait Coll[@specialized A] {
   }
 }
 
+/** Base trait for specialized (Structure-Of-Arrays) representation of collection of pairs
+  * (i.e. `Coll[(A, B)]`).
+  * Some instances of `Coll[(A, B)]` may be instances of this trait, but it is NOT guaranteed,
+  * since some of them may be instances of `CollOverArray[(A, B)]`.
+  */
 trait PairColl[@specialized L, @specialized R] extends Coll[(L,R)] {
   def ls: Coll[L]
   def rs: Coll[R]

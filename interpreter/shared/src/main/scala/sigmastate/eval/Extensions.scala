@@ -63,13 +63,14 @@ object Extensions {
       * precisely describes the type of elements in `call`. (Which is the case for all
       * collections created by ErgoTree interpreter).
       *
-      * However it is not the case, then JVM and JS will have different semantics for Byte and Short.
+      * However, if it is not the case, then JVM and JS will have different semantics for Byte and Short.
       *
       * The JVM version preserves v5.0 consensus protocol semantics.
       * The JS version is a reasonable approximation of the JVM version.
       */
     def toArrayOfConstants: Array[Constant[SType]] = {
       val constants = coll.toArray.map { v =>
+        // see ScalaDoc for ensureTypeCarringValue
         val valToLift = Helpers.ensureTypeCarringValue(v, coll.tItem.asInstanceOf[RType[Any]])
         // call platform-specific method to transform the value to a Constant
         Platform.liftToConstant(valToLift, TransformingSigmaBuilder) match {

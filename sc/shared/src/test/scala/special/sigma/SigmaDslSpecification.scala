@@ -4416,9 +4416,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       Seq(
         (box1, Expected(Success(CAvlTree(
           AvlTreeData(
-            ADDigest @@ (
-                ErgoAlgos.decodeUnsafe("4ec61f485b98eb87153f7c57db4f5ecd75556fddbc403b41acf8441fde8e160900")
-                ),
+            ErgoAlgos.decodeUnsafe("4ec61f485b98eb87153f7c57db4f5ecd75556fddbc403b41acf8441fde8e160900").toColl,
             AvlTreeFlags(true, true, true),
             32,
             None
@@ -4678,7 +4676,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       Helpers.decodeBytes("c1d70ad9b1ffc1fb9a715fff19807f2401017fcd8b73db017f1cff77727fff08"),
       CAvlTree(
         AvlTreeData(
-          ADDigest @@ (ErgoAlgos.decodeUnsafe("54d23dd080006bdb56800100356080935a80ffb77e90b800057f00661601807f17")),
+          ErgoAlgos.decodeUnsafe("54d23dd080006bdb56800100356080935a80ffb77e90b800057f00661601807f17").toColl,
           AvlTreeFlags(true, true, false),
           2147483647,
           None
@@ -4768,7 +4766,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       selfIndex = 0,
       lastBlockUtxoRootHash = CAvlTree(
         AvlTreeData(
-          ADDigest @@ (ErgoAlgos.decodeUnsafe("54d23dd080006bdb56800100356080935a80ffb77e90b800057f00661601807f17")),
+          ErgoAlgos.decodeUnsafe("54d23dd080006bdb56800100356080935a80ffb77e90b800057f00661601807f17").toColl,
           AvlTreeFlags(true, true, true),
           1211925457,
           None

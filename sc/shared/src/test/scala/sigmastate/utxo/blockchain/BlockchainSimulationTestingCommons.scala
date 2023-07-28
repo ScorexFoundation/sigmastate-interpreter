@@ -139,7 +139,7 @@ object BlockchainSimulationTestingCommons extends CompilerTestingCommons {
       assert(blockCost <= maxCost, s"Block cost $blockCost exceeds limit $maxCost")
 
       boxesReader.applyBlock(block)
-      val newState = BlockchainState(height, state.lastBlockUtxoRoot.copy(digest = boxesReader.digest))
+      val newState = BlockchainState(height, state.lastBlockUtxoRoot.copy(digest = Colls.fromArray(boxesReader.digest)))
       ValidationState(newState, boxesReader, activatedVersion)
     }
   }
@@ -165,7 +165,7 @@ object BlockchainSimulationTestingCommons extends CompilerTestingCommons {
       val keySize = 32
       val prover = new BatchProver(keySize, None)
 
-      val digest = prover.digest
+      val digest = Colls.fromArray(prover.digest)
       val utxoRoot = AvlTreeData(digest, AvlTreeFlags.AllOperationsAllowed, keySize)
 
       val bs = BlockchainState(currentHeight = -2, utxoRoot)

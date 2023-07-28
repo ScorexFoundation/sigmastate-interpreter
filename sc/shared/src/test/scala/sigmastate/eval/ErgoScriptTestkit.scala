@@ -15,7 +15,7 @@ import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.{AvlTreeData, CompilerTestsBase, SType, VersionContext}
 import special.sigma.{ContractsTestkit, Context => DContext}
 
-import scala.language.implicitConversions
+import scala.annotation.unused
 import scala.util.Success
 
 trait ErgoScriptTestkit extends ContractsTestkit with LangTests
@@ -195,7 +195,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
     tcase.doReduce()
   }
 
-  def build(env: ScriptEnv, name: String, script: String, expected: SValue): Unit = {
+  def build(env: ScriptEnv, @unused name: String, script: String, expected: SValue): Unit = {
     val tree = compile(env, script)
     tree  shouldBe expected
   }

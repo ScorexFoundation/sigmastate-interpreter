@@ -23,13 +23,13 @@ import special.sigma.{Box, SigmaDslTesting}
   * setup of activatedScriptVersion and ErgoTree.version.
   */
 class ScriptVersionSwitchSpecification extends SigmaDslTesting {
-  override implicit val generatorDrivenConfig = PropertyCheckConfiguration(minSuccessful = 30)
+  override implicit val generatorDrivenConfig: PropertyCheckConfiguration = PropertyCheckConfiguration(minSuccessful = 30)
   override implicit val evalSettings: EvalSettings =
     ErgoTreeEvaluator.DefaultEvalSettings.copy(
       costTracingEnabled = true  // should always be enabled in tests (and false by default)
     )
 
-  implicit def IR = createIR()
+  implicit def IR: IRContext = createIR()
 
   lazy val b1 = CostingBox(
     new ErgoBox(

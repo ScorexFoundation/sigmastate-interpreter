@@ -278,7 +278,7 @@ trait JsonCodecs {
       treeFlagsByte <- cursor.downField("treeFlags").as[Byte]
       keyLength <- cursor.downField("keyLength").as[Int]
       valueLength <- cursor.downField("valueLength").as[Option[Int]]
-    } yield new AvlTreeData(digest, AvlTreeFlags(treeFlagsByte), keyLength, valueLength)
+    } yield new AvlTreeData(Colls.fromArray(digest), AvlTreeFlags(treeFlagsByte), keyLength, valueLength)
   })
 
   implicit val ergoTreeEncoder: Encoder[ErgoTree] = Encoder.instance({ value =>

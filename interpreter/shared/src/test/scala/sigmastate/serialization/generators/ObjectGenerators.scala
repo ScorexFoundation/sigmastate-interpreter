@@ -17,7 +17,7 @@ import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.{CryptoConstants, ProveDHTuple}
 import sigmastate.eval.Extensions._
 import sigmastate.eval.{CostingBox, SigmaDsl, _}
-import sigmastate.basics.CryptoConstants.EcPointType
+import sigmastate.basics.CryptoConstants.{EcPointType, dlogGroup}
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.lang.TransformingSigmaBuilder._
 import sigmastate._
@@ -25,6 +25,7 @@ import sigmastate.utxo._
 import special.collection.Coll
 import special.sigma._
 
+import java.math.BigInteger
 import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
@@ -75,25 +76,25 @@ trait ObjectGenerators extends TypeGenerators
   implicit lazy val arbProveDlog: Arbitrary[ProveDlog] = Arbitrary(proveDlogGen)
   implicit lazy val arbProveDHT: Arbitrary[ProveDHTuple] = Arbitrary(proveDHTGen)
   implicit lazy val arbRegisterIdentifier: Arbitrary[RegisterId] = Arbitrary(registerIdentifierGen)
-  implicit lazy val arbBigInteger = Arbitrary(Arbitrary.arbBigInt.arbitrary.map(_.bigInteger))
-  implicit lazy val arbBigInt = Arbitrary(arbBigInteger.arbitrary.map(SigmaDsl.BigInt(_)))
-  implicit lazy val arbEcPointType = Arbitrary(Gen.const(()).flatMap(_ => CryptoConstants.dlogGroup.createRandomGenerator()))
-  implicit lazy val arbGroupElement = Arbitrary(arbEcPointType.arbitrary.map(SigmaDsl.GroupElement(_)))
+  implicit lazy val arbBigInteger: Arbitrary[BigInteger] = Arbitrary(Arbitrary.arbBigInt.arbitrary.map(_.bigInteger))
+  implicit lazy val arbBigInt: Arbitrary[BigInt] = Arbitrary(arbBigInteger.arbitrary.map(SigmaDsl.BigInt(_)))
+  implicit lazy val arbEcPointType: Arbitrary[dlogGroup.ElemType] = Arbitrary(Gen.const(()).flatMap(_ => CryptoConstants.dlogGroup.createRandomGenerator()))
+  implicit lazy val arbGroupElement: Arbitrary[GroupElement] = Arbitrary(arbEcPointType.arbitrary.map(SigmaDsl.GroupElement(_)))
   implicit lazy val arbSigmaBoolean: Arbitrary[SigmaBoolean] = Arbitrary(Gen.oneOf(proveDHTGen, proveDHTGen))
   implicit lazy val arbSigmaProp: Arbitrary[SigmaProp] = Arbitrary(sigmaPropGen)
   implicit lazy val arbSigmaPropValue: Arbitrary[SigmaPropValue] = Arbitrary(sigmaPropValueGen)
-  implicit lazy val arbErgoBox = Arbitrary(ergoBoxGen)
-  implicit lazy val arbBox = Arbitrary(ergoBoxGen.map(SigmaDsl.Box))
-  implicit lazy val arbAvlTreeData = Arbitrary(avlTreeDataGen)
-  implicit lazy val arbAvlTree = Arbitrary(avlTreeGen)
-  implicit lazy val arbBoxCandidate = Arbitrary(ergoBoxCandidateGen(tokensGen.sample.get))
-  implicit lazy val arbTransaction = Arbitrary(ergoTransactionGen)
-  implicit lazy val arbContextExtension = Arbitrary(contextExtensionGen)
-  implicit lazy val arbSerializedProverResult = Arbitrary(serializedProverResultGen)
-  implicit lazy val arbUnsignedInput = Arbitrary(unsignedInputGen)
-  implicit lazy val arbDataInput = Arbitrary(dataInputGen)
-  implicit lazy val arbInput = Arbitrary(inputGen)
-  implicit lazy val arbUnsignedErgoLikeTransaction = Arbitrary(unsignedErgoLikeTransactionGen)
+  implicit lazy val arbErgoBox: Arbitrary[ErgoBox] = Arbitrary(ergoBoxGen)
+  implicit lazy val arbBox: Arbitrary[Box] = Arbitrary(ergoBoxGen.map(SigmaDsl.Box))
+  implicit lazy val arbAvlTreeData: Arbitrary[AvlTreeData] = Arbitrary(avlTreeDataGen)
+  implicit lazy val arbAvlTree: Arbitrary[AvlTree] = Arbitrary(avlTreeGen)
+  implicit lazy val arbBoxCandidate: Arbitrary[ErgoBoxCandidate] = Arbitrary(ergoBoxCandidateGen(tokensGen.sample.get))
+  implicit lazy val arbTransaction: Arbitrary[ErgoLikeTransaction] = Arbitrary(ergoTransactionGen)
+  implicit lazy val arbContextExtension: Arbitrary[ContextExtension] = Arbitrary(contextExtensionGen)
+  implicit lazy val arbSerializedProverResult: Arbitrary[ProverResult] = Arbitrary(serializedProverResultGen)
+  implicit lazy val arbUnsignedInput: Arbitrary[UnsignedInput] = Arbitrary(unsignedInputGen)
+  implicit lazy val arbDataInput: Arbitrary[DataInput] = Arbitrary(dataInputGen)
+  implicit lazy val arbInput: Arbitrary[Input] = Arbitrary(inputGen)
+  implicit lazy val arbUnsignedErgoLikeTransaction: Arbitrary[UnsignedErgoLikeTransaction] = Arbitrary(unsignedErgoLikeTransactionGen)
 
   def arrayOfN[T](n: Int, g: Gen[T])
       (implicit evb: Buildable[T, Array[T]]): Gen[Array[T]] = {
@@ -286,7 +287,7 @@ trait ObjectGenerators extends TypeGenerators
     flags <- avlTreeFlagsGen
     keyLength <- unsignedIntGen
     vl <- arbOption[Int](Arbitrary(unsignedIntGen)).arbitrary
-  } yield AvlTreeData(ADDigest @@@ digest, flags, keyLength, vl)
+  } yield AvlTreeData(Colls.fromArray(digest), flags, keyLength, vl)
 
   def avlTreeGen: Gen[AvlTree] = avlTreeDataGen.map(SigmaDsl.avlTree)
 
@@ -709,7 +710,7 @@ trait ObjectGenerators extends TypeGenerators
     header <- headerGen(stateRoot, parentId)
   } yield header
 
-  implicit lazy val arbHeader = Arbitrary(headerGen)
+  implicit lazy val arbHeader: Arbitrary[Header] = Arbitrary(headerGen)
 
   val MaxHeaders = 2
   def headersGen(stateRoot: AvlTree): Gen[Seq[Header]] = for {
@@ -738,7 +739,7 @@ trait ObjectGenerators extends TypeGenerators
     preHeader <- preHeaderGen(parentId)
   } yield preHeader
 
-  implicit lazy val arbPreHeader = Arbitrary(preHeaderGen)
+  implicit lazy val arbPreHeader: Arbitrary[PreHeader] = Arbitrary(preHeaderGen)
 
   lazy val ergoLikeTransactionGen: Gen[ErgoLikeTransaction] = for {
     inputBoxesIds <- Gen.nonEmptyListOf(boxIdGen)
@@ -796,7 +797,7 @@ trait ObjectGenerators extends TypeGenerators
       ergoLikeTransactionGen(boxesToSpend.map(_.id), dataBoxes.map(_.id))
     )
   } yield new ErgoLikeContext(
-    lastBlockUtxoRoot = AvlTreeData(ADDigest @@ stateRoot.digest.toArray, avlTreeFlags, unsignedIntGen.sample.get),
+    lastBlockUtxoRoot = AvlTreeData(stateRoot.digest, avlTreeFlags, unsignedIntGen.sample.get),
     headers = headers.toColl,
     preHeader = preHeader,
     dataBoxes = dataBoxes.toIndexedSeq,

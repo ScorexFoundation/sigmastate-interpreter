@@ -3,7 +3,6 @@ package sigmastate.helpers
 import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.{ErgoBox, Outputs}
 import scalan.RType
-import scorex.crypto.authds.ADDigest
 import scorex.util.ModifierId
 import sigmastate.Values._
 import sigmastate._
@@ -74,7 +73,7 @@ class SigmaPPrintSpec extends SigmaDslTesting {
     test(Helpers.decodeECPoint(ge1), s"""Helpers.decodeECPoint("${ge1}")""")
 
     val t1 = AvlTreeData(
-      ADDigest @@ ErgoAlgos.decodeUnsafe("000183807f66b301530120ff7fc6bd6601ff01ff7f7d2bedbbffff00187fe89094"),
+      ErgoAlgos.decodeUnsafe("000183807f66b301530120ff7fc6bd6601ff01ff7f7d2bedbbffff00187fe89094").toColl,
       AvlTreeFlags(false, true, true),
       1,
       Some(1)
@@ -82,7 +81,7 @@ class SigmaPPrintSpec extends SigmaDslTesting {
     test(t1,
       """AvlTreeData(
         |  ADDigest @@ (
-        |    ErgoAlgos.decodeUnsafe("000183807f66b301530120ff7fc6bd6601ff01ff7f7d2bedbbffff00187fe89094")
+        |    Helpers.decodeBytes("000183807f66b301530120ff7fc6bd6601ff01ff7f7d2bedbbffff00187fe89094")
         |  ),
         |  AvlTreeFlags(false, true, true),
         |  1,

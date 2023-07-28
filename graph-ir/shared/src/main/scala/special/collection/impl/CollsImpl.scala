@@ -5,8 +5,7 @@ import scalan._
 import scala.collection.compat.immutable.ArraySeq
 
 package impl {
-  import scalan.reflection.CommonReflection.registerClassEntry
-  import scalan.reflection.{SRConstructor, RClass, RMethod, SRMethod}
+  import scalan.reflection.{RClass, RMethod}
 
   // Abs -----------------------------------
 trait CollsDefs extends scalan.Scalan with Colls {
@@ -166,7 +165,7 @@ class CollCls extends EntityObject("Coll") {
     extends Liftable[SColl[SA], Coll[A]] {
     lazy val eW: Elem[Coll[A]] = collElement(lA.eW)
     lazy val sourceType: RType[SColl[SA]] = {
-            implicit val tagSA = lA.sourceType.asInstanceOf[RType[SA]]
+      implicit val tagSA: RType[SA] = lA.sourceType
       RType[SColl[SA]]
     }
     def lift(x: SColl[SA]): Ref[Coll[A]] = CollConst(x, lA)
@@ -180,7 +179,7 @@ class CollCls extends EntityObject("Coll") {
   case class CollAdapter[A](source: Ref[Coll[A]])
       extends Node with Coll[A]
       with Def[Coll[A]] {
-    implicit lazy val eA = source.elem.typeArgs("A")._1.asInstanceOf[Elem[A]]
+    implicit lazy val eA: Elem[A] = source.elem.typeArgs("A")._1.asInstanceOf[Elem[A]]
 
     val resultType: Elem[Coll[A]] = element[Coll[A]]
     override def transform(t: Transformer) = CollAdapter[A](t(source))

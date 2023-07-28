@@ -26,6 +26,14 @@ class ErgoTree(tree: Values.ErgoTree) extends js.Object {
   /** Serializes the ErgoTree instance to a hexadecimal string. */
   def toHex(): String = tree.bytesHex
 
+  /** Serialized proposition expression of SigmaProp type with
+    * ConstantPlaceholder nodes not replaced by Constant nodes.
+    */
+  def template(): Array[Byte] = tree.template
+
+  /** Base16 encoding of `template` bytes. */
+  def templateHex(): String = tree.templateHex
+
   /** Returns segregated constants of this tree as [[js.Array]]. */
   def constants(): js.Array[Value] = {
     val constants = tree.constants
@@ -42,17 +50,14 @@ object ErgoTree extends js.Object {
     *
     * @param hex a hexadecimal string representing the serialized ErgoTree
     */
-  def fromHex(hex: String): ErgoTree = {
-    val bytes = Base16.decode(hex).get
-    fromBytes(bytes)
-  }
+  def fromHex(hex: String): ErgoTree =
+    new ErgoTree(Values.ErgoTree.fromHex(hex))
 
   /** Deserializes an ErgoTree instance from an array of bytes.
     *
     * @param bytes an array of bytes representing the serialized ErgoTree
     */
   def fromBytes(bytes: Array[Byte]): ErgoTree = {
-    val tree = ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(bytes)
-    new ErgoTree(tree)
+    new ErgoTree(Values.ErgoTree.fromBytes(bytes))
   }
 }

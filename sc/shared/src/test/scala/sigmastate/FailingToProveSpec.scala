@@ -10,7 +10,7 @@ import scala.util.Success
 
 class FailingToProveSpec extends CompilerTestingCommons
   with CompilerCrossVersionProps {
-  implicit lazy val IR = new TestingIRContext
+  implicit lazy val IR: TestingIRContext = new TestingIRContext
   /**
     * Both properties should work fine.
     * Currently the problem in first case is that even if we evaluate `withdrawCondition1 == true`

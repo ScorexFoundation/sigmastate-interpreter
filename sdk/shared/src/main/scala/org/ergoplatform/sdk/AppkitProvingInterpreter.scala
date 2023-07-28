@@ -5,7 +5,7 @@ import org.ergoplatform._
 import org.ergoplatform.sdk.Extensions.{CollOps, PairCollOps}
 import org.ergoplatform.sdk.JavaHelpers.{TokenColl, UniversalConverter}
 import org.ergoplatform.sdk.utils.ArithUtils
-import org.ergoplatform.sdk.wallet.protocol.context.{BlockchainStateContext, TransactionContext}
+import org.ergoplatform.sdk.wallet.protocol.context.{ErgoLikeParameters, ErgoLikeStateContext, TransactionContext}
 import org.ergoplatform.sdk.wallet.secrets.ExtendedSecretKey
 import org.ergoplatform.validation.ValidationRules
 import scalan.util.Extensions.LongOps
@@ -185,7 +185,7 @@ class AppkitProvingInterpreter(
       require(util.Arrays.equals(unsignedInput.boxId, inputBox.box.id))
 
       val context = new ErgoLikeContext(
-        AvlTreeData.avlTreeFromDigest(ADDigest @@ stateContext.previousStateDigest.toArray),
+        AvlTreeData.avlTreeFromDigest(stateContext.previousStateDigest),
         stateContext.sigmaLastHeaders,
         stateContext.sigmaPreHeader,
         transactionContext.dataBoxes,

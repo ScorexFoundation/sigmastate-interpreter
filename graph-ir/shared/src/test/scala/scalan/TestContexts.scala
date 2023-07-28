@@ -11,7 +11,6 @@ trait TestContexts extends TestUtils {
     def shouldUnpack(e: Elem[_]): Boolean
     def testName: String
     def emitF(name: String, sfs: (() => Sym)*): Unit
-    //    def emit(name: String, s1: => Sym): Unit = emitF(name, () => s1)
     def emit(name: String, ss: Sym*): Unit = {
       emitF(name, ss.map((s: Ref[_]) => () => s): _*)
     }
@@ -28,7 +27,8 @@ trait TestContexts extends TestUtils {
     override def shouldUnpack(e: Elem[_]) = true
 
     // workaround for non-existence of by-name repeated parameters
-    def emitF(name: String, sfs: (() => Sym)*): Unit = Platform.stage(this)(prefix, testName, name, sfs)
+    def emitF(name: String, sfs: (() => Sym)*): Unit =
+      Platform.stage(this)(prefix, testName, name, sfs)
   }
 
 
