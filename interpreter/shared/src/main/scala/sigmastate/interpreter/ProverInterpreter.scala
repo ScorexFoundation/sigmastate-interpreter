@@ -29,7 +29,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils {
   override type ProofT = UncheckedTree
 
   /** All secrets available for this prover. */
-  def secrets: Seq[SigmaProtocolPrivateInput[_, _]]
+  def secrets: Seq[SigmaProtocolPrivateInput[_]]
 
   /**
     * Public keys of prover's secrets. This operation can be costly if there are many
@@ -181,7 +181,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils {
       // is known to an external participant in multi-signing;
       // else mark it "simulated"
       val isReal = hintsBag.realImages.contains(ul.proposition) || secrets.exists {
-        case in: SigmaProtocolPrivateInput[_, _] => in.publicImage == ul.proposition
+        case in: SigmaProtocolPrivateInput[_] => in.publicImage == ul.proposition
       }
       ul.withSimulated(!isReal)
     case t: UnprovenTree =>

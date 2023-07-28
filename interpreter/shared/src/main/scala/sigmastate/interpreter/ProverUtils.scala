@@ -41,7 +41,7 @@ trait ProverUtils extends Interpreter {
           sc.children.zipWithIndex.foldLeft(bag) { case (b, (child, idx)) =>
             traverseNode(child, b, position.child(idx))
           }
-        case leaf: SigmaProofOfKnowledgeLeaf[_, _] =>
+        case leaf: SigmaProofOfKnowledgeLeaf[_] =>
           if (generateFor.contains(leaf)) {
             val (r, a) = leaf match {
               case _: ProveDlog =>

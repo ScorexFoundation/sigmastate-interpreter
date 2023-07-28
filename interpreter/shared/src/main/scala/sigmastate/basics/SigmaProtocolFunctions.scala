@@ -50,10 +50,10 @@ trait SigmaProtocol[SP <: SigmaProtocol[SP]] {
 }
 
 
-trait SigmaProtocolCommonInput[SP <: SigmaProtocol[SP]] {
+trait SigmaProtocolCommonInput {
 }
 
-trait SigmaProtocolPrivateInput[SP <: SigmaProtocol[SP], CI <: SigmaProtocolCommonInput[SP]] {
+trait SigmaProtocolPrivateInput[CI <: SigmaProtocolCommonInput] {
   def publicImage: CI
 }
 

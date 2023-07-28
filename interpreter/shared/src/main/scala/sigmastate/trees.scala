@@ -40,8 +40,8 @@ trait SigmaConjecture extends SigmaBoolean {
 /**
   * Basic trait for leafs of crypto-trees, such as ProveDlog and ProveDiffieHellman instances
   */
-trait SigmaProofOfKnowledgeLeaf[SP <: SigmaProtocol[SP], S <: SigmaProtocolPrivateInput[SP, _]]
-  extends SigmaBoolean with SigmaProtocolCommonInput[SP]
+trait SigmaProofOfKnowledgeLeaf[S <: SigmaProtocolPrivateInput[_]]
+  extends SigmaBoolean with SigmaProtocolCommonInput
 
 
 /**

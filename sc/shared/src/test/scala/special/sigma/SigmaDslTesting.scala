@@ -85,7 +85,7 @@ class SigmaDslTesting extends AnyPropSpec
     val sk2: DLogProverInput = decodeSecretInput("34648336872573478681093104997365775365807654884817677358848426648354905397359")
     val sk3: DLogProverInput = decodeSecretInput("50415569076448343263191022044468203756975150511337537963383000142821297891310")
 
-    val secrets: Seq[SigmaProtocolPrivateInput[_ <: SigmaProtocol[_], _ <: SigmaProtocolCommonInput[_]]] = {
+    val secrets: Seq[SigmaProtocolPrivateInput[_ <: SigmaProtocolCommonInput]] = {
       // Note, not all secrets are used, which is required by checkVerify
       // This is to make AtLeast to be unproved and thus the verify is successfull
       // because of the other condition in SigmaOr (see checkVerify)

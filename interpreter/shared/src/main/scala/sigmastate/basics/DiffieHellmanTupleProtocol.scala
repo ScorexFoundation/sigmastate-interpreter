@@ -19,7 +19,7 @@ trait DiffieHellmanTupleProtocol extends SigmaProtocol[DiffieHellmanTupleProtoco
 }
 
 case class DiffieHellmanTupleProverInput(w: BigInteger, commonInput: ProveDHTuple)
-  extends SigmaProtocolPrivateInput[DiffieHellmanTupleProtocol, ProveDHTuple] {
+  extends SigmaProtocolPrivateInput[ProveDHTuple] {
 
   override lazy val publicImage: ProveDHTuple = commonInput
 }
@@ -62,7 +62,7 @@ case class SecondDiffieHellmanTupleProverMessage(z: BigInteger) extends SecondPr
 /** Construct a new SigmaProp value representing public key of Diffie Hellman signature protocol.
   * Common input: (g,h,u,v) */
 case class ProveDHTuple(gv: EcPointType, hv: EcPointType, uv: EcPointType, vv: EcPointType)
-  extends SigmaProofOfKnowledgeLeaf[DiffieHellmanTupleProtocol, DiffieHellmanTupleProverInput] {
+  extends SigmaProofOfKnowledgeLeaf[DiffieHellmanTupleProverInput] {
   override val opCode: OpCode = OpCodes.ProveDiffieHellmanTupleCode
   override def size: Int = 4  // one node for each EcPoint
   lazy val g = gv
