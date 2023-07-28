@@ -1,34 +1,31 @@
 package sigmastate
 
+import debox.{cfor, Map => DMap}
 import org.ergoplatform.SigmaConstants
 import org.ergoplatform.validation.SigmaValidationSettings
-import scalan.{ExactIntegral, ExactNumeric, ExactOrdering, Nullable}
+import scalan.ExactIntegral._
+import scalan.ExactOrdering._
 import scalan.OverloadHack.Overloaded1
+import scalan.{ExactIntegral, ExactOrdering}
 import scorex.crypto.hash.{Blake2b256, CryptographicHash32, Sha256}
+import sigmastate.ArithOp.OperationImpl
 import sigmastate.Operations._
 import sigmastate.SCollection.{SByteArray, SIntArray}
 import sigmastate.SOption.SIntOption
 import sigmastate.Values._
-import sigmastate.basics.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
+import sigmastate.eval.Extensions.EvalCollOps
+import sigmastate.eval.NumericOps.{BigIntIsExactIntegral, BigIntIsExactOrdering}
+import sigmastate.eval.{Colls, SigmaDsl}
 import sigmastate.interpreter.ErgoTreeEvaluator
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization._
 import sigmastate.utxo.{SimpleTransformerCompanion, Transformer}
-import debox.{Map => DMap}
-import scalan.ExactIntegral._
-import scalan.ExactOrdering._
-import sigmastate.ArithOp.OperationImpl
-import sigmastate.eval.NumericOps.{BigIntIsExactIntegral, BigIntIsExactOrdering}
-import sigmastate.eval.{Colls, SigmaDsl}
-import sigmastate.lang.TransformingSigmaBuilder
 import special.collection.Coll
 import special.sigma.{GroupElement, SigmaProp}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import debox.cfor
-import sigmastate.eval.Extensions.EvalCollOps
 
 /**
   * Basic trait for inner nodes of crypto-trees, so AND/OR/THRESHOLD sigma-protocol connectives
@@ -40,8 +37,7 @@ trait SigmaConjecture extends SigmaBoolean {
 /**
   * Basic trait for leafs of crypto-trees, such as ProveDlog and ProveDiffieHellman instances
   */
-trait SigmaProofOfKnowledgeLeaf[S <: SigmaProtocolPrivateInput[_]]
-  extends SigmaBoolean with SigmaProtocolCommonInput
+trait SigmaLeaf extends SigmaBoolean
 
 
 /**

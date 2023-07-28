@@ -22,8 +22,7 @@ object DLogProtocol {
   }
 
   /** Construct a new SigmaBoolean value representing public key of discrete logarithm signature protocol. */
-  case class ProveDlog(value: EcPointType)
-    extends SigmaProofOfKnowledgeLeaf[DLogProverInput] {
+  case class ProveDlog(value: EcPointType) extends SigmaLeaf {
     override def size: Int = 1
     override val opCode: OpCode = OpCodes.ProveDlogCode
     /** Serialized bytes of the elliptic curve point (using GroupElementSerializer). */
