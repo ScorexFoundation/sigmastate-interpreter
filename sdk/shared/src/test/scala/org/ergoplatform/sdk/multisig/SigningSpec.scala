@@ -19,7 +19,7 @@ class SigningSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matcher
     with TestsBase
     with SigmaTestingData {
 
-  val testMainnetParameters = BlockchainParameters(
+  val mainnetParameters = BlockchainParameters(
     storageFeeFactor = 1250000,
     minValuePerByte = 360,
     maxBlockSize = 1271009,
@@ -35,7 +35,7 @@ class SigningSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matcher
 
   val mockTxId = "f9e5ce5aa0d95f5d54a7bc89c46730d9662397067250aa18a0039631c0f5b809"
 
-  val ctx = BlockchainContext(Mainnet, testMainnetParameters,
+  val ctx = BlockchainContext(NetworkType.Mainnet, mainnetParameters,
     BlockchainStateContext(
       sigmaLastHeaders = headers,
       previousStateDigest = headers(0).stateRoot.digest,
@@ -44,7 +44,7 @@ class SigningSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matcher
   )
 
   def createSigner(secret: String): Signer = Signer(
-    ProverBuilder.forMainnet(testMainnetParameters)
+    ProverBuilder.forMainnet(mainnetParameters)
         .withMnemonic(SecretString.create(secret), SecretString.empty())
         .build()
   )
@@ -54,7 +54,7 @@ class SigningSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matcher
   val carol = createSigner("Carol secret")
   val david = createSigner("David secret")
 
-  def createRtx(
+  def createReducedTx(
       ctx: BlockchainContext, inputs: Seq[ExtendedInputBox],
       recepient: ErgoAddress, changeAddress: ErgoAddress): ReducedTransaction = {
     val txB = UnsignedTransactionBuilder(ctx)
@@ -85,13 +85,13 @@ class SigningSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matcher
     val out = UnsignedTransactionBuilder(ctx).outBoxBuilder
         .value(amount)
         .contract(contract)
-        .perform(b => if (registers.isEmpty) b else b.registers(registers: _*))
+        .update(b => if (registers.isEmpty) b else b.registers(registers: _*))
         .build()
     out
   }
 
   def createInput(ctx: BlockchainContext, owner: Signer): ExtendedInputBox = {
-    val out = createTestOut(ctx, 1.erg, owner.prover.getP2PKAddress.script)
+    val out = createTestOut(ctx, 1.erg, owner.masterAddress.script)
     out.convertToInputWith(mockTxId, 0)
   }
 
@@ -129,19 +129,24 @@ class SigningSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matcher
       val reduced: ReducedTransaction
   )
   object SigningSession {
-    def apply(reduced: ReducedTransaction, addressBook: AddressBook): SigningSession = {
-      reduced.ergoTx.reducedInputs.map { reducedInput =>
+    def apply(reduced: ReducedTransaction): SigningSession = {
+      val inputs = reduced.ergoTx.reducedInputs
+      val participants = inputs.zipWithIndex.map { case (reducedInput, i) =>
         val sb = reducedInput.reductionResult.value
-
+        sb
       }
       new SigningSession(reduced)
     }
   }
+
+  class CosigningServer(
+      val addressBook: AddressBook
+  )
   
   property("Signing workflow") {
     val cosigners = Seq(alice, bob, carol)
     val inputs = cosigners.map(createInput(ctx, _))
-    val reduced = createRtx(ctx, inputs, alice.masterAddress, david.masterAddress)
+    val reduced = createReducedTx(ctx, inputs, alice.masterAddress, david.masterAddress)
 
     reduced shouldNot be(null)
 

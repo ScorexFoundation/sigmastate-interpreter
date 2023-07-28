@@ -4,6 +4,8 @@ import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, UnsignedInput}
 import scorex.util.ModifierId
 import sigmastate.interpreter.ContextExtension
 
+// TODO rename to InputBox
+
 /** Input ErgoBox paired with context variables (aka ContextExtensions).
  *
  * @param box       an instance of ErgoBox which is used as an input of the transaction.

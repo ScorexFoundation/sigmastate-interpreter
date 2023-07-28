@@ -5,11 +5,10 @@ import org.ergoplatform._
 import org.ergoplatform.sdk.Extensions.{CollOps, PairCollOps}
 import org.ergoplatform.sdk.JavaHelpers.{TokenColl, UniversalConverter}
 import org.ergoplatform.sdk.utils.ArithUtils
-import org.ergoplatform.sdk.wallet.protocol.context.{ErgoLikeParameters, ErgoLikeStateContext, TransactionContext}
+import org.ergoplatform.sdk.wallet.protocol.context.{BlockchainStateContext, TransactionContext}
 import org.ergoplatform.sdk.wallet.secrets.ExtendedSecretKey
 import org.ergoplatform.validation.ValidationRules
 import scalan.util.Extensions.LongOps
-import scorex.crypto.authds.ADDigest
 import sigmastate.Values.SigmaBoolean
 import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate.basics.{DiffieHellmanTupleProverInput, SigmaProtocolPrivateInput}

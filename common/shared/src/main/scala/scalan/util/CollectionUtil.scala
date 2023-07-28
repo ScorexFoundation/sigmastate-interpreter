@@ -129,7 +129,7 @@ object CollectionUtil {
 
   implicit class AnyOps[A](val x: A) extends AnyVal {
     /** Performs a specified action on the source value and returns the result. */
-    def perform(action: A => A): A = action(x)
+    def update(updater: A => A): A = updater(x)
 
     /** Traverses the tree structure in a depth-first manner using the provided function to generate child nodes.
       *
