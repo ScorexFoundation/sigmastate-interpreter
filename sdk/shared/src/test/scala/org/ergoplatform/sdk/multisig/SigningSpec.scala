@@ -9,6 +9,7 @@ import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import scalan.util.CollectionUtil.AnyOps
 import sigmastate.Values.{Constant, ErgoTree}
+import sigmastate.interpreter.{HintsBag, RealCommitment}
 import sigmastate.{PositionedLeaf, TestsBase}
 import special.sigma.SigmaTestingData
 
@@ -118,15 +119,22 @@ class SigningSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matcher
     // anyone can start a session (e.g. Alice)
     server.addSession(alice.startCosigning(reduced))
 
-    // participants can retrieve the session
-    {
-      val session = server.getSessionsFor(alice).head
-      session.reduced shouldBe reduced
+    { // participants can retrieve the session
+      cosigners.zipWithIndex.foreach { case (signer, i) =>
+        val session = server.getSessionsFor(signer).head
+        session.reduced shouldBe reduced
 
-      val actions = session.getActionsFor(alice)
-      val expectedAction = CreateCommitment(alice, 0, PositionedLeaf.at()(alice.masterAddress.pubkey))
-      actions.head shouldBe expectedAction
-//      val newSession = actions.foldLeft(session) { case (s, a) => s.execute(a) }
+        val actions = session.getActionsFor(signer)
+        val signerPk = signer.masterAddress.pubkey
+        val expectedAction = CreateCommitment(signer, i, PositionedLeaf.at()(signerPk))
+        actions shouldBe Seq(expectedAction)
+
+        val newSession = session.execute(actions.head)
+        val HintsBag(Seq(RealCommitment(image, _, position))) = newSession.collectedHints(actions.head.inputIndex)
+
+        image shouldBe signerPk
+        position shouldBe expectedAction.leaf.position
+      }
     }
 
   }

@@ -3,6 +3,7 @@ package org.ergoplatform.sdk
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform._
 import org.ergoplatform.sdk.wallet.protocol.context.BlockchainStateContext
+import sigmastate.Values.SigmaBoolean
 import sigmastate.eval.{CostingSigmaDslBuilder, SigmaDsl}
 import sigmastate.interpreter.HintsBag
 import sigmastate.utils.Helpers.TryOps
@@ -84,6 +85,10 @@ class SigmaProver(private[sdk] val _prover: AppkitProvingInterpreter, networkPre
   /** Signs a given ReducedTransaction using the prover's secret keys. */
   def signReduced(tx: ReducedTransaction): SignedTransaction = {
     _prover.signReduced(tx, tx.ergoTx.cost)
+  }
+
+  def generateCommitments(sigmaTree: SigmaBoolean): HintsBag = {
+    _prover.generateCommitments(sigmaTree)
   }
 
   override def equals(obj: Any): Boolean = obj match {

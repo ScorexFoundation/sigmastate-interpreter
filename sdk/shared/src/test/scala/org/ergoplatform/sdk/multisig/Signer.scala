@@ -17,7 +17,7 @@ case class Signer(prover: SigmaProver) {
   def canProve(leaf: SigmaLeaf): Boolean = allKeys.contains(leaf)
 
   def startCosigning(reduced: ReducedTransaction): SigningSession = {
-    SigningSession(reduced, HintsBag.empty)
+    SigningSession(reduced)
   }
 }
 

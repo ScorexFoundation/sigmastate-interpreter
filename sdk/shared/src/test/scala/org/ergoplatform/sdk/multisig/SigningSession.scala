@@ -2,7 +2,7 @@ package org.ergoplatform.sdk.multisig
 
 import org.ergoplatform.sdk.ReducedTransaction
 import sigmastate.PositionedLeaf
-import sigmastate.interpreter.HintsBag
+import sigmastate.interpreter.{Hint, HintsBag}
 
 case class SessionId(value: String) extends AnyVal
 
@@ -19,8 +19,11 @@ case class CreateSignature(signer: Signer, inputIndex: Int, leaf: PositionedLeaf
 
 case class SigningSession(
     reduced: ReducedTransaction,
-    collectedHints: HintsBag
+    collectedHints: Vector[HintsBag]
 ) {
+  require(reduced.ergoTx.reducedInputs.length == collectedHints.length,
+    s"Collected hints should be provided for each input, but got ${collectedHints.length} hints for ${reduced.ergoTx.reducedInputs.length} inputs")
+
   def id: SessionId = SessionId(reduced.ergoTx.unsignedTx.id)
 
   /** Returns a seq of public keys (leaf sigma propositions) for each input.
@@ -40,7 +43,7 @@ case class SigningSession(
     }
     canProve.zipWithIndex.flatMap { case (positions, inputIndex) =>
       positions.map { pl =>
-        val action = if (collectedHints.hints.isEmpty)
+        val action = if (collectedHints(inputIndex).hints.isEmpty)
           CreateCommitment(signer, inputIndex, pl)
         else
           CreateSignature(signer, inputIndex, pl)
@@ -49,19 +52,19 @@ case class SigningSession(
     }
   }
 
+  private def addHintsAt(inputIndex: Int, hints: Seq[Hint]): SigningSession = {
+    val existingHints = collectedHints(inputIndex)
+    val newBag = existingHints.addHints(hints: _*)
+    copy(collectedHints = collectedHints.updated(inputIndex, newBag))
+  }
+
   def execute(action: SigningAction): SigningSession = {
-//    val newHints: HintsBag = action match {
-//      case CreateCommitment(signer) =>
-//        val positions = positionsToProve
-//        val commitments = positions.map { positions =>
-//          positions.map { pl =>
-//            val leaf = pl.leaf
-//            val position = pl.position
-//            val commitment = signer.prover.createCommitment(leaf, position)
-//            (leaf, position, commitment)
-//          }
-//        }
-//        collectedHints.add(commitments)
+    val newHints: Seq[Hint] = action match {
+      case CreateCommitment(signer, inputIndex, pl) =>
+        val proposition = reduced.sigmaPropositions(inputIndex)
+        val commitments = signer.prover.generateCommitments(proposition).realCommitments
+        commitments.filter { c => c.position == pl.position && c.image == pl.leaf }
+
 //      case CreateSignature(signer) =>
 //        val positions = positionsToProve
 //        val signatures = positions.map { positions =>
@@ -73,10 +76,16 @@ case class SigningSession(
 //          }
 //        }
 //        collectedHints.addHints(signatures)
-//    }
-    this
+      case _ => Seq.empty
+    }
+    addHintsAt(action.inputIndex, newHints)
   }
+
 }
 
 object SigningSession {
+  def apply(reduced: ReducedTransaction): SigningSession = {
+    val collectedHints = Vector.fill(reduced.ergoTx.reducedInputs.length)(HintsBag.empty)
+    SigningSession(reduced, collectedHints)
+  }
 }
