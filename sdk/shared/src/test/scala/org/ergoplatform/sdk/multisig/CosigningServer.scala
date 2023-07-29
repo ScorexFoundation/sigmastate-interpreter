@@ -23,6 +23,10 @@ class CosigningServer {
       }
     }.toSeq
   }
+
+  def updateSession(session: SigningSession): Unit = {
+    sessions.put(session.id, session)
+  }
 }
 
 object CosigningServer {

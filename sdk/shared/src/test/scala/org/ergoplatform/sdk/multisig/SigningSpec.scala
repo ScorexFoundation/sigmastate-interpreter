@@ -117,26 +117,32 @@ class SigningSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matcher
     val server = new CosigningServer
 
     // anyone can start a session (e.g. Alice)
-    server.addSession(alice.startCosigning(reduced))
+    val sessionId = server.addSession(alice.startCosigning(reduced))
 
-    { // participants can retrieve the session
-      cosigners.zipWithIndex.foreach { case (signer, i) =>
-        val session = server.getSessionsFor(signer).head
-        session.reduced shouldBe reduced
+    // each cosigner generated a commitment and stores it in the session
+    cosigners.zipWithIndex.foreach { case (signer, i) =>
+      val signerPk = signer.masterAddress.pubkey
 
-        val actions = session.getActionsFor(signer)
-        val signerPk = signer.masterAddress.pubkey
-        val expectedAction = CreateCommitment(signer, i, PositionedLeaf.at()(signerPk))
-        actions shouldBe Seq(expectedAction)
+      // participants can retrieve related sessions
+      val session = server.getSessionsFor(signer).head
+      session.reduced shouldBe reduced
 
-        val newSession = session.execute(actions.head)
-        val HintsBag(Seq(RealCommitment(image, _, position))) = newSession.collectedHints(actions.head.inputIndex)
+      // obtain next actions for the current session state
+      val actions = session.getActionsFor(signer)
+      val expectedAction = CreateCommitment(signer, i, PositionedLeaf.at()(signerPk))
+      actions shouldBe Seq(expectedAction)
 
-        image shouldBe signerPk
-        position shouldBe expectedAction.leaf.position
-      }
+      // then execute actions to obtain a new session state
+      val newSession = session.execute(actions.head)
+      val HintsBag(Seq(RealCommitment(image, _, position))) = newSession.collectedHints(actions.head.inputIndex)
+
+      image shouldBe signerPk
+      position shouldBe expectedAction.leaf.position
+
+      server.updateSession(newSession)
     }
 
+    server.getSession(sessionId).get.collectedHints.size shouldBe cosigners.size
   }
 }
 
