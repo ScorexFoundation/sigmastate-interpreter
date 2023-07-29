@@ -1,19 +1,16 @@
 package org.ergoplatform.sdk.multisig
 
 import org.ergoplatform.sdk.Extensions.DoubleOps
-import org.ergoplatform.sdk.wallet.protocol.context.BlockchainStateContext
 import org.ergoplatform.sdk._
-import org.ergoplatform.{ErgoAddress, ErgoTreePredef, P2PKAddress}
+import org.ergoplatform.sdk.wallet.protocol.context.BlockchainStateContext
+import org.ergoplatform.{ErgoAddress, ErgoTreePredef}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import scalan.util.CollectionUtil.AnyOps
-import scorex.util.ModifierId
-import sigmastate.{SigmaLeaf, TestsBase}
 import sigmastate.Values.{Constant, ErgoTree}
+import sigmastate.{PositionedLeaf, TestsBase}
 import special.sigma.SigmaTestingData
-
-import scala.collection.mutable
 
 class SigningSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers
     with TestsBase
@@ -43,18 +40,6 @@ class SigningSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matcher
     )
   )
 
-  case class Signer(prover: SigmaProver) {
-    def masterAddress: P2PKAddress = prover.getP2PKAddress
-
-    def eip3Addresses: Seq[P2PKAddress] = prover.getEip3Addresses
-
-    def startCosigning(reduced: ReducedTransaction): SigningSession = {
-      SigningSession(reduced)
-    }
-  }
-
-  object Signer {
-  }
 
   def createSigner(secret: String): Signer = Signer(
     ProverBuilder.forMainnet(mainnetParameters)
@@ -108,74 +93,6 @@ class SigningSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matcher
     out.convertToInputWith(mockTxId, 0)
   }
 
-  class AddressBook {
-    val signersByMasterAddress: mutable.HashMap[ErgoAddress, Signer] = mutable.HashMap.empty
-    val signersByEip3Address: mutable.HashMap[ErgoAddress, Signer] = mutable.HashMap.empty
-
-    def add(signer: Signer): this.type = {
-      if (!signersByMasterAddress.contains(signer.masterAddress)) {
-        signersByMasterAddress.put(signer.masterAddress, signer)
-        signer.eip3Addresses.foreach { eip3Address =>
-          signersByEip3Address.put(eip3Address, signer)
-        }
-      }
-      this
-    }
-
-    def ++=(signers: Signer*): this.type = {
-      signers.foreach(add);
-      this
-    }
-
-    def get(address: ErgoAddress): Option[Signer] = {
-      signersByMasterAddress.get(address).orElse(signersByEip3Address.get(address))
-    }
-  }
-
-  object AddressBook {
-    def apply(signers: Signer*): AddressBook = {
-      new AddressBook ++= (signers: _*)
-    }
-  }
-
-  case class SigningSession(
-      reduced: ReducedTransaction
-  ) {
-    def txId: ModifierId = reduced.ergoTx.unsignedTx.id
-
-    /** Returns a set of public keys (leaf sigma propositions) for each input. */
-    def participants: Seq[Set[SigmaLeaf]] = {
-      val inputs = reduced.ergoTx.reducedInputs
-      inputs.map { reducedInput =>
-        val sb = reducedInput.reductionResult.value
-        sb.distinctLeaves
-      }
-    }
-  }
-
-  object SigningSession {
-  }
-
-  class CosigningServer(
-      val addressBook: AddressBook
-  ) {
-    val sessions: mutable.Map[String, SigningSession] = mutable.Map.empty
-
-    def addSession(session: SigningSession): Unit = {
-      require(!sessions.contains(session.txId), s"Session for tx ${session.txId} already exists")
-      sessions.put(session.txId, session)
-    }
-
-    def getSessionsFor(signer: Signer): Seq[SigningSession] = {
-      sessions.values.toSeq
-    }
-  }
-  object CosigningServer {
-    def apply(addressBook: AddressBook): CosigningServer = {
-      new CosigningServer(addressBook)
-    }
-  }
-
   property("Signing workflow") {
     val cosigners = Seq(alice, bob, carol)
     val inputs = cosigners.map(createInput(ctx, _))
@@ -196,7 +113,7 @@ class SigningSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matcher
       addressBook.get(s.masterAddress) shouldBe Some(s)
     )
 
-    val server = CosigningServer(addressBook)
+    val server = new CosigningServer
 
     // anyone can start a session (e.g. Alice)
     server.addSession(alice.startCosigning(reduced))
@@ -204,6 +121,12 @@ class SigningSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matcher
     // participants can retrieve the session
     {
       val session = server.getSessionsFor(alice).head
+      session.reduced shouldBe reduced
+
+      val actions = session.getActionsFor(alice)
+      val expectedAction = CreateCommitment(alice, 0, PositionedLeaf.at()(alice.masterAddress.pubkey))
+      actions.head shouldBe expectedAction
+//      val newSession = actions.foldLeft(session) { case (s, a) => s.execute(a) }
     }
 
   }

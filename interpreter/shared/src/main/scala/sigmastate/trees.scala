@@ -50,6 +50,9 @@ trait SigmaLeaf extends SigmaBoolean {
 
 /** Represents leaf and its position in a SigmaBoolean tree. */
 case class PositionedLeaf(position: NodePosition, leaf: SigmaLeaf)
+object PositionedLeaf {
+  def at(path: Int*)(leaf: SigmaLeaf) = PositionedLeaf(NodePosition.CryptoTreePrefix ++ path, leaf)
+}
 
 /**
   * AND conjunction for sigma propositions

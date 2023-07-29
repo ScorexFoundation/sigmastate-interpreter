@@ -90,7 +90,7 @@ class SigmaProver(private[sdk] val _prover: AppkitProvingInterpreter, networkPre
     case that: SigmaProver =>
       if (!this.hasSecrets || !that.hasSecrets) this eq that
       else {
-        // both have secrets
+        // both have secrets, compare masterKeys
         this._prover.pubKeys(0) == that._prover.pubKeys(0)
       }
     case _ => false
