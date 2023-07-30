@@ -62,7 +62,7 @@ case class SigningSession(
     val newHints: Seq[Hint] = action match {
       case CreateCommitment(signer, inputIndex, pl) =>
         val proposition = reduced.sigmaPropositions(inputIndex)
-        val commitments = signer.prover.generateCommitments(proposition).realCommitments
+        val commitments = signer.generateCommitments(proposition).realCommitments
         commitments.filter { c => c.position == pl.position && c.image == pl.leaf }
 
 //      case CreateSignature(signer) =>
