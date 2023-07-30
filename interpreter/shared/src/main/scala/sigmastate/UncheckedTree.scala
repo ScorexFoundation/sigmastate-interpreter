@@ -16,23 +16,21 @@ sealed trait UncheckedSigmaTree extends UncheckedTree {
 
 trait UncheckedConjecture extends UncheckedSigmaTree with ProofTreeConjecture
 
-trait UncheckedLeaf[SP <: SigmaBoolean] extends UncheckedSigmaTree with ProofTreeLeaf {
-  val proposition: SigmaBoolean
-}
+trait UncheckedLeaf extends UncheckedSigmaTree with ProofTreeLeaf
 
 case class UncheckedSchnorr(
     override val proposition: ProveDlog,
     override val commitmentOpt: Option[FirstDLogProverMessage],
     override val challenge: Challenge,
     secondMessage: SecondDLogProverMessage
-) extends UncheckedLeaf[ProveDlog]
+) extends UncheckedLeaf
 
 case class UncheckedDiffieHellmanTuple(
     override val proposition: ProveDHTuple,
     override val commitmentOpt: Option[FirstDHTupleProverMessage],
     override val challenge: Challenge,
     secondMessage: SecondDHTupleProverMessage
-) extends UncheckedLeaf[ProveDHTuple]
+) extends UncheckedLeaf
 
 case class CAndUncheckedNode(
     override val challenge: Challenge,

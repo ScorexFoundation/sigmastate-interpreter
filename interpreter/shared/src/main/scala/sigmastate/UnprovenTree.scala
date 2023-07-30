@@ -25,7 +25,7 @@ object ConjectureType extends Enumeration {
 trait ProofTree extends Product
 
 trait ProofTreeLeaf extends ProofTree {
-  val proposition: SigmaBoolean
+  val proposition: SigmaLeaf
   val commitmentOpt: Option[FirstProverMessage]
 }
 

@@ -115,7 +115,7 @@ trait ProverUtils extends Interpreter {
           inner.children.zipWithIndex.foldLeft(hintsBag) { case (hb, (c, idx)) =>
             traverseNode(c, realPropositions, simulatedPropositions, hb, position.child(idx))
           }
-        case leaf: UncheckedLeaf[_] =>
+        case leaf: UncheckedLeaf =>
           val realFound = realPropositions.contains(leaf.proposition)
           val simulatedFound = simulatedPropositions.contains(leaf.proposition)
           if (realFound || simulatedFound) {
