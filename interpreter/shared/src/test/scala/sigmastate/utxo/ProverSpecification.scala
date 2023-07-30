@@ -118,8 +118,8 @@ class ProverSpecification extends TestingCommons {
   def checkUnrealRoot(sb: SigmaBoolean)(implicit prover: ProverInterpreter) = {
     assertExceptionThrown(
       checkProof(sb),
-      { case e: AssertionError => e.getMessage.contains("Tree root should be real but was")
-        case _ => false })
+      exceptionLike[IllegalArgumentException]("Tree root should be real but was")
+    )
   }
 
   property("proof/verify completeness") {
