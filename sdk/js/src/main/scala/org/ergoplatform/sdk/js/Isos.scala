@@ -2,7 +2,7 @@ package org.ergoplatform.sdk.js
 
 import org.ergoplatform.ErgoBox._
 import org.ergoplatform.sdk.JavaHelpers.UniversalConverter
-import org.ergoplatform.sdk.wallet.protocol.context.{CErgoLikeStateContext, ErgoLikeStateContext}
+import org.ergoplatform.sdk.wallet.protocol.context
 import org.ergoplatform.sdk.{ExtendedInputBox, Iso}
 import org.ergoplatform._
 import scalan.RType
