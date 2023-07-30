@@ -67,7 +67,7 @@ class WRTypeCls extends EntityObject("WRType") {
   case class WRTypeAdapter[A](source: Ref[WRType[A]])
       extends Node with WRType[A]
       with Def[WRType[A]] {
-    implicit lazy val eA = source.elem.typeArgs("A")._1.asInstanceOf[Elem[A]]
+    implicit lazy val eA: Elem[A] = source.elem.typeArgs("A")._1.asInstanceOf[Elem[A]]
 
     val resultType: Elem[WRType[A]] = element[WRType[A]]
     override def transform(t: Transformer) = WRTypeAdapter[A](t(source))

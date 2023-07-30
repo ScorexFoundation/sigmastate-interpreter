@@ -90,7 +90,7 @@ class WOptionCls extends EntityObject("WOption") {
   case class WOptionAdapter[A](source: Ref[WOption[A]])
       extends Node with WOption[A]
       with Def[WOption[A]] {
-    implicit lazy val eA = source.elem.typeArgs("A")._1.asInstanceOf[Elem[A]]
+    implicit lazy val eA: Elem[A] = source.elem.typeArgs("A")._1.asInstanceOf[Elem[A]]
 
     val resultType: Elem[WOption[A]] = element[WOption[A]]
     override def transform(t: Transformer) = WOptionAdapter[A](t(source))

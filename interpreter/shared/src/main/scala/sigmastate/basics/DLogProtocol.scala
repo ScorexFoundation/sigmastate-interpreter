@@ -78,7 +78,7 @@ object DLogProtocol {
   }
 
 
-  object DLogInteractiveProver {
+  object DLogInteractiveProver extends SigmaProtocolProver {
     import CryptoConstants.secureRandom
 
     def firstMessage(): (BigInteger, FirstDLogProverMessage) = {
@@ -91,12 +91,7 @@ object DLogProtocol {
     }
 
     def secondMessage(privateInput: DLogProverInput, rnd: BigInteger, challenge: Challenge): SecondDLogProverMessage = {
-      import CryptoConstants.dlogGroup
-
-      val q: BigInteger = dlogGroup.order
-      val e: BigInteger = new BigInteger(1, challenge)
-      val ew: BigInteger = e.multiply(privateInput.w).mod(q)
-      val z: BigInteger = rnd.add(ew).mod(q)
+      val z = responseToChallenge(privateInput, rnd, challenge)
       SecondDLogProverMessage(z)
     }
 
@@ -108,7 +103,7 @@ object DLogProtocol {
       val z = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, secureRandom)
 
       //COMPUTE a = g^z*h^(-e)  (where -e here means -e mod q)
-      val e: BigInteger = new BigInteger(1, challenge)
+      val e: BigInteger = new BigInteger(1, challenge.toArray)
       val minusE = dlogGroup.order.subtract(e)
       val hToE = dlogGroup.exponentiate(publicInput.value, minusE)
       val gToZ = dlogGroup.exponentiate(dlogGroup.generator, z)
@@ -136,7 +131,7 @@ object DLogProtocol {
 
       dlogGroup.multiplyGroupElements(
         dlogGroup.exponentiate(g, secondMessage.z.underlying()),
-        dlogGroup.inverseOf(dlogGroup.exponentiate(h, new BigInteger(1, challenge))))
+        dlogGroup.inverseOf(dlogGroup.exponentiate(h, new BigInteger(1, challenge.toArray))))
     }
   }
 

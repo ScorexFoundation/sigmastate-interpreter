@@ -1,20 +1,17 @@
 package sigmastate.helpers
 
-import scorex.crypto.hash.Digest32
-import special.collection.{Coll, CollOverArray, PairOfCols}
-import scorex.util.ModifierId
-import org.ergoplatform.{DataInput, ErgoBox, ErgoBoxCandidate, ErgoLikeContext, ErgoLikeTransaction, ErgoLikeTransactionTemplate, Input, UnsignedInput}
-import sigmastate.Values.ErgoTree
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, Token, allZerosModifierId}
 import org.ergoplatform.validation.SigmaValidationSettings
+import org.ergoplatform._
+import scorex.util.ModifierId
 import sigmastate.AvlTreeData
-import sigmastate.eval.CostingSigmaDslBuilder
-import sigmastate.eval._
+import sigmastate.Values.ErgoTree
+import sigmastate.eval.{CostingSigmaDslBuilder, _}
 import sigmastate.interpreter.ContextExtension
+import special.collection.{Coll, CollOverArray, PairOfCols}
 import special.sigma.{Header, PreHeader}
 
 import scala.collection.compat.immutable.ArraySeq
-import scala.collection.mutable.WrappedArray
 
 // TODO refactor: unification is required between two hierarchies of tests
 //  and as part of it, more methods can be moved to TestingHelpers

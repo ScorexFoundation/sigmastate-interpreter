@@ -5,7 +5,7 @@ import scorex.crypto.hash.Blake2b256
 import sigmastate.Values.SigmaBoolean
 import sigmastate._
 import sigmastate.basics.DLogProtocol.FirstDLogProverMessage
-import sigmastate.basics.{FirstDiffieHellmanTupleProverMessage, SecP256K1Group}
+import sigmastate.basics.{FirstDHTupleProverMessage, SecP256K1Group}
 import sigmastate.exceptions.InterpreterException
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, TestingCommons}
 import sigmastate.interpreter.{HintsBag, ProverInterpreter}
@@ -52,7 +52,7 @@ class ProverSpecification extends TestingCommons {
 
     h3.realCommitments.head.commitment shouldBe h3.ownCommitments.head.commitment
 
-    h3.realCommitments.head.commitment.isInstanceOf[FirstDiffieHellmanTupleProverMessage] shouldBe true
+    h3.realCommitments.head.commitment.isInstanceOf[FirstDHTupleProverMessage] shouldBe true
   }
 
   property("setPositions - and") {
