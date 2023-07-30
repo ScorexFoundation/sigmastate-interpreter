@@ -3,7 +3,7 @@ package sigmastate
 import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, ProveDlog, SecondDLogProverMessage}
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.Values.SigmaBoolean
-import sigmastate.basics.{FirstDiffieHellmanTupleProverMessage, ProveDHTuple, SecondDiffieHellmanTupleProverMessage}
+import sigmastate.basics.{FirstDHTupleProverMessage, ProveDHTuple, SecondDHTupleProverMessage}
 import sigmastate.crypto.GF2_192_Poly
 
 sealed trait UncheckedTree extends ProofTree
@@ -29,9 +29,9 @@ case class UncheckedSchnorr(
 
 case class UncheckedDiffieHellmanTuple(
     override val proposition: ProveDHTuple,
-    override val commitmentOpt: Option[FirstDiffieHellmanTupleProverMessage],
+    override val commitmentOpt: Option[FirstDHTupleProverMessage],
     override val challenge: Challenge,
-    secondMessage: SecondDiffieHellmanTupleProverMessage
+    secondMessage: SecondDHTupleProverMessage
 ) extends UncheckedLeaf[ProveDHTuple]
 
 case class CAndUncheckedNode(

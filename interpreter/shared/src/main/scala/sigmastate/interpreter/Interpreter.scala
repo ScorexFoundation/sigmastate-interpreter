@@ -405,7 +405,7 @@ trait Interpreter {
       implicit val E = ErgoTreeEvaluator.getCurrentEvaluator
       fixedCostOp(ComputeCommitments_DHT) {
         val (a, b) = DiffieHellmanTupleInteractiveProver.computeCommitment(dh.proposition, dh.challenge, dh.secondMessage)
-        dh.copy(commitmentOpt = Some(FirstDiffieHellmanTupleProverMessage(a, b)))
+        dh.copy(commitmentOpt = Some(FirstDHTupleProverMessage(a, b)))
       }
 
     case _: UncheckedSigmaTree => ???

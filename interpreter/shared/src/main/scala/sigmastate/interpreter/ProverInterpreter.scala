@@ -399,7 +399,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils {
 
         // Step 6 (real leaf -- compute the commitment a or take it from the hints bag)
         hintsBag.commitments.find(_.position == dhu.position).map { cmtHint =>
-          dhu.copy(commitmentOpt = Some(cmtHint.commitment.asInstanceOf[FirstDiffieHellmanTupleProverMessage]))
+          dhu.copy(commitmentOpt = Some(cmtHint.commitment.asInstanceOf[FirstDHTupleProverMessage]))
         }.getOrElse {
           if (dhu.simulated) {
             // Step 5 (simulated leaf -- complete the simulation)
@@ -542,7 +542,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils {
             provenSchnorr.secondMessage
           }.getOrElse {
             val bs = secureRandomBytes(32)
-            SecondDiffieHellmanTupleProverMessage(new BigInteger(1, bs).mod(CryptoConstants.groupOrder))
+            SecondDHTupleProverMessage(new BigInteger(1, bs).mod(CryptoConstants.groupOrder))
           }
       }
       UncheckedDiffieHellmanTuple(dhu.proposition, None, dhu.challengeOpt.get, z)

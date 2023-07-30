@@ -91,13 +91,7 @@ object DLogProtocol {
     }
 
     def secondMessage(privateInput: DLogProverInput, rnd: BigInteger, challenge: Challenge): SecondDLogProverMessage = {
-      import CryptoConstants.dlogGroup
-
-      // TODO: get rid of duplicate code
-      val q: BigInteger = dlogGroup.order
-      val e: BigInteger = new BigInteger(1, challenge.toArray)
-      val ew: BigInteger = e.multiply(privateInput.w).mod(q)
-      val z: BigInteger = rnd.add(ew).mod(q)
+      val z = responseToChallenge(privateInput, rnd, challenge)
       SecondDLogProverMessage(z)
     }
 

@@ -35,7 +35,7 @@ trait SigmaConjecture extends SigmaBoolean {
 }
 
 /**
-  * Basic trait for leafs of crypto-trees, such as ProveDlog and ProveDiffieHellman instances
+  * Basic trait for leafs of crypto-trees, such as [[sigmastate.basics.DLogProtocol.ProveDlog]] and [[sigmastate.basics.ProveDHTuple]] instances
   */
 trait SigmaLeaf extends SigmaBoolean
 

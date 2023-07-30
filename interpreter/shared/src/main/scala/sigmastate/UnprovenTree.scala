@@ -4,7 +4,7 @@ import java.math.BigInteger
 import sigmastate.Values.{ErgoTree, SigmaBoolean, SigmaPropConstant}
 import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, ProveDlog}
 import sigmastate.basics.VerifierMessage.Challenge
-import sigmastate.basics.{FirstDiffieHellmanTupleProverMessage, FirstProverMessage, ProveDHTuple}
+import sigmastate.basics.{FirstDHTupleProverMessage, FirstProverMessage, ProveDHTuple}
 import sigmastate.interpreter.{ErgoTreeEvaluator, NamedDesc, OperationCostInfo}
 import sigmastate.interpreter.ErgoTreeEvaluator.fixedCostOp
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
@@ -187,7 +187,7 @@ case class UnprovenSchnorr(override val proposition: ProveDlog,
 }
 
 case class UnprovenDiffieHellmanTuple(override val proposition: ProveDHTuple,
-                                      override val commitmentOpt: Option[FirstDiffieHellmanTupleProverMessage],
+                                      override val commitmentOpt: Option[FirstDHTupleProverMessage],
                                       randomnessOpt: Option[BigInteger],
                                       override val challengeOpt: Option[Challenge] = None,
                                       override val simulated: Boolean,

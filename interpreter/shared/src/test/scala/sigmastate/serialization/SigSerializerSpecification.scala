@@ -8,7 +8,7 @@ import sigmastate.Values.SigmaBoolean
 import sigmastate._
 import sigmastate.basics.DLogProtocol.{ProveDlog, SecondDLogProverMessage}
 import sigmastate.basics.VerifierMessage.Challenge
-import sigmastate.basics.{ProveDHTuple, SecondDiffieHellmanTupleProverMessage}
+import sigmastate.basics.{ProveDHTuple, SecondDHTupleProverMessage}
 import sigmastate.crypto.GF2_192_Poly
 import sigmastate.eval.Extensions.ArrayOps
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTransactionTesting, TestingCommons}
@@ -173,7 +173,7 @@ class SigSerializerSpecification extends TestingCommons
           ),
           None,
           Challenge @@ ErgoAlgos.decodeUnsafe("9ec740b57353cb2f6035bb1a481b0066b2fdc0406a6fa67e").toColl,
-          SecondDiffieHellmanTupleProverMessage(
+          SecondDHTupleProverMessage(
             new BigInteger("bb2e6f44a38052b3f564fafcd477c4eb8cda1a8a553a4a5f38f1e1084d6a69f0", 16)
           )
         ),
@@ -306,7 +306,7 @@ class SigSerializerSpecification extends TestingCommons
               ),
               None,
               Challenge @@ ErgoAlgos.decodeUnsafe("ffd3149193b042fda134c0e208fefcb791379959ac6fc731").toColl,
-              SecondDiffieHellmanTupleProverMessage(new BigInteger("adf47e32000fc75e2923dba482c843c7f6b684cbf2ceec5bfdf5fe6d13cabe5d", 16))
+              SecondDHTupleProverMessage(new BigInteger("adf47e32000fc75e2923dba482c843c7f6b684cbf2ceec5bfdf5fe6d13cabe5d", 16))
             ),
             COrUncheckedNode(
               Challenge @@ ErgoAlgos.decodeUnsafe("697ecb4c5fa939260dc100f6274f908ea97cafc056281d4c").toColl,
@@ -326,7 +326,7 @@ class SigSerializerSpecification extends TestingCommons
                   ),
                   None,
                   Challenge @@ ErgoAlgos.decodeUnsafe("7c86e210fb413069b7fd47e09890534acb3dd5b9f037d104").toColl,
-                  SecondDiffieHellmanTupleProverMessage(new BigInteger("dd97c3bd2fe40ecdbbda6f43bf71240da8dac878c044c16d42a4b34c536bbb1b", 16))
+                  SecondDHTupleProverMessage(new BigInteger("dd97c3bd2fe40ecdbbda6f43bf71240da8dac878c044c16d42a4b34c536bbb1b", 16))
                 )
               )
             )
@@ -390,7 +390,7 @@ class SigSerializerSpecification extends TestingCommons
                   ),
                   None,
                   Challenge @@ ErgoAlgos.decodeUnsafe("ff8b9c2a4eed345a11c697f6850cf3a38763d738539ad2d2").toColl,
-                  SecondDiffieHellmanTupleProverMessage(new BigInteger("140fc95e28775cde52e71bb4d7b5ee2564553fac5b52202530fcbcdf205b7cca", 16))
+                  SecondDHTupleProverMessage(new BigInteger("140fc95e28775cde52e71bb4d7b5ee2564553fac5b52202530fcbcdf205b7cca", 16))
                 )
               )
             ),
@@ -406,7 +406,7 @@ class SigSerializerSpecification extends TestingCommons
                   ),
                   None,
                   Challenge @@ ErgoAlgos.decodeUnsafe("145202fb2a5bb181a890eb15536b08b747ea163f6b5d32a1").toColl,
-                  SecondDiffieHellmanTupleProverMessage(new BigInteger("16fa9e1eb6b348fd82d3ebc11c125e5bc3f09c499aa0a8db14dc1780b4181f9b", 16))
+                  SecondDHTupleProverMessage(new BigInteger("16fa9e1eb6b348fd82d3ebc11c125e5bc3f09c499aa0a8db14dc1780b4181f9b", 16))
                 ),
                 UncheckedDiffieHellmanTuple(
                   ProveDHTuple(
@@ -417,7 +417,7 @@ class SigSerializerSpecification extends TestingCommons
                   ),
                   None,
                   Challenge @@ ErgoAlgos.decodeUnsafe("a405e8a07b6ec105b167a40ad8dd02d2e298bb0113e86b10").toColl,
-                  SecondDiffieHellmanTupleProverMessage(new BigInteger("ae5ed0f743f71b82b18784380814507d810cbef61ebc0b30e7f324083e2d3d08", 16))
+                  SecondDHTupleProverMessage(new BigInteger("ae5ed0f743f71b82b18784380814507d810cbef61ebc0b30e7f324083e2d3d08", 16))
                 )
               )
             )
@@ -465,7 +465,7 @@ class SigSerializerSpecification extends TestingCommons
               ),
               None,
               Challenge @@ ErgoAlgos.decodeUnsafe("5735f4df1b280e1d423a8f28977057af8c52123c9a3fe96d").toColl,
-              SecondDiffieHellmanTupleProverMessage(new BigInteger("da857dd649d3228a8c359ac499d430ecada3f92d5206cddeffb16248068c1003", 16))
+              SecondDHTupleProverMessage(new BigInteger("da857dd649d3228a8c359ac499d430ecada3f92d5206cddeffb16248068c1003", 16))
             ),
             UncheckedDiffieHellmanTuple(
               ProveDHTuple(
@@ -476,7 +476,7 @@ class SigSerializerSpecification extends TestingCommons
               ),
               None,
               Challenge @@ ErgoAlgos.decodeUnsafe("980cc5d167b847dc8baceeb02fa66d8095bb9a7f22249d54").toColl,
-              SecondDiffieHellmanTupleProverMessage(new BigInteger("477d717e04afbf206c87a59ce5263ee7cc4020b5772d91b1df00bd72b15347fd", 16))
+              SecondDHTupleProverMessage(new BigInteger("477d717e04afbf206c87a59ce5263ee7cc4020b5772d91b1df00bd72b15347fd", 16))
             )
           ),
           2,

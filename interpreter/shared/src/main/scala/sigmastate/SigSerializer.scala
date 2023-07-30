@@ -5,7 +5,7 @@ import scorex.util.encode.Base16
 import sigmastate.Values.SigmaBoolean
 import sigmastate.basics.DLogProtocol.{ProveDlog, SecondDLogProverMessage}
 import sigmastate.basics.VerifierMessage.Challenge
-import sigmastate.basics.{CryptoConstants, ProveDHTuple, SecondDiffieHellmanTupleProverMessage}
+import sigmastate.basics.{CryptoConstants, ProveDHTuple, SecondDHTupleProverMessage}
 import sigmastate.interpreter.ErgoTreeEvaluator.{fixedCostOp, perItemCostOp}
 import sigmastate.interpreter.{ErgoTreeEvaluator, NamedDesc, OperationCostInfo}
 import sigmastate.serialization.SigmaSerializer
@@ -204,7 +204,7 @@ class SigSerializer {
         fixedCostOp(ParseChallenge_ProveDHT) {
           val z_bytes = readBytesChecked(r, order, hex => warn(s"Invalid z bytes for $dh: $hex"))
           val z = BigIntegers.fromUnsignedByteArray(z_bytes)
-          UncheckedDiffieHellmanTuple(dh, None, challenge, SecondDiffieHellmanTupleProverMessage(z))
+          UncheckedDiffieHellmanTuple(dh, None, challenge, SecondDHTupleProverMessage(z))
         }
 
       case and: CAND =>
