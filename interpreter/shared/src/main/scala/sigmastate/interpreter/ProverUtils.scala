@@ -122,12 +122,12 @@ trait ProverUtils extends Interpreter {
             val hints = if (realFound) {
               Seq(
                 RealCommitment(leaf.proposition, leaf.commitmentOpt.get, position),
-                RealSecretProof(leaf.proposition, Challenge @@ leaf.challenge, leaf, position)
+                RealSecretProof(leaf.proposition, leaf.challenge, leaf, position)
               )
             } else {
               Seq(
                 SimulatedCommitment(leaf.proposition, leaf.commitmentOpt.get, position),
-                SimulatedSecretProof(leaf.proposition, Challenge @@ leaf.challenge, leaf, position)
+                SimulatedSecretProof(leaf.proposition, leaf.challenge, leaf, position)
               )
             }
             hintsBag.addHints(hints: _*)

@@ -102,7 +102,7 @@ sealed trait UnprovenTree extends ProofTree {
   /**
     * Challenge used by the prover.
     */
-  val challengeOpt: Option[Array[Byte]]
+  val challengeOpt: Option[Challenge]
 
   def withChallenge(challenge: Challenge): UnprovenTree
 

@@ -383,7 +383,7 @@ trait Interpreter {
       * (and, if applicable,  the associated data). Reject otherwise.
       */
     val expectedChallenge = CryptoFunctions.hashFn(bytes)
-    util.Arrays.equals(newRoot.challenge, expectedChallenge)
+    util.Arrays.equals(newRoot.challenge.toArray, expectedChallenge)
   }
 
   /**

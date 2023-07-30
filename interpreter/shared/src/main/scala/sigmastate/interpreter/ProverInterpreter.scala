@@ -11,8 +11,10 @@ import sigmastate.basics.DLogProtocol._
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.basics._
 import sigmastate.crypto.{GF2_192, GF2_192_Poly}
+import sigmastate.eval.Extensions.ArrayOps
 import sigmastate.exceptions.InterpreterException
 import sigmastate.utils.Helpers
+import special.collection.Coll
 
 import java.math.BigInteger
 import scala.util.Try
@@ -91,7 +93,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils {
 
     // Prover Step 8: compute the challenge for the root of the tree as the Fiat-Shamir hash of propBytes
     // and the message being signed.
-    val rootChallenge = Challenge @@ CryptoFunctions.hashFn(Helpers.concatArrays(propBytes, message))
+    val rootChallenge = Challenge @@ CryptoFunctions.hashFn(Helpers.concatArrays(propBytes, message)).toColl
     val step8 = step6.withChallenge(rootChallenge)
 
     // Prover Step 9: complete the proof by computing challenges at real nodes and additionally responses at real leaves
@@ -287,7 +289,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils {
           // take challenge from previously done proof stored in the hints bag,
           // or generate random challenge for simulated child
           val newChallenge = hintsBag.proofs.find(_.position == c.position).map(_.challenge).getOrElse(
-            Challenge @@ secureRandomBytes(CryptoFunctions.soundnessBytes)
+            Challenge @@ secureRandomBytes(CryptoFunctions.soundnessBytes).toColl
           )
           c.withChallenge(newChallenge)
         }
@@ -314,8 +316,10 @@ trait ProverInterpreter extends Interpreter with ProverUtils {
       // the other children and e_0.
       assert(or.challengeOpt.isDefined)
       val unprovenChildren = or.children.cast[UnprovenTree]
-      val t = unprovenChildren.tail.map(_.withChallenge(Challenge @@ secureRandomBytes(CryptoFunctions.soundnessBytes)))
-      val toXor: Seq[Array[Byte]] = or.challengeOpt.get +: t.map(_.challengeOpt.get)
+      val t = unprovenChildren.tail.map(
+        _.withChallenge(Challenge @@ secureRandomBytes(CryptoFunctions.soundnessBytes).toColl)
+      )
+      val toXor: Seq[Coll[Byte]] = or.challengeOpt.get +: t.map(_.challengeOpt.get)
       val xoredChallenge = Challenge @@ Helpers.xor(toXor: _*)
       val h = unprovenChildren.head.withChallenge(xoredChallenge)
       or.copy(children = h +: t)
@@ -329,11 +333,11 @@ trait ProverInterpreter extends Interpreter with ProverUtils {
       assert(t.challengeOpt.isDefined)
       val n = t.children.length
       val unprovenChildren = t.children.cast[UnprovenTree]
-      val q = GF2_192_Poly.fromByteArray(t.challengeOpt.get, secureRandomBytes(CryptoFunctions.soundnessBytes * (n - t.k)))
+      val q = GF2_192_Poly.fromByteArray(t.challengeOpt.get.toArray, secureRandomBytes(CryptoFunctions.soundnessBytes * (n - t.k)))
 
       val newChildren = unprovenChildren.foldLeft((Seq[UnprovenTree](), 1)) {
         case ((childSeq, childIndex), child) =>
-          (childSeq :+ child.withChallenge(Challenge @@ q.evaluate(childIndex.toByte).toByteArray), childIndex + 1)
+          (childSeq :+ child.withChallenge(Challenge @@ q.evaluate(childIndex.toByte).toByteArray.toColl), childIndex + 1)
       }._1
       t.withPolynomial(q).copy(children = newChildren)
 
@@ -412,7 +416,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils {
     case t: ProofTree => error(s"Don't know how to challengeSimulated($t)")
   })
 
-  private def extractChallenge(pt: ProofTree): Option[Array[Byte]] = pt match {
+  private def extractChallenge(pt: ProofTree): Option[Challenge] = pt match {
     case upt: UnprovenTree => upt.challengeOpt
     case sn: UncheckedSchnorr => Some(sn.challenge)
     case dh: UncheckedDiffieHellmanTuple => Some(dh.challenge)
@@ -461,16 +465,16 @@ trait ProverInterpreter extends Interpreter with ProverUtils {
             // has a challenge. Other ways are more of a pain because the children can be of different types
             val challengeOpt = extractChallenge(child)
             if (challengeOpt.isEmpty) (p, v)
-            else (p :+ count.toByte, v :+ new GF2_192(challengeOpt.get))
+            else (p :+ count.toByte, v :+ new GF2_192(challengeOpt.get.toArray))
 
           }
           (newPoints, newValues, count + 1)
       }
-      val q = GF2_192_Poly.interpolate(points, values, new GF2_192(t.challengeOpt.get))
+      val q = GF2_192_Poly.interpolate(points, values, new GF2_192(t.challengeOpt.get.toArray))
       val newChildren = t.children.foldLeft(Seq[ProofTree](), 1) {
         case ((s, count), child) =>
           val newChild = child match {
-            case r: UnprovenTree if r.real => r.withChallenge(Challenge @@ q.evaluate(count.toByte).toByteArray)
+            case r: UnprovenTree if r.real => r.withChallenge(Challenge @@ q.evaluate(count.toByte).toByteArray.toColl)
             case p: ProofTree => p
           }
           (s :+ newChild, count + 1)

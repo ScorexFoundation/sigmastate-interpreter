@@ -65,7 +65,7 @@ object BigIntegers {
     if (min.bitLength > max.bitLength / 2)
       return createRandomInRange(ZERO, max.subtract(min), random).add(min)
 
-    for ( i <- 0 until MAX_ITERATIONS ) {
+    for ( _ <- 0 until MAX_ITERATIONS ) {
       val x = createRandomBigInteger(max.bitLength, random)
       if (x.compareTo(min) >= 0 && x.compareTo(max) <= 0) return x
     }

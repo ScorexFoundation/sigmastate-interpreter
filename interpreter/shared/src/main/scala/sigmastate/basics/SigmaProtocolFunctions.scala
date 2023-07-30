@@ -1,6 +1,7 @@
 package sigmastate.basics
 
 import sigmastate.SigmaLeaf
+import special.collection.Coll
 import supertagged.TaggedType
 
 /*
@@ -26,7 +27,7 @@ trait VerifierMessage extends TranscriptMessage
 
 object VerifierMessage {
   /** A challenge from the verifier (message `e` of `SigmaProtocol`)*/
-  object Challenge extends TaggedType[Array[Byte]]
+  object Challenge extends TaggedType[Coll[Byte]]
   type Challenge = Challenge.Type
 }
 
@@ -53,6 +54,10 @@ trait SigmaProtocol[SP <: SigmaProtocol[SP]] {
 
 trait SigmaProtocolPrivateInput[CI <: SigmaLeaf] {
   def publicImage: CI
+}
+
+trait SigmaProtocolProver {
+
 }
 
 

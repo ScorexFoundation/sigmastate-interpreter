@@ -1,5 +1,6 @@
 package sigmastate.utils
 
+import debox.cfor
 import io.circe.Decoder
 import org.ergoplatform.settings.ErgoAlgos
 import scalan.{OverloadHack, RType}
@@ -36,6 +37,18 @@ object Helpers {
 
   def xor(bas: Array[Byte]*): Array[Byte] =
     bas.reduce({case (ba, ba1) => xor(ba, ba1)}: ((Array[Byte], Array[Byte]) => Array[Byte]))
+
+  def xor(bas: Coll[Byte]*): Coll[Byte] = {
+    require(bas.nonEmpty, "at least one argument is required")
+    if (bas.length == 1) bas(0)
+    else {
+      val res = bas(0).toArray.clone()
+      cfor(1)(_ < bas.length, _ + 1) { i =>
+        xorU(res, bas(i).toArray)
+      }
+      Colls.fromArray(res)
+    }
+  }
 
   /** Same as `xor` but makes in-place update of the first argument (hence suffix `U`)
     * This is boxing-free version.

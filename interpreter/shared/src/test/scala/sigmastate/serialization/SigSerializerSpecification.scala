@@ -1,17 +1,17 @@
 package sigmastate.serialization
 
 import java.math.BigInteger
-import java.util
 import org.ergoplatform.settings.ErgoAlgos
-import org.scalacheck.{Gen, Arbitrary}
+import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.Assertion
 import sigmastate.Values.SigmaBoolean
 import sigmastate._
 import sigmastate.basics.DLogProtocol.{ProveDlog, SecondDLogProverMessage}
 import sigmastate.basics.VerifierMessage.Challenge
-import sigmastate.basics.{SecondDiffieHellmanTupleProverMessage, ProveDHTuple}
+import sigmastate.basics.{ProveDHTuple, SecondDiffieHellmanTupleProverMessage}
 import sigmastate.crypto.GF2_192_Poly
-import sigmastate.helpers.{ErgoLikeTransactionTesting, ErgoLikeContextTesting, ContextEnrichingTestProvingInterpreter, TestingCommons}
+import sigmastate.eval.Extensions.ArrayOps
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTransactionTesting, TestingCommons}
 import sigmastate.interpreter.Interpreter
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers
@@ -54,7 +54,7 @@ class SigSerializerSpecification extends TestingCommons
       // `firstMessageOpt` is not serialized
       sch1.copy(commitmentOpt = None) == sch2
     case (conj1: UncheckedConjecture, conj2: UncheckedConjecture) =>
-      util.Arrays.equals(conj1.challenge, conj2.challenge) &&
+      conj1.challenge == conj2.challenge &&
         conj1.children.zip(conj2.children).forall(t => isEquivalent(t._1, t._2))
     case _ => false
   }
@@ -147,7 +147,7 @@ class SigSerializerSpecification extends TestingCommons
             Helpers.decodeECPoint("02e8e77123e300f8324e7b5c4cbe0f7ac616e0b78fc45f28f54fa6696231fc8ec3")
           ),
           None,
-          Challenge @@ ErgoAlgos.decodeUnsafe("c6429b70f4926a3ba1454f1aec116075f9e9fbe8a8f72114"),
+          Challenge @@ ErgoAlgos.decodeUnsafe("c6429b70f4926a3ba1454f1aec116075f9e9fbe8a8f72114").toColl,
           SecondDLogProverMessage(
             BigInt("b277b8462a8b9098f5d4c934ab2876eb1b5707f3119e209bdbbad831e7cc4a41", 16)
           )
@@ -172,7 +172,7 @@ class SigSerializerSpecification extends TestingCommons
             Helpers.decodeECPoint("034132d4c7eb387f12ef40ba3ec03723bda0ee5707f7471185aafc316167e85137")
           ),
           None,
-          Challenge @@ ErgoAlgos.decodeUnsafe("9ec740b57353cb2f6035bb1a481b0066b2fdc0406a6fa67e"),
+          Challenge @@ ErgoAlgos.decodeUnsafe("9ec740b57353cb2f6035bb1a481b0066b2fdc0406a6fa67e").toColl,
           SecondDiffieHellmanTupleProverMessage(
             new BigInteger("bb2e6f44a38052b3f564fafcd477c4eb8cda1a8a553a4a5f38f1e1084d6a69f0", 16)
           )
@@ -194,7 +194,7 @@ class SigSerializerSpecification extends TestingCommons
           "a00b476899e583aefc18b237a7a70e73baace72aa533271a561d3432c347dcaec8975fdefb36389abe21656aadcfda0a0259681ce17bc47c9539ae1e7068292bb9646a9ffe4e11653495bd67588cfd6454d82cc455036e5b"
         ),
         CAndUncheckedNode(
-          Challenge @@ ErgoAlgos.decodeUnsafe("a00b476899e583aefc18b237a7a70e73baace72aa533271a"),
+          Challenge @@ ErgoAlgos.decodeUnsafe("a00b476899e583aefc18b237a7a70e73baace72aa533271a").toColl,
           List(
             UncheckedSchnorr(
               ProveDlog(
@@ -203,7 +203,7 @@ class SigSerializerSpecification extends TestingCommons
                 )
               ),
               None,
-              Challenge @@ ErgoAlgos.decodeUnsafe("a00b476899e583aefc18b237a7a70e73baace72aa533271a"),
+              Challenge @@ ErgoAlgos.decodeUnsafe("a00b476899e583aefc18b237a7a70e73baace72aa533271a").toColl,
               SecondDLogProverMessage(
                 BigInt("561d3432c347dcaec8975fdefb36389abe21656aadcfda0a0259681ce17bc47c", 16)
               )
@@ -215,7 +215,7 @@ class SigSerializerSpecification extends TestingCommons
                 )
               ),
               None,
-              Challenge @@ ErgoAlgos.decodeUnsafe("a00b476899e583aefc18b237a7a70e73baace72aa533271a"),
+              Challenge @@ ErgoAlgos.decodeUnsafe("a00b476899e583aefc18b237a7a70e73baace72aa533271a").toColl,
               SecondDLogProverMessage(
                 BigInt("9539ae1e7068292bb9646a9ffe4e11653495bd67588cfd6454d82cc455036e5b", 16)
               )
@@ -239,7 +239,7 @@ class SigSerializerSpecification extends TestingCommons
           "c617e65a2ca62ac97bc33a33b76cb669622129ba0e094ad96287d97c2c6d6c8e48790d7c44961f7d958d59222ab4d7c814808a466a3e66e6f98e02d421757baa2842288b8d02787b5111db2e8924623790175e5bf27a2e4513e8eb196c22c8cf26a9d7b51cd7e386508db9c12b070d84"
         ),
         COrUncheckedNode(
-          Challenge @@ ErgoAlgos.decodeUnsafe("c617e65a2ca62ac97bc33a33b76cb669622129ba0e094ad9"),
+          Challenge @@ ErgoAlgos.decodeUnsafe("c617e65a2ca62ac97bc33a33b76cb669622129ba0e094ad9").toColl,
           List(
             UncheckedSchnorr(
               ProveDlog(
@@ -248,7 +248,7 @@ class SigSerializerSpecification extends TestingCommons
                 )
               ),
               None,
-              Challenge @@ ErgoAlgos.decodeUnsafe("6287d97c2c6d6c8e48790d7c44961f7d958d59222ab4d7c8"),
+              Challenge @@ ErgoAlgos.decodeUnsafe("6287d97c2c6d6c8e48790d7c44961f7d958d59222ab4d7c8").toColl,
               SecondDLogProverMessage(
                 BigInt("14808a466a3e66e6f98e02d421757baa2842288b8d02787b5111db2e89246237", 16)
               )
@@ -260,7 +260,7 @@ class SigSerializerSpecification extends TestingCommons
                 )
               ),
               None,
-              Challenge @@ ErgoAlgos.decodeUnsafe("a4903f2600cb464733ba374ff3faa914f7ac709824bd9d11"),
+              Challenge @@ ErgoAlgos.decodeUnsafe("a4903f2600cb464733ba374ff3faa914f7ac709824bd9d11").toColl,
               SecondDLogProverMessage(
                 BigInt("90175e5bf27a2e4513e8eb196c22c8cf26a9d7b51cd7e386508db9c12b070d84", 16)
               )
@@ -295,7 +295,7 @@ class SigSerializerSpecification extends TestingCommons
           "96addfddcc197bdbacf5c0142fb16c39384b3699fa47da7dffd3149193b042fda134c0e208fefcb791379959ac6fc731adf47e32000fc75e2923dba482c843c7f6b684cbf2ceec5bfdf5fe6d13cabe5d15f8295ca4e8094fba3c4716bfdfc3c462417a79a61fcc487d6997a42739d533eebffa3b420a6e2e44616a1341e5baa1165c6c22e91a81addd97c3bd2fe40ecdbbda6f43bf71240da8dac878c044c16d42a4b34c536bbb1b"
         ),
         COrUncheckedNode(
-          Challenge @@ ErgoAlgos.decodeUnsafe("96addfddcc197bdbacf5c0142fb16c39384b3699fa47da7d"),
+          Challenge @@ ErgoAlgos.decodeUnsafe("96addfddcc197bdbacf5c0142fb16c39384b3699fa47da7d").toColl,
           List(
             UncheckedDiffieHellmanTuple(
               ProveDHTuple(
@@ -305,16 +305,16 @@ class SigSerializerSpecification extends TestingCommons
                 Helpers.decodeECPoint("03f17cefec3911966dc9952090325267a5cf7f9b0be76b02623021989d7f0007a2")
               ),
               None,
-              Challenge @@ ErgoAlgos.decodeUnsafe("ffd3149193b042fda134c0e208fefcb791379959ac6fc731"),
+              Challenge @@ ErgoAlgos.decodeUnsafe("ffd3149193b042fda134c0e208fefcb791379959ac6fc731").toColl,
               SecondDiffieHellmanTupleProverMessage(new BigInteger("adf47e32000fc75e2923dba482c843c7f6b684cbf2ceec5bfdf5fe6d13cabe5d", 16))
             ),
             COrUncheckedNode(
-              Challenge @@ ErgoAlgos.decodeUnsafe("697ecb4c5fa939260dc100f6274f908ea97cafc056281d4c"),
+              Challenge @@ ErgoAlgos.decodeUnsafe("697ecb4c5fa939260dc100f6274f908ea97cafc056281d4c").toColl,
               List(
                 UncheckedSchnorr(
                   ProveDlog(Helpers.decodeECPoint("03f997167c03aa234732e3a68126b371dffa1e409f62ca8fa18cea6acd1dbe54d5")),
                   None,
-                  Challenge @@ ErgoAlgos.decodeUnsafe("15f8295ca4e8094fba3c4716bfdfc3c462417a79a61fcc48"),
+                  Challenge @@ ErgoAlgos.decodeUnsafe("15f8295ca4e8094fba3c4716bfdfc3c462417a79a61fcc48").toColl,
                   SecondDLogProverMessage(BigInt("7d6997a42739d533eebffa3b420a6e2e44616a1341e5baa1165c6c22e91a81ad", 16))
                 ),
                 UncheckedDiffieHellmanTuple(
@@ -325,7 +325,7 @@ class SigSerializerSpecification extends TestingCommons
                     Helpers.decodeECPoint("02fc58b939b105231da101540c87e56f5703460c179935aaee47137f3c367904f1")
                   ),
                   None,
-                  Challenge @@ ErgoAlgos.decodeUnsafe("7c86e210fb413069b7fd47e09890534acb3dd5b9f037d104"),
+                  Challenge @@ ErgoAlgos.decodeUnsafe("7c86e210fb413069b7fd47e09890534acb3dd5b9f037d104").toColl,
                   SecondDiffieHellmanTupleProverMessage(new BigInteger("dd97c3bd2fe40ecdbbda6f43bf71240da8dac878c044c16d42a4b34c536bbb1b", 16))
                 )
               )
@@ -370,15 +370,15 @@ class SigSerializerSpecification extends TestingCommons
           "4fdc76711fd844de0831d8e90ebaf9c622117a062b2f8b63ff8b9c2a4eed345a11c697f6850cf3a38763d738539ad2d2e0a3e44384f23eee260931d88e1f5241a2600a7c98545ada675fd5e627e8e84f140fc95e28775cde52e71bb4d7b5ee2564553fac5b52202530fcbcdf205b7cca145202fb2a5bb181a890eb15536b08b747ea163f6b5d32a116fa9e1eb6b348fd82d3ebc11c125e5bc3f09c499aa0a8db14dc1780b4181f9bae5ed0f743f71b82b18784380814507d810cbef61ebc0b30e7f324083e2d3d08"
         ),
         COrUncheckedNode(
-          Challenge @@ ErgoAlgos.decodeUnsafe("4fdc76711fd844de0831d8e90ebaf9c622117a062b2f8b63"),
+          Challenge @@ ErgoAlgos.decodeUnsafe("4fdc76711fd844de0831d8e90ebaf9c622117a062b2f8b63").toColl,
           List(
             CAndUncheckedNode(
-              Challenge @@ ErgoAlgos.decodeUnsafe("ff8b9c2a4eed345a11c697f6850cf3a38763d738539ad2d2"),
+              Challenge @@ ErgoAlgos.decodeUnsafe("ff8b9c2a4eed345a11c697f6850cf3a38763d738539ad2d2").toColl,
               List(
                 UncheckedSchnorr(
                   ProveDlog(Helpers.decodeECPoint("0368c0d88d9eb2972bbfc23c961de6307f6a944352cbfe316f262401feabdaa87d")),
                   None,
-                  Challenge @@ ErgoAlgos.decodeUnsafe("ff8b9c2a4eed345a11c697f6850cf3a38763d738539ad2d2"),
+                  Challenge @@ ErgoAlgos.decodeUnsafe("ff8b9c2a4eed345a11c697f6850cf3a38763d738539ad2d2").toColl,
                   SecondDLogProverMessage(BigInt("e0a3e44384f23eee260931d88e1f5241a2600a7c98545ada675fd5e627e8e84f", 16))
                 ),
                 UncheckedDiffieHellmanTuple(
@@ -389,13 +389,13 @@ class SigSerializerSpecification extends TestingCommons
                     Helpers.decodeECPoint("029d4ec275379f9212a53e15994aef203dcec43a177c0b1f40afcf592e5753ce67")
                   ),
                   None,
-                  Challenge @@ ErgoAlgos.decodeUnsafe("ff8b9c2a4eed345a11c697f6850cf3a38763d738539ad2d2"),
+                  Challenge @@ ErgoAlgos.decodeUnsafe("ff8b9c2a4eed345a11c697f6850cf3a38763d738539ad2d2").toColl,
                   SecondDiffieHellmanTupleProverMessage(new BigInteger("140fc95e28775cde52e71bb4d7b5ee2564553fac5b52202530fcbcdf205b7cca", 16))
                 )
               )
             ),
             COrUncheckedNode(
-              Challenge @@ ErgoAlgos.decodeUnsafe("b057ea5b5135708419f74f1f8bb60a65a572ad3e78b559b1"),
+              Challenge @@ ErgoAlgos.decodeUnsafe("b057ea5b5135708419f74f1f8bb60a65a572ad3e78b559b1").toColl,
               List(
                 UncheckedDiffieHellmanTuple(
                   ProveDHTuple(
@@ -405,7 +405,7 @@ class SigSerializerSpecification extends TestingCommons
                     Helpers.decodeECPoint("0315d84dba1b29074f766e57bb11843687da899180cf2487ccecd0a3ec5f05365a")
                   ),
                   None,
-                  Challenge @@ ErgoAlgos.decodeUnsafe("145202fb2a5bb181a890eb15536b08b747ea163f6b5d32a1"),
+                  Challenge @@ ErgoAlgos.decodeUnsafe("145202fb2a5bb181a890eb15536b08b747ea163f6b5d32a1").toColl,
                   SecondDiffieHellmanTupleProverMessage(new BigInteger("16fa9e1eb6b348fd82d3ebc11c125e5bc3f09c499aa0a8db14dc1780b4181f9b", 16))
                 ),
                 UncheckedDiffieHellmanTuple(
@@ -416,7 +416,7 @@ class SigSerializerSpecification extends TestingCommons
                     Helpers.decodeECPoint("0315d84dba1b29074f766e57bb11843687da899180cf2487ccecd0a3ec5f05365a")
                   ),
                   None,
-                  Challenge @@ ErgoAlgos.decodeUnsafe("a405e8a07b6ec105b167a40ad8dd02d2e298bb0113e86b10"),
+                  Challenge @@ ErgoAlgos.decodeUnsafe("a405e8a07b6ec105b167a40ad8dd02d2e298bb0113e86b10").toColl,
                   SecondDiffieHellmanTupleProverMessage(new BigInteger("ae5ed0f743f71b82b18784380814507d810cbef61ebc0b30e7f324083e2d3d08", 16))
                 )
               )
@@ -448,12 +448,12 @@ class SigSerializerSpecification extends TestingCommons
           "c94696c3e3089d9fd1174c18e6dd22f1be8003bbea08011fcf39310e7c9049c1c9966198b8d63a2f19e98843b81b74399f662dba4e764cd548406dd180453dd1bc0e24562f0184d189ca25a41ca8b54ada857dd649d3228a8c359ac499d430ecada3f92d5206cddeffb16248068c1003477d717e04afbf206c87a59ce5263ee7cc4020b5772d91b1df00bd72b15347fd"
         ),
         CThresholdUncheckedNode(
-          Challenge @@ ErgoAlgos.decodeUnsafe("c94696c3e3089d9fd1174c18e6dd22f1be8003bbea08011f"),
+          Challenge @@ ErgoAlgos.decodeUnsafe("c94696c3e3089d9fd1174c18e6dd22f1be8003bbea08011f").toColl,
           List(
             UncheckedSchnorr(
               ProveDlog(Helpers.decodeECPoint("03a5a5234701fff48be4ed1b3e1fab446657eeddb52e2573c52b9c4021f2403866")),
               None,
-              Challenge @@ ErgoAlgos.decodeUnsafe("067fa7cd9f98d45e18812d805e0b18dea7698bf852137526"),
+              Challenge @@ ErgoAlgos.decodeUnsafe("067fa7cd9f98d45e18812d805e0b18dea7698bf852137526").toColl,
               SecondDLogProverMessage(BigInt("9f662dba4e764cd548406dd180453dd1bc0e24562f0184d189ca25a41ca8b54a", 16))
             ),
             UncheckedDiffieHellmanTuple(
@@ -464,7 +464,7 @@ class SigSerializerSpecification extends TestingCommons
                 Helpers.decodeECPoint("02730455ebb8c01a89dced09c5253c9bfa4b1471d1068ba30ab226104a6551c461")
               ),
               None,
-              Challenge @@ ErgoAlgos.decodeUnsafe("5735f4df1b280e1d423a8f28977057af8c52123c9a3fe96d"),
+              Challenge @@ ErgoAlgos.decodeUnsafe("5735f4df1b280e1d423a8f28977057af8c52123c9a3fe96d").toColl,
               SecondDiffieHellmanTupleProverMessage(new BigInteger("da857dd649d3228a8c359ac499d430ecada3f92d5206cddeffb16248068c1003", 16))
             ),
             UncheckedDiffieHellmanTuple(
@@ -475,7 +475,7 @@ class SigSerializerSpecification extends TestingCommons
                 Helpers.decodeECPoint("03cefefa1511430ca2a873759107085f269f6fbcd4e836db7760749f52b7f7923a")
               ),
               None,
-              Challenge @@ ErgoAlgos.decodeUnsafe("980cc5d167b847dc8baceeb02fa66d8095bb9a7f22249d54"),
+              Challenge @@ ErgoAlgos.decodeUnsafe("980cc5d167b847dc8baceeb02fa66d8095bb9a7f22249d54").toColl,
               SecondDiffieHellmanTupleProverMessage(new BigInteger("477d717e04afbf206c87a59ce5263ee7cc4020b5772d91b1df00bd72b15347fd", 16))
             )
           ),
@@ -525,7 +525,9 @@ class SigSerializerSpecification extends TestingCommons
 
       r.position = 0
       var reported = false
-      val res = SigSerializer.readBytesChecked(r, nRequested, msg => reported = true)
+      val res = SigSerializer.readBytesChecked(r,
+        numRequestedBytes = nRequested,
+        onError = _ => reported = true)
       res shouldBe bytes
       reported shouldBe true
     }

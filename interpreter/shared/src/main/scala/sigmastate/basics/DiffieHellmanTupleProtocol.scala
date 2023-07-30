@@ -83,7 +83,7 @@ object ProveDHTupleProp {
   }
 }
 
-object DiffieHellmanTupleInteractiveProver {
+object DiffieHellmanTupleInteractiveProver extends SigmaProtocolProver {
 
   import CryptoConstants.dlogGroup
 
@@ -99,7 +99,7 @@ object DiffieHellmanTupleInteractiveProver {
                     rnd: BigInteger,
                     challenge: Challenge): SecondDiffieHellmanTupleProverMessage = {
     val q: BigInteger = dlogGroup.order
-    val e: BigInteger = new BigInteger(1, challenge)
+    val e: BigInteger = new BigInteger(1, challenge.toArray)
     val ew: BigInteger = e.multiply(privateInput.w).mod(q)
     val z: BigInteger = rnd.add(ew).mod(q)
     SecondDiffieHellmanTupleProverMessage(z)
@@ -114,7 +114,7 @@ object DiffieHellmanTupleInteractiveProver {
     val z = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, dlogGroup.secureRandom)
 
     // COMPUTE a = g^z*u^(-e) and b = h^z*v^{-e}  (where -e here means -e mod q)
-    val e: BigInteger = new BigInteger(1, challenge)
+    val e: BigInteger = new BigInteger(1, challenge.toArray)
     val minusE = dlogGroup.order.subtract(e)
     val hToZ = dlogGroup.exponentiate(publicInput.h, z)
     val gToZ = dlogGroup.exponentiate(publicInput.g, z)
@@ -149,7 +149,7 @@ object DiffieHellmanTupleInteractiveProver {
 
     val z = secondMessage.z
 
-    val e = new BigInteger(1, challenge)
+    val e = new BigInteger(1, challenge.toArray)
 
     val gToZ = dlogGroup.exponentiate(g, z)
     val hToZ = dlogGroup.exponentiate(h, z)
