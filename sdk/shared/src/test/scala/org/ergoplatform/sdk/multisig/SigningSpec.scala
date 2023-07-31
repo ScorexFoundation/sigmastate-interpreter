@@ -128,12 +128,12 @@ class SigningSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matcher
       session.reduced shouldBe reduced
 
       // obtain next actions for the current session state
-      val actions = session.getActionsFor(signer)
-      val expectedAction = CreateCommitment(signer, i, PositionedLeaf.at()(signerPk))
+      val actions = signer.getActionsFrom(session)
+      val expectedAction = CreateCommitment(signerPk, i, PositionedLeaf.at()(signerPk))
       actions shouldBe Seq(expectedAction)
 
       // then execute actions to obtain a new session state
-      val newSession = session.execute(actions.head)
+      val newSession = signer.execute(actions.head, session)
       val HintsBag(Seq(RealCommitment(image, _, position))) = newSession.collectedHints(actions.head.inputIndex)
 
       image shouldBe signerPk

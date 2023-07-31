@@ -208,4 +208,18 @@ object Extensions {
   implicit class DoubleOps(val i: Double) extends AnyVal {
     def erg: Long = (i * 1000000000L).toLong
   }
+
+  /** extension methods for IndexedSeq */
+  implicit class IndexedSeqOps[T, C[X] <: IndexedSeq[X]](val v: C[T]) extends AnyVal {
+
+    /** Modifies the seq by applying a function to the given element.
+      * @param i the index of the element to modify.
+      * @param f the function to apply to the element.
+      * @return the seq with the modified element.
+      */
+    def modify(i: Int, f: T => T): C[T] = {
+      val newItem = f(v(i))
+      v.updated(i, newItem).asInstanceOf[C[T]]
+    }
+  }
 }

@@ -125,8 +125,10 @@ case class HintsBag(hints: Seq[Hint]) {
 
   def ++(other: HintsBag): HintsBag = HintsBag(other.hints ++ hints)
 
-  override def toString: String = s"HintsBag(${hints.mkString("\n")})"
+  /** @return a new bag with hints satisfying the predicate `p`. */
+  def filter(p: Hint => Boolean): HintsBag = HintsBag(hints.filter(p))
 
+  override def toString: String = s"HintsBag(${hints.mkString("\n")})"
 }
 
 object HintsBag {

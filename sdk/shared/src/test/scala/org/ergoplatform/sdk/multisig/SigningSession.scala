@@ -1,20 +1,21 @@
 package org.ergoplatform.sdk.multisig
 
+import org.ergoplatform.sdk.Extensions.IndexedSeqOps
 import org.ergoplatform.sdk.ReducedTransaction
-import sigmastate.PositionedLeaf
+import sigmastate.{PositionedLeaf, SigmaLeaf}
 import sigmastate.interpreter.{Hint, HintsBag}
 
 case class SessionId(value: String) extends AnyVal
 
 trait SigningAction {
-  def signer: Signer
+  def signerPk: SigmaLeaf
   def inputIndex: Int
   def leaf: PositionedLeaf
 }
 
-case class CreateCommitment(signer: Signer, inputIndex: Int, leaf: PositionedLeaf) extends SigningAction
+case class CreateCommitment(signerPk: SigmaLeaf, inputIndex: Int, leaf: PositionedLeaf) extends SigningAction
 
-case class CreateSignature(signer: Signer, inputIndex: Int, leaf: PositionedLeaf) extends SigningAction
+case class CreateSignature(signerPk: SigmaLeaf, inputIndex: Int, leaf: PositionedLeaf) extends SigningAction
 
 
 case class SigningSession(
@@ -37,49 +38,10 @@ case class SigningSession(
     }
   }
 
-  def getActionsFor(signer: Signer): Seq[SigningAction] = {
-    val canProve = positionsToProve.map { positions =>
-      positions.filter { pl => signer.canProve(pl.leaf) }
-    }
-    canProve.zipWithIndex.flatMap { case (positions, inputIndex) =>
-      positions.map { pl =>
-        val action = if (collectedHints(inputIndex).hints.isEmpty)
-          CreateCommitment(signer, inputIndex, pl)
-        else
-          CreateSignature(signer, inputIndex, pl)
-        action
-      }
-    }
+  def addHintsAt(inputIndex: Int, hints: Seq[Hint]): SigningSession = {
+    copy(collectedHints = collectedHints.modify(inputIndex, _.addHints(hints: _*)))
   }
 
-  private def addHintsAt(inputIndex: Int, hints: Seq[Hint]): SigningSession = {
-    val existingHints = collectedHints(inputIndex)
-    val newBag = existingHints.addHints(hints: _*)
-    copy(collectedHints = collectedHints.updated(inputIndex, newBag))
-  }
-
-  def execute(action: SigningAction): SigningSession = {
-    val newHints: Seq[Hint] = action match {
-      case CreateCommitment(signer, inputIndex, pl) =>
-        val proposition = reduced.sigmaPropositions(inputIndex)
-        val commitments = signer.generateCommitments(proposition).realCommitments
-        commitments.filter { c => c.position == pl.position && c.image == pl.leaf }
-
-//      case CreateSignature(signer) =>
-//        val positions = positionsToProve
-//        val signatures = positions.map { positions =>
-//          positions.map { pl =>
-//            val leaf = pl.leaf
-//            val position = pl.position
-//            val signature = signer.prover.createSignature(leaf, position, collectedHints)
-//            (leaf, position, signature)
-//          }
-//        }
-//        collectedHints.addHints(signatures)
-      case _ => Seq.empty
-    }
-    addHintsAt(action.inputIndex, newHints)
-  }
 
 }
 
