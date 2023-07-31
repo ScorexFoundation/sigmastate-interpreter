@@ -9,9 +9,11 @@ import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import scalan.util.CollectionUtil.AnyOps
 import sigmastate.Values.{Constant, ErgoTree}
-import sigmastate.interpreter.{HintsBag, RealCommitment}
+import sigmastate.interpreter.{HintsBag, OwnCommitment, RealCommitment}
 import sigmastate.{PositionedLeaf, TestsBase}
 import special.sigma.SigmaTestingData
+
+import scala.collection.immutable.Seq
 
 class SigningSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers
     with TestsBase
@@ -121,7 +123,7 @@ class SigningSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matcher
 
     // each cosigner generated a commitment and stores it in the session
     cosigners.zipWithIndex.foreach { case (signer, i) =>
-      val signerPk = signer.masterAddress.pubkey
+      val signerPk = signer.pubkey
 
       // participants can retrieve related sessions
       val session = server.getSessionsFor(signer).head
@@ -134,15 +136,22 @@ class SigningSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matcher
 
       // then execute actions to obtain a new session state
       val newSession = signer.execute(actions.head, session)
-      val HintsBag(Seq(RealCommitment(image, _, position))) = newSession.collectedHints(actions.head.inputIndex)
 
+      val HintsBag(Seq(rc @ RealCommitment(image, _, position))) = newSession.collectedHints(actions.head.inputIndex)
       image shouldBe signerPk
       position shouldBe expectedAction.leaf.position
+
+      // signer should store commitments (including secret random values)
+      val proposition = session.reduced.inputPropositions(i)
+      val Seq(OwnCommitment(`signerPk`, _, _, `position`), `rc`) = signer.getHintsBag(sessionId, proposition).get.hints
 
       server.updateSession(newSession)
     }
 
+    // each signer added a commitment to the session
     server.getSession(sessionId).get.collectedHints.size shouldBe cosigners.size
+
+
   }
 }
 

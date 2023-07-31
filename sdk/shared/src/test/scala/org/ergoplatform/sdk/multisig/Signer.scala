@@ -30,11 +30,15 @@ class Signer(val prover: SigmaProver) {
 
   def canProve(leaf: SigmaLeaf): Boolean = allKeys.contains(leaf)
 
+  def getHintsBag(sessionId: SessionId, leaf: SigmaBoolean): Option[HintsBag] = {
+    sessions.get((sessionId, leaf))
+  }
+
   def startCosigning(reduced: ReducedTransaction): SigningSession = {
     SigningSession(reduced)
   }
 
-  def generateCommitments(sigmaTree: SigmaBoolean, sessionId: SessionId): Seq[RealCommitment] = {
+  private def generateCommitments(sigmaTree: SigmaBoolean, sessionId: SessionId): Seq[RealCommitment] = {
     val bag = memoize(sessions)((sessionId, sigmaTree), prover.generateCommitments(sigmaTree))
     bag.realCommitments
   }
