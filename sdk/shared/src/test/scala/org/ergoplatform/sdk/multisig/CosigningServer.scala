@@ -1,5 +1,7 @@
 package org.ergoplatform.sdk.multisig
 
+import sigmastate.SigmaLeaf
+
 import scala.collection.mutable
 
 class CosigningServer {
@@ -15,11 +17,11 @@ class CosigningServer {
     sessions.get(id)
   }
 
-  def getSessionsFor(signer: Signer): Seq[SigningSession] = {
-    val signerKeys = signer.allKeys.toSet
+  def getSessionsFor(signerKeys: Seq[SigmaLeaf]): Seq[SigningSession] = {
+    val keyset = signerKeys.toSet
     sessions.values.filter { s =>
       s.positionsToProve.exists { positionedLeafs =>
-        positionedLeafs.exists(pl => signerKeys.contains(pl.leaf))
+        positionedLeafs.exists(pl => keyset.contains(pl.leaf))
       }
     }.toSeq
   }

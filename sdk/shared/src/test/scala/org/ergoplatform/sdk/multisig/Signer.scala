@@ -18,6 +18,9 @@ class Signer(val prover: SigmaProver) {
   /** Mapping from (session id, input proposition) stored hints. */
   private val sessions = mutable.HashMap.empty[(SessionId, SigmaBoolean), HintsBag]
 
+  /** Mapping from (session id, input proposition) stored proof hints. */
+  private val proofs = mutable.HashMap.empty[(SessionId, SigmaBoolean), HintsBag]
+
   def masterAddress: P2PKAddress = prover.getP2PKAddress
 
   def pubkey: SigmaLeaf = masterAddress.pubkey
@@ -43,6 +46,13 @@ class Signer(val prover: SigmaProver) {
     bag.realCommitments
   }
 
+  private def generateProof(
+      sb: SigmaBoolean, sessionId: SessionId,
+      messageToSign: Array[Byte],
+      hintsBag: HintsBag): Array[Byte] = {
+    prover.generateProof(sb, messageToSign, hintsBag)
+  }
+
   def getActionsFrom(session: SigningSession): Seq[SigningAction] = {
     val canProveInputs = session.positionsToProve.map { positions =>
       positions.filter { pl => canProve(pl.leaf) }
@@ -59,24 +69,22 @@ class Signer(val prover: SigmaProver) {
   }
 
   def execute(action: SigningAction, session: SigningSession): SigningSession = {
+    val proposition = session.reduced.inputPropositions(action.inputIndex)
     val newHints = action match {
       case CreateCommitment(_, inputIndex, pl) =>
-        val proposition = session.reduced.inputPropositions(inputIndex)
         val commitments = generateCommitments(proposition, session.id)
-        commitments.filter { c => c.position == pl.position && c.image == pl.leaf }
+        commitments.filter(c => c.position == pl.position && c.image == pl.leaf)
 
-      //      case CreateSignature(signer) =>
-      //        val positions = positionsToProve
-      //        val signatures = positions.map { positions =>
-      //          positions.map { pl =>
-      //            val leaf = pl.leaf
-      //            val position = pl.position
-      //            val signature = signer.prover.createSignature(leaf, position, collectedHints)
-      //            (leaf, position, signature)
-      //          }
-      //        }
-      //        collectedHints.addHints(signatures)
-      case _ => Seq.empty
+      case CreateSignature(_, inputIndex, pl) =>
+        val ownCommitments = getHintsBag(session.id, proposition).get.ownCommitments
+        val otherCommitments = session.collectedHints(inputIndex)
+            .filter(_.image != pl.leaf)
+        val proof = generateProof(proposition,
+          session.id,
+          session.reduced.bytesToSign,
+          otherCommitments.addHints(ownCommitments: _*))
+        val proofHints = prover.extractHints(proposition, proof, Seq(pl.leaf), Seq.empty)
+        proofHints.realProofs.filter(rp => rp.position == pl.position && rp.image == pl.leaf)
     }
     session.addHintsAt(action.inputIndex, newHints)
   }

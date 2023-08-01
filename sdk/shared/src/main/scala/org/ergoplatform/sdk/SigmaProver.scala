@@ -3,6 +3,7 @@ package org.ergoplatform.sdk
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform._
 import org.ergoplatform.sdk.wallet.protocol.context.BlockchainStateContext
+import sigmastate.SigmaLeaf
 import sigmastate.Values.SigmaBoolean
 import sigmastate.eval.{CostingSigmaDslBuilder, SigmaDsl}
 import sigmastate.interpreter.HintsBag
@@ -89,6 +90,21 @@ class SigmaProver(private[sdk] val _prover: AppkitProvingInterpreter, networkPre
 
   def generateCommitments(sigmaTree: SigmaBoolean): HintsBag = {
     _prover.generateCommitments(sigmaTree)
+  }
+
+  def extractHints(
+      proposition: SigmaBoolean,
+      proof: Array[Byte],
+      realSecretsToExtract: Seq[SigmaLeaf],
+      simulatedSecretsToExtract: Seq[SigmaLeaf]): HintsBag = {
+    _prover.bagForMultisig(proposition, proof, realSecretsToExtract, simulatedSecretsToExtract)
+  }
+
+  def generateProof(
+      sb: SigmaBoolean,
+      messageToSign: Array[Byte],
+      hintsBag: HintsBag): Array[Byte] = {
+    _prover.generateProof(sb, messageToSign, hintsBag)
   }
 
   override def equals(obj: Any): Boolean = obj match {

@@ -126,7 +126,7 @@ class SigningSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matcher
       val signerPk = signer.pubkey
 
       // participants can retrieve related sessions
-      val session = server.getSessionsFor(signer).head
+      val session = server.getSessionsFor(signer.allKeys).head
       session.reduced shouldBe reduced
 
       // obtain next actions for the current session state
@@ -151,6 +151,19 @@ class SigningSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matcher
     // each signer added a commitment to the session
     server.getSession(sessionId).get.collectedHints.size shouldBe cosigners.size
 
+
+    // each cosigner generated a commitment and stores it in the session
+    cosigners.zipWithIndex.foreach { case (signer, i) =>
+      val signerPk = signer.pubkey
+      val session = server.getSessionsFor(signer.allKeys).head
+      val actions = signer.getActionsFrom(session)
+      
+      val expectedAction = CreateSignature(signerPk, i, PositionedLeaf.at()(signerPk))
+      actions shouldBe Seq(expectedAction)
+      val newSession = signer.execute(actions.head, session)
+
+      server.updateSession(newSession)
+    }
 
   }
 }
