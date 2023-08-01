@@ -1,5 +1,6 @@
 package org.ergoplatform.sdk.multisig
 
+import org.ergoplatform.sdk.Extensions.MutableMapOps
 import sigmastate.SigmaLeaf
 
 import scala.collection.mutable
@@ -28,6 +29,14 @@ class CosigningServer {
 
   def updateSession(session: SigningSession): Unit = {
     sessions.put(session.id, session)
+  }
+
+  def getReadySessions: Seq[SigningSession] = {
+    sessions.values.filter(_.isReady).toSeq
+  }
+
+  def finishSession(sessionId: SessionId): Unit = {
+    sessions.modifyIfExists(sessionId)(_.finish())
   }
 }
 

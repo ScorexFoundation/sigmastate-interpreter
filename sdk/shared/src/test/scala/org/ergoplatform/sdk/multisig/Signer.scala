@@ -1,7 +1,7 @@
 package org.ergoplatform.sdk.multisig
 
 import org.ergoplatform.P2PKAddress
-import org.ergoplatform.sdk.{ReducedTransaction, SigmaProver}
+import org.ergoplatform.sdk.{ReducedTransaction, SigmaProver, SignedTransaction}
 import scalan.reflection.memoize
 import sigmastate.SigmaLeaf
 import sigmastate.Values.SigmaBoolean
@@ -87,6 +87,10 @@ class Signer(val prover: SigmaProver) {
         proofHints.realProofs.filter(rp => rp.position == pl.position && rp.image == pl.leaf)
     }
     session.addHintsAt(action.inputIndex, newHints)
+  }
+
+  def createSignedTransaction(session: SigningSession): SignedTransaction = {
+    prover.signReduced(session.reduced, session.collectedHints)
   }
 
   override def equals(obj: Any): Boolean = (this eq obj.asInstanceOf[AnyRef]) || (obj match {

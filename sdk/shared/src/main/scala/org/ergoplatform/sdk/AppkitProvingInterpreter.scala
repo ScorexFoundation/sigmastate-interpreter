@@ -212,21 +212,25 @@ class AppkitProvingInterpreter(
     * Note, this method doesn't require context to generate proofs (aka signatures).
     *
     * @param reducedTx unsigend transaction augmented with reduced
+    * @param baseCost  initial cost before signing
+    * @param inputBagsOpt optional sequence of hints bags for each input
     * @return a new signed transaction with all inputs signed and the cost of this transaction
     *         The returned cost includes:
     *         - the costs of obtaining reduced transaction
     *         - the cost of verification of each signed input
     */
-  def signReduced(reducedTx: ReducedTransaction, baseCost: Int): SignedTransaction = {
+  def signReduced(reducedTx: ReducedTransaction, baseCost: Int, inputBagsOpt: Option[IndexedSeq[HintsBag]] = None): SignedTransaction = {
     val provedInputs = mutable.ArrayBuilder.make[Input]
     val unsignedTx = reducedTx.ergoTx.unsignedTx
+    val inputBags = inputBagsOpt.getOrElse(
+      IndexedSeq.fill(unsignedTx.inputs.length)(HintsBag.empty))
 
     val maxCost = params.maxBlockCost
     var currentCost: Long = baseCost
 
-    for ((reducedInput, boxIdx) <- reducedTx.ergoTx.reducedInputs.zipWithIndex ) {
+    for ((reducedInput, boxIdx) <- reducedTx.ergoTx.reducedInputs.zipWithIndex) {
       val unsignedInput = unsignedTx.inputs(boxIdx)
-      val proverResult = proveReduced(reducedInput, unsignedTx.messageToSign)
+      val proverResult = proveReduced(reducedInput, unsignedTx.messageToSign, inputBags(boxIdx))
       val signedInput = Input(unsignedInput.boxId, proverResult)
 
       val verificationCost = estimateCryptoVerifyCost(reducedInput.reductionResult.value).toBlockCost

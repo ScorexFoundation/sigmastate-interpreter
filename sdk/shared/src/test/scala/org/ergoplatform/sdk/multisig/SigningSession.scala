@@ -2,8 +2,8 @@ package org.ergoplatform.sdk.multisig
 
 import org.ergoplatform.sdk.Extensions.IndexedSeqOps
 import org.ergoplatform.sdk.ReducedTransaction
-import sigmastate.{PositionedLeaf, SigmaLeaf}
 import sigmastate.interpreter.{Hint, HintsBag}
+import sigmastate.{PositionedLeaf, SigmaLeaf}
 
 case class SessionId(value: String) extends AnyVal
 
@@ -20,7 +20,8 @@ case class CreateSignature(signerPk: SigmaLeaf, inputIndex: Int, leaf: Positione
 
 case class SigningSession(
     reduced: ReducedTransaction,
-    collectedHints: Vector[HintsBag]
+    collectedHints: Vector[HintsBag],
+    isFinished: Boolean = false
 ) {
   require(reduced.ergoTx.reducedInputs.length == collectedHints.length,
     s"Collected hints should be provided for each input, but got ${collectedHints.length} hints for ${reduced.ergoTx.reducedInputs.length} inputs")
@@ -42,6 +43,17 @@ case class SigningSession(
     copy(collectedHints = collectedHints.modify(inputIndex, _.addHints(hints: _*)))
   }
 
+  def isReady: Boolean = {
+    positionsToProve.zipWithIndex.forall { case (positions, inputIndex) =>
+      val inputHints = collectedHints(inputIndex)
+      positions.forall { pl => inputHints.hasProofFor(pl) }
+    }
+  }
+
+  /** Mark this session as finished, no more actions can be performed. */
+  def finish(): SigningSession = {
+    copy(isFinished = true)
+  }
 
 }
 

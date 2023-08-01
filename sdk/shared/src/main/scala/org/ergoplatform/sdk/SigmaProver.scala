@@ -88,6 +88,18 @@ class SigmaProver(private[sdk] val _prover: AppkitProvingInterpreter, networkPre
     _prover.signReduced(tx, tx.ergoTx.cost)
   }
 
+  /** Signs a given ReducedTransaction using the prover's secret keys and hints.
+    * @param tx - transaction to sign
+    * @param inputHints - hints containing proofs for all inputs
+    */
+  def signReduced(tx: ReducedTransaction, inputBags: IndexedSeq[HintsBag]): SignedTransaction = {
+    val nInputs = tx.ergoTx.reducedInputs.length
+    require(nInputs == inputBags.length,
+      s"Number of bags ${inputBags.length} must be equal to number of inputs $nInputs")
+
+    _prover.signReduced(tx, tx.ergoTx.cost, Some(inputBags))
+  }
+
   def generateCommitments(sigmaTree: SigmaBoolean): HintsBag = {
     _prover.generateCommitments(sigmaTree)
   }

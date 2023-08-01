@@ -1,7 +1,7 @@
 package sigmastate.interpreter
 
 import java.math.BigInteger
-import sigmastate.{NodePosition, SigmaLeaf, UncheckedTree}
+import sigmastate.{NodePosition, PositionedLeaf, SigmaLeaf, UncheckedTree}
 import sigmastate.Values.SigmaBoolean
 import sigmastate.basics.FirstProverMessage
 import sigmastate.basics.VerifierMessage.Challenge
@@ -127,6 +127,14 @@ case class HintsBag(hints: Seq[Hint]) {
 
   /** @return a new bag with hints satisfying the predicate `p`. */
   def filter(p: Hint => Boolean): HintsBag = HintsBag(hints.filter(p))
+
+  /** @return true if there is a proof in this bag for the given leaf of sigma proposition.  */
+  def hasProofFor(pl: PositionedLeaf): Boolean = {
+    hints.exists {
+      case RealSecretProof(image, _, _, position) => pl.leaf == image && pl.position == position
+      case _ => false
+    }
+  }
 
   override def toString: String = s"HintsBag(${hints.mkString("\n")})"
 }

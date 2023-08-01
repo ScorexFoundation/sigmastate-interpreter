@@ -50,6 +50,9 @@ class SigningSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matcher
         .build()
   )
 
+  /** Special signer without secretes */
+  val publicSigner = Signer(ProverBuilder.forMainnet(mainnetParameters).build())
+
   val alice = createSigner("Alice secret")
   val bob = createSigner("Bob secret")
   val carol = createSigner("Carol secret")
@@ -121,7 +124,7 @@ class SigningSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matcher
     // anyone can start a session (e.g. Alice)
     val sessionId = server.addSession(alice.startCosigning(reduced))
 
-    // each cosigner generated a commitment and stores it in the session
+    // each cosigner generates a commitment and stores it in the session
     cosigners.zipWithIndex.foreach { case (signer, i) =>
       val signerPk = signer.pubkey
 
@@ -152,7 +155,7 @@ class SigningSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matcher
     server.getSession(sessionId).get.collectedHints.size shouldBe cosigners.size
 
 
-    // each cosigner generated a commitment and stores it in the session
+    // each cosigner generates a proof and stores it in the session
     cosigners.zipWithIndex.foreach { case (signer, i) =>
       val signerPk = signer.pubkey
       val session = server.getSessionsFor(signer.allKeys).head
@@ -165,6 +168,13 @@ class SigningSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matcher
       server.updateSession(newSession)
     }
 
+    // complete signing of the ready session
+    val session = server.getReadySessions.head
+    val signedTx = publicSigner.createSignedTransaction(session)
+
+    // send the signed transaction to the network and wait for confirmation
+    // then finish the session
+    server.finishSession(session.id)
   }
 }
 
