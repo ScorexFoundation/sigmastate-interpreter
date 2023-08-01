@@ -120,7 +120,7 @@ object Platform {
   class Curve
 
   // TODO JS: Use JS library for secure source of randomness
-  type SecureRandom = Random
+  type SecureRandom = sigmastate.crypto.SecureRandomJS
 
   /** Opaque point type. */
   @js.native
@@ -198,7 +198,7 @@ object Platform {
   }
 
   /** Create JS specific source of secure randomness. */
-  def createSecureRandom(): Random = new Random()
+  def createSecureRandom(): SecureRandom = new SecureRandomJS
 
   /** Computes HMAC-SHA512 hash of the given data using the specified key.
     *
