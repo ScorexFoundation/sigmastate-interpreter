@@ -100,14 +100,23 @@ object Platform {
   def multiplyPoints(p1: Ecp, p2: Ecp): Ecp = new Ecp(CryptoFacadeJs.addPoint(p1.point, p2.point))
 
   /** Exponentiate a point p.
+    * The implementation mimics the Java implementation of `AbstractECMultiplier.multiply`
+    * from BouncyCastle library.
     *
     * @param p point to exponentiate
     * @param n exponent
     * @return p to the power of n (`p^n`) i.e. `p + p + ... + p` (n times)
     */
   def exponentiatePoint(p: Ecp, n: BigInteger): Ecp = {
-    val scalar = Convert.bigIntegerToBigInt(n)
-    new Ecp(CryptoFacadeJs.multiplyPoint(p.point, scalar))
+    val sign = n.signum()
+    if (sign == 0 || isInfinityPoint(p)) {
+      val ctx = new CryptoContextJs()
+      return new Ecp(ctx.getInfinity())
+    }
+    val scalar = Convert.bigIntegerToBigInt(n.abs())
+    val positive = CryptoFacadeJs.multiplyPoint(p.point, scalar)
+    val result = if (sign > 0) positive else CryptoFacadeJs.negatePoint(positive)
+    new Ecp(result)
   }
 
   /** Check if a point is infinity. */
