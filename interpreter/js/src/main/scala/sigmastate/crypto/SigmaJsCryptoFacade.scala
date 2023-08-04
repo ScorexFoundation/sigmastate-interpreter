@@ -116,6 +116,7 @@ object CryptoFacadeJs extends js.Object {
   def getRandomBytes(length: Int): Uint8Array = js.native
 }
 
+/** This class provides a cryptographically strong generator of byte arrays. */
 class SecureRandomJS {
   /**
     * Generates a user-specified number of random bytes.
