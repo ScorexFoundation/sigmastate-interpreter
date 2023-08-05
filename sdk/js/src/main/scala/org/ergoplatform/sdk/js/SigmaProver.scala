@@ -1,6 +1,7 @@
 package org.ergoplatform.sdk.js
 
 import org.ergoplatform.sdk
+import org.ergoplatform.sdk.SignedTransaction
 import sigmastate.fleetSdkCommon.distEsmTypesBoxesMod.Box
 import sigmastate.fleetSdkCommon.{distEsmTypesCommonMod => commonMod, distEsmTypesInputsMod => inputsMod, distEsmTypesTokenMod => tokenMod, distEsmTypesTransactionsMod => transactionsMod}
 
@@ -12,45 +13,46 @@ import scala.scalajs.js.annotation.JSExportTopLevel
 class SigmaProver(_prover: sdk.SigmaProver) extends js.Object {
   import Isos._
 
-  //TODO finish implementation
+  /** Reduces the transaction to the reduced form, which is ready to be signed.
+    * @param stateCtx blockchain state context
+    * @param unsignedTx unsigned transaction to be reduced (created by Fleet builders)
+    * @param boxesToSpend boxes to be spent by the transaction
+    * @param dataInputs data inputs to be used by the transaction
+    * @param tokensToBurn tokens to be burned by the transaction
+    * @param baseCost base cost of the transaction
+    * @return reduced transaction
+    */
   def reduce(
       stateCtx: BlockchainStateContext,
       unsignedTx: transactionsMod.UnsignedTransaction,
       boxesToSpend: js.Array[inputsMod.EIP12UnsignedInput],
+      dataInputs: js.Array[Box[commonMod.Amount]],
+      tokensToBurn: js.Array[tokenMod.TokenAmount[commonMod.Amount]],
       baseCost: Int): ReducedTransaction = {
-    val tx = sdk.UnreducedTransaction(
+    val unreducedTx = sdk.UnreducedTransaction(
       unsignedTx = isoUnsignedTransaction.to(unsignedTx),
       boxesToSpend = isoArrayToIndexed(isoEIP12UnsignedInput).to(boxesToSpend),
-      dataInputs = IndexedSeq.empty,
-      tokensToBurn = IndexedSeq.empty
+      dataInputs = isoArrayToIndexed(isoBox).to(dataInputs),
+      tokensToBurn = isoArrayToIndexed(isoToken.andThen(sdk.Iso.isoErgoTokenToPair.inverse)).to(tokensToBurn)
     )
-    _prover.reduce(
-      isoBlockchainStateContext.to(stateCtx),
-      tx,
-      baseCost
-    )
-    new ReducedTransaction
+    val ctx = isoBlockchainStateContext.to(stateCtx)
+    val reducedTx = _prover.reduce(ctx, unreducedTx, baseCost)
+    new ReducedTransaction(reducedTx)
   }
 
-  def reduceTransaction(
-      unsignedTx: transactionsMod.UnsignedTransaction,
-      boxesToSpend: js.Array[inputsMod.EIP12UnsignedInput],
-      dataBoxes: js.Array[Box[commonMod.Amount]],
-      stateDigest: String,
-      baseCost: Int,
-      tokensToBurn: js.Array[tokenMod.TokenAmount[commonMod.Amount]]
-  ): (ReducedTransaction, Int) = {
-    val tx = Isos.isoUnsignedTransaction.to(unsignedTx)
-//    val inputs: = boxesToSpend.map(isoEIP12UnsignedInput.to).toArray
-
-    (new ReducedTransaction, 0)
+  /** Signs the reduced transaction.
+    * @param reducedTx reduced transaction to be signed
+    * @return signed transaction containting all the required proofs (signatures)
+    */
+  def signReduced(reducedTx: ReducedTransaction): transactionsMod.SignedTransaction = {
+    val signed = _prover.signReduced(reducedTx._tx)
+    isoSignedTransaction.from(signed.ergoTx)
   }
-
 }
 
 //TODO finish implementation
 @JSExportTopLevel("ReducedTransaction")
-class ReducedTransaction
+class ReducedTransaction(private [js] val _tx: sdk.ReducedTransaction)
 
 //TODO finish implementation
 @JSExportTopLevel("SigmaProverObj")

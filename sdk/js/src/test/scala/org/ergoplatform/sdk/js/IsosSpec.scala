@@ -11,7 +11,7 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import sigmastate.SType
 import sigmastate.Values.Constant
 import sigmastate.eval.Colls
-import sigmastate.interpreter.ContextExtension
+import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.generators.ObjectGenerators
 import special.collection.Coll
 import special.sigma
@@ -102,9 +102,21 @@ class IsosSpec  extends AnyPropSpec with Matchers with ObjectGenerators with Sca
     }
   }
 
+  property("Iso.isoProverResult") {
+    forAll { (c: ProverResult) =>
+      roundtrip(Isos.isoProverResult)(c)
+    }
+  }
+
   property("Iso.isoUnsignedInput") {
     forAll { (c: UnsignedInput) =>
       roundtrip(Isos.isoUnsignedInput)(c)
+    }
+  }
+
+  property("Iso.isoSignedInput") {
+    forAll { (c: Input) =>
+      roundtrip(Isos.isoSignedInput)(c)
     }
   }
 
@@ -163,12 +175,6 @@ class IsosSpec  extends AnyPropSpec with Matchers with ObjectGenerators with Sca
     }
   }
 
-  property("Iso.isoUnsignedTransaction") {
-    forAll { (tx: UnsignedErgoLikeTransaction) =>
-      roundtrip(Isos.isoUnsignedTransaction)(tx)
-    }
-  }
-
   property("Iso.isoBox") {
     forAll { (b: ErgoBox) =>
       roundtrip(Isos.isoBox)(b)
@@ -181,4 +187,15 @@ class IsosSpec  extends AnyPropSpec with Matchers with ObjectGenerators with Sca
     }
   }
 
+  property("Iso.isoUnsignedTransaction") {
+    forAll { (tx: UnsignedErgoLikeTransaction) =>
+      roundtrip(Isos.isoUnsignedTransaction)(tx)
+    }
+  }
+
+  property("Iso.isoSignedTransaction") {
+    forAll { (tx: ErgoLikeTransaction) =>
+      roundtrip(Isos.isoSignedTransaction)(tx)
+    }
+  }
 }
