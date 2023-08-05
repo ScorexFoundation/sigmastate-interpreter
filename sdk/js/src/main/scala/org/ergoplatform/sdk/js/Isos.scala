@@ -200,7 +200,7 @@ object Isos {
   implicit val isoContextExtension: Iso[contextExtensionMod.ContextExtension, ContextExtension] = new Iso[contextExtensionMod.ContextExtension, ContextExtension] {
     override def to(x: contextExtensionMod.ContextExtension): ContextExtension = {
       var map = new ListMap[Byte, Constant[SType]]()
-      val keys = js.Object.keys(x)
+      val keys = js.Object.keys(x).sorted
       for ( k <- keys ) {
         val id = k.toInt.toByte
         val c = isoHexStringToConstant.to(x.apply(id).get.get)

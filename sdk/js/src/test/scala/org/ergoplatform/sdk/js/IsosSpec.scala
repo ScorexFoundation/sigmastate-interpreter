@@ -37,8 +37,7 @@ class IsosSpec  extends AnyPropSpec with Matchers with ObjectGenerators with Sca
     )
 
   def roundtrip[A,B](iso: Iso[A,B])(b: B): Unit = {
-    val invIso = iso.inverse
-    invIso.from(invIso.to(b)) shouldBe b
+    iso.to(iso.from(b)) shouldBe b
   }
 
   override implicit val generatorDrivenConfig: PropertyCheckConfiguration = PropertyCheckConfiguration(minSuccessful = 30)
@@ -164,7 +163,7 @@ class IsosSpec  extends AnyPropSpec with Matchers with ObjectGenerators with Sca
     }
   }
 
-  ignore("Iso.isoUnsignedTransaction") {
+  property("Iso.isoUnsignedTransaction") {
     forAll { (tx: UnsignedErgoLikeTransaction) =>
       roundtrip(Isos.isoUnsignedTransaction)(tx)
     }
