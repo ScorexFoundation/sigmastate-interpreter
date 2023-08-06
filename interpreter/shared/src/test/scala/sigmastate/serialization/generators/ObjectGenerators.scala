@@ -27,7 +27,7 @@ import special.sigma._
 
 import java.math.BigInteger
 import scala.collection.compat.immutable.ArraySeq
-import scala.collection.immutable.ListMap
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 
@@ -238,8 +238,8 @@ trait ObjectGenerators extends TypeGenerators
   val unsignedShortGen: Gen[Short] = Gen.chooseNum(0, Short.MaxValue).map(_.toShort)
 
   lazy val contextExtensionGen: Gen[ContextExtension] = for {
-    values <- Gen.sequence(contextExtensionValuesGen(0, 5))(Buildable.buildableSeq)
-  } yield ContextExtension(ListMap.empty ++ values.sortBy(_._1))
+    values: collection.Seq[(Byte, EvaluatedValue[SType])] <- Gen.sequence(contextExtensionValuesGen(0, 5))(Buildable.buildableSeq)
+  } yield ContextExtension(mutable.LinkedHashMap[Byte, EvaluatedValue[SType]](values.sortBy(_._1).toSeq:_*))
 
   lazy val serializedProverResultGen: Gen[ProverResult] = for {
     bytes <- arrayOfRange(1, 100, arbByte.arbitrary)

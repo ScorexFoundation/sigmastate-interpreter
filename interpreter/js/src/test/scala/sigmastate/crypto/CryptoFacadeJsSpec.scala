@@ -2,7 +2,6 @@ package sigmastate.crypto
 
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
-import scorex.util.encode.Base16
 
 import scala.scalajs.js
 import scala.scalajs.js.typedarray.Uint8Array

@@ -1,7 +1,6 @@
 package org.ergoplatform.sdk
 
 import java.math.BigInteger
-
 import cats.syntax.either._
 import io.circe._
 import io.circe.syntax._
@@ -32,6 +31,8 @@ import org.ergoplatform.UnsignedErgoLikeTransaction
 import org.ergoplatform.ErgoLikeTransactionTemplate
 import org.ergoplatform.ErgoBoxCandidate
 import org.ergoplatform.ErgoLikeContext
+
+import scala.collection.mutable
 
 trait JsonCodecs {
 
@@ -244,7 +245,7 @@ trait JsonCodecs {
 
   implicit val contextExtensionDecoder: Decoder[ContextExtension] = Decoder.instance({ cursor =>
     for {
-      values <- cursor.as[Map[Byte, EvaluatedValue[SType]]]
+      values <- cursor.as[mutable.LinkedHashMap[Byte, EvaluatedValue[SType]]]
     } yield ContextExtension(values)
   })
 

@@ -9,6 +9,8 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import special.sigma
 import special.sigma.AnyValue
 
+import scala.collection.mutable
+
 /**
   * User-defined variables to be put into context.
   * Each variable is identified by `id: Byte` and can be accessed from a script
@@ -20,7 +22,7 @@ import special.sigma.AnyValue
   *
   * @param values internal container of the key-value pairs
   */
-case class ContextExtension(values: Map[Byte, EvaluatedValue[_ <: SType]]) {
+case class ContextExtension(values: scala.collection.Map[Byte, EvaluatedValue[_ <: SType]]) {
   def add(bindings: VarBinding*): ContextExtension =
     ContextExtension(values ++ bindings)
 }
@@ -49,8 +51,7 @@ object ContextExtension {
         error(s"Negative amount of context extension values: $extSize")
       val ext = (0 until extSize)
         .map(_ => (r.getByte(), r.getValue().asInstanceOf[EvaluatedValue[_ <: SType]]))
-        .toMap[Byte, EvaluatedValue[_ <: SType]]
-      ContextExtension(ext)
+      ContextExtension(mutable.LinkedHashMap(ext:_*))
     }
 
   }
