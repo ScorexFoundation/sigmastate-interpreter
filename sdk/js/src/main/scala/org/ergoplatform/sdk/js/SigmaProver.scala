@@ -1,8 +1,8 @@
 package org.ergoplatform.sdk.js
 
 import org.ergoplatform.sdk
-import org.ergoplatform.sdk.SignedTransaction
 import sigmastate.fleetSdkCommon.distEsmTypesBoxesMod.Box
+import sigmastate.fleetSdkCommon.distEsmTypesRegistersMod.NonMandatoryRegisters
 import sigmastate.fleetSdkCommon.{distEsmTypesCommonMod => commonMod, distEsmTypesInputsMod => inputsMod, distEsmTypesTokenMod => tokenMod, distEsmTypesTransactionsMod => transactionsMod}
 
 import scala.scalajs.js
@@ -26,7 +26,7 @@ class SigmaProver(_prover: sdk.SigmaProver) extends js.Object {
       stateCtx: BlockchainStateContext,
       unsignedTx: transactionsMod.UnsignedTransaction,
       boxesToSpend: js.Array[inputsMod.EIP12UnsignedInput],
-      dataInputs: js.Array[Box[commonMod.Amount]],
+      dataInputs: js.Array[Box[commonMod.Amount, NonMandatoryRegisters]],
       tokensToBurn: js.Array[tokenMod.TokenAmount[commonMod.Amount]],
       baseCost: Int): ReducedTransaction = {
     val unreducedTx = sdk.UnreducedTransaction(

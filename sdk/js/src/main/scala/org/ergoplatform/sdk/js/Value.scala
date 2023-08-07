@@ -10,6 +10,7 @@ import sigmastate.crypto.Platform
 import sigmastate.eval.{CAvlTree, CGroupElement, CSigmaProp, Colls, CostingBox, Evaluation, SigmaDsl}
 import sigmastate.fleetSdkCommon.distEsmTypesBoxesMod.Box
 import sigmastate.fleetSdkCommon.distEsmTypesCommonMod
+import sigmastate.fleetSdkCommon.distEsmTypesRegistersMod.NonMandatoryRegisters
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.serialization.{ConstantSerializer, DataSerializer, SigmaSerializer}
 import special.collection.{Coll, CollType}
@@ -97,7 +98,7 @@ object Value extends js.Object {
       val t = data.asInstanceOf[AvlTree]
       Isos.isoAvlTree.to(t)
     case special.sigma.BoxRType =>
-      val t = data.asInstanceOf[Box[distEsmTypesCommonMod.Amount]]
+      val t = data.asInstanceOf[Box[distEsmTypesCommonMod.Amount, NonMandatoryRegisters]]
       SigmaDsl.Box(Isos.isoBox.to(t))
     case ct: CollType[a] =>
       val xs = data.asInstanceOf[js.Array[Any]]

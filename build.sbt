@@ -17,7 +17,7 @@ lazy val commonSettings = Seq(
   scalacOptions ++= {
     CrossVersion.partialVersion(scalaVersion.value) match {
       case Some((2, 13)) =>
-        Seq("-Ywarn-unused:_,imports", "-Ywarn-unused:imports", "-release", "8")
+        Seq("-Ywarn-unused:_,imports", "-Ywarn-unused:imports", "-Wconf:src=src_managed/.*:silent", "-release", "8")
       case Some((2, 12)) =>
         Seq("-Ywarn-unused:_,imports", "-Ywarn-unused:imports", "-release", "8")
       case Some((2, 11)) =>
@@ -282,7 +282,7 @@ lazy val interpreterJS = interpreter.js
       },
       Compile / npmDependencies ++= Seq(
         "sigmajs-crypto-facade" -> sigmajsCryptoFacadeVersion,
-        "@fleet-sdk/common" -> "0.1.0-alpha.14"
+        "@fleet-sdk/common" -> "0.1.0"
       )
     )
 

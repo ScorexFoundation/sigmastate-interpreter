@@ -343,8 +343,8 @@ object Isos {
       }
     }
 
-  implicit val isoBoxCandidate: Iso[boxesMod.BoxCandidate[commonMod.Amount], ErgoBoxCandidate] = new Iso[boxesMod.BoxCandidate[commonMod.Amount], ErgoBoxCandidate] {
-    override def to(x: boxesMod.BoxCandidate[commonMod.Amount]): ErgoBoxCandidate = {
+  implicit val isoBoxCandidate: Iso[boxesMod.BoxCandidate[commonMod.Amount, NonMandatoryRegisters], ErgoBoxCandidate] = new Iso[boxesMod.BoxCandidate[commonMod.Amount, NonMandatoryRegisters], ErgoBoxCandidate] {
+    override def to(x: boxesMod.BoxCandidate[commonMod.Amount, NonMandatoryRegisters]): ErgoBoxCandidate = {
       val ergoBoxCandidate = new ErgoBoxCandidate(
         value = isoAmount.to(x.value),
         ergoTree = {
@@ -358,11 +358,11 @@ object Isos {
       ergoBoxCandidate
     }
 
-    override def from(x: ErgoBoxCandidate): boxesMod.BoxCandidate[commonMod.Amount] = {
+    override def from(x: ErgoBoxCandidate): boxesMod.BoxCandidate[commonMod.Amount, NonMandatoryRegisters] = {
       val ergoTree = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(x.ergoTree)
       val ergoTreeStr = Base16.encode(ergoTree)
       val assets = isoTokenArray.from(x.additionalTokens)
-      boxesMod.BoxCandidate[commonMod.Amount](
+      boxesMod.BoxCandidate[commonMod.Amount, NonMandatoryRegisters](
         ergoTree = ergoTreeStr,
         value = isoAmount.from(x.value),
         assets = assets,
@@ -372,8 +372,8 @@ object Isos {
     }
   }
 
-  val isoBox: Iso[Box[commonMod.Amount], ErgoBox] = new Iso[Box[commonMod.Amount], ErgoBox] {
-    override def to(x: Box[commonMod.Amount]): ErgoBox = {
+  val isoBox: Iso[Box[commonMod.Amount, NonMandatoryRegisters], ErgoBox] = new Iso[Box[commonMod.Amount, NonMandatoryRegisters], ErgoBox] {
+    override def to(x: Box[commonMod.Amount, NonMandatoryRegisters]): ErgoBox = {
       val ergoBox = new ErgoBox(
         value = isoAmount.to(x.value),
         ergoTree = {
@@ -389,11 +389,11 @@ object Isos {
       ergoBox
     }
 
-    override def from(x: ErgoBox): Box[commonMod.Amount] = {
+    override def from(x: ErgoBox): Box[commonMod.Amount, NonMandatoryRegisters] = {
       val ergoTree = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(x.ergoTree)
       val ergoTreeStr = Base16.encode(ergoTree)
       val assets = isoTokenArray.from(x.additionalTokens)
-      Box[commonMod.Amount](
+      Box[commonMod.Amount, NonMandatoryRegisters](
         boxId = Base16.encode(x.id),
         ergoTree = ergoTreeStr,
         value = isoAmount.from(x.value),
@@ -409,7 +409,7 @@ object Isos {
   val isoEIP12UnsignedInput: Iso[inputsMod.EIP12UnsignedInput, ExtendedInputBox] =
     new Iso[inputsMod.EIP12UnsignedInput, ExtendedInputBox] {
       override def to(x: inputsMod.EIP12UnsignedInput): ExtendedInputBox = {
-        val box = Box[commonMod.Amount](
+        val box = Box[commonMod.Amount, NonMandatoryRegisters](
           boxId = x.boxId,
           ergoTree = x.ergoTree,
           value = x.value,
