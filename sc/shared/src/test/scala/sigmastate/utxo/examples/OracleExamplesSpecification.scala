@@ -15,7 +15,7 @@ import sigmastate.helpers.TestingHelpers._
 import org.ergoplatform._
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, TestContractSpec}
 import sigmastate.basics.CryptoConstants
-import sigmastate.crypto.CryptoFacade
+import sigmastate.crypto.{BigIntegers, CryptoFacade}
 import sigmastate.eval.Extensions.ArrayOps
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.utxo._
@@ -89,7 +89,8 @@ class OracleExamplesSpecification extends CompilerTestingCommons
 
     val temperature: Long = 18
 
-    val r = BigInt.apply(128, CryptoFacade.createSecureRandom()) //128 bits random number
+    //create 128 bits random number
+    val r = BigInt(BigIntegers.createRandomBigInteger(128, CryptoFacade.createSecureRandom()))
     val a = group.exponentiate(group.generator, r.bigInteger)
 
     val ts = System.currentTimeMillis()
