@@ -282,7 +282,7 @@ lazy val interpreterJS = interpreter.js
       },
       Compile / npmDependencies ++= Seq(
         "sigmajs-crypto-facade" -> sigmajsCryptoFacadeVersion,
-        "@fleet-sdk/common" -> "0.1.0"
+        "@fleet-sdk/common" -> "0.1.3"
       )
     )
 
