@@ -1,7 +1,7 @@
 package scalan
 
 import scala.reflect.ClassTag
-import scala.annotation.implicitNotFound
+import scala.annotation.{implicitNotFound, unused}
 import scala.language.implicitConversions
 
 /** Base type for all runtime type descriptors. Sigma uses type descriptors to
@@ -112,6 +112,7 @@ object RType {
 
   case class ArrayType[A](tA: RType[A]) extends RType[Array[A]] {
     val classTag: ClassTag[Array[A]] = {
+      @unused // avoid warning about unused ctA
       implicit val ctA: ClassTag[A] = tA.classTag
       scala.reflect.classTag[Array[A]]
     }
@@ -122,6 +123,7 @@ object RType {
 
   case class OptionType[A](tA: RType[A]) extends RType[Option[A]] {
     val classTag: ClassTag[Option[A]] = {
+      @unused // avoid warning about unused ctA
       implicit val ctA: ClassTag[A] = tA.classTag
       scala.reflect.classTag[Option[A]]
     }
@@ -135,6 +137,7 @@ object RType {
 
   case class ThunkType[A](tA: RType[A]) extends RType[ThunkData[A]] {
     val classTag: ClassTag[ThunkData[A]] = {
+      @unused // avoid warning about unused ctA
       implicit val ctA: ClassTag[A] = tA.classTag
       scala.reflect.classTag[ThunkData[A]]
     }

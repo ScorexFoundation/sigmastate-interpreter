@@ -12,7 +12,7 @@ object OverloadHack {
   class Overloaded1 extends Overloaded { override def toString = "O1"}
   class Overloaded2 extends Overloaded { override def toString = "O2"}
   class Overloaded3 extends Overloaded { override def toString = "O3"}
-  implicit val overloaded1 = new Overloaded1
-  implicit val overloaded2 = new Overloaded2
-  implicit val overloaded3 = new Overloaded3
+  implicit val overloaded1: Overloaded1 = new Overloaded1
+  implicit val overloaded2: Overloaded2 = new Overloaded2
+  implicit val overloaded3: Overloaded3 = new Overloaded3
 }

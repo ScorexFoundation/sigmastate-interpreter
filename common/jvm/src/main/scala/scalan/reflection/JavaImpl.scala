@@ -24,7 +24,7 @@ class JRClass[T](val value: Class[T]) extends RClass[T] {
   val methods = TrieMap.empty[(String, Seq[Class[_]]), RMethod]
 
   override def getMethod(name: String, parameterTypes: Class[_]*): RMethod = {
-    memoize(methods)((name, parameterTypes), JRMethod(this, value.getMethod(name, parameterTypes:_*)))
+    memoize(methods)((name, parameterTypes), JRMethod(value.getMethod(name, parameterTypes:_*)))
   }
 
   override def getSimpleName: String = value.getSimpleName
@@ -62,7 +62,7 @@ class JRClass[T](val value: Class[T]) extends RClass[T] {
 
   override def isAssignableFrom(cls: Class[_]): Boolean = value.isAssignableFrom(cls)
 
-  override def getDeclaredMethods(): Array[RMethod] = value.getDeclaredMethods.map(JRMethod(this, _))
+  override def getDeclaredMethods(): Array[RMethod] = value.getDeclaredMethods.map(JRMethod(_))
 
   override def equals(other: Any): Boolean = (this eq other.asInstanceOf[AnyRef]) || (other match {
     case that: JRClass[_] =>
@@ -130,10 +130,9 @@ object JRConstructor {
 /**
   * Implements [[RMethod]] using Java reflection.
   *
-  * @param declaringClass The JRClass that declares this method.
   * @param value          The [[java.lang.reflect.Method]] instance that this JRMethod represents.
   */
-class JRMethod private (declaringClass: JRClass[_], val value: Method) extends RMethod {
+class JRMethod private (val value: Method) extends RMethod {
   override def invoke(obj: Any, args: AnyRef*): AnyRef = {
 //    val name = value.getName
 //    val parameterTypes: Seq[Class[_]] = value.getParameterTypes
@@ -156,5 +155,5 @@ class JRMethod private (declaringClass: JRClass[_], val value: Method) extends R
   override def toString: String = s"JRMethod($value)"
 }
 object JRMethod {
-  private[reflection] def apply(clazz: JRClass[_], value: Method): RMethod = new JRMethod(clazz, value)
+  private[reflection] def apply(value: Method): RMethod = new JRMethod(value)
 }

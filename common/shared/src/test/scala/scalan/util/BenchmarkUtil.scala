@@ -2,7 +2,7 @@ package scalan.util
 
 import debox.cfor
 
-import scala.concurrent.{Future, Await}
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -15,7 +15,7 @@ object BenchmarkUtil {
     var sum = 0L
     cfor(0)(_ < nIters, _ + 1) { i =>
       val start = System.currentTimeMillis()
-      val res = action(i)
+      action(i)
       val end = System.currentTimeMillis()
       val iterTime = end - start
       if (okShowIterTime)
@@ -41,10 +41,13 @@ object BenchmarkUtil {
     (res, end - start)
   }
 
+  /** Runs `n` instances of the given block in parallel, await completion and measure the
+    * total time. The time is printed to the console.
+    */
   def runTasks(nTasks: Int)(block: Int => Unit) = {
     val (_, total) = measureTime {
       val tasks = (1 to nTasks).map(iTask => Future(block(iTask)))
-      val res = Await.result(Future.sequence(tasks), Duration.Inf)
+      Await.result(Future.sequence(tasks), Duration.Inf)
     }
     println(s"Completed $nTasks tasks in $total msec")
   }

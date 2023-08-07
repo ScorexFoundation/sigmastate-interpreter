@@ -1,5 +1,7 @@
 package scalan.reflection
 
+import sigmastate.RuntimePlatform
+
 import scala.collection.mutable
 
 /** JS Platform dependent implementation of reflection methods. */
@@ -47,4 +49,14 @@ object Platform {
       map.getOrElseUpdate(key, value)
     }
   }
+
+  /** This method works for Scala 2.13+. Sigma.js is compiled only with Scala 2.13+, hence
+    * using getSimpleName is ok.
+    * @see https://github.com/scala/bug/issues/5425 */
+  def safeSimpleName(cl: Class[_]): String = {
+    cl.getSimpleName
+  }
+
+  /** Returns current runtime platform descriptor. */
+  def runtimePlatform: RuntimePlatform = RuntimePlatform.JS
 }

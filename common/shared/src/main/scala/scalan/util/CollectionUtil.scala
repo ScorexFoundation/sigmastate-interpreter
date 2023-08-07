@@ -13,15 +13,15 @@ object CollectionUtil {
   def concatArrays[T](xs: Array[T], ys: Array[T]): Array[T] = {
     val len = xs.length + ys.length
     val result = (xs match {
-      case arr: Array[AnyRef] => new Array[AnyRef](len) // creates an array with invalid type descriptor (i.e. when T == Tuple2)
-      case arr: Array[Byte] => new Array[Byte](len)
-      case arr: Array[Short] => new Array[Short](len)
-      case arr: Array[Int] => new Array[Int](len)
-      case arr: Array[Long] => new Array[Long](len)
-      case arr: Array[Char] => new Array[Char](len)
-      case arr: Array[Float] => new Array[Float](len)
-      case arr: Array[Double] => new Array[Double](len)
-      case arr: Array[Boolean] => new Array[Boolean](len)
+      case _: Array[AnyRef] => new Array[AnyRef](len) // creates an array with invalid type descriptor (i.e. when T == Tuple2)
+      case _: Array[Byte] => new Array[Byte](len)
+      case _: Array[Short] => new Array[Short](len)
+      case _: Array[Int] => new Array[Int](len)
+      case _: Array[Long] => new Array[Long](len)
+      case _: Array[Char] => new Array[Char](len)
+      case _: Array[Float] => new Array[Float](len)
+      case _: Array[Double] => new Array[Double](len)
+      case _: Array[Boolean] => new Array[Boolean](len)
     }).asInstanceOf[Array[T]]
     Array.copy(xs, 0, result, 0, xs.length)
     Array.copy(ys, 0, result, xs.length, ys.length)
@@ -177,7 +177,7 @@ object CollectionUtil {
       * @return original collection `xs` casted to Source[B]
       * @throws java.lang.AssertionError if at least one item cannot be cast to `B`
       */
-    def cast[B:ClassTag](implicit cbf: BuildFrom[Source[A], B, Source[B]]): Source[B] = {
+    def cast[B:ClassTag]: Source[B] = {
       for (x <- xs) {
         assert(x match { case _: B => true case _ => false}, s"Value $x doesn't conform to type ${reflect.classTag[B]}")
       }

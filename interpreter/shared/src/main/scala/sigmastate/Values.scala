@@ -15,7 +15,7 @@ import sigmastate.serialization.OpCodes._
 import sigmastate.TrivialProp.{FalseProp, TrueProp}
 import sigmastate.Values.ErgoTree.substConstants
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.{ProveDHTuple, CryptoConstants}
+import sigmastate.basics.{CryptoConstants, ProveDHTuple}
 import sigmastate.lang.Terms._
 import sigmastate.utxo._
 import sigmastate.eval._
@@ -23,7 +23,9 @@ import sigmastate.eval.Extensions._
 import scalan.util.Extensions.ByteOps
 import sigmastate.interpreter.ErgoTreeEvaluator._
 import debox.cfor
+import scorex.util.encode.Base16
 import sigmastate.exceptions.InterpreterException
+
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import sigmastate.lang.CheckingSigmaBuilder._
@@ -33,7 +35,6 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import special.sigma.{AvlTree, Header, PreHeader, _}
 import sigmastate.lang.SourceContext
 import sigmastate.util.safeNewArray
-import sigmastate.crypto.Platform
 import special.collection.Coll
 
 import scala.collection.compat.immutable.ArraySeq
@@ -324,7 +325,8 @@ object Values {
     * @see Constant
     */
   case class ConstantNode[S <: SType](value: S#WrappedType, tpe: S) extends Constant[S] {
-    require(Platform.isCorrectType(value, tpe), s"Invalid type of constant value $value, expected type $tpe")
+    require(sigmastate.crypto.Platform.isCorrectType(value, tpe),
+      s"Invalid type of constant value $value, expected type $tpe")
     override def companion: ValueCompanion = Constant
     override def opCode: OpCode = companion.opCode
     override def opName: String = s"Const"
@@ -1314,12 +1316,15 @@ object Values {
     }
 
     /** Serialized proposition expression of SigmaProp type with
-      * ConstantPlaceholder nodes instead of Constant nodes 
+      * ConstantPlaceholder nodes not replaced by Constant nodes.
       */
     lazy val template: Array[Byte] = {
       val r = SigmaSerializer.startReader(bytes)
       DefaultSerializer.deserializeHeaderWithTreeBytes(r)._4
     }
+
+    /** Base16 encoding of `template` bytes. */
+    def templateHex: String = Base16.encode(template)
 
     /** Get proposition expression from this contract.
       * When root.isRight then
@@ -1496,6 +1501,24 @@ object Values {
       */
     def withSegregation(prop: SigmaPropValue): ErgoTree =
       withSegregation(DefaultHeader, prop)
+
+    /** Deserializes an ErgoTree instance from a hexadecimal string.
+      *
+      * @param hex a hexadecimal string representing the serialized ErgoTree
+      */
+    def fromHex(hex: String): ErgoTree = {
+      val bytes = Base16.decode(hex).get
+      fromBytes(bytes)
+    }
+
+    /** Deserializes an ErgoTree instance from an array of bytes.
+      *
+      * @param bytes an array of bytes representing the serialized ErgoTree
+      */
+    def fromBytes(bytes: Array[Byte]): ErgoTree = {
+      ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(bytes)
+    }
+
   }
 
 }

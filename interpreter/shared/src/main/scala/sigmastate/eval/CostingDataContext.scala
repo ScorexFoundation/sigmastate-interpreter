@@ -1,37 +1,35 @@
 package sigmastate.eval
 
+import debox.cfor
+import org.ergoplatform.validation.{SigmaValidationSettings, ValidationRules}
+import org.ergoplatform.{ErgoBox, SigmaConstants}
+import scalan.OverloadHack.Overloaded1
+import scalan.RType
+import scalan.util.Extensions.BigIntegerOps
+import scorex.crypto.authds.avltree.batch._
+import scorex.crypto.authds.{ADDigest, ADKey, ADValue, SerializedAdProof}
+import scorex.crypto.hash.{Blake2b256, Digest32, Sha256}
 import scorex.utils.{Ints, Longs}
+import sigmastate.SCollection.SByteArray
+import sigmastate.Values.ErgoTree.EmptyConstants
+import sigmastate.Values.{ConstantNode, ErgoTree, EvaluatedValue, SValue, SigmaBoolean}
+import sigmastate._
+import sigmastate.basics.CryptoConstants.EcPointType
+import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.basics.{CryptoConstants, ProveDHTuple}
+import sigmastate.crypto.{CryptoFacade, Ecp}
+import sigmastate.eval.Extensions._
+import sigmastate.interpreter.Interpreter
+import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigmastate.serialization.{GroupElementSerializer, SigmaSerializer}
+import special.collection._
+import special.sigma._
 
 import java.math.BigInteger
 import java.util.Arrays
-import org.ergoplatform.{ErgoBox, SigmaConstants}
-import org.ergoplatform.validation.ValidationRules
-import scalan.OverloadHack.Overloaded1
-import scorex.crypto.authds.avltree.batch._
-import scorex.crypto.authds.{ADDigest, ADKey, ADValue, SerializedAdProof}
-import sigmastate.SCollection.SByteArray
-import sigmastate._
-import sigmastate.Values.{ConstantNode, ErgoTree, EvaluatedValue, SValue, SigmaBoolean}
-import sigmastate.basics.CryptoConstants.EcPointType
-import sigmastate.interpreter.Interpreter
-import special.collection._
-import special.sigma._
-import sigmastate.eval.Extensions._
-import debox.cfor
-
-import scala.util.{Failure, Success}
-import scalan.util.Extensions.BigIntegerOps
-import scalan.{Nullable, RType}
-import scorex.crypto.hash.{Blake2b256, Digest32, Sha256}
-import sigmastate.Values.ErgoTree.EmptyConstants
-import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.{ProveDHTuple, CryptoConstants}
-import sigmastate.crypto.{CryptoFacade, Ecp}
-import sigmastate.lang.TransformingSigmaBuilder
-import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.serialization.{GroupElementSerializer, SigmaSerializer}
-
+import scala.annotation.unused
 import scala.reflect.ClassTag
+import scala.util.{Failure, Success}
 
 /** Interface implmented by wrappers to provide access to the underlying wrapped value. */
 trait WrapperOf[T] {
@@ -195,17 +193,17 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
 
   override def valueLengthOpt: Option[Int] = treeData.valueLengthOpt
 
-  override def digest: Coll[Byte] = Colls.fromArray(treeData.digest)
+  override def digest: Coll[Byte] = treeData.digest
 
   override def updateDigest(newDigest: Coll[Byte]): AvlTree = {
-    val td = treeData.copy(digest = ADDigest @@ newDigest.toArray)
+    val td = treeData.copy(digest = newDigest)
     this.copy(treeData = td)
   }
 
   override def createVerifier(proof: Coll[Byte]): AvlTreeVerifier = {
     val adProof = SerializedAdProof @@ proof.toArray
     val bv = new CAvlTreeVerifier(
-      treeData.digest, adProof, treeData.keyLength, treeData.valueLengthOpt)
+      ADDigest @@ treeData.digest.toArray, adProof, treeData.keyLength, treeData.valueLengthOpt)
     bv
   }
 
@@ -304,7 +302,7 @@ case class CAnyValue[A](value: A, tVal: RType[Any]) extends AnyValue {
 }
 
 object CAnyValue {
-  def apply[A](value: A, t: RType[A])(implicit o: Overloaded1): CAnyValue[A] =
+  def apply[A](value: A)(implicit t: RType[A], @unused o: Overloaded1): CAnyValue[A] =
     new CAnyValue(value, t.asInstanceOf[RType[Any]])
 }
 
@@ -313,7 +311,7 @@ import sigmastate.eval.CostingBox._
 /** A default implementation of [[Box]] interface.
   * @see [[Box]] for detailed descriptions
   */
-case class CostingBox(val ebox: ErgoBox) extends Box with WrapperOf[ErgoBox] {
+case class CostingBox(ebox: ErgoBox) extends Box with WrapperOf[ErgoBox] {
   val builder = CostingSigmaDslBuilder
 
   val value = ebox.value
@@ -493,7 +491,7 @@ object CHeader {
   * @see [[SigmaDslBuilder]] for detailed descriptions
   */
 class CostingSigmaDslBuilder extends SigmaDslBuilder { dsl =>
-  implicit val validationSettings = ValidationRules.currentSettings
+  implicit val validationSettings: SigmaValidationSettings = ValidationRules.currentSettings
 
   // manual fix
   override val Colls: CollBuilder = new CollOverArrayBuilder
@@ -524,7 +522,7 @@ class CostingSigmaDslBuilder extends SigmaDslBuilder { dsl =>
     * @see AvlTreeData for details
     */
   override def avlTree(operationFlags: Byte, digest: Coll[Byte], keyLength: Int, valueLengthOpt: Option[Int]): CAvlTree = {
-    val treeData = AvlTreeData(ADDigest @@ digest.toArray, AvlTreeFlags(operationFlags), keyLength, valueLengthOpt)
+    val treeData = AvlTreeData(digest, AvlTreeFlags(operationFlags), keyLength, valueLengthOpt)
     CAvlTree(treeData)
   }
 
@@ -648,12 +646,12 @@ class CostingSigmaDslBuilder extends SigmaDslBuilder { dsl =>
   override def substConstants[T](scriptBytes: Coll[Byte],
                                  positions: Coll[Int],
                                  newValues: Coll[T]): Coll[Byte] = {
-    val typedNewVals = newValues.toArray.map(v => TransformingSigmaBuilder.liftToConstant(v) match {
-      case Nullable(v) => v
-      case _ => sys.error(s"Cannot evaluate substConstants($scriptBytes, $positions, $newValues): cannot lift value $v")
-    })
-
-    val (res, _) = SubstConstants.eval(scriptBytes.toArray, positions.toArray, typedNewVals)(validationSettings)
+    val constants = try newValues.toArrayOfConstants
+    catch {
+      case e: Throwable =>
+        throw new RuntimeException(s"Cannot evaluate substConstants($scriptBytes, $positions, $newValues)", e)
+    }
+    val (res, _) = SubstConstants.eval(scriptBytes.toArray, positions.toArray, constants)(validationSettings)
     Colls.fromArray(res)
   }
 
@@ -714,6 +712,7 @@ case class CostingDataContext(
   }
 
   override def getVar[T](id: Byte)(implicit tT: RType[T]): Option[T] = {
+    @unused // avoid warning about unused ctA
     implicit val tag: ClassTag[T] = tT.classTag
     if (id < 0 || id >= vars.length) return None
     val value = vars(id)

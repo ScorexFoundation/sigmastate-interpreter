@@ -37,30 +37,29 @@ trait CollGens { testSuite =>
 
   def getCollReplGen[T: RType](
       lenGen: Gen[Int],
-      valGen: Gen[T],
-      count: Int = 100): Gen[Coll[T]] = {
+      valGen: Gen[T]): Gen[Coll[T]] = {
     for {l <- lenGen; v <- valGen} yield builder.replicate(l, v)
   }
 
-  def getCollPairGenFinal[A: RType, B: RType](
+  def getCollPairGenFinal[A, B](
       collGenLeft: Gen[Coll[A]],
       collGenRight: Gen[Coll[B]]): Gen[PairColl[A, B]] = {
     for {left <- collGenLeft; right <- collGenRight} yield builder.pairColl(left, right)
   }
 
-  def getCollPairGenRight[A: RType, B: RType, C: RType](
+  def getCollPairGenRight[A, B, C](
       collGenLeft: Gen[Coll[A]],
       collGenRight: Gen[PairColl[B, C]]): Gen[PairColl[A, (B, C)]] = {
     for {left <- collGenLeft; right <- collGenRight} yield builder.pairColl(left, right)
   }
 
-  def getCollPairGenLeft[A: RType, B: RType, C: RType](
+  def getCollPairGenLeft[A, B, C](
       collGenLeft: Gen[PairColl[A, B]],
       collGenRight: Gen[Coll[C]]): Gen[PairColl[(A, B), C]] = {
     for {left <- collGenLeft; right <- collGenRight} yield builder.pairColl(left, right)
   }
 
-  def getCollPairGenBoth[A: RType, B: RType, C: RType, D: RType](
+  def getCollPairGenBoth[A, B, C, D](
       collGenLeft: Gen[PairColl[A, B]],
       collGenRight: Gen[PairColl[C, D]]): Gen[PairColl[(A, B), (C, D)]] = {
     for {left <- collGenLeft; right <- collGenRight} yield builder.pairColl(left, right)

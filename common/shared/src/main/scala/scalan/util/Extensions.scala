@@ -2,7 +2,6 @@ package scalan.util
 
 import java.math.BigInteger
 import java.nio.ByteBuffer
-import scala.language.higherKinds
 
 object Extensions {
   implicit class BooleanOps(val b: Boolean) extends AnyVal {

@@ -13,18 +13,18 @@ import sigmastate.{AvlTreeData, AvlTreeFlags, SType}
 import sigmastate.Values.{Constant, GroupElementConstant}
 import sigmastate.eval.Extensions.ArrayOps
 import sigmastate.eval.{CAvlTree, CBigInt, CHeader, CPreHeader, Colls, Digest32Coll, Evaluation}
+import sigmastate.fleetSdkCommon.{distEsmTypesBoxesMod => boxesMod, distEsmTypesCommonMod => commonMod, distEsmTypesContextExtensionMod => contextExtensionMod, distEsmTypesInputsMod => inputsMod, distEsmTypesRegistersMod => registersMod, distEsmTypesTokenMod => tokenMod}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
 import special.collection.Coll
 import special.collection.Extensions.CollBytesOps
 import special.sigma
 import special.sigma.GroupElement
-import typings.fleetSdkCommon.boxesMod.Box
-import typings.fleetSdkCommon.commonMod.HexString
-import typings.fleetSdkCommon.registersMod.NonMandatoryRegisters
-import typings.fleetSdkCommon.tokenMod.TokenAmount
-import typings.fleetSdkCommon.{boxesMod, commonMod, contextExtensionMod, inputsMod, registersMod, tokenMod}
-import typings.fleetSdkCommon.transactionsMod.UnsignedTransaction
+import sigmastate.fleetSdkCommon.distEsmTypesBoxesMod.Box
+import sigmastate.fleetSdkCommon.distEsmTypesCommonMod.HexString
+import sigmastate.fleetSdkCommon.distEsmTypesRegistersMod.NonMandatoryRegisters
+import sigmastate.fleetSdkCommon.distEsmTypesTokenMod.TokenAmount
+import sigmastate.fleetSdkCommon.distEsmTypesTransactionsMod.UnsignedTransaction
 
 import java.math.BigInteger
 import scala.collection.immutable.ListMap
@@ -90,7 +90,7 @@ object Isos {
     override def to(x: AvlTree): sigma.AvlTree = {
       CAvlTree(
         AvlTreeData(
-          digest = ADDigest @@ isoStringToArray.to(x.digest),
+          digest = isoStringToArray.to(x.digest).toColl,
           treeFlags = AvlTreeFlags(x.insertAllowed, x.updateAllowed, x.removeAllowed),
           x.keyLength,
           valueLengthOpt = isoUndefOr(Iso.identityIso[Int]).to(x.valueLengthOpt),
@@ -183,7 +183,7 @@ object Isos {
     override def to(a: BlockchainStateContext): ErgoLikeStateContext = {
       CErgoLikeStateContext(
         sigmaLastHeaders = isoArrayToColl(isoHeader).to(a.sigmaLastHeaders),
-        previousStateDigest = ADDigest @@ isoStringToColl.to(a.previousStateDigest).toArray,
+        previousStateDigest = isoStringToColl.to(a.previousStateDigest),
         sigmaPreHeader = isoPreHeader.to(a.sigmaPreHeader)
       )
     }
@@ -191,7 +191,7 @@ object Isos {
     override def from(b: ErgoLikeStateContext): BlockchainStateContext = {
       new BlockchainStateContext(
         sigmaLastHeaders = isoArrayToColl(isoHeader).from(b.sigmaLastHeaders),
-        previousStateDigest = isoStringToColl.from(b.previousStateDigest.toColl),
+        previousStateDigest = isoStringToColl.from(b.previousStateDigest),
         sigmaPreHeader = isoPreHeader.from(b.sigmaPreHeader)
       )
     }
@@ -370,7 +370,6 @@ object Isos {
     }
 
   val isoBox: Iso[Box[commonMod.Amount], ErgoBox] = new Iso[Box[commonMod.Amount], ErgoBox] {
-    import sigmastate.eval._
     override def to(x: Box[commonMod.Amount]): ErgoBox = {
       val ergoBox = new ErgoBox(
         value = isoAmount.to(x.value),

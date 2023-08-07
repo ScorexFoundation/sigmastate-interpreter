@@ -50,11 +50,12 @@ trait LangTests extends Matchers with NegativeTesting {
   protected val p2: SigmaBoolean = ProveDlog(ecp2)
   protected val dht1: SigmaBoolean = ProveDHTuple(ecp1, ecp2, ecp3, ecp4)
 
+  // to support both JVM and JS we need to wrap numeric values into CAnyValue
   val env = Map(
-    "x" -> 10, "y" -> 11, "c1" -> true, "c2" -> false,
+    "x" -> CAnyValue(10), "y" -> CAnyValue(11), "c1" -> true, "c2" -> false,
     "height1" -> 100L, "height2" -> 200L,
-    "b1" -> 1.toByte,
-    "b2" -> 2.toByte,
+    "b1" -> CAnyValue(1.toByte),
+    "b2" -> CAnyValue(2.toByte),
     "arr1" -> arr1,
     "arr2" -> arr2,
     "col1" -> ConcreteCollection.fromItems(LongConstant(1), LongConstant(2)),

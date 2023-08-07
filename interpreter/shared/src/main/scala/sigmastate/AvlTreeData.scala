@@ -1,10 +1,10 @@
 package sigmastate
 
-import java.util.{Arrays, Objects}
-import scorex.crypto.authds.ADDigest
 import sigmastate.basics.CryptoConstants
+import sigmastate.eval.Colls
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import special.collection.Coll
 
 
 case class AvlTreeFlags(insertAllowed: Boolean, updateAllowed: Boolean, removeAllowed: Boolean) {
@@ -51,35 +51,22 @@ object AvlTreeFlags {
   * @param valueLengthOpt - if non-empty, all the values under the tree are of the same length
   */
 
-case class AvlTreeData(digest: ADDigest,
+case class AvlTreeData(digest: Coll[Byte],
                        treeFlags: AvlTreeFlags,
                        keyLength: Int,
-                       valueLengthOpt: Option[Int] = None) {
-  override def equals(arg: Any): Boolean = arg match {
-    case x: AvlTreeData =>
-      Arrays.equals(digest, x.digest) &&
-      keyLength == x.keyLength &&
-      valueLengthOpt == x.valueLengthOpt &&
-      treeFlags == x.treeFlags
-    case _ => false
-  }
-
-  override def hashCode(): Int =
-    (Arrays.hashCode(digest) * 31 +
-        keyLength.hashCode()) * 31 + Objects.hash(valueLengthOpt, treeFlags)
-}
+                       valueLengthOpt: Option[Int] = None)
 
 object AvlTreeData {
   val DigestSize: Int = CryptoConstants.hashLength + 1 //please read class comments above for details
   val TreeDataSize = DigestSize + 3 + 4 + 4
 
   val dummy = new AvlTreeData(
-    ADDigest @@ Array.fill(DigestSize)(0:Byte),
+    Colls.fromArray(Array.fill(DigestSize)(0:Byte)),
     AvlTreeFlags.AllOperationsAllowed,
     keyLength = 32)
 
   /** Create [[AvlTreeData]] with the given digest and all operations enabled. */
-  def avlTreeFromDigest(digest: ADDigest): AvlTreeData = {
+  def avlTreeFromDigest(digest: Coll[Byte]): AvlTreeData = {
     val flags = AvlTreeFlags(insertAllowed = true, updateAllowed = true, removeAllowed = true)
     AvlTreeData(digest, flags, CryptoConstants.hashLength)
   }
@@ -88,7 +75,7 @@ object AvlTreeData {
 
     override def serialize(data: AvlTreeData, w: SigmaByteWriter): Unit = {
       val tf = AvlTreeFlags.serializeFlags(data.treeFlags)
-      w.putBytes(data.digest)
+      w.putBytes(data.digest.toArray)
         .putUByte(tf)
         .putUInt(data.keyLength)
         .putOption(data.valueLengthOpt)(_.putUInt(_))
@@ -102,7 +89,7 @@ object AvlTreeData {
       // Note, when keyLength and valueLengthOpt < 0 as a result of Int overflow,
       // the deserializer succeeds with invalid AvlTreeData
       // but still some AvlTree operations (remove_eval, update_eval, contains_eval) won't throw
-      AvlTreeData(ADDigest @@ digest, tf, keyLength, valueLengthOpt)
+      AvlTreeData(Colls.fromArray(digest), tf, keyLength, valueLengthOpt)
     }
   }
 }

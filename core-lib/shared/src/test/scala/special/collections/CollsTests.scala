@@ -9,7 +9,7 @@ import scalan._
 import sigmastate.{VersionContext, VersionTestingProperty}
 import special.collection.{Coll, CollOverArray, PairOfCols}
 
-import scala.language.{existentials, implicitConversions}
+import scala.language.{existentials}
 
 class CollsTests extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers with CollGens with VersionTestingProperty { testSuite =>
   import Gen._
@@ -19,7 +19,7 @@ class CollsTests extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers
 
   property("Coll.indices") {
     val minSuccess = MinSuccessful(30)
-    forAll(collGen, collGen, minSuccess) { (col1: Coll[Int], col2: Coll[Int]) =>
+    forAll(collGen, collGen, minSuccess) { (col1: Coll[Int], _: Coll[Int]) =>
       col1.indices.toArray shouldBe col1.toArray.indices.toArray
     }
     forAll(superGen, minSuccess) { cl =>
@@ -51,7 +51,6 @@ class CollsTests extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers
     // The above equality should hold for all possible collection instances
 
     forAll(MinSuccessful(300)) { xs: Coll[Int] =>
-      val arr = xs.toArray
       equalLength(xs)
       equalLengthMapped(xs, inc)
 
@@ -474,7 +473,7 @@ class CollsTests extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers
       checkColls(repl, coll)
     }
     // This tuple tests fail with previous implementation
-    forAll (byteGen, doubleGen, intGen, indexGen, minSuccess) { (b, d, i, n) =>
+    forAll (byteGen, doubleGen, intGen, indexGen, minSuccess) { (b, _, i, n) =>
       val repl = builder.replicate(n, (b, i))
       val coll = builder.fromArray(Array.fill[(Byte, Int)](n)((b, i)))
 

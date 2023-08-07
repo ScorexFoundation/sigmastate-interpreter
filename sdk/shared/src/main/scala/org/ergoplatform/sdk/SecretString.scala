@@ -83,7 +83,7 @@ final class SecretString private[sdk](val _data: Array[Char]) {
     if (obj == null) return false
     obj match {
       case anotherString: SecretString if _data.length == anotherString._data.length =>
-        var n: Int = _data.length
+        val n: Int = _data.length
         val v1: Array[Char] = _data
         val v2: Array[Char] = anotherString._data
         cfor(0)(_ < n, _ + 1) { i =>

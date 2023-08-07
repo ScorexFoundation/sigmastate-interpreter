@@ -1,5 +1,7 @@
 package sigmastate.crypto
 
+import debox.cfor
+
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 import scala.scalajs.js.typedarray.Uint8Array
@@ -109,6 +111,25 @@ object CryptoFacadeJs extends js.Object {
   def generatePbkdf2Key(
       normalizedMnemonic: String,
       normalizedPass: String): Uint8Array = js.native
+
+  /** Creates a random array of bytes of the given length. */
+  def getRandomBytes(length: Int): Uint8Array = js.native
+}
+
+/** This class provides a cryptographically strong generator of byte arrays. */
+class SecureRandomJS {
+  /**
+    * Generates a user-specified number of random bytes.
+    *
+    * @param bytes the array to be filled in with random bytes.
+    */
+  def nextBytes(bytes: Array[Byte]): Unit = {
+    val len = bytes.length
+    val arr = CryptoFacadeJs.getRandomBytes(len)
+    cfor(0)(_ < len, _ + 1) { i =>
+      bytes(i) = arr(i).toByte
+    }
+  }
 }
 
 /** Represents imported Point class from `sigmajs-crypto-facade` JS libarary. */

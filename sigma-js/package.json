@@ -1,15 +1,18 @@
 {
   "name": "sigmastate-js",
-  "version": "0.0.9",
+  "version": "0.2.1",
   "description": "Sigma.js library",
-  "main": "dist/main.js",
   "files": [
     "dist/",
+    "sigmastate-js.d.ts",
     "README.md"
   ],
   "exports": {
     "./internal-*": null,
-    "./*": "./dist/*.js"
+    "./main": {
+      "types": "./sigmastate-js.d.ts",
+      "default": "./dist/main.js"
+    }
   },
   "license": "MIT",
   "publishConfig": {
@@ -23,17 +26,18 @@
   "bugs": {
     "url": "https://github.com/ScorexFoundation/sigmastate-interpreter/issues"
   },
-  "homepage": "https://github.com/ScorexFoundation/sigmastate-interpreter/blob/v5.x-scala-js/sigma-js/README.md",
+  "homepage": "https://github.com/ScorexFoundation/sigmastate-interpreter/blob/master/sigma-js/README.md",
   "scripts": {
-    "test": "node_modules/.bin/jest",
+    "test": "jest",
     "clean": "shx rm -rf ./dist/*",
-    "copy-output": "shx mkdir -p ./dist/ && cp -r ../sdk/js/target/scala-2.12/sdk-fastopt/* ./dist/",
-    "prepublishOnly": "npm run clean && npm run copy-output"
+    "copy-output": "shx mkdir -p ./dist/ && cp -r ../sc/js/target/scala-2.13/sc-fastopt/* ./dist/",
+    "prepublishOnly": "npm run clean && npm run copy-output",
+    "ci:snapshot": "node ./scripts/setSnapshotVersion"
   },
   "dependencies": {
+    "@noble/hashes": "1.1.4",
     "@fleet-sdk/common": "0.1.0-alpha.14",
-    "bouncycastle-js": "0.1.8",
-    "sigmajs-crypto-facade": "0.0.3"
+    "sigmajs-crypto-facade": "0.0.6"
   },
   "devDependencies": {
     "jest": "^29.0.3",

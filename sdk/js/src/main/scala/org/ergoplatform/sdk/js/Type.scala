@@ -17,7 +17,7 @@ class Type(private[js] final val rtype: RType[_]) extends js.Object {
   override def toString = s"Type($rtype)"
 }
 
-@JSExportTopLevel("Types")
+@JSExportTopLevel("TypeObj")
 object Type extends js.Object {
   /** Descriptor of ErgoScript type Byte. */
   val Byte = new Type(RType.ByteType)
@@ -30,6 +30,35 @@ object Type extends js.Object {
 
   /** Descriptor of ErgoScript type Long. */
   val Long = new Type(RType.LongType)
+
+  /** Descriptor of ErgoScript type BigInt. */
+  val BigInt = new Type(special.sigma.BigIntRType)
+
+  /** Descriptor of ErgoScript type GroupElement. */
+  val GroupElement = new Type(special.sigma.GroupElementRType)
+
+  /** Descriptor of ErgoScript type SigmaProp. */
+  val SigmaProp = new Type(special.sigma.SigmaPropRType)
+
+  /** Descriptor of ErgoScript type Box. */
+  val Box = new Type(special.sigma.BoxRType)
+
+  /** Descriptor of ErgoScript type AvlTree. */
+  val AvlTree = new Type(special.sigma.AvlTreeRType)
+
+  /** Descriptor of ErgoScript type Context. */
+  val Context = new Type(special.sigma.ContextRType)
+
+  /** Descriptor of ErgoScript type Header. */
+  val Header = new Type(special.sigma.HeaderRType)
+
+  /** Descriptor of ErgoScript type PreHeader. */
+  val PreHeader = new Type(special.sigma.PreHeaderRType)
+
+  /** Descriptor of ErgoScript type Global.
+    * @see SigmaDslBuilder, SGlobal
+    */
+  val SigmaDslBuilder = new Type(special.sigma.SigmaDslBuilderRType)
 
   /** Constructs a new descriptor of ErgoScript pair type (l, r).
     * @param l first component of the pair

@@ -1,6 +1,5 @@
 package sigmastate.lang.syntax
 
-import scala.language.implicitConversions
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.syntax
