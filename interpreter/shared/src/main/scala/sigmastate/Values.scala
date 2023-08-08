@@ -735,8 +735,15 @@ object Values {
   trait SigmaBoolean {
     /** Unique id of the node class used in serialization of SigmaBoolean. */
     val opCode: OpCode
+
     /** Size of the proposition tree (number of nodes). */
     def size: Int
+
+    /** Recursively collect all the leaves of this sigma expression into `buf`.
+      * @param position - position of this node in the tree
+      * @param buf - buffer to collect leaves into
+      */
+    def collectLeaves(position: NodePosition, buf: mutable.ArrayBuffer[PositionedLeaf]): Unit
   }
 
   object SigmaBoolean {
@@ -1005,6 +1012,20 @@ object Values {
       case ProveDHTuple(gv, hv, uv, vv) =>
         s"ProveDHTuple(${showECPoint(gv)}, ${showECPoint(hv)}, ${showECPoint(uv)}, ${showECPoint(vv)})"
       case _ => sb.toString
+    }
+
+    /** Traverses the tree and returns all leaves nodes of sigma proposition tree. */
+    def leaves(): Seq[PositionedLeaf] = {
+      val buf = mutable.ArrayBuffer.empty[PositionedLeaf]
+      sb.collectLeaves(NodePosition.CryptoTreePrefix, buf)
+      buf.toSeq
+    }
+
+    /** Traverses the tree and returns all DISTINCT leaves of sigma proposition tree. */
+    def distinctLeaves: Set[SigmaLeaf] = {
+      val buf = mutable.ArrayBuffer.empty[PositionedLeaf]
+      sb.collectLeaves(NodePosition.CryptoTreePrefix, buf)
+      buf.iterator.map(_.leaf).toSet
     }
   }
 

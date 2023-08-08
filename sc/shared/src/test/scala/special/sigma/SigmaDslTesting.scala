@@ -1,5 +1,6 @@
 package special.sigma
 
+import debox.cfor
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.ergoplatform._
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, TestContractSpec}
@@ -9,6 +10,10 @@ import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen.frequency
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.exceptions.TestFailedException
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.propspec.AnyPropSpec
+import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import scalan.Platform.threadSleepOrNoOp
 import scalan.RType
 import scalan.RType._
 import scalan.util.BenchmarkUtil
@@ -18,7 +23,7 @@ import scalan.util.StringUtil.StringUtilExtensions
 import sigmastate.SType.AnyOps
 import sigmastate.Values.{ByteArrayConstant, Constant, ConstantNode, ErgoTree, IntConstant, SValue}
 import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
-import sigmastate.basics.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
+import sigmastate.basics.SigmaProtocolPrivateInput
 import sigmastate.eval.Extensions._
 import sigmastate.eval.{CompiletimeIRContext, CostingBox, CostingDataContext, Evaluation, IRContext, SigmaDsl}
 import sigmastate.helpers.TestingHelpers._
@@ -30,13 +35,8 @@ import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers._
 import sigmastate.utxo.{DeserializeContext, DeserializeRegister, GetVar, OptionGet}
-import sigmastate.{SOption, SSigmaProp, SType, VersionContext, eval}
+import sigmastate.{SOption, SSigmaProp, SType, SigmaLeaf, VersionContext, eval}
 import special.collection.{Coll, CollType}
-import debox.cfor
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.propspec.AnyPropSpec
-import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import scalan.Platform.threadSleepOrNoOp
 
 import java.util
 import scala.collection.mutable
@@ -85,7 +85,7 @@ class SigmaDslTesting extends AnyPropSpec
     val sk2: DLogProverInput = decodeSecretInput("34648336872573478681093104997365775365807654884817677358848426648354905397359")
     val sk3: DLogProverInput = decodeSecretInput("50415569076448343263191022044468203756975150511337537963383000142821297891310")
 
-    val secrets: Seq[SigmaProtocolPrivateInput[_ <: SigmaProtocol[_], _ <: SigmaProtocolCommonInput[_]]] = {
+    val secrets: Seq[SigmaProtocolPrivateInput[_ <: SigmaLeaf]] = {
       // Note, not all secrets are used, which is required by checkVerify
       // This is to make AtLeast to be unproved and thus the verify is successfull
       // because of the other condition in SigmaOr (see checkVerify)

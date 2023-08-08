@@ -2,11 +2,13 @@ package org.ergoplatform.sdk
 
 import debox.cfor
 import scalan.RType
-import scalan.rtypeToClassTag // actually required
+import scalan.rtypeToClassTag // actually used
+import sigmastate.eval.CPreHeader
 import special.collection.{Coll, CollBuilder, PairColl}
+import special.sigma.{Header, PreHeader}
 
 import scala.collection.compat.BuildFrom
-import scala.collection.{GenIterable, immutable}
+import scala.collection.{GenIterable, immutable, mutable}
 import scala.reflect.ClassTag
 
 object Extensions {
@@ -194,6 +196,46 @@ object Extensions {
     def fromMap[K: RType, V: RType](m: Map[K, V]): Coll[(K, V)] = {
       val (ks, vs) = Utils.mapToArrays(m)
       builder.pairCollFromArrays(ks, vs)
+    }
+  }
+
+  implicit class HeaderOps(val h: Header) extends AnyVal {
+    def toPreHeader: PreHeader = {
+      CPreHeader(h.version, h.parentId, h.timestamp, h.nBits, h.height, h.minerPk, h.votes)
+    }
+  }
+
+  implicit class DoubleOps(val i: Double) extends AnyVal {
+    def erg: Long = (i * 1000000000L).toLong
+  }
+
+  /** extension methods for IndexedSeq */
+  implicit class IndexedSeqOps[T, C[X] <: IndexedSeq[X]](val v: C[T]) extends AnyVal {
+
+    /** Modifies the seq by applying a function to the given element.
+      * @param i the index of the element to modify.
+      * @param f the function to apply to the element.
+      * @return the seq with the modified element.
+      */
+    def modify(i: Int, f: T => T): C[T] = {
+      val newItem = f(v(i))
+      v.updated(i, newItem).asInstanceOf[C[T]]
+    }
+  }
+
+  /** extension methods for IndexedSeq */
+  implicit class MutableMapOps[K, V](val m: mutable.Map[K, V]) extends AnyVal {
+    /** Modifies the Map by applying a function to the given element if it exists.
+      *
+      * @param k the key of the element to modify.
+      * @param f the function to apply to the element.
+      * @return the new value associated with the specified key
+      */
+    def modifyIfExists(k: K)(f: V => V): Option[V] = {
+      m.updateWith(k) {
+        case Some(v) => Some(f(v))
+        case None => None
+      }
     }
   }
 }

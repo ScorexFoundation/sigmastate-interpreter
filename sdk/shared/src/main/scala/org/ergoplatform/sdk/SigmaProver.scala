@@ -2,7 +2,9 @@ package org.ergoplatform.sdk
 
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform._
-import org.ergoplatform.sdk.wallet.protocol.context.ErgoLikeStateContext
+import org.ergoplatform.sdk.wallet.protocol.context.BlockchainStateContext
+import sigmastate.SigmaLeaf
+import sigmastate.Values.SigmaBoolean
 import sigmastate.eval.{CostingSigmaDslBuilder, SigmaDsl}
 import sigmastate.interpreter.HintsBag
 import sigmastate.utils.Helpers.TryOps
@@ -13,10 +15,18 @@ import special.sigma.{BigInt, SigmaProp}
   * @param _prover        an instance of interpreter and a prover combined
   * @param networkPrefix  the network prefix for Ergo addresses
   */
-class SigmaProver(_prover: AppkitProvingInterpreter, networkPrefix: NetworkPrefix) {
+class SigmaProver(private[sdk] val _prover: AppkitProvingInterpreter, networkPrefix: NetworkPrefix) {
+  require(!hasSecrets || _prover.pubKeys.nonEmpty,
+    "Prover has secrets but no public keys.")
+
   implicit val ergoAddressEncoder: ErgoAddressEncoder = ErgoAddressEncoder(networkPrefix)
 
-  /** Returns the Pay-to-Public-Key (P2PK) address associated with the prover's public key. */
+  def hasSecrets: Boolean = _prover.secrets.nonEmpty
+
+  /** Returns the Pay-to-Public-Key (P2PK) address associated with the prover's public key.
+    * The returned address corresponds to the master secret derived from the mnemonic
+    * phrase configured in the [[ProverBuilder]].
+    */
   def getP2PKAddress: P2PKAddress = {
     val pk = _prover.pubKeys(0)
     P2PKAddress(pk)
@@ -37,16 +47,16 @@ class SigmaProver(_prover: AppkitProvingInterpreter, networkPrefix: NetworkPrefi
     addresses
   }
 
-  /** Signs a given `UnreducedTransaction` using the prover's secret keys and the provided `ErgoLikeStateContext`.
+  /** Signs a given `UnreducedTransaction` using the prover's secret keys and the provided [[BlockchainStateContext]].
     * Uses baseCost == 0.
     */
-  def sign(stateCtx: ErgoLikeStateContext, tx: UnreducedTransaction): SignedTransaction =
+  def sign(stateCtx: BlockchainStateContext, tx: UnreducedTransaction): SignedTransaction =
     sign(stateCtx, tx, baseCost = 0)
 
-  /** Signs a given `UnreducedTransaction` using the prover's secret keys and the provided `ErgoLikeStateContext`.
+  /** Signs a given `UnreducedTransaction` using the prover's secret keys and the provided [[BlockchainStateContext]].
     * Uses the given baseCost.
     */
-  def sign(stateCtx: ErgoLikeStateContext, tx: UnreducedTransaction, baseCost: Int): SignedTransaction = {
+  def sign(stateCtx: BlockchainStateContext, tx: UnreducedTransaction, baseCost: Int): SignedTransaction = {
     val signed = _prover
         .sign(tx, stateContext = stateCtx, baseCost = baseCost)
         .getOrThrow
@@ -65,9 +75,9 @@ class SigmaProver(_prover: AppkitProvingInterpreter, networkPrefix: NetworkPrefi
   }
 
   /** Reduces a given `UnreducedTransaction` using the prover's secret keys and the
-    * provided `ErgoLikeStateContext` with a base cost.
+    * provided [[BlockchainStateContext]] with a base cost.
     */
-  def reduce(stateCtx: ErgoLikeStateContext, tx: UnreducedTransaction, baseCost: Int): ReducedTransaction = {
+  def reduce(stateCtx: BlockchainStateContext, tx: UnreducedTransaction, baseCost: Int): ReducedTransaction = {
     val reduced = _prover.reduceTransaction(
       unreducedTx = tx, stateContext = stateCtx, baseCost = baseCost)
     reduced
@@ -78,4 +88,47 @@ class SigmaProver(_prover: AppkitProvingInterpreter, networkPrefix: NetworkPrefi
     _prover.signReduced(tx, tx.ergoTx.cost)
   }
 
+  /** Signs a given ReducedTransaction using the prover's secret keys and hints.
+    * @param tx - transaction to sign
+    * @param inputHints - hints containing proofs for all inputs
+    */
+  def signReduced(tx: ReducedTransaction, inputBags: IndexedSeq[HintsBag]): SignedTransaction = {
+    val nInputs = tx.ergoTx.reducedInputs.length
+    require(nInputs == inputBags.length,
+      s"Number of bags ${inputBags.length} must be equal to number of inputs $nInputs")
+
+    _prover.signReduced(tx, tx.ergoTx.cost, Some(inputBags))
+  }
+
+  def generateCommitments(sigmaTree: SigmaBoolean): HintsBag = {
+    _prover.generateCommitments(sigmaTree)
+  }
+
+  def extractHints(
+      proposition: SigmaBoolean,
+      proof: Array[Byte],
+      realSecretsToExtract: Seq[SigmaLeaf],
+      simulatedSecretsToExtract: Seq[SigmaLeaf]): HintsBag = {
+    _prover.bagForMultisig(proposition, proof, realSecretsToExtract, simulatedSecretsToExtract)
+  }
+
+  def generateProof(
+      sb: SigmaBoolean,
+      messageToSign: Array[Byte],
+      hintsBag: HintsBag): Array[Byte] = {
+    _prover.generateProof(sb, messageToSign, hintsBag)
+  }
+
+  override def equals(obj: Any): Boolean = obj match {
+    case that: SigmaProver =>
+      if (!this.hasSecrets || !that.hasSecrets) this eq that
+      else {
+        // both have secrets, compare masterKeys
+        this._prover.pubKeys(0) == that._prover.pubKeys(0)
+      }
+    case _ => false
+  }
+
+  override def hashCode(): Int =
+    if (hasSecrets) this._prover.pubKeys(0).hashCode() else super.hashCode()
 }

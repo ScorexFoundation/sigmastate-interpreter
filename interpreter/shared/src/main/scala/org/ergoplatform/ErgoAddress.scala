@@ -88,6 +88,13 @@ sealed trait ErgoAddress {
   def networkPrefix: NetworkPrefix
 }
 
+object ErgoAddress {
+  def fromSigmaBoolean(sb: SigmaBoolean)(implicit encoder: ErgoAddressEncoder): ErgoAddress = sb match {
+    case pk: ProveDlog => P2PKAddress(pk)
+    case _ => Pay2SAddress(ErgoTree.fromSigmaBoolean(sb))
+  }
+}
+
 /** Implementation of pay-to-public-key [[ErgoAddress]]. */
 class P2PKAddress(val pubkey: ProveDlog,
                   val pubkeyBytes: Array[Byte])

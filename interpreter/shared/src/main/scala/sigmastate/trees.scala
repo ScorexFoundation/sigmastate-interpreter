@@ -1,48 +1,58 @@
 package sigmastate
 
+import debox.{cfor, Map => DMap}
 import org.ergoplatform.SigmaConstants
 import org.ergoplatform.validation.SigmaValidationSettings
-import scalan.{ExactIntegral, ExactNumeric, ExactOrdering, Nullable}
+import scalan.ExactIntegral._
+import scalan.ExactOrdering._
 import scalan.OverloadHack.Overloaded1
+import scalan.{ExactIntegral, ExactOrdering}
 import scorex.crypto.hash.{Blake2b256, CryptographicHash32, Sha256}
+import sigmastate.ArithOp.OperationImpl
 import sigmastate.Operations._
 import sigmastate.SCollection.{SByteArray, SIntArray}
 import sigmastate.SOption.SIntOption
 import sigmastate.Values._
-import sigmastate.basics.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
+import sigmastate.eval.Extensions.EvalCollOps
+import sigmastate.eval.NumericOps.{BigIntIsExactIntegral, BigIntIsExactOrdering}
+import sigmastate.eval.{Colls, SigmaDsl}
 import sigmastate.interpreter.ErgoTreeEvaluator
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization._
 import sigmastate.utxo.{SimpleTransformerCompanion, Transformer}
-import debox.{Map => DMap}
-import scalan.ExactIntegral._
-import scalan.ExactOrdering._
-import sigmastate.ArithOp.OperationImpl
-import sigmastate.eval.NumericOps.{BigIntIsExactIntegral, BigIntIsExactOrdering}
-import sigmastate.eval.{Colls, SigmaDsl}
-import sigmastate.lang.TransformingSigmaBuilder
 import special.collection.Coll
 import special.sigma.{GroupElement, SigmaProp}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import debox.cfor
-import sigmastate.eval.Extensions.EvalCollOps
 
 /**
   * Basic trait for inner nodes of crypto-trees, so AND/OR/THRESHOLD sigma-protocol connectives
   */
 trait SigmaConjecture extends SigmaBoolean {
   def children: Seq[SigmaBoolean]
+
+  override def collectLeaves(position: NodePosition, buf: mutable.ArrayBuffer[PositionedLeaf]): Unit = {
+    cfor(0)(_ < children.length, _ + 1) { i =>
+      children(i).collectLeaves(position.child(i),  buf)
+    }
+  }
 }
 
 /**
-  * Basic trait for leafs of crypto-trees, such as ProveDlog and ProveDiffieHellman instances
+  * Basic trait for leafs of crypto-trees, such as [[sigmastate.basics.DLogProtocol.ProveDlog]] and [[sigmastate.basics.ProveDHTuple]] instances
   */
-trait SigmaProofOfKnowledgeLeaf[SP <: SigmaProtocol[SP], S <: SigmaProtocolPrivateInput[SP, _]]
-  extends SigmaBoolean with SigmaProtocolCommonInput[SP]
+trait SigmaLeaf extends SigmaBoolean {
+  override def collectLeaves(position: NodePosition, buf: mutable.ArrayBuffer[PositionedLeaf]): Unit =
+    buf += PositionedLeaf(position, this)
+}
 
+/** Represents leaf and its position in a SigmaBoolean tree. */
+case class PositionedLeaf(position: NodePosition, leaf: SigmaLeaf)
+object PositionedLeaf {
+  def at(path: Int*)(leaf: SigmaLeaf) = PositionedLeaf(NodePosition.CryptoTreePrefix ++ path, leaf)
+}
 
 /**
   * AND conjunction for sigma propositions
@@ -134,6 +144,7 @@ case class CTHRESHOLD(k: Int, children: Seq[SigmaBoolean]) extends SigmaConjectu
 abstract class TrivialProp(val condition: Boolean) extends SigmaBoolean with Product1[Boolean] {
   override def _1: Boolean = condition
   override def canEqual(that: Any): Boolean = that != null && that.isInstanceOf[TrivialProp]
+  override def collectLeaves(position: NodePosition, buf: mutable.ArrayBuffer[PositionedLeaf]): Unit = () // not a leaf
 }
 object TrivialProp {
   // NOTE: the corresponding unapply is missing because any implementation (even using Nullable)

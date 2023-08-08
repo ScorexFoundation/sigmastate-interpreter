@@ -1,34 +1,30 @@
 package org.ergoplatform.sdk.js
 
-import org.ergoplatform.sdk.wallet.protocol.context.ErgoLikeParameters
+import org.ergoplatform.sdk
 
 import scala.scalajs.js.UndefOr
 import scala.scalajs.js.annotation.JSExportTopLevel
+import org.ergoplatform.sdk.Iso._
 
+/** JS exported version of the [[sdk.BlockchainParameters]] class with the same fields.
+  * @see sdk.BlockchainParameters
+  */
 @JSExportTopLevel("BlockchainParameters")
 class BlockchainParameters(
-    val storageFeeFactor: Int,
-    val minValuePerByte: Int,
-    val maxBlockSize: Int,
-    val tokenAccessCost: Int,
-    val inputCost: Int,
-    val dataInputCost: Int,
-    val outputCost: Int,
-    val maxBlockCost: Int,
-    val _softForkStartingHeight: UndefOr[Int],
-    val _softForkVotesCollected: UndefOr[Int],
-    val blockVersion: Byte
-) extends ErgoLikeParameters {
-  import org.ergoplatform.sdk.Iso._
-  /**
-    * @return height when voting for a soft-fork had been started
-    */
-  override def softForkStartingHeight: Option[Int] =
-    Isos.isoUndefOr[Int, Int](identityIso).to(_softForkStartingHeight)
-
-  /**
-    * @return votes for soft-fork collected in previous epochs
-    */
-  override def softForkVotesCollected: Option[Int] =
-    Isos.isoUndefOr[Int, Int](identityIso).to(_softForkVotesCollected)
-}
+    storageFeeFactor: Int,
+    minValuePerByte: Int,
+    maxBlockSize: Int,
+    tokenAccessCost: Int,
+    inputCost: Int,
+    dataInputCost: Int,
+    outputCost: Int,
+    maxBlockCost: Int,
+    _softForkStartingHeight: UndefOr[Int],
+    _softForkVotesCollected: UndefOr[Int],
+    blockVersion: Byte
+) extends sdk.BlockchainParameters(
+  storageFeeFactor, minValuePerByte, maxBlockSize, tokenAccessCost, inputCost, dataInputCost,
+  outputCost, maxBlockCost,
+  Isos.isoUndefOr[Int, Int](identityIso).to(_softForkStartingHeight),
+  Isos.isoUndefOr[Int, Int](identityIso).to(_softForkVotesCollected), blockVersion
+)

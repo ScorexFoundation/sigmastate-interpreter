@@ -1,30 +1,30 @@
 package org.ergoplatform.sdk.js
 
 import org.ergoplatform.ErgoBox._
-import org.ergoplatform.{DataInput, ErgoBox, ErgoBoxCandidate, UnsignedErgoLikeTransaction, UnsignedInput}
-import org.ergoplatform.sdk.{ExtendedInputBox, Iso}
 import org.ergoplatform.sdk.JavaHelpers.UniversalConverter
-import org.ergoplatform.sdk.wallet.protocol.context.{CErgoLikeStateContext, ErgoLikeStateContext}
+import org.ergoplatform.sdk.wallet.protocol.context
+import org.ergoplatform.sdk.{ExtendedInputBox, Iso}
+import org.ergoplatform._
 import scalan.RType
-import scorex.crypto.authds.{ADDigest, ADKey}
+import scorex.crypto.authds.ADKey
 import scorex.util.ModifierId
 import scorex.util.encode.Base16
-import sigmastate.{AvlTreeData, AvlTreeFlags, SType}
 import sigmastate.Values.{Constant, GroupElementConstant}
 import sigmastate.eval.Extensions.ArrayOps
 import sigmastate.eval.{CAvlTree, CBigInt, CHeader, CPreHeader, Colls, Digest32Coll, Evaluation}
-import sigmastate.fleetSdkCommon.{distEsmTypesBoxesMod => boxesMod, distEsmTypesCommonMod => commonMod, distEsmTypesContextExtensionMod => contextExtensionMod, distEsmTypesInputsMod => inputsMod, distEsmTypesRegistersMod => registersMod, distEsmTypesTokenMod => tokenMod}
-import sigmastate.interpreter.ContextExtension
-import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
-import special.collection.Coll
-import special.collection.Extensions.CollBytesOps
-import special.sigma
-import special.sigma.GroupElement
 import sigmastate.fleetSdkCommon.distEsmTypesBoxesMod.Box
 import sigmastate.fleetSdkCommon.distEsmTypesCommonMod.HexString
 import sigmastate.fleetSdkCommon.distEsmTypesRegistersMod.NonMandatoryRegisters
 import sigmastate.fleetSdkCommon.distEsmTypesTokenMod.TokenAmount
 import sigmastate.fleetSdkCommon.distEsmTypesTransactionsMod.UnsignedTransaction
+import sigmastate.fleetSdkCommon.{distEsmTypesBoxesMod => boxesMod, distEsmTypesCommonMod => commonMod, distEsmTypesContextExtensionMod => contextExtensionMod, distEsmTypesInputsMod => inputsMod, distEsmTypesRegistersMod => registersMod, distEsmTypesTokenMod => tokenMod}
+import sigmastate.interpreter.ContextExtension
+import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
+import sigmastate.{AvlTreeData, AvlTreeFlags, SType}
+import special.collection.Coll
+import special.collection.Extensions.CollBytesOps
+import special.sigma
+import special.sigma.GroupElement
 
 import java.math.BigInteger
 import scala.collection.immutable.ListMap
@@ -179,16 +179,16 @@ object Isos {
     }
   }
 
-  implicit val isoBlockchainStateContext: Iso[BlockchainStateContext, ErgoLikeStateContext] = new Iso[BlockchainStateContext, ErgoLikeStateContext] {
-    override def to(a: BlockchainStateContext): ErgoLikeStateContext = {
-      CErgoLikeStateContext(
+  implicit val isoBlockchainStateContext: Iso[BlockchainStateContext, context.BlockchainStateContext] = new Iso[BlockchainStateContext, context.BlockchainStateContext] {
+    override def to(a: BlockchainStateContext): context.BlockchainStateContext = {
+      context.BlockchainStateContext(
         sigmaLastHeaders = isoArrayToColl(isoHeader).to(a.sigmaLastHeaders),
         previousStateDigest = isoStringToColl.to(a.previousStateDigest),
         sigmaPreHeader = isoPreHeader.to(a.sigmaPreHeader)
       )
     }
 
-    override def from(b: ErgoLikeStateContext): BlockchainStateContext = {
+    override def from(b: context.BlockchainStateContext): BlockchainStateContext = {
       new BlockchainStateContext(
         sigmaLastHeaders = isoArrayToColl(isoHeader).from(b.sigmaLastHeaders),
         previousStateDigest = isoStringToColl.from(b.previousStateDigest),

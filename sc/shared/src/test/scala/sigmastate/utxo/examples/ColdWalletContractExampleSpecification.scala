@@ -167,10 +167,10 @@ class ColdWalletContractExampleSpecification extends CompilerTestingCommons
       activatedVersionInTests
     )
 
-    an [AssertionError] should be thrownBy (
+    an [IllegalArgumentException] should be thrownBy (
       alice.prove(spendEnv, scriptTree, withdrawContextInvalid, fakeMessage).get
     )
-    an [AssertionError] should be thrownBy (
+    an [IllegalArgumentException] should be thrownBy (
       bob.prove(spendEnv, scriptTree, withdrawContextInvalid, fakeMessage).get
     )
 

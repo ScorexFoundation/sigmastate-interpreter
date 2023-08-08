@@ -5,24 +5,24 @@ import org.scalacheck.Arbitrary.arbString
 import sigmastate._
 
 trait TypeGenerators {
-  implicit val booleanTypeGen = Gen.const(SBoolean)
-  implicit val byteTypeGen = Gen.const(SByte)
-  implicit val shortTypeGen = Gen.const(SShort)
-  implicit val intTypeGen = Gen.const(SInt)
-  implicit val longTypeGen = Gen.const(SLong)
-  implicit val bigIntTypeGen = Gen.const(SBigInt)
-  implicit val groupElementTypeGen = Gen.const(SGroupElement)
-  implicit val sigmaPropTypeGen = Gen.const(SSigmaProp)
-  implicit val boxTypeGen = Gen.const(SBox)
-  implicit val avlTreeTypeGen = Gen.const(SAvlTree)
-  implicit val optionSigmaPropTypeGen = Gen.const(SOption(SSigmaProp))
+  implicit val booleanTypeGen: Gen[SBoolean.type] = Gen.const(SBoolean)
+  implicit val byteTypeGen: Gen[SByte.type] = Gen.const(SByte)
+  implicit val shortTypeGen: Gen[SShort.type] = Gen.const(SShort)
+  implicit val intTypeGen: Gen[SInt.type] = Gen.const(SInt)
+  implicit val longTypeGen: Gen[SLong.type] = Gen.const(SLong)
+  implicit val bigIntTypeGen: Gen[SBigInt.type] = Gen.const(SBigInt)
+  implicit val groupElementTypeGen: Gen[SGroupElement.type] = Gen.const(SGroupElement)
+  implicit val sigmaPropTypeGen: Gen[SSigmaProp.type] = Gen.const(SSigmaProp)
+  implicit val boxTypeGen: Gen[SBox.type] = Gen.const(SBox)
+  implicit val avlTreeTypeGen: Gen[SAvlTree.type] = Gen.const(SAvlTree)
+  implicit val optionSigmaPropTypeGen: Gen[SOption[SSigmaProp.type]] = Gen.const(SOption(SSigmaProp))
 
   implicit val primTypeGen: Gen[SPrimType] =
     Gen.oneOf[SPrimType](SBoolean, SByte, SShort, SInt, SLong, SBigInt, SGroupElement, SSigmaProp, SUnit)
-  implicit val arbPrimType = Arbitrary(primTypeGen)
+  implicit val arbPrimType: Arbitrary[SPrimType] = Arbitrary(primTypeGen)
   implicit val predefTypeGen: Gen[SPredefType] =
     Gen.oneOf[SPredefType](SBoolean, SByte, SShort, SInt, SLong, SBigInt, SGroupElement, SSigmaProp, SUnit, SBox, SAvlTree)
-  implicit val arbPredefType = Arbitrary(predefTypeGen)
+  implicit val arbPredefType: Arbitrary[SPredefType] = Arbitrary(predefTypeGen)
 
   implicit def genToArbitrary[T: Gen]: Arbitrary[T] = Arbitrary(implicitly[Gen[T]])
 

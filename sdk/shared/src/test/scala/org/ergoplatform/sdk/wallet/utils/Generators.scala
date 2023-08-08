@@ -17,7 +17,6 @@ import sigmastate.eval.Extensions._
 import scorex.util.{ModifierId, bytesToId}
 import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._
-import scorex.crypto.hash.Digest32
 import sigmastate.crypto.CryptoFacade
 
 trait Generators {

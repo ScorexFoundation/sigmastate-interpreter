@@ -169,12 +169,6 @@ class Profiler {
   /** Timings of method calls */
   private val mcStat = new StatCollection[Int, Long]()
 
-  /** Update time measurement stats for a given method. */
-  @inline private final def addMcTime(typeId: Byte, methodId: Byte, time: Long) = {
-    val key = typeId << 8 | methodId
-    mcStat.addPoint(key, time)
-  }
-
   /** Wrapper class which implements special equality between CostItem instances,
    * suitable for collecting of the statistics. */
   class CostItemKey(val costItem: CostItem) {

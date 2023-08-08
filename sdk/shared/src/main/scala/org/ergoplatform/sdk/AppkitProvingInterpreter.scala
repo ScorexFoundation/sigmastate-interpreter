@@ -5,7 +5,7 @@ import org.ergoplatform._
 import org.ergoplatform.sdk.Extensions.{CollOps, PairCollOps}
 import org.ergoplatform.sdk.JavaHelpers.{TokenColl, UniversalConverter}
 import org.ergoplatform.sdk.utils.ArithUtils
-import org.ergoplatform.sdk.wallet.protocol.context.{ErgoLikeParameters, ErgoLikeStateContext, TransactionContext}
+import org.ergoplatform.sdk.wallet.protocol.context.{BlockchainStateContext, TransactionContext}
 import org.ergoplatform.sdk.wallet.secrets.ExtendedSecretKey
 import org.ergoplatform.validation.ValidationRules
 import scalan.util.Extensions.LongOps
@@ -35,7 +35,7 @@ class AppkitProvingInterpreter(
       val secretKeys: IndexedSeq[ExtendedSecretKey],
       val dLogInputs: IndexedSeq[DLogProverInput],
       val dhtInputs: IndexedSeq[DiffieHellmanTupleProverInput],
-      params: ErgoLikeParameters)
+      params: BlockchainParameters)
   extends ReducingInterpreter(params) with ProverInterpreter {
 
   override type CTX = ErgoLikeContext
@@ -44,7 +44,7 @@ class AppkitProvingInterpreter(
   /** All secrets available to this interpreter including [[ExtendedSecretKey]], dlog and
     * dht secrets.
     */
-  override val secrets: Seq[SigmaProtocolPrivateInput[_, _]] = {
+  override val secrets: Seq[SigmaProtocolPrivateInput[_]] = {
     val dlogs: IndexedSeq[DLogProverInput] = secretKeys.map(_.privateInput)
     dlogs ++ dLogInputs ++ dhtInputs
   }
@@ -79,7 +79,7 @@ class AppkitProvingInterpreter(
    *         The returned cost doesn't include `baseCost`.
    */
   def sign(unreducedTx: UnreducedTransaction,
-           stateContext: ErgoLikeStateContext,
+           stateContext: BlockchainStateContext,
            baseCost: Int): Try[SignedTransaction] = Try {
     val maxCost = params.maxBlockCost
     var currentCost: Long = baseCost
@@ -112,7 +112,7 @@ class AppkitProvingInterpreter(
       unsignedTx: UnsignedErgoLikeTransaction,
       boxesToSpend: IndexedSeq[ExtendedInputBox],
       dataBoxes: IndexedSeq[ErgoBox],
-      stateContext: ErgoLikeStateContext,
+      stateContext: BlockchainStateContext,
       baseCost: Int,
       tokensToBurn: IndexedSeq[ErgoToken]): ReducedErgoLikeTransaction = {
     if (unsignedTx.inputs.length != boxesToSpend.length) throw new Exception("Not enough boxes to spend")
@@ -212,21 +212,25 @@ class AppkitProvingInterpreter(
     * Note, this method doesn't require context to generate proofs (aka signatures).
     *
     * @param reducedTx unsigend transaction augmented with reduced
+    * @param baseCost  initial cost before signing
+    * @param inputBagsOpt optional sequence of hints bags for each input
     * @return a new signed transaction with all inputs signed and the cost of this transaction
     *         The returned cost includes:
     *         - the costs of obtaining reduced transaction
     *         - the cost of verification of each signed input
     */
-  def signReduced(reducedTx: ReducedTransaction, baseCost: Int): SignedTransaction = {
+  def signReduced(reducedTx: ReducedTransaction, baseCost: Int, inputBagsOpt: Option[IndexedSeq[HintsBag]] = None): SignedTransaction = {
     val provedInputs = mutable.ArrayBuilder.make[Input]
     val unsignedTx = reducedTx.ergoTx.unsignedTx
+    val inputBags = inputBagsOpt.getOrElse(
+      IndexedSeq.fill(unsignedTx.inputs.length)(HintsBag.empty))
 
     val maxCost = params.maxBlockCost
     var currentCost: Long = baseCost
 
-    for ((reducedInput, boxIdx) <- reducedTx.ergoTx.reducedInputs.zipWithIndex ) {
+    for ((reducedInput, boxIdx) <- reducedTx.ergoTx.reducedInputs.zipWithIndex) {
       val unsignedInput = unsignedTx.inputs(boxIdx)
-      val proverResult = proveReduced(reducedInput, unsignedTx.messageToSign)
+      val proverResult = proveReduced(reducedInput, unsignedTx.messageToSign, inputBags(boxIdx))
       val signedInput = Input(unsignedInput.boxId, proverResult)
 
       val verificationCost = estimateCryptoVerifyCost(reducedInput.reductionResult.value).toBlockCost

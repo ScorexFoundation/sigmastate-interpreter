@@ -4,7 +4,7 @@ import java.math.BigInteger
 import sigmastate.Values.{ErgoTree, SigmaBoolean, SigmaPropConstant}
 import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, ProveDlog}
 import sigmastate.basics.VerifierMessage.Challenge
-import sigmastate.basics.{FirstDiffieHellmanTupleProverMessage, FirstProverMessage, ProveDHTuple}
+import sigmastate.basics.{FirstDHTupleProverMessage, FirstProverMessage, ProveDHTuple}
 import sigmastate.interpreter.{ErgoTreeEvaluator, NamedDesc, OperationCostInfo}
 import sigmastate.interpreter.ErgoTreeEvaluator.fixedCostOp
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
@@ -25,54 +25,13 @@ object ConjectureType extends Enumeration {
 trait ProofTree extends Product
 
 trait ProofTreeLeaf extends ProofTree {
-  val proposition: SigmaBoolean
+  val proposition: SigmaLeaf
   val commitmentOpt: Option[FirstProverMessage]
 }
 
 trait ProofTreeConjecture extends ProofTree {
   val conjectureType: ConjectureType.Value
   val children: Seq[ProofTree]
-}
-
-/**
-  * Data type which encodes position of a node in a tree.
-  *
-  * Position is encoded like following (the example provided is for CTHRESHOLD(2, Seq(pk1, pk2, pk3 && pk4)) :
-  *
-  *            0
-  *          / | \
-  *         /  |  \
-  *       0-0 0-1 0-2
-  *               /|
-  *              / |
-  *             /  |
-  *            /   |
-  *          0-2-0 0-2-1
-  *
-  * So a hint associated with pk1 has a position "0-0", pk4 - "0-2-1" .
-  *
-  * Please note that "0" prefix is for a crypto tree. There are several kinds of trees during evaluation.
-  * Initial mixed tree (ergoTree) would have another prefix.
-  *
-  * @param positions - positions from root (inclusive) in top-down order
-  */
-case class NodePosition(positions: Seq[Int]) {
-
-  def child(childIdx: Int): NodePosition = NodePosition(positions :+ childIdx)
-
-  override def toString: String = positions.mkString("-")
-}
-
-object NodePosition {
-  /**
-    * Prefix to encode node positions in a crypto tree.
-    */
-  val CryptoTreePrefix = NodePosition(Seq(0))
-
-  /**
-    * Prefix to encode node positions in an ErgoTree instance.
-    */
-  val ErgoTreePrefix = NodePosition(Seq(1))
 }
 
 /**
@@ -102,7 +61,7 @@ sealed trait UnprovenTree extends ProofTree {
   /**
     * Challenge used by the prover.
     */
-  val challengeOpt: Option[Array[Byte]]
+  val challengeOpt: Option[Challenge]
 
   def withChallenge(challenge: Challenge): UnprovenTree
 
@@ -187,7 +146,7 @@ case class UnprovenSchnorr(override val proposition: ProveDlog,
 }
 
 case class UnprovenDiffieHellmanTuple(override val proposition: ProveDHTuple,
-                                      override val commitmentOpt: Option[FirstDiffieHellmanTupleProverMessage],
+                                      override val commitmentOpt: Option[FirstDHTupleProverMessage],
                                       randomnessOpt: Option[BigInteger],
                                       override val challengeOpt: Option[Challenge] = None,
                                       override val simulated: Boolean,
