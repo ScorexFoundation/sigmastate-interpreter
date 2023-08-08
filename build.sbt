@@ -377,6 +377,7 @@ lazy val sc = crossProject(JVMPlatform, JSPlatform)
     )
 lazy val scJS = sc.js
     .enablePlugins(ScalaJSBundlerPlugin)
+    .settings(publish / skip := false)
     .settings(
       scalaJSLinkerConfig ~= { conf =>
         conf.withSourceMap(false)
