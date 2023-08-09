@@ -45,7 +45,7 @@ case class EvalSettings(
   /** Maximum execution cost of a script used by profiler.
     * @see ErgoTreeEvaluator
     */
-  scriptCostLimitInEvaluator: Int = 1000000,
+  scriptCostLimitInEvaluator: Int = 1000000
 )
 
 object EvalSettings {
