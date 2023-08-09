@@ -1,7 +1,6 @@
 package sigmastate.interpreter
 
 import org.ergoplatform.ErgoLikeContext
-import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import sigmastate.{PerItemCost, VersionContext, TypeBasedCost, FixedCost, SType, JitCost}
 import sigmastate.Values._
 import sigmastate.eval.Profiler
@@ -42,7 +41,12 @@ case class EvalSettings(
     * The default value is None, which means the version is defined by ErgoTree.version
     * and Context.activatedScriptVersion.
     */
-  evaluationMode: Option[EvaluationMode] = None)
+  evaluationMode: Option[EvaluationMode] = None,
+  /** Maximum execution cost of a script used by profiler.
+    * @see ErgoTreeEvaluator
+    */
+  scriptCostLimitInEvaluator: Int = 1000000,
+)
 
 object EvalSettings {
   /** Enumeration type of evaluation modes of [[Interpreter]].
@@ -123,7 +127,7 @@ class ErgoTreeEvaluator(
   protected val coster: CostAccumulator,
   val profiler: Profiler,
   val settings: EvalSettings) {
-  
+
   /** Evaluates the given expression in the given data environment. */
   def eval(env: DataEnv, exp: SValue): Any = {
     VersionContext.checkVersions(context.activatedScriptVersion, context.currentErgoTreeVersion)
@@ -392,7 +396,7 @@ object ErgoTreeEvaluator {
   def forProfiling(profiler: Profiler, evalSettings: EvalSettings): ErgoTreeEvaluator = {
     val acc = new CostAccumulator(
       initialCost = JitCost(0),
-      costLimit = Some(JitCost.fromBlockCost(ScriptCostLimit.value)))
+      costLimit = Some(JitCost.fromBlockCost(evalSettings.scriptCostLimitInEvaluator)))
     new ErgoTreeEvaluator(
       context = null,
       constants = ArraySeq.empty,

@@ -491,7 +491,7 @@ class SigSerializerSpecification extends TestingCommons
       )
     )
 
-    cases.zipWithIndex.foreach { case (c, iCase) =>
+    cases.zipWithIndex.foreach { case (c, _) =>
       val sigBytes = SigSerializer.toProofBytes(c.uncheckedTree)
       sigBytes shouldBe c.proof
       val uncheckedTree = SigSerializer.parseAndComputeChallenges(c.prop, c.proof)(null)

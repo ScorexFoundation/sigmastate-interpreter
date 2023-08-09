@@ -1,6 +1,5 @@
 package sigmastate.helpers
 
-import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules.CheckSerializableTypeCode
 import org.ergoplatform.validation.{ValidationException, ValidationSpecification}
@@ -137,7 +136,7 @@ trait CompilerTestingCommons extends TestingCommons
       val sigmaCtx = createContexts(in, bindings)
       val accumulator = new CostAccumulator(
         initialCost = JitCost(0),
-        costLimit = Some(JitCost.fromBlockCost(ScriptCostLimit.value)))
+        costLimit = Some(JitCost.fromBlockCost(evalSettings.scriptCostLimitInEvaluator)))
       val evaluator = new ErgoTreeEvaluator(
         context = sigmaCtx,
         constants = ErgoTree.EmptyConstants,

@@ -1,7 +1,6 @@
 package special.sigma
 
 import debox.cfor
-import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.ergoplatform._
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, TestContractSpec}
 import org.ergoplatform.validation.ValidationRules.CheckSerializableTypeCode
@@ -366,7 +365,7 @@ class SigmaDslTesting extends AnyPropSpec
             createErgoLikeContext(
               newCtx,
               ValidationRules.currentSettings,
-              ScriptCostLimit.value,
+              evalSettings.scriptCostLimitInEvaluator,
               initCost = initialCostInTests.value
             )
 

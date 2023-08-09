@@ -66,10 +66,6 @@ object SigmaConstants {
     "Max children count should not be greater than provided value") {
   }
 
-  object ScriptCostLimit extends SizeConstant[Int](1000000, 12,
-    "Maximum execution cost of a script") {
-  }
-
   object MaxLoopLevelInCostFunction extends SizeConstant[Int](1, 13,
     "Maximum allowed loop level in a cost function") {
   }
@@ -96,7 +92,6 @@ object SigmaConstants {
       MaxTupleLength,
       MaxHeaders,
       MaxChildrenCountForAtLeastOp,
-      ScriptCostLimit,
       MaxLoopLevelInCostFunction,
       VotesArraySize,
       AutolykosPowSolutionNonceArraySize
