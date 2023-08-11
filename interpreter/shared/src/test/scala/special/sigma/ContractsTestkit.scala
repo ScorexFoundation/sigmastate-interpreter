@@ -7,7 +7,9 @@ import sigmastate.{AvlTreeData, Values}
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import sigmastate.helpers.TestingHelpers._
-import scalan._  // imports implicit ClassTag
+import scalan._
+
+import scala.annotation.nowarn  // imports implicit ClassTag
 
 trait ContractsTestkit {
   val R0 = 0.toByte;
@@ -59,7 +61,7 @@ trait ContractsTestkit {
 
   val AliceId = Array[Byte](1) // 0x0001
 
-  def newAliceBox(id: Byte, value: Long): Box = {
+  def newAliceBox(@nowarn id: Byte, value: Long): Box = {
     val ergoBox = testBox(value,
       ErgoTree.fromProposition(Values.TrueSigmaProp),
       creationHeight = 0, additionalTokens = Seq(), additionalRegisters = Map())

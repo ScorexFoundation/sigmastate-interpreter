@@ -1,16 +1,16 @@
 package sigmastate.helpers
 
-import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.ergoplatform.ErgoLikeContext.Height
 import org.ergoplatform._
-import org.ergoplatform.validation.{ValidationRules, SigmaValidationSettings}
+import org.ergoplatform.validation.{SigmaValidationSettings, ValidationRules}
 import sigmastate.AvlTreeData
 import sigmastate.basics.CryptoConstants
 import sigmastate.eval._
 import sigmastate.interpreter.ContextExtension
-import sigmastate.serialization.{SigmaSerializer, GroupElementSerializer}
+import sigmastate.interpreter.ErgoTreeEvaluator.DefaultEvalSettings
+import sigmastate.serialization.{GroupElementSerializer, SigmaSerializer}
 import special.collection.Coll
-import special.sigma.{Box, PreHeader, Header}
+import special.sigma.{Box, Header, PreHeader}
 
 object ErgoLikeContextTesting {
   /* NO HF PROOF:
@@ -46,7 +46,8 @@ object ErgoLikeContextTesting {
     new ErgoLikeContext(
       lastBlockUtxoRoot, noHeaders, dummyPreHeader(currentHeight, minerPubkey), noBoxes,
       boxesToSpend, spendingTransaction, boxesToSpend.indexOf(self), extension, vs,
-      ScriptCostLimit.value, initCost = 0L, activatedVersion)
+      DefaultEvalSettings.scriptCostLimitInEvaluator,
+      initCost = 0L, activatedVersion)
 
   def apply(currentHeight: Height,
             lastBlockUtxoRoot: AvlTreeData,
@@ -59,7 +60,7 @@ object ErgoLikeContextTesting {
     new ErgoLikeContext(
       lastBlockUtxoRoot, noHeaders, dummyPreHeader(currentHeight, minerPubkey),
       dataBoxes, boxesToSpend, spendingTransaction, selfIndex, ContextExtension.empty,
-      ValidationRules.currentSettings, ScriptCostLimit.value,
+      ValidationRules.currentSettings, DefaultEvalSettings.scriptCostLimitInEvaluator,
       initCost = 0L, activatedVersion)
 
 

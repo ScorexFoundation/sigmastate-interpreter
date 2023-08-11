@@ -41,7 +41,7 @@ trait ProverUtils extends Interpreter {
           sc.children.zipWithIndex.foldLeft(bag) { case (b, (child, idx)) =>
             traverseNode(child, b, position.child(idx))
           }
-        case leaf: SigmaProofOfKnowledgeLeaf[_, _] =>
+        case leaf: SigmaLeaf =>
           if (generateFor.contains(leaf)) {
             val (r, a) = leaf match {
               case _: ProveDlog =>
@@ -115,19 +115,19 @@ trait ProverUtils extends Interpreter {
           inner.children.zipWithIndex.foldLeft(hintsBag) { case (hb, (c, idx)) =>
             traverseNode(c, realPropositions, simulatedPropositions, hb, position.child(idx))
           }
-        case leaf: UncheckedLeaf[_] =>
+        case leaf: UncheckedLeaf =>
           val realFound = realPropositions.contains(leaf.proposition)
           val simulatedFound = simulatedPropositions.contains(leaf.proposition)
           if (realFound || simulatedFound) {
             val hints = if (realFound) {
               Seq(
                 RealCommitment(leaf.proposition, leaf.commitmentOpt.get, position),
-                RealSecretProof(leaf.proposition, Challenge @@ leaf.challenge, leaf, position)
+                RealSecretProof(leaf.proposition, leaf.challenge, leaf, position)
               )
             } else {
               Seq(
                 SimulatedCommitment(leaf.proposition, leaf.commitmentOpt.get, position),
-                SimulatedSecretProof(leaf.proposition, Challenge @@ leaf.challenge, leaf, position)
+                SimulatedSecretProof(leaf.proposition, leaf.challenge, leaf, position)
               )
             }
             hintsBag.addHints(hints: _*)

@@ -5,13 +5,14 @@ import scorex.util.encode.Base16
 import sigmastate.Values.SigmaBoolean
 import sigmastate.basics.DLogProtocol.{ProveDlog, SecondDLogProverMessage}
 import sigmastate.basics.VerifierMessage.Challenge
-import sigmastate.basics.{SecondDiffieHellmanTupleProverMessage, ProveDHTuple, CryptoConstants}
+import sigmastate.basics.{CryptoConstants, ProveDHTuple, SecondDHTupleProverMessage}
 import sigmastate.interpreter.ErgoTreeEvaluator.{fixedCostOp, perItemCostOp}
 import sigmastate.interpreter.{ErgoTreeEvaluator, NamedDesc, OperationCostInfo}
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.util.safeNewArray
 import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
 import debox.cfor
+import sigmastate.eval.Extensions.ArrayOps
 import sigmastate.exceptions.SerializerException
 
 /** Contains implementation of signature (aka proof) serialization.
@@ -61,7 +62,7 @@ class SigSerializer {
                    w: SigmaByteWriter,
                    writeChallenge: Boolean): Unit = {
     if (writeChallenge) {
-      w.putBytes(node.challenge)
+      w.putBytes(node.challenge.toArray)
     }
     node match {
       case dl: UncheckedSchnorr =>
@@ -184,7 +185,7 @@ class SigSerializer {
     // Verifier Step 2: Let e_0 be the challenge in the node here (e_0 is called "challenge" in the code)
     val challenge = if (challengeOpt == null) {
       Challenge @@ readBytesChecked(r, hashSize,
-        hex => warn(s"Invalid challenge in: $hex"))
+        hex => warn(s"Invalid challenge in: $hex")).toColl
     } else {
       challengeOpt
     }
@@ -203,7 +204,7 @@ class SigSerializer {
         fixedCostOp(ParseChallenge_ProveDHT) {
           val z_bytes = readBytesChecked(r, order, hex => warn(s"Invalid z bytes for $dh: $hex"))
           val z = BigIntegers.fromUnsignedByteArray(z_bytes)
-          UncheckedDiffieHellmanTuple(dh, None, challenge, SecondDiffieHellmanTupleProverMessage(z))
+          UncheckedDiffieHellmanTuple(dh, None, challenge, SecondDHTupleProverMessage(z))
         }
 
       case and: CAND =>
@@ -223,18 +224,18 @@ class SigSerializer {
         // Read all the children but the last and compute the XOR of all the challenges including e_0
         val nChildren = or.children.length
         val children = safeNewArray[UncheckedSigmaTree](nChildren)
-        val xorBuf = challenge.clone()
+        val xorBuf = challenge.toArray.clone()
         val iLastChild = nChildren - 1
         cfor(0)(_ < iLastChild, _ + 1) { i =>
           val parsedChild = parseAndComputeChallenges(or.children(i), r, null)
           children(i) = parsedChild
-          Helpers.xorU(xorBuf, parsedChild.challenge) // xor it into buffer
+          Helpers.xorU(xorBuf, parsedChild.challenge.toArray) // xor it into buffer
         }
         val lastChild = or.children(iLastChild)
 
         // use the computed XOR for last child's challenge
         children(iLastChild) = parseAndComputeChallenges(
-          lastChild, r, challengeOpt = Challenge @@ xorBuf)
+          lastChild, r, challengeOpt = Challenge @@ xorBuf.toColl)
 
         COrUncheckedNode(challenge, children)
 
@@ -248,13 +249,13 @@ class SigSerializer {
         val polynomial = perItemCostOp(ParsePolynomial, nCoefs) { () =>
           val coeffBytes = readBytesChecked(r, hashSize * nCoefs,
             hex => warn(s"Invalid coeffBytes for $th: $hex"))
-          GF2_192_Poly.fromByteArray(challenge, coeffBytes)
+          GF2_192_Poly.fromByteArray(challenge.toArray, coeffBytes)
         }
 
         val children = safeNewArray[UncheckedSigmaTree](nChildren)
         cfor(0)(_ < nChildren, _ + 1) { i =>
           val c = perItemCostOp(EvaluatePolynomial, nCoefs) { () =>
-            Challenge @@ polynomial.evaluate((i + 1).toByte).toByteArray
+            Challenge @@ polynomial.evaluate((i + 1).toByte).toByteArray.toColl
           }
           children(i) = parseAndComputeChallenges(th.children(i), r, c)
         }
