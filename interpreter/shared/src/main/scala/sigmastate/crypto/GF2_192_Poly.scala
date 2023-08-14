@@ -32,7 +32,6 @@ package sigmastate.crypto
 import debox.cfor
 
 import java.util
-import java.util.Arrays
 
 class GF2_192_Poly {
   final private var c: Array[GF2_192] = null // must be not null and of length at least 1

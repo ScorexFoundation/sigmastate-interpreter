@@ -2,7 +2,7 @@ package org.ergoplatform.sdk.js
 
 import org.ergoplatform.ErgoBox._
 import org.ergoplatform.sdk.JavaHelpers.UniversalConverter
-import org.ergoplatform.sdk.wallet.protocol.context
+import org.ergoplatform.sdk.wallet.protocol.context.{CErgoLikeStateContext, ErgoLikeStateContext}
 import org.ergoplatform.sdk.{ExtendedInputBox, Iso}
 import org.ergoplatform._
 import scalan.RType
@@ -16,9 +16,9 @@ import sigmastate.fleetSdkCommon.distEsmTypesBoxesMod.Box
 import sigmastate.fleetSdkCommon.distEsmTypesCommonMod.HexString
 import sigmastate.fleetSdkCommon.distEsmTypesRegistersMod.NonMandatoryRegisters
 import sigmastate.fleetSdkCommon.distEsmTypesTokenMod.TokenAmount
-import sigmastate.fleetSdkCommon.distEsmTypesTransactionsMod.{SignedTransaction, UnsignedTransaction}
-import sigmastate.fleetSdkCommon.{distEsmTypesBoxesMod => boxesMod, distEsmTypesCommonMod => commonMod, distEsmTypesContextExtensionMod => contextExtensionMod, distEsmTypesInputsMod => inputsMod, distEsmTypesProverResultMod => proverResultMod, distEsmTypesRegistersMod => registersMod, distEsmTypesTokenMod => tokenMod}
-import sigmastate.interpreter.{ContextExtension, ProverResult}
+import sigmastate.fleetSdkCommon.distEsmTypesTransactionsMod.UnsignedTransaction
+import sigmastate.fleetSdkCommon.{distEsmTypesBoxesMod => boxesMod, distEsmTypesCommonMod => commonMod, distEsmTypesContextExtensionMod => contextExtensionMod, distEsmTypesInputsMod => inputsMod, distEsmTypesRegistersMod => registersMod, distEsmTypesTokenMod => tokenMod}
+import sigmastate.interpreter.ContextExtension
 import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
 import sigmastate.{AvlTreeData, AvlTreeFlags, SType}
 import special.collection.Coll

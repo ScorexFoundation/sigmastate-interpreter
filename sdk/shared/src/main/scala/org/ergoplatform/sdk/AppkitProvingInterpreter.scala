@@ -45,7 +45,7 @@ class AppkitProvingInterpreter(
   /** All secrets available to this interpreter including [[ExtendedSecretKey]], dlog and
     * dht secrets.
     */
-  override val secrets: Seq[SigmaProtocolPrivateInput[_, _]] = {
+  override val secrets: Seq[SigmaProtocolPrivateInput[_]] = {
     val dlogs: IndexedSeq[DLogProverInput] = secretKeys.map(_.privateInput)
     dlogs ++ dLogInputs ++ dhtInputs
   }

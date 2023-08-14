@@ -3,7 +3,6 @@ package sigmastate.lang
 import fastparse._
 import ScalaWhitespace._
 import sigmastate._
-import sigmastate.SCollection.SByteArray
 import Values._
 import sigmastate.lang.Terms.Ident
 import sigmastate.lang.syntax.Core
