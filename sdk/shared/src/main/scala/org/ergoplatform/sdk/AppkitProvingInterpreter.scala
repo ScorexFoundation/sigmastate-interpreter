@@ -9,7 +9,6 @@ import org.ergoplatform.sdk.wallet.protocol.context.{BlockchainStateContext, Tra
 import org.ergoplatform.sdk.wallet.secrets.ExtendedSecretKey
 import org.ergoplatform.validation.ValidationRules
 import scalan.util.Extensions.LongOps
-import scorex.crypto.authds.ADDigest
 import sigmastate.Values.SigmaBoolean
 import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate.basics.{DiffieHellmanTupleProverInput, SigmaProtocolPrivateInput}
