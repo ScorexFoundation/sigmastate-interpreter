@@ -1,6 +1,5 @@
 package org.ergoplatform.sdk.js
 
-import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform.sdk
 import org.ergoplatform.sdk.SecretString
 
@@ -9,9 +8,15 @@ import scala.scalajs.js.annotation.JSExportTopLevel
 import Isos._
 import sigmastate.eval.SigmaDsl
 
-/** Equivalent of [[sdk.ProverBuilder]] available from JS. */
+/** Equivalent of [[sdk.ProverBuilder]] available from JS.
+  *
+  * @param parameters Blockchain parameters re-adjustable via miners voting and
+  *                   voting-related data. All of them are included into extension
+  *                   section of a first block of a voting epoch.
+  * @param network    Network prefix to use for addresses.
+  */
 @JSExportTopLevel("ProverBuilder")
-class ProverBuilder(parameters: BlockchainParameters, network: NetworkPrefix) extends js.Object {
+class ProverBuilder(parameters: BlockchainParameters, network: Byte) extends js.Object {
   val _builder = new sdk.ProverBuilder(parameters, network)
 
   /** Configure this builder to use the given seed when building a new prover.

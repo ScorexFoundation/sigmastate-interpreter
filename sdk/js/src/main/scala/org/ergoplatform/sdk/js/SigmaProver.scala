@@ -13,6 +13,25 @@ import scala.scalajs.js.annotation.JSExportTopLevel
 class SigmaProver(_prover: sdk.SigmaProver) extends js.Object {
   import Isos._
 
+  /** Returns the Pay-to-Public-Key (P2PK) address associated with the prover's public key.
+    * The returned address corresponds to the master secret derived from the mnemonic
+    * phrase configured in the [[ProverBuilder]].
+    */
+  def getP2PKAddress: String = {
+    val addr = _prover.getP2PKAddress
+    addr.toString
+  }
+
+  /** Returns the prover's secret key. */
+  def getSecretKey: js.BigInt =
+    isoBigInt.from(_prover.getSecretKey)
+
+  /** Returns a sequence of EIP-3 addresses associated with the prover's secret keys. */
+  def getEip3Addresses: js.Array[String] = {
+    val addresses = _prover.getEip3Addresses
+    js.Array(addresses.map(_.toString): _*)
+  }
+
   /** Reduces the transaction to the reduced form, which is ready to be signed.
     * @param stateCtx blockchain state context
     * @param unsignedTx unsigned transaction to be reduced (created by Fleet builders)
@@ -48,13 +67,4 @@ class SigmaProver(_prover: sdk.SigmaProver) extends js.Object {
     val signed = _prover.signReduced(reducedTx._tx)
     isoSignedTransaction.from(signed.ergoTx)
   }
-}
-
-//TODO finish implementation
-@JSExportTopLevel("ReducedTransaction")
-class ReducedTransaction(private [js] val _tx: sdk.ReducedTransaction)
-
-//TODO finish implementation
-@JSExportTopLevel("SigmaProverObj")
-object SigmaProver {
 }

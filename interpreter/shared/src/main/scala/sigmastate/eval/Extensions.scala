@@ -4,6 +4,7 @@ import debox.{cfor, Buffer => DBuffer}
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.TokenId
 import scalan.{Nullable, RType}
+import scorex.util.encode.Base16
 import sigmastate.SType.AnyOps
 import sigmastate.Values.{Constant, ConstantNode}
 import sigmastate.crypto.{CryptoFacade, Ecp}
@@ -41,6 +42,8 @@ object Extensions {
   implicit class ArrayByteOps(val arr: Array[Byte]) extends AnyVal {
     /** Wraps array into TokenId instance. The source array in not cloned. */
     @inline def toTokenId: TokenId = Digest32Coll @@ Colls.fromArray(arr)
+    /** Encodes array into hex string */
+    @inline def toHex: String = Base16.encode(arr)
   }
 
   implicit class EvalIterableOps[T: RType](seq: Iterable[T]) {

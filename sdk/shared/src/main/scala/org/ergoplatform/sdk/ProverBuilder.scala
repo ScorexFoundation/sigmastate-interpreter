@@ -9,7 +9,13 @@ import special.sigma.GroupElement
 import java.math.BigInteger
 import scala.collection.mutable.ArrayBuffer
 
-/** A builder class for constructing a `Prover` with specified secrets. */
+/** A builder class for constructing a `Prover` with specified secrets.
+  *
+  * @param parameters    Blockchain parameters re-adjustable via miners voting and
+  *                      voting-related data. All of them are included into extension
+  *                      section of a first block of a voting epoch.
+  * @param networkPrefix Network prefix to use for addresses.
+  */
 class ProverBuilder(parameters: BlockchainParameters, networkPrefix: NetworkPrefix) {
   private var _masterKey: Option[ExtendedSecretKey] = None
 
