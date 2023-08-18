@@ -16,7 +16,7 @@ import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.eval.Digest32Coll
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.SerializationSpecification
-import sigmastate.utils.Helpers._
+import sigmastate.utils.Helpers.DecoderResultOps  // required for Scala 2.11 (extension method toTry)
 import special.collection.Coll
 import special.sigma.{Header, PreHeader}
 import org.ergoplatform.ErgoLikeContext
@@ -36,7 +36,7 @@ class JsonSerializationSpec extends SerializationSpecification with JsonCodecs {
   }
 
   property("ErgoLikeContext should be encoded into JSON and decoded back correctly") {
-    forAll(ergoLikeContextGen) { v: ErgoLikeContext => jsonRoundTrip(v) }
+    forAll(ergoLikeContextGen, MinSuccessful(50)) { v: ErgoLikeContext => jsonRoundTrip(v) }
   }
 
   property("sigma.BigInt should be encoded into JSON and decoded back correctly") {

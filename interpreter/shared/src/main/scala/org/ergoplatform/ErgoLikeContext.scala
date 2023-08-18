@@ -200,11 +200,11 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
       lastBlockUtxoRoot, headers, preHeader, dataBoxes, boxesToSpend, spendingTransaction,
       selfIndex, extension, validationSettings, costLimit, initCost,
       activatedScriptVersion)
-    var hashCode = 0
+    var h = 0
     cfor(0)(_ < state.length, _ + 1) { i =>
-      hashCode = 31 * hashCode + state(i).hashCode
+      h = 31 * h + state(i).hashCode
     }
-    hashCode
+    h
   }
 
   override def toString = s"ErgoLikeContext(lastBlockUtxoRoot=$lastBlockUtxoRoot, headers=$headers, preHeader=$preHeader, dataBoxes=$dataBoxes, boxesToSpend=$boxesToSpend, spendingTransaction=$spendingTransaction, selfIndex=$selfIndex, extension=$extension, validationSettings=$validationSettings, costLimit=$costLimit, initCost=$initCost, activatedScriptVersion=$activatedScriptVersion)"

@@ -48,7 +48,7 @@ abstract class SigmaValidationSettings extends Iterable[(Short, (ValidationRule,
   def isSoftFork(ruleId: Short, ve: ValidationException): Boolean = {
     val infoOpt = get(ruleId)
     infoOpt match {
-      case Some((_, ReplacedRule(newRuleId))) => true
+      case Some((_, ReplacedRule(_))) => true
       case Some((rule, status)) => rule.isSoftFork(this, rule.id, status, ve.args)
       case None => false
     }
@@ -72,10 +72,11 @@ sealed class MapSigmaValidationSettings(private val map: Map[Short, (ValidationR
   }
 
   override def equals(obj: Any): Boolean = (this eq obj.asInstanceOf[AnyRef]) || (obj match {
-    case that: MapSigmaValidationSettings => map == that.map
+    case that: MapSigmaValidationSettings =>
+      map.iterator.forall { case (id, v) => that.map.get(id).exists(_ == v) }
     case _ => false
   })
 
-  override def hashCode(): Int = map.hashCode()
+  override def hashCode(): Int = map.toIndexedSeq.sortBy(_._1).hashCode()
 }
 
