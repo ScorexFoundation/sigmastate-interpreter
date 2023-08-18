@@ -213,6 +213,14 @@ object Value extends js.Object {
     new Value(n, Type.BigInt)
   }
 
+  /** Creates a Value of GroupElement type from [[sigmastate.crypto.Platform.Point]] hex.
+    * @param pointHex hex of ASN representation of [[sigmastate.crypto.Platform.Point]]
+    */
+  def ofGroupElement(pointHex: String): Value = {
+    val ge = GroupElement.fromHex(pointHex)
+    new Value(ge, Type.GroupElement)
+  }
+
   /** Create Pair value from two values. */
   def pairOf(l: Value, r: Value): Value = {
     val data = js.Array(l.data, r.data) // the l and r data have been validated
@@ -238,7 +246,9 @@ object Value extends js.Object {
     * descriptor.
     * @param hex the string is obtained as hex encoding of serialized ConstantNode.
     *            (The bytes obtained by ConstantSerializer in sigma)
-    * @return new deserialized ErgoValue instance
+    * @return new deserialized Value instance containing:
+    *         - suitable JS value in its `data` field
+    *         - and [[Type]] descriptor in its `tpe` field
     */
   def fromHex(hex: String): Value = {
     val bytes = Base16.decode(hex).fold(t => throw t, identity)
