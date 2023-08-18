@@ -12,12 +12,13 @@ class GroupElement(val point: Ecp) extends js.Object {
   /** Returns the point encoded as hex string (ASN.1 encoding).
     * @see CryptoFacade.getASN1Encoding
     */
-  def toHex: String = {
+  def toHex(): String = {
     CryptoFacade.getASN1Encoding(point, true).toHex
   }
 }
 
-object GroupElement {
+@JSExportTopLevel("GroupElementObj")
+object GroupElement extends js.Object {
   /** Creates a new [[GroupElement]] from the given hex string (ASN.1 encoding)
     * representation of the underlying [[sigmastate.crypto.Platform.Point]].
     */

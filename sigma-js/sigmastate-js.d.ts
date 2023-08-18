@@ -20,6 +20,14 @@ declare module "sigmastate-js/main" {
     static fromHex(value: HexString): ErgoTree;
   }
 
+  export declare class GroupElement {
+    toHex(): HexString;
+  }
+
+  export declare class GroupElementObj {
+    static fromHex(value: HexString): GroupElement;
+  }
+
   export declare class Type {
     name: string;
     toString(): string;
