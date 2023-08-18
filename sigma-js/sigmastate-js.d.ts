@@ -73,7 +73,7 @@ declare module "sigmastate-js/main" {
     static ofGroupElement(pointHex: string): Value<GroupElement>;
     static ofSigmaProp(pointHex: string): Value<SigmaProp>;
     static pairOf<R, L>(left: Value<R>, right: Value<L>): Value<[R, L]>;
-    static collOf<T>(items: T[], type: Type): Value<T[]>;
+    static collOf<T>(items: T[], elemType: Type): Value<T[]>;
     static fromHex<T>(hex: HexString): Value<T>;
   }
 
