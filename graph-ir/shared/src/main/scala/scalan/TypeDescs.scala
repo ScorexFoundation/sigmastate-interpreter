@@ -367,11 +367,8 @@ abstract class TypeDescs extends Base { self: Scalan =>
   implicit val ShortElement: Elem[Short] = new BaseElemLiftable(0.toShort, ShortType)
   implicit val IntElement: Elem[Int] = new BaseElemLiftable(0, IntType)
   implicit val LongElement: Elem[Long] = new BaseElemLiftable(0L, LongType)
-  implicit val FloatElement: Elem[Float] = new BaseElemLiftable(0.0F, FloatType)
-  implicit val DoubleElement: Elem[Double] = new BaseElemLiftable(0.0, DoubleType)
   implicit val UnitElement: Elem[Unit] = new BaseElemLiftable((), UnitType)
   implicit val StringElement: Elem[String] = new BaseElemLiftable("", StringType)
-  implicit val CharElement: Elem[Char] = new BaseElemLiftable('\u0000', CharType)
 
   /** Implicitly defines element type for pairs. */
   implicit final def pairElement[A, B](implicit ea: Elem[A], eb: Elem[B]): Elem[(A, B)] =

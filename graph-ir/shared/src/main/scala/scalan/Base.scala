@@ -301,16 +301,13 @@ abstract class Base { scalan: Scalan =>
       def lift(srcF: SA => SB): Ref[A => B] = FuncConst[SA,SB,A,B](srcF)
     }
 
-    implicit lazy val BooleanIsLiftable = asLiftable[Boolean,Boolean](BooleanElement.liftable)
-    implicit lazy val ByteIsLiftable    = asLiftable[Byte,Byte](ByteElement.liftable)
-    implicit lazy val ShortIsLiftable   = asLiftable[Short,Short](ShortElement.liftable)
-    implicit lazy val IntIsLiftable     = asLiftable[Int,Int](IntElement.liftable)
-    implicit lazy val LongIsLiftable    = asLiftable[Long,Long](LongElement.liftable)
-    implicit lazy val StringIsLiftable  = asLiftable[String,String](StringElement.liftable)
-    implicit lazy val FloatIsLiftable   = asLiftable[Float,Float](FloatElement.liftable)
-    implicit lazy val DoubleIsLiftable  = asLiftable[Double,Double](DoubleElement.liftable)
-    implicit lazy val UnitIsLiftable    = asLiftable[Unit,Unit](UnitElement.liftable)
-    implicit lazy val CharIsLiftable    = asLiftable[Char,Char](CharElement.liftable)
+    implicit lazy val BooleanIsLiftable: Liftable[Boolean, Boolean] = asLiftable[Boolean,Boolean](BooleanElement.liftable)
+    implicit lazy val ByteIsLiftable:    Liftable[Byte, Byte] = asLiftable[Byte,Byte](ByteElement.liftable)
+    implicit lazy val ShortIsLiftable:   Liftable[Short, Short] = asLiftable[Short,Short](ShortElement.liftable)
+    implicit lazy val IntIsLiftable:     Liftable[Int, Int] = asLiftable[Int,Int](IntElement.liftable)
+    implicit lazy val LongIsLiftable:    Liftable[Long, Long] = asLiftable[Long,Long](LongElement.liftable)
+    implicit lazy val StringIsLiftable:  Liftable[String, String] = asLiftable[String,String](StringElement.liftable)
+    implicit lazy val UnitIsLiftable:    Liftable[Unit, Unit] = asLiftable[Unit,Unit](UnitElement.liftable)
 
     implicit def PairIsLiftable[SA,SB,A,B]
         (implicit lA: Liftable[SA, A], lB: Liftable[SB, B]): Liftable[(SA, SB), (A, B)] =

@@ -35,9 +35,6 @@ object RType {
     case ClassTag.Short => ShortType
     case ClassTag.Int => IntType
     case ClassTag.Long => LongType
-    case ClassTag.Char => CharType
-    case ClassTag.Float => FloatType
-    case ClassTag.Double => DoubleType
     case ClassTag.Unit => UnitType
     case _ => GeneralType[A](ctA)
   }).asInstanceOf[RType[A]]
@@ -72,10 +69,6 @@ object RType {
   implicit val ShortType   : RType[Short]    = PrimitiveType[Short]   (ClassTag.Short, Array.emptyShortArray)
   implicit val IntType     : RType[Int]      = PrimitiveType[Int]     (ClassTag.Int, Array.emptyIntArray)
   implicit val LongType    : RType[Long]     = PrimitiveType[Long]    (ClassTag.Long, Array.emptyLongArray)
-  // TODO v5.x: optimize: remove Char, Float, Double types, they are not supported and will never be
-  implicit val CharType    : RType[Char]     = PrimitiveType[Char]    (ClassTag.Char, Array.emptyCharArray)
-  implicit val FloatType   : RType[Float]    = PrimitiveType[Float]   (ClassTag.Float, Array.emptyFloatArray)
-  implicit val DoubleType  : RType[Double]   = PrimitiveType[Double]  (ClassTag.Double, Array.emptyDoubleArray)
   implicit val UnitType    : RType[Unit]     = PrimitiveType[Unit]    (ClassTag.Unit, Array[Unit]()(ClassTag.Unit))
 
   implicit case object StringType extends RType[String] {
