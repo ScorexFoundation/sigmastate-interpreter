@@ -844,7 +844,7 @@ class SigmaDslTesting extends AnyPropSpec
 
     /** in v5.x the old and the new interpreters are the same */
     val oldImpl = () => funcJit[A, B](script)
-    val newImpl = oldImpl // funcJit[A, B](script) // TODO v6.0 (16h): use actual new implementation here
+    val newImpl = oldImpl // funcJit[A, B](script) // TODO v6.0: use actual new implementation here (https://github.com/ScorexFoundation/sigmastate-interpreter/issues/910)
 
     /** In v5.x this method just checks the old implementations fails on the new feature. */
     override def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, CostDetails)] = {

@@ -129,7 +129,7 @@ case class CSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[
   override def propBytes: Coll[Byte] = {
     // in order to have comparisons like  `box.propositionBytes == pk.propBytes` we need to make sure
     // the same serialization method is used in both cases
-    // TODO v6.0: add `pk.propBytes(version)`
+    // TODO v6.0: add `pk.propBytes(version)` (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/903)
     val root = sigmaTree.toSigmaProp
     val ergoTree = new ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, Right(root), 0, null, None)
     val bytes = DefaultSerializer.serializeErgoTree(ergoTree)

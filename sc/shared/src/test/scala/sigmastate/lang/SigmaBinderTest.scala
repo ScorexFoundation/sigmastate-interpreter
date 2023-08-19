@@ -143,7 +143,7 @@ class SigmaBinderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Mat
         If(EQ(IntConstant(10), IntConstant(11)), IntConstant(2), IntConstant(3)))
   }
 
-  // TODO v6.0 (4h): SomeValue and NoneValue are not used in ErgoTree and can be
+  // TODO v5.x (4h): SomeValue and NoneValue are not used in ErgoTree and can be
   //  either removed or implemented in v4.x
   property("Option constructors") {
     bind(env, "None") shouldBe NoneValue(NoType)

@@ -2202,7 +2202,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       (BigIntMaxValue, BigIntMinValue) -> expect(false),
       (BigIntMaxValue, -47.toBigInt) -> expect(false),
       (BigIntMaxValue, BigIntMaxValue) -> expect(false),
-      (BigIntMaxValue, BigIntOverlimit) -> expect(true),  // TODO v6.0: reject this overlimit cases
+      (BigIntMaxValue, BigIntOverlimit) -> expect(true),  // TODO v6.0: reject this overlimit cases (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/554)
       (BigIntOverlimit, BigIntOverlimit) -> expect(false)
     )
 
@@ -2219,7 +2219,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("BigInt LE, GE") {
     val o = NumericOps.BigIntIsExactOrdering
-    // TODO v6.0: this values have bitCount == 255 (see to256BitValueExact)
+    // TODO v6.0: this values have bitCount == 255 (see to256BitValueExact) (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/554)
     val BigIntMinValue = CBigInt(new BigInteger("-7F" + "ff" * 31, 16))
     val BigIntMaxValue = CBigInt(new BigInteger("7F" + "ff" * 31, 16))
     val BigIntOverlimit = CBigInt(new BigInteger("7F" + "ff" * 33, 16))
@@ -2262,7 +2262,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       (BigIntMaxValue, BigIntMinValue) -> expect(false),
       (BigIntMaxValue, -47.toBigInt) -> expect(false),
       (BigIntMaxValue, BigIntMaxValue) -> expect(true),
-      (BigIntMaxValue, BigIntOverlimit) -> expect(true), // TODO v6.0: reject this overlimit cases
+      (BigIntMaxValue, BigIntOverlimit) -> expect(true), // TODO v6.0: reject this overlimit cases (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/554)
       (BigIntOverlimit, BigIntOverlimit) -> expect(true)
     )
 
@@ -2274,7 +2274,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("BigInt methods equivalence (new features)") {
-    // TODO v6.0 (2h): the behavior of `upcast` for BigInt is different from all other Numeric types
+    // TODO v6.0: the behavior of `upcast` for BigInt is different from all other Numeric types (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/877)
     // The `Upcast(bigInt, SBigInt)` node is never produced by ErgoScript compiler, but is still valid ErgoTree.
     // It makes sense to fix this inconsistency as part of upcoming forks
     assertExceptionThrown(
@@ -2282,7 +2282,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       _.getMessage.contains("Cannot upcast value")
     )
 
-    // TODO v6.0 (2h): the behavior of `downcast` for BigInt is different from all other Numeric types
+    // TODO v6.0: the behavior of `downcast` for BigInt is different from all other Numeric types (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/877)
     // The `Downcast(bigInt, SBigInt)` node is never produced by ErgoScript compiler, but is still valid ErgoTree.
     // It makes sense to fix this inconsistency as part of HF
     assertExceptionThrown(
@@ -2919,12 +2919,6 @@ class SigmaDslSpecification extends SigmaDslTesting
       ))
   }
 
-  // TODO v6.0 (3h): related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-  //  property("GroupElement.isIdentity equivalence") {
-  //    // val isIdentity = existingFeature({ (x: GroupElement) => x.isIdentity },
-  //    //   "{ (x: GroupElement) => x.isIdentity }")
-  //  }
-
   property("AvlTree properties equivalence") {
     def expectedExprFor(propName: String) = {
       FuncValue(
@@ -3555,7 +3549,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         val invalidKvs = Colls.fromItems((invalidKey -> value)) // NOTE, insertProof is based on `key`
         val input = (tree, (invalidKvs, insertProof))
         val (res, _) = insert.checkEquality(input).getOrThrow
-        res.isDefined shouldBe true // TODO v6.0: should it really be true? (looks like a bug)
+        res.isDefined shouldBe true // TODO v6.0: should it really be true? (looks like a bug) (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/908)
         insert.checkExpected(input, Expected(Success(res), 1796, costDetails2, 1796))
       }
 
@@ -3717,7 +3711,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       val invalidKvs = Colls.fromItems((key -> invalidValue))
       val input = (tree, (invalidKvs, updateProof))
       val (res, _) = update.checkEquality(input).getOrThrow
-      res.isDefined shouldBe true  // TODO v6.0: should it really be true? (looks like a bug)
+      res.isDefined shouldBe true  // TODO v6.0: should it really be true? (looks like a bug) (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/908)
       update.checkExpected(input, Expected(Success(res), 1805, costDetails2, 1805))
     }
 
@@ -4044,7 +4038,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         "{ (x: Box) => x.creationInfo }",
         FuncValue(Vector((1, SBox)), ExtractCreationInfo(ValUse(1, SBox)))))
 
-    // TODO v6.0 (2h): fix collections equality and remove map(identity)
+    // TODO v6.0: fix collections equality and remove map(identity)(see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/909)
     //  (PairOfColl should be equal CollOverArray)
     verifyCases(
       Seq(
@@ -4068,7 +4062,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("Box properties equivalence (new features)") {
-    // TODO v6.0 (4h): related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
+    // TODO v6.0: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
     val getReg = newFeature((x: Box) => x.getReg[Int](1).get,
       "{ (x: Box) => x.getReg[Int](1).get }")
 
@@ -4344,7 +4338,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     val box3 = SigmaDsl.Box(testBox(20, TrueTree, 0, Seq(), Map(
       ErgoBox.R4 -> Constant((10, 20L).asInstanceOf[SType#WrappedType], STuple(SInt, SLong))
-      // TODO v6.0 (1h): uncomment after DataSerializer support of Option type
+      // TODO v6.0: uncomment after DataSerializer support of Option type (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/659)
       //  ErgoBox.R5 -> Constant((10, Some(20L)).asInstanceOf[SType#WrappedType], STuple(SInt, SOption(SLong)))
       //  ErgoBox.R6 -> Constant[SOption[SInt.type]](Option(10), SOption(SInt)),
     )))
@@ -4448,7 +4442,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         )))
 
 
-    // TODO v6.0 (1h): uncomment after DataSerializer support of Option type
+    // TODO v6.0: uncomment after DataSerializer support of Option type (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/659)
     //    verifyCases(
     //      Seq(
     //        (box3, Expected(Success(10), cost = 36468))//, expCostDetails, 1790))
@@ -5164,7 +5158,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       existingPropTest("minerPubKey", { (x: Context) => x.minerPubKey }),
       preGeneratedSamples = Some(samples))
 
-// TODO v6.0 (2h): implement support of Option[T] in DataSerializer
+// TODO v6.0: implement support of Option[T] in DataSerializer (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/659)
 //  this will allow passing optional values in registers and also in constants
 //    testCases2(
 //      Seq(
@@ -9095,7 +9089,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         ) ))
   }
 
-  // TODO v6.0 (3h): implement Option.fold
+  // TODO v6.0: implement Option.fold (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479)
   property("Option new methods") {
     val n = ExactNumeric.LongIsExactNumeric
     val fold = newFeature({ (x: Option[Long]) => x.fold(5.toLong)( (v: Long) => n.plus(v, 1) ) },
@@ -10032,7 +10026,7 @@ class SigmaDslSpecification extends SigmaDslTesting
        |""".stripMargin
     )
 
-    // TODO v6.0: Add support of SFunc in TypeSerializer
+    // TODO v6.0: Add support of SFunc in TypeSerializer (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/847)
     assertExceptionThrown(
       f.verifyCase(Coll[Int](), Expected(Success(Coll[Int]()), 0)),
       exceptionLike[MatchError]("(SInt$) => SInt$ (of class sigmastate.SFunc)")

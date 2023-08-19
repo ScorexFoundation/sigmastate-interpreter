@@ -100,6 +100,7 @@ class ErgoLikeTransactionSpec extends SigmaDslTesting {
       ).map(identity).toConstant
       // TODO v6.0 (16h): fix collections equality and remove map(identity)
       //  (PairOfColl should be equal CollOverArray but now it is not)
+      // see (https://github.com/ScorexFoundation/sigmastate-interpreter/issues/909)
       res shouldBe exp
     }
 
