@@ -320,11 +320,6 @@ class SigmaCompilerTest extends CompilerTestingCommons with LangTests with Objec
       )
   }
 
-  property("failed option constructors (not supported)") {
-    costerFail("None", 1, 1)
-    costerFail("Some(10)", 1, 1)
-  }
-
   property("byteArrayToLong") {
     comp("byteArrayToLong(longToByteArray(1L))") shouldBe ByteArrayToLong(LongToByteArray(LongConstant(1)))
   }

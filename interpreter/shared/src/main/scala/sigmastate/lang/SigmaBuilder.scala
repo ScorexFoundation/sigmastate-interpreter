@@ -158,9 +158,6 @@ abstract class SigmaBuilder {
 
   def mkTaggedVariable[T <: SType](varId: Byte, tpe: T): TaggedVariable[T]
 
-  def mkSomeValue[T <: SType](x: Value[T]): Value[SOption[T]]
-  def mkNoneValue[T <: SType](elemType: T): Value[SOption[T]]
-
   def mkBlock(bindings: Seq[Val], result: Value[SType]): Value[SType]
   def mkBlockValue(items: IndexedSeq[BlockItem], result: Value[SType]): Value[SType]
   def mkValUse(valId: Int, tpe: SType): Value[SType]
@@ -526,11 +523,6 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkTaggedVariable[T <: SType](varId: Byte, tpe: T): TaggedVariable[T] =
     TaggedVariableNode(varId, tpe).withSrcCtx(currentSrcCtx.value).asInstanceOf[TaggedVariable[T]]
-
-  override def mkSomeValue[T <: SType](x: Value[T]): Value[SOption[T]] =
-    SomeValue(x).withSrcCtx(currentSrcCtx.value)
-  override def mkNoneValue[T <: SType](elemType: T): Value[SOption[T]] =
-    NoneValue(elemType).withSrcCtx(currentSrcCtx.value)
 
   override def mkBlock(bindings: Seq[Val], result: Value[SType]): Value[SType] =
     Block(bindings, result).withSrcCtx(currentSrcCtx.value)

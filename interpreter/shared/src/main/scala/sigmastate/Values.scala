@@ -878,31 +878,6 @@ object Values {
     def apply(items: Value[SType]*): Tuple = Tuple(items.toIndexedSeq)
   }
 
-  trait OptionValue[T <: SType] extends Value[SOption[T]] {
-  }
-
-  // TODO v5.x (4h): SomeValue and NoneValue are not used in ErgoTree and can be
-  //  either removed or implemented in v6.0
-  case class SomeValue[T <: SType](x: Value[T]) extends OptionValue[T] {
-    override def companion = SomeValue
-    val tpe = SOption(x.tpe)
-    def opType = SFunc(x.tpe, tpe)
-  }
-  object SomeValue extends ValueCompanion {
-    override val opCode = SomeValueCode
-    override def costKind: CostKind = Constant.costKind
-  }
-
-  case class NoneValue[T <: SType](elemType: T) extends OptionValue[T] {
-    override def companion = NoneValue
-    val tpe = SOption(elemType)
-    def opType = SFunc(elemType, tpe)
-  }
-  object NoneValue extends ValueCompanion {
-    override val opCode = NoneValueCode
-    override def costKind: CostKind = Constant.costKind
-  }
-
   /** ErgoTree node which converts a collection of expressions into a collection of data
     * values. Each data value of the resulting collection is obtained by evaluating the
     * corresponding expression in `items`. All items must have the same type.

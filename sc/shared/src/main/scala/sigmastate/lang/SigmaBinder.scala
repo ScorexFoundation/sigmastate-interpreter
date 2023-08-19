@@ -48,7 +48,6 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
         case "SELF" => Some(Self)
         case "CONTEXT" => Some(Context)
         case "Global" => Some(Global)
-        case "None" => Some(mkNoneValue(NoType))
         case _ => None
       }
     }
@@ -61,12 +60,6 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
     case Apply(Ident("Coll", _), args) =>
       val tpe = if (args.isEmpty) NoType else args(0).tpe
       Some(mkConcreteCollection(args, tpe))
-
-    // Rule: Some(x) -->
-    case Apply(i @ Ident("Some", _), args) => args match {
-      case Seq(arg) => Some(mkSomeValue(arg))
-      case _ => error(s"Invalid arguments of Some: expected one argument but found $args", i.sourceContext)
-    }
 
     // Rule: min(x, y) -->
     case Apply(i @ Ident("min", _), args) => args match {
