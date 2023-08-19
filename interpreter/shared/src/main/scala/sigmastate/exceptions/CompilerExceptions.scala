@@ -42,8 +42,7 @@ class TyperException(message: String, source: Option[SourceContext] = None)
 class BuilderException(message: String, source: Option[SourceContext] = None)
   extends CompilerException(message, source)
 
-// TODO v5.x: remove this exception
-class CosterException(message: String, source: Option[SourceContext], cause: Option[Throwable] = None)
+class GraphBuildingException(message: String, source: Option[SourceContext], cause: Option[Throwable] = None)
     extends CompilerException(message, source, cause)
 
 
