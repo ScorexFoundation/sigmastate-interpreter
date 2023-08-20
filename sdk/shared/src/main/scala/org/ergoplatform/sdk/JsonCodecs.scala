@@ -239,9 +239,9 @@ trait JsonCodecs {
   })
 
   implicit val contextExtensionEncoder: Encoder[ContextExtension] = Encoder.instance({ extension =>
-    extension.values.map { case (key, value) =>
-      key -> evaluatedValueEncoder(value)
-    }.asJson
+    Json.obj(extension.values.toSeq.map { case (key, value) =>
+      key.toString -> evaluatedValueEncoder.apply(value)
+    }: _*)
   })
 
   implicit val contextExtensionDecoder: Decoder[ContextExtension] = Decoder.instance({ cursor =>
@@ -327,7 +327,7 @@ trait JsonCodecs {
       ergoTreeBytes <- cursor.downField("ergoTree").as[Array[Byte]]
       additionalTokens <- cursor.downField("assets").as(Decoder.decodeSeq(assetDecoder))
       creationHeight <- cursor.downField("creationHeight").as[Int]
-      additionalRegisters <- cursor.downField("additionalRegisters").as[scala.collection.Map[NonMandatoryRegisterId, EvaluatedValue[SType]]]
+      additionalRegisters <- cursor.downField("additionalRegisters").as(registersDecoder)
       transactionId <- cursor.downField("transactionId").as[ModifierId]
       index <- cursor.downField("index").as[Short]
     } yield new ErgoBox(
@@ -341,22 +341,68 @@ trait JsonCodecs {
     )
   })
 
+  implicit val ergoBoxCandidateEncoder: Encoder[ErgoBoxCandidate] = Encoder.instance({ box =>
+    Json.obj(
+      "value" -> box.value.asJson,
+      "ergoTree" -> ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(box.ergoTree).asJson,
+      "assets" -> box.additionalTokens.toArray.toSeq.asJson,
+      "creationHeight" -> box.creationHeight.asJson,
+      "additionalRegisters" -> box.additionalRegisters.asJson
+    )
+  })
+
+  implicit val ergoBoxCandidateDecoder: Decoder[ErgoBoxCandidate] = Decoder.instance({ cursor =>
+    for {
+      value <- cursor.downField("value").as[Long]
+      ergoTreeBytes <- cursor.downField("ergoTree").as[Array[Byte]]
+      additionalTokens <- cursor.downField("assets").as(Decoder.decodeSeq(assetDecoder))
+      creationHeight <- cursor.downField("creationHeight").as[Int]
+      additionalRegisters <- cursor.downField("additionalRegisters").as(registersDecoder)
+    } yield new ErgoBoxCandidate(
+      value = value,
+      ergoTree = ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(ergoTreeBytes),
+      creationHeight = creationHeight,
+      additionalTokens = additionalTokens.toColl,
+      additionalRegisters = additionalRegisters
+    )
+  })
+
   implicit val ergoLikeTransactionEncoder: Encoder[ErgoLikeTransaction] = Encoder.instance({ tx =>
     Json.obj(
+      "type" -> "elt".asJson, // ErgoLikeTransaction
       "id" -> tx.id.asJson,
       "inputs" -> tx.inputs.asJson,
       "dataInputs" -> tx.dataInputs.asJson,
-      "outputs" -> tx.outputs.asJson
+      "outputs" -> tx.outputCandidates.asJson
     )
+  })
+
+  implicit val ergoLikeTransactionDecoder: Decoder[ErgoLikeTransaction] = Decoder.instance({ implicit cursor =>
+    for {
+      t <- cursor.downField("type").as[String]
+      inputs <- {require(t == "elt"); cursor.downField("inputs").as[IndexedSeq[Input]] }
+      dataInputs <- cursor.downField("dataInputs").as[IndexedSeq[DataInput]]
+      outputs <- cursor.downField("outputs").as[IndexedSeq[ErgoBoxCandidate]]
+    } yield new ErgoLikeTransaction(inputs, dataInputs, outputs)
   })
 
   implicit val unsignedErgoLikeTransactionEncoder: Encoder[UnsignedErgoLikeTransaction] = Encoder.instance({ tx =>
     Json.obj(
+      "type" -> "uelt".asJson, // UnsignedErgoLikeTransaction
       "id" -> tx.id.asJson,
       "inputs" -> tx.inputs.asJson,
       "dataInputs" -> tx.dataInputs.asJson,
-      "outputs" -> tx.outputs.asJson
+      "outputs" -> tx.outputCandidates.asJson
     )
+  })
+
+  implicit val unsignedErgoLikeTransactionDecoder: Decoder[UnsignedErgoLikeTransaction] = Decoder.instance({ implicit cursor =>
+    for {
+      t <- cursor.downField("type").as[String]
+      inputs <- {require(t == "uelt"); cursor.downField("inputs").as[IndexedSeq[UnsignedInput]] }
+      dataInputs <- cursor.downField("dataInputs").as[IndexedSeq[DataInput]]
+      outputs <- cursor.downField("outputs").as[IndexedSeq[ErgoBoxCandidate]]
+    } yield new UnsignedErgoLikeTransaction(inputs, dataInputs, outputs)
   })
 
   implicit def ergoLikeTransactionTemplateEncoder[T <: UnsignedInput]: Encoder[ErgoLikeTransactionTemplate[T]] = Encoder.instance({
@@ -365,37 +411,15 @@ trait JsonCodecs {
     case t => throw new SigmaException(s"Don't know how to encode transaction $t")
   })
 
-  implicit val transactionOutputsDecoder: Decoder[(ErgoBoxCandidate, Option[BoxId])] = Decoder.instance({ cursor =>
+  implicit val ergoLikeTransactionTemplateDecoder: Decoder[ErgoLikeTransactionTemplate[_ <: UnsignedInput]] = Decoder.instance({ implicit cursor =>
     for {
-      maybeId <- cursor.downField("boxId").as[Option[BoxId]]
-      value <- cursor.downField("value").as[Long]
-      creationHeight <- cursor.downField("creationHeight").as[Int]
-      ergoTree <- cursor.downField("ergoTree").as[ErgoTree]
-      assets <- cursor.downField("assets").as[Seq[(ErgoBox.TokenId, Long)]] // TODO optimize: encode directly into Coll avoiding allocation of Tuple2 for each element
-      registers <- cursor.downField("additionalRegisters").as[Map[NonMandatoryRegisterId, EvaluatedValue[SType]]]
-    } yield (new ErgoBoxCandidate(value, ergoTree, creationHeight, assets.toColl, registers), maybeId)
+      t <- cursor.downField("type").as[String]
+      tx <- t match {
+        case "elt" => ergoLikeTransactionDecoder(cursor)
+        case "uelt" => unsignedErgoLikeTransactionDecoder(cursor)
+      }
+    } yield tx
   })
-
-  implicit val ergoLikeTransactionDecoder: Decoder[ErgoLikeTransaction] = Decoder.instance({ implicit cursor =>
-    for {
-      inputs <- cursor.downField("inputs").as[IndexedSeq[Input]]
-      dataInputs <- cursor.downField("dataInputs").as[IndexedSeq[DataInput]]
-      outputsWithIndex <- cursor.downField("outputs").as[IndexedSeq[(ErgoBoxCandidate, Option[BoxId])]]
-    } yield new ErgoLikeTransaction(inputs, dataInputs, outputsWithIndex.map(_._1))
-  })
-
-  implicit val unsignedErgoLikeTransactionDecoder: Decoder[UnsignedErgoLikeTransaction] = Decoder.instance({ implicit cursor =>
-    for {
-      inputs <- cursor.downField("inputs").as[IndexedSeq[UnsignedInput]]
-      dataInputs <- cursor.downField("dataInputs").as[IndexedSeq[DataInput]]
-      outputsWithIndex <- cursor.downField("outputs").as[IndexedSeq[(ErgoBoxCandidate, Option[BoxId])]]
-    } yield new UnsignedErgoLikeTransaction(inputs, dataInputs, outputsWithIndex.map(_._1))
-  })
-
-  implicit val ergoLikeTransactionTemplateDecoder: Decoder[ErgoLikeTransactionTemplate[_ <: UnsignedInput]] = {
-    ergoLikeTransactionDecoder.asInstanceOf[Decoder[ErgoLikeTransactionTemplate[_ <: UnsignedInput]]] or
-    unsignedErgoLikeTransactionDecoder.asInstanceOf[Decoder[ErgoLikeTransactionTemplate[_ <: UnsignedInput]]]
-  }
 
   implicit val sigmaValidationSettingsEncoder: Encoder[SigmaValidationSettings] = Encoder.instance({ v =>
     SigmaValidationSettingsSerializer.toBytes(v).asJson

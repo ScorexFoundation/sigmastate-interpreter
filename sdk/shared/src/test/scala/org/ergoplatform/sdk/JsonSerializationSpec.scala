@@ -101,19 +101,19 @@ class JsonSerializationSpec extends SerializationSpecification with JsonCodecs {
   }
 
   property("AvlTreeData should be encoded into JSON and decoded back correctly") {
-    forAll(avlTreeDataGen) { v: AvlTreeData => jsonRoundTrip(v) }
+    forAll(avlTreeDataGen, MinSuccessful(500)) { v: AvlTreeData => jsonRoundTrip(v) }
   }
 
   property("ErgoTree should be encoded into JSON and decoded back correctly") {
-    forAll(ergoTreeGen) { v: ErgoTree => jsonRoundTrip(v) }
+    forAll(ergoTreeGen, MinSuccessful(500)) { v: ErgoTree => jsonRoundTrip(v) }
   }
 
   property("ErgoBox should be encoded into JSON and decoded back correctly") {
-    forAll(ergoBoxGen) { v: ErgoBox => jsonRoundTrip(v) }
+    forAll(ergoBoxGen, MinSuccessful(500)) { v: ErgoBox => jsonRoundTrip(v) }
   }
 
   property("ErgoLikeTransaction should be encoded into JSON and decoded back correctly") {
-    forAll(ergoLikeTransactionGen) { v: ErgoLikeTransaction => jsonRoundTrip(v) }
+    forAll(ergoLikeTransactionGen, MinSuccessful(500)) { v: ErgoLikeTransaction => jsonRoundTrip(v) }
   }
 
   property("UnsignedErgoLikeTransaction should be encoded into JSON and decoded back correctly") {

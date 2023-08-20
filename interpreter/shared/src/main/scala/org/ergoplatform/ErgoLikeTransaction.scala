@@ -50,7 +50,6 @@ trait ErgoLikeTransactionTemplate[IT <: UnsignedInput] {
 
   lazy val inputIds: IndexedSeq[ADKey] = inputs.map(_.boxId)
 
-  override def toString = s"ErgoLikeTransactionTemplate(dataInputs=$dataInputs, inputs=$inputs, outputCandidates=$outputCandidates)"
 }
 
 
@@ -76,6 +75,8 @@ class UnsignedErgoLikeTransaction(override val inputs: IndexedSeq[UnsignedInput]
   }
 
   override def hashCode(): Int = id.hashCode()
+
+  override def toString = s"UnsignedErgoLikeTransaction(dataInputs=$dataInputs, inputs=$inputs, outputCandidates=$outputCandidates)"
 }
 
 object UnsignedErgoLikeTransaction {
@@ -105,6 +106,7 @@ class ErgoLikeTransaction(override val inputs: IndexedSeq[Input],
   }
 
   override def hashCode(): Int = id.hashCode()
+  override def toString = s"ErgoLikeTransaction(dataInputs=$dataInputs, inputs=$inputs, outputCandidates=$outputCandidates)"
 }
 
 object ErgoLikeTransactionSerializer extends SigmaSerializer[ErgoLikeTransaction, ErgoLikeTransaction] {
