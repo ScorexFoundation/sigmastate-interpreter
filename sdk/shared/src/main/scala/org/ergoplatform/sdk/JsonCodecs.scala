@@ -18,6 +18,7 @@ import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.{AvlTreeData, AvlTreeFlags, SType}
 import special.collection.Coll
 import special.sigma.{AnyValue, Header, PreHeader}
+
 import scala.util.Try
 import sigmastate.utils.Helpers._  // required for Scala 2.11
 import org.ergoplatform.ErgoBox
@@ -259,8 +260,8 @@ trait JsonCodecs {
   implicit val proverResultDecoder: Decoder[ProverResult] = Decoder.instance({ cursor =>
     for {
       proofBytes <- cursor.downField("proofBytes").as[Array[Byte]]
-      extMap <- cursor.downField("extension").as[Map[Byte, EvaluatedValue[SType]]]
-    } yield ProverResult(proofBytes, ContextExtension(extMap))
+      ext <- cursor.downField("extension").as[ContextExtension]
+    } yield ProverResult(proofBytes, ext)
   })
 
 
@@ -296,11 +297,15 @@ trait JsonCodecs {
     decodeErgoTree(_.asInstanceOf[ErgoTree])
   }
 
-  implicit def registersEncoder[T <: EvaluatedValue[_ <: SType]]: Encoder[Map[NonMandatoryRegisterId, T]] = Encoder.instance({ m =>
+  implicit def registersEncoder[T <: EvaluatedValue[_ <: SType]]: Encoder[scala.collection.Map[NonMandatoryRegisterId, T]] = Encoder.instance({ m =>
     Json.obj(
       m.toSeq
         .sortBy(_._1.number)
         .map { case (k, v) => registerIdEncoder(k) -> evaluatedValueEncoder(v) }: _*)
+  })
+
+  implicit def registersDecoder[T <: EvaluatedValue[_ <: SType]]: Decoder[scala.collection.Map[NonMandatoryRegisterId, T]] = Decoder.instance({ implicit m =>
+    m.as[mutable.LinkedHashMap[NonMandatoryRegisterId, EvaluatedValue[SType]]].asInstanceOf[Decoder.Result[scala.collection.Map[NonMandatoryRegisterId, T]]]
   })
 
   implicit val ergoBoxEncoder: Encoder[ErgoBox] = Encoder.instance({ box =>
@@ -322,7 +327,7 @@ trait JsonCodecs {
       ergoTreeBytes <- cursor.downField("ergoTree").as[Array[Byte]]
       additionalTokens <- cursor.downField("assets").as(Decoder.decodeSeq(assetDecoder))
       creationHeight <- cursor.downField("creationHeight").as[Int]
-      additionalRegisters <- cursor.downField("additionalRegisters").as[Map[NonMandatoryRegisterId, EvaluatedValue[SType]]]
+      additionalRegisters <- cursor.downField("additionalRegisters").as[scala.collection.Map[NonMandatoryRegisterId, EvaluatedValue[SType]]]
       transactionId <- cursor.downField("transactionId").as[ModifierId]
       index <- cursor.downField("index").as[Short]
     } yield new ErgoBox(

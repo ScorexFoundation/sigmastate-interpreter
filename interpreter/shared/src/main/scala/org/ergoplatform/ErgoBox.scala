@@ -1,11 +1,11 @@
 package org.ergoplatform
 
-import scorex.utils.{Ints, Shorts}
-import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, Token}
+import org.ergoplatform.ErgoBox.{AdditionalRegisters, Token}
 import org.ergoplatform.settings.ErgoAlgos
 import scorex.crypto.authds.ADKey
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.Blake2b256
 import scorex.util._
+import scorex.utils.{Ints, Shorts}
 import sigmastate.SCollection.SByteArray
 import sigmastate.SType.AnyOps
 import sigmastate.Values._
@@ -13,11 +13,9 @@ import sigmastate._
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigmastate.serialization.SigmaSerializer
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter, Helpers}
+import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.ExtractCreationInfo
 import special.collection._
-
-import scala.runtime.ScalaRunTime
 
 /**
   * Box (aka coin, or an unspent output) is a basic concept of a UTXO-based cryptocurrency. In Bitcoin, such an object
@@ -52,7 +50,7 @@ class ErgoBox(
          override val value: Long,
          override val ergoTree: ErgoTree,
          override val additionalTokens: Coll[Token] = Colls.emptyColl[Token],
-         override val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map.empty,
+         override val additionalRegisters: AdditionalRegisters = Map.empty,
          val transactionId: ModifierId,
          val index: Short,
          override val creationHeight: Int
@@ -136,7 +134,7 @@ object ErgoBox {
   /** Represents id of optional registers of a box. */
   sealed abstract class NonMandatoryRegisterId(override val number: Byte) extends RegisterId
 
-  type AdditionalRegisters = Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]]
+  type AdditionalRegisters = scala.collection.Map[NonMandatoryRegisterId, EvaluatedValue[_ <: SType]]
 
   object R0 extends MandatoryRegisterId(0, "Monetary value, in Ergo tokens")
   object R1 extends MandatoryRegisterId(1, "Guarding script")
