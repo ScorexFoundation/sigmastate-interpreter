@@ -240,7 +240,7 @@ trait JsonCodecs {
 
   implicit val contextExtensionEncoder: Encoder[ContextExtension] = Encoder.instance({ extension =>
     Json.obj(extension.values.toSeq.map { case (key, value) =>
-      key.toString -> evaluatedValueEncoder.apply(value)
+      key.toString -> evaluatedValueEncoder(value)
     }: _*)
   })
 
@@ -369,7 +369,7 @@ trait JsonCodecs {
 
   implicit val ergoLikeTransactionEncoder: Encoder[ErgoLikeTransaction] = Encoder.instance({ tx =>
     Json.obj(
-      "type" -> "elt".asJson, // ErgoLikeTransaction
+      "type" -> "ELT".asJson, // ErgoLikeTransaction
       "id" -> tx.id.asJson,
       "inputs" -> tx.inputs.asJson,
       "dataInputs" -> tx.dataInputs.asJson,
@@ -380,7 +380,7 @@ trait JsonCodecs {
   implicit val ergoLikeTransactionDecoder: Decoder[ErgoLikeTransaction] = Decoder.instance({ implicit cursor =>
     for {
       t <- cursor.downField("type").as[String]
-      inputs <- {require(t == "elt"); cursor.downField("inputs").as[IndexedSeq[Input]] }
+      inputs <- {require(t == "ELT"); cursor.downField("inputs").as[IndexedSeq[Input]] }
       dataInputs <- cursor.downField("dataInputs").as[IndexedSeq[DataInput]]
       outputs <- cursor.downField("outputs").as[IndexedSeq[ErgoBoxCandidate]]
     } yield new ErgoLikeTransaction(inputs, dataInputs, outputs)
@@ -388,7 +388,7 @@ trait JsonCodecs {
 
   implicit val unsignedErgoLikeTransactionEncoder: Encoder[UnsignedErgoLikeTransaction] = Encoder.instance({ tx =>
     Json.obj(
-      "type" -> "uelt".asJson, // UnsignedErgoLikeTransaction
+      "type" -> "UELT".asJson, // UnsignedErgoLikeTransaction
       "id" -> tx.id.asJson,
       "inputs" -> tx.inputs.asJson,
       "dataInputs" -> tx.dataInputs.asJson,
@@ -399,7 +399,7 @@ trait JsonCodecs {
   implicit val unsignedErgoLikeTransactionDecoder: Decoder[UnsignedErgoLikeTransaction] = Decoder.instance({ implicit cursor =>
     for {
       t <- cursor.downField("type").as[String]
-      inputs <- {require(t == "uelt"); cursor.downField("inputs").as[IndexedSeq[UnsignedInput]] }
+      inputs <- {require(t == "UELT"); cursor.downField("inputs").as[IndexedSeq[UnsignedInput]] }
       dataInputs <- cursor.downField("dataInputs").as[IndexedSeq[DataInput]]
       outputs <- cursor.downField("outputs").as[IndexedSeq[ErgoBoxCandidate]]
     } yield new UnsignedErgoLikeTransaction(inputs, dataInputs, outputs)
@@ -415,8 +415,8 @@ trait JsonCodecs {
     for {
       t <- cursor.downField("type").as[String]
       tx <- t match {
-        case "elt" => ergoLikeTransactionDecoder(cursor)
-        case "uelt" => unsignedErgoLikeTransactionDecoder(cursor)
+        case "ELT" => ergoLikeTransactionDecoder(cursor)
+        case "UELT" => unsignedErgoLikeTransactionDecoder(cursor)
       }
     } yield tx
   })

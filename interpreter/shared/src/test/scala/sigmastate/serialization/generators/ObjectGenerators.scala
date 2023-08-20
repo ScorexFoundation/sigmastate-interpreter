@@ -350,7 +350,6 @@ trait ObjectGenerators extends TypeGenerators
     regs <- Gen.sequence(additionalRegistersGen(regNum))(Buildable.buildableSeq)
   } yield
     Map(regs.toIndexedSeq:_*)
-//    mutable.LinkedHashMap(regs.toIndexedSeq.sortBy(_._1.number):_*)
 
   def ergoBoxTokens(availableTokens: Seq[TokenId]): Gen[Coll[Token]] = for {
     tokens <-

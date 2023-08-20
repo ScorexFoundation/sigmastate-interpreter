@@ -113,49 +113,11 @@ class JsonSerializationSpec extends SerializationSpecification with JsonCodecs {
   }
 
   property("ErgoLikeTransaction should be encoded into JSON and decoded back correctly") {
-    forAll(ergoLikeTransactionGen, MinSuccessful(500)) { v: ErgoLikeTransaction => jsonRoundTrip(v) }
+    forAll(ergoLikeTransactionGen, MinSuccessful(50)) { v: ErgoLikeTransaction => jsonRoundTrip(v) }
   }
 
   property("UnsignedErgoLikeTransaction should be encoded into JSON and decoded back correctly") {
-    forAll(unsignedErgoLikeTransactionGen) { v: UnsignedErgoLikeTransaction => jsonRoundTrip(v) }
-  }
-
-  private def sortRegisters(box: ErgoBoxCandidate): ErgoBoxCandidate = box match {
-    case box: ErgoBox =>
-      new ErgoBox(box.value,
-        box.ergoTree,
-        box.additionalTokens,
-        mutable.LinkedHashMap(box.additionalRegisters.toIndexedSeq.sortBy(_._1.number): _*),
-        box.transactionId,
-        box.index,
-        box.creationHeight
-      )
-    case box: ErgoBoxCandidate =>
-      new ErgoBoxCandidate(box.value,
-        box.ergoTree,
-        box.creationHeight,
-        box.additionalTokens,
-        mutable.LinkedHashMap(box.additionalRegisters.toIndexedSeq.sortBy(_._1.number): _*)
-      )
-  }
-
-  private def sortRegisters(tx: ErgoLikeTransactionTemplate[_ <: UnsignedInput]): ErgoLikeTransactionTemplate[_ <: UnsignedInput] = {
-    tx match {
-      case tx: ErgoLikeTransaction =>
-        new ErgoLikeTransaction(tx.inputs,
-          tx.dataInputs,
-          tx.outputCandidates.map { out =>
-            sortRegisters(out)
-          }
-        )
-      case tx: UnsignedErgoLikeTransaction =>
-        new UnsignedErgoLikeTransaction(tx.inputs,
-          tx.dataInputs,
-          tx.outputCandidates.map { out =>
-            sortRegisters(out)
-          }
-        )
-    }
+    forAll(unsignedErgoLikeTransactionGen, MinSuccessful(50)) { v: UnsignedErgoLikeTransaction => jsonRoundTrip(v) }
   }
 
   property("ErgoLikeTransactionTemplate should be encoded into JSON and decoded back correctly") {

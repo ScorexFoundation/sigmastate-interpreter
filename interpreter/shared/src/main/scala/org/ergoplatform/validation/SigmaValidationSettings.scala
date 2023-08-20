@@ -73,7 +73,8 @@ sealed class MapSigmaValidationSettings(private val map: Map[Short, (ValidationR
 
   override def equals(obj: Any): Boolean = (this eq obj.asInstanceOf[AnyRef]) || (obj match {
     case that: MapSigmaValidationSettings =>
-      map.iterator.forall { case (id, v) => that.map.get(id).exists(_ == v) }
+      map.size == that.map.size &&
+        map.iterator.forall { case (id, v) => that.map.get(id).exists(_ == v) }
     case _ => false
   })
 
