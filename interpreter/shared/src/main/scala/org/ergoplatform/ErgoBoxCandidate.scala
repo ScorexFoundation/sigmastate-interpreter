@@ -38,7 +38,7 @@ class ErgoBoxCandidate(val value: Long,
                        val ergoTree: ErgoTree,
                        val creationHeight: Int,
                        val additionalTokens: Coll[Token] = Colls.emptyColl,
-                       val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map()) 
+                       val additionalRegisters: AdditionalRegisters = Map())
                        extends ErgoBoxAssets {
 
   /** Transforms this tree to a proposition, substituting the constants if the constant

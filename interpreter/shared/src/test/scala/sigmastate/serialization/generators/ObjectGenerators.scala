@@ -210,7 +210,7 @@ trait ObjectGenerators extends TypeGenerators
   lazy val evaluatedValueGen: Gen[EvaluatedValue[SType]] =
     Gen.oneOf(booleanConstGen.asInstanceOf[Gen[EvaluatedValue[SType]]], byteArrayConstGen, longConstGen)
 
-  def additionalRegistersGen(cnt: Byte): Seq[Gen[(NonMandatoryRegisterId, EvaluatedValue[SType])]] = {
+  def additionalRegistersGen(cnt: Byte): Seq[Gen[(NonMandatoryRegisterId, EvaluatedValue[_ <: SType])]] = {
     scala.util.Random.shuffle((0 until cnt).toList)
       .map(_ + ErgoBox.startingNonMandatoryIndex)
       .map(rI => ErgoBox.registerByIndex(rI).asInstanceOf[NonMandatoryRegisterId])
@@ -348,7 +348,8 @@ trait ObjectGenerators extends TypeGenerators
   lazy val additionalRegistersGen: Gen[AdditionalRegisters] = for {
     regNum <- Gen.chooseNum[Byte](0, ErgoBox.nonMandatoryRegistersCount)
     regs <- Gen.sequence(additionalRegistersGen(regNum))(Buildable.buildableSeq)
-  } yield regs.toMap
+  } yield
+    Map(regs.toIndexedSeq:_*)
 
   def ergoBoxTokens(availableTokens: Seq[TokenId]): Gen[Coll[Token]] = for {
     tokens <-
