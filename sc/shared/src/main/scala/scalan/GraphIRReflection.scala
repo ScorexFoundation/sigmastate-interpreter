@@ -2,7 +2,8 @@ package scalan
 
 import scalan.primitives.Thunks
 import scalan.reflection.CommonReflection.registerClassEntry
-import scalan.reflection.{mkConstructor, mkMethod, CommonReflection}
+import scalan.reflection.{CommonReflection, mkConstructor, mkMethod}
+import sigmastate.eval.SigmaLibrary
 import special.CoreLibReflection
 import special.collection.Colls
 import special.sigma.SigmaDsl

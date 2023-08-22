@@ -134,9 +134,6 @@ object JRConstructor {
   */
 class JRMethod private (val value: Method) extends RMethod {
   override def invoke(obj: Any, args: AnyRef*): AnyRef = {
-//    val name = value.getName
-//    val parameterTypes: Seq[Class[_]] = value.getParameterTypes
-//    memoize(declaringClass.methods)((name, parameterTypes), this)
     value.invoke(obj, args:_*)
   }
 

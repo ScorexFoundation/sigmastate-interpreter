@@ -1,5 +1,6 @@
-package scalan
+package sigmastate.eval
 
+import scalan.Library
 import special.sigma.SigmaDslModule
 
 /** Main trait which represents sigma operations in graph IR cake. */

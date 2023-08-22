@@ -1,13 +1,14 @@
 package special.sigma
 
-import scala.language.{existentials,implicitConversions}
+import scala.language.{existentials, implicitConversions}
 import scalan._
+import sigmastate.eval.SigmaLibrary
+
 import scala.collection.compat.immutable.ArraySeq
 
 package impl {
-  import scalan.OverloadHack.Overloaded1
-  import scalan.reflection.CommonReflection.registerClassEntry
-  import scalan.reflection.{RClass, RMethod, SRMethod} // manual fix
+  import scalan.reflection.{RClass, RMethod}
+  import sigmastate.eval.SigmaLibrary
 
   // Abs -----------------------------------
 trait SigmaDslDefs extends scalan.Scalan with SigmaDsl {

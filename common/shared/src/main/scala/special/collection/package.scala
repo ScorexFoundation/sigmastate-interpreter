@@ -1,17 +1,9 @@
 package special
 
-import scala.language.implicitConversions
 import scalan.RType
 
-import scala.reflect.{classTag, ClassTag}
-
-package collection {
-  /** Type descriptor for `Coll[A]` type. */
-  case class CollType[A](tItem: RType[A]) extends RType[Coll[A]] {
-    override val classTag: ClassTag[Coll[A]] = ClassTag[Coll[A]](classOf[Coll[A]])
-    override def name: String = s"Coll[${tItem.name}]"
-  }
-}
+import scala.language.implicitConversions
+import scala.reflect.classTag
 
 package object collection {
   /** Forces reflection data initialization */
@@ -30,4 +22,11 @@ package object collection {
   implicit def downcastCollType[A](ct: RType[Coll[A]]): CollType[A] = ct.asInstanceOf[CollType[A]]
 
   implicit val collBuilderRType: RType[CollBuilder] = RType.fromClassTag(classTag[CollBuilder])
+
+  private def sameLengthErrorMsg[A, B](xs: Coll[A], ys: Coll[B]) =
+    s"Collections should have same length but was ${xs.length} and ${ys.length}:\n xs=$xs;\n ys=$ys"
+
+  def requireSameLength[A, B](xs: Coll[A], ys: Coll[B]) = {
+    require(xs.length == ys.length, sameLengthErrorMsg(xs, ys))
+  }
 }

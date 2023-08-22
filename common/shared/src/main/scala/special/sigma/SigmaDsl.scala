@@ -316,7 +316,7 @@ trait Box {
     * @tparam T expected type of the register.
     * @return Some(value) if the register is defined AND has the given type.
     *         None otherwise
-    * @throws special.sigma.InvalidType exception when the type of the register value is
+    * @throws `sigmastate.eval.InvalidType` exception when the type of the register value is
     *                                   different from cT.
     * @since 2.0
     */

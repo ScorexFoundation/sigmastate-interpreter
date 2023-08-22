@@ -4,7 +4,7 @@ import org.ergoplatform._
 import scalan.ExactIntegral.{ByteIsExactIntegral, IntIsExactIntegral, LongIsExactIntegral, ShortIsExactIntegral}
 import scalan.ExactOrdering.{ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering, ShortIsExactOrdering}
 import scalan.util.Extensions.ByteOps
-import scalan.{ExactIntegral, ExactNumeric, ExactOrdering, Lazy, MutableLazy, Nullable, SigmaLibrary}
+import scalan.{ExactIntegral, ExactNumeric, ExactOrdering, Lazy, MutableLazy, Nullable}
 import sigmastate.Values.Value.Typed
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter.ScriptEnv

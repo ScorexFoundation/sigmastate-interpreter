@@ -1,10 +1,9 @@
 package special.collection
 
 import java.util
-import scalan._
+import scalan._  // required
 import scalan.util.CollectionUtil
 import scalan.RType
-import Helpers._
 import debox.Buffer
 import scalan.RType._
 import sigmastate.VersionContext

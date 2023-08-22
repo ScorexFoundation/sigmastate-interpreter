@@ -1,5 +1,6 @@
 package special.sigma {
   import scalan._
+  import sigmastate.eval.SigmaLibrary
 
   trait SigmaDsl extends Base { self: SigmaLibrary =>
     trait BigInt extends Def[BigInt] {
