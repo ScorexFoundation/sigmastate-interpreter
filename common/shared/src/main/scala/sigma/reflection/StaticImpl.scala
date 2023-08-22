@@ -1,4 +1,4 @@
-package scalan.reflection
+package sigma.reflection
 
 /**
   * Represents a field in an Sigma Reflection metadata.

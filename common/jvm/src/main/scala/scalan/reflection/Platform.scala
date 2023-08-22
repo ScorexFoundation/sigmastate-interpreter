@@ -1,4 +1,4 @@
-package scalan.reflection
+package sigma.reflection
 
 import sigma.RuntimePlatform
 import scala.collection.concurrent.TrieMap

@@ -1,4 +1,4 @@
-package scalan
+package sigma
 
 import scala.collection.mutable
 

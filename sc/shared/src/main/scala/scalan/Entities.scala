@@ -13,7 +13,7 @@ trait Entities extends TypeDescs { self: Scalan =>
     def parent: Option[Elem[_]] = None
     /** Name of the entity type without `Elem` suffix. */
     def entityName: String = {
-      val n = scalan.reflection.Platform.safeSimpleName(this.getClass).stripSuffix("Elem")
+      val n = sigma.reflection.Platform.safeSimpleName(this.getClass).stripSuffix("Elem")
       n
     }
     def convert(x: Ref[Def[_]]): Ref[A] = !!!("should not be called")

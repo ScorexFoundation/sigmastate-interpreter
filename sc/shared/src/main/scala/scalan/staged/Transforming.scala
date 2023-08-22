@@ -2,10 +2,10 @@ package scalan.staged
 
 import java.util
 import scala.language.existentials
-import scalan.{AVHashMap, DelayInvokeException, Lazy, Nullable, Scalan}
+import scalan.{Lazy, Nullable, Scalan}
 import debox.{Buffer => DBuffer}
 import debox.cfor
-import scalan.reflection.RMethod
+import sigma.reflection.RMethod
 
 trait Transforming { self: Scalan =>
 

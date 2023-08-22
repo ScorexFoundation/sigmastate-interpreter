@@ -8,7 +8,7 @@ import scala.collection.compat.immutable.ArraySeq
 
 package impl {
   import scalan.GraphIRReflection
-  import scalan.reflection.{RClass, RMethod}
+  import sigma.reflection.{RClass, RMethod}
 
   // Abs -----------------------------------
 trait WRTypesDefs extends scalan.Scalan with WRTypes {

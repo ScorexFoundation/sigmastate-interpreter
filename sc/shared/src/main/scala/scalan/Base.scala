@@ -1,17 +1,16 @@
 package scalan
 
-import java.util.Arrays
+import debox.{cfor, Buffer => DBuffer}
 import scalan.OverloadHack.Overloaded1
+import scalan.util.StringUtil
+import sigma.reflection.RConstructor
 
-import scala.language.implicitConversions
+import java.util.Arrays
 import scala.annotation.implicitNotFound
 import scala.annotation.unchecked.uncheckedVariance
-import scalan.util.StringUtil
-import debox.{cfor, Buffer => DBuffer}
-import scalan.reflection.{RClass, RConstructor}
-
 import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
+import scala.language.implicitConversions
 
 /**
   * The Base trait houses common AST nodes. It also manages a list of encountered definitions which

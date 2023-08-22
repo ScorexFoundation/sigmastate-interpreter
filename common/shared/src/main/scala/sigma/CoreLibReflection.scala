@@ -1,8 +1,8 @@
 package sigma
 
 import scalan.RType
-import scalan.reflection.CommonReflection.registerClassEntry
-import scalan.reflection._
+import sigma.reflection.CommonReflection.registerClassEntry
+import sigma.reflection._
 
 /** Registrations of reflection metadata for core-lib module.
   * For each class of this module that needs reflection metadata,

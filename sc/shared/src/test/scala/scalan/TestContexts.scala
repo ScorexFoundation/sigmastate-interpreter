@@ -1,6 +1,6 @@
 package scalan
 
-import scalan.reflection.RMethod
+import sigma.reflection.RMethod
 import sigma.CoreLibReflection
 
 trait TestContexts extends TestUtils {

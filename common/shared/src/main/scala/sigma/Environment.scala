@@ -17,6 +17,6 @@ object Environment {
   implicit val current: Environment = new Environment {
     override def isJVM: Boolean = runtimePlatform == RuntimePlatform.JVM
     override def isJS: Boolean = runtimePlatform == RuntimePlatform.JS
-    override def runtimePlatform: RuntimePlatform = scalan.reflection.Platform.runtimePlatform
+    override def runtimePlatform: RuntimePlatform = sigma.reflection.Platform.runtimePlatform
   }
 }

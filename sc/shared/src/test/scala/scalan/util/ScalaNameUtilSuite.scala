@@ -1,8 +1,8 @@
 package scalan.util
 
 import scalan.BaseTests
-import scalan.reflection.CommonReflection.registerClassEntry
-import scalan.reflection.{RClass, mkMethod}
+import sigma.reflection.CommonReflection.registerClassEntry
+import sigma.reflection.{RClass, mkMethod}
 
 class ScalaNameUtilSuite extends BaseTests {
   def +\() = ???

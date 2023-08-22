@@ -7,7 +7,7 @@ import special.wrappers.OptionWrapSpec
 import scala.collection.compat.immutable.ArraySeq
 
 package impl {
-  import scalan.reflection.{RClass, RMethod}
+  import sigma.reflection.{RClass, RMethod}
 
   // Abs -----------------------------------
 trait WOptionsDefs extends scalan.Scalan with WOptions {

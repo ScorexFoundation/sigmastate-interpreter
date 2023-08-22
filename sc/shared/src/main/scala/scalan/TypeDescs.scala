@@ -8,7 +8,7 @@ import scalan.RType._
 
 import scala.collection.mutable
 import debox.cfor
-import scalan.reflection.{RClass, RConstructor, RMethod}
+import sigma.reflection.{RClass, RConstructor, RMethod}
 import special.wrappers.WrapSpec
 
 abstract class TypeDescs extends Base { self: Scalan =>
@@ -95,7 +95,7 @@ abstract class TypeDescs extends Base { self: Scalan =>
     lazy val name: String = getName(_.name)
 
     // <> to delimit because: [] is used inside name; {} looks bad with structs.
-    override def toString = s"${scalan.reflection.Platform.safeSimpleName(getClass)}<$name>"
+    override def toString = s"${sigma.reflection.Platform.safeSimpleName(getClass)}<$name>"
   }
 
   /** Type descriptor of staged types, which correspond to source (unstaged) RTypes
@@ -121,7 +121,7 @@ abstract class TypeDescs extends Base { self: Scalan =>
           be.sourceType.name
         case e =>
           val cl = e.getClass
-          val name = scalan.reflection.Platform.safeSimpleName(cl).stripSuffix("Elem")
+          val name = sigma.reflection.Platform.safeSimpleName(cl).stripSuffix("Elem")
           name
       }
       if (typeArgs.isEmpty)

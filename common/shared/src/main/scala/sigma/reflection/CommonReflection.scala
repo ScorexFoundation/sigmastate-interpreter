@@ -1,4 +1,4 @@
-package scalan.reflection
+package sigma.reflection
 
 import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable

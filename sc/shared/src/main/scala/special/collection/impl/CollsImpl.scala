@@ -5,7 +5,7 @@ import scalan._
 import scala.collection.compat.immutable.ArraySeq
 
 package impl {
-  import scalan.reflection.{RClass, RMethod}
+  import sigma.reflection.{RClass, RMethod}
 
   // Abs -----------------------------------
 trait CollsDefs extends scalan.Scalan with Colls {

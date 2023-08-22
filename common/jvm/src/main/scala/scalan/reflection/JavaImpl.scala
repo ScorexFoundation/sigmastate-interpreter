@@ -1,4 +1,4 @@
-package scalan.reflection
+package sigma.reflection
 
 import debox.cfor
 

@@ -10,7 +10,7 @@ import scala.reflect.classTag
   */
 package object sigma {
   /** Forces reflection data initialization */
-  val reflection = CoreLibReflection
+  val coreLibReflection = CoreLibReflection
 
   implicit val BigIntRType: RType[BigInt] = GeneralType(classTag[BigInt])
   implicit val GroupElementRType: RType[GroupElement] = GeneralType(classTag[GroupElement])

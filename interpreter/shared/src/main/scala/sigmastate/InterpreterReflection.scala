@@ -1,8 +1,8 @@
 package sigmastate
 
 import org.ergoplatform.ErgoBox.RegisterId
-import scalan.reflection.CommonReflection.registerClassEntry
-import scalan.reflection.{mkConstructor, mkMethod}
+import sigma.reflection.CommonReflection.registerClassEntry
+import sigma.reflection.{mkConstructor, mkMethod}
 import sigma.Coll
 import sigma.{AvlTree, CoreLibReflection, SigmaDslBuilder}
 import sigmastate.SAvlTree.KeyValueColl

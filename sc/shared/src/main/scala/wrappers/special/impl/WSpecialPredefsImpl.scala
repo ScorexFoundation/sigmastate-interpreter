@@ -5,7 +5,7 @@ import scalan._
 import special.wrappers.WrappersModule
 
 package impl {
-  import scalan.reflection.RClass
+  import sigma.reflection.RClass
 
   // Abs -----------------------------------
 trait WSpecialPredefsDefs extends scalan.Scalan with WSpecialPredefs {

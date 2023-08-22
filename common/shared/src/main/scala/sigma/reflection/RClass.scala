@@ -1,4 +1,4 @@
-package scalan.reflection
+package sigma.reflection
 
 /** A representation of a field of a class, providing reflective access to the field's type. */
 abstract class RField {

@@ -11,7 +11,7 @@
 package sigma.kiama
 package rewriting
 
-import scalan.reflection.{Platform, RClass, RConstructor}
+import sigma.reflection.{Platform, RClass, RConstructor}
 //import sigma.kiama.==>
 
 /**

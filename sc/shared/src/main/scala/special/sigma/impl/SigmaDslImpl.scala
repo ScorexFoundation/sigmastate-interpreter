@@ -7,7 +7,7 @@ import sigmastate.eval.SigmaLibrary
 import scala.collection.compat.immutable.ArraySeq
 
 package impl {
-  import scalan.reflection.{RClass, RMethod}
+  import sigma.reflection.{RClass, RMethod}
   import sigmastate.eval.SigmaLibrary
 
   // Abs -----------------------------------

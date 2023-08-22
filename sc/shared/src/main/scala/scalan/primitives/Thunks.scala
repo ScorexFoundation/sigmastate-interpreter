@@ -4,7 +4,7 @@ import scala.language.{existentials, implicitConversions}
 import scalan._
 import debox.{Buffer => DBuffer, Set => DSet}
 import debox.cfor
-import scalan.reflection.RClass
+import sigma.reflection.RClass
 
 import scalan.util.{Covariant, GraphUtil}
 

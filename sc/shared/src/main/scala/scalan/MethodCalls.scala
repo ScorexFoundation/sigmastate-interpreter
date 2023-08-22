@@ -4,7 +4,7 @@ import scala.annotation.{tailrec, unused}
 import scala.reflect.ClassTag
 import debox.{Buffer => DBuffer}
 import debox.cfor
-import scalan.reflection.RMethod
+import sigma.reflection.RMethod
 
 trait MethodCalls extends Base { self: Scalan =>
 
@@ -12,7 +12,7 @@ trait MethodCalls extends Base { self: Scalan =>
 
   /** Graph node to represent invocation of the method of some class.
     * @param receiver    node ref representing instance on which the method is called
-    * @param method      method which is called (descriptor from `scalan.reflection`)
+    * @param method      method which is called (descriptor from `sigma.reflection`)
     * @param args        node refs representing arguments passed to the method
     * @param neverInvoke it true this method cannot be performed, even if the
     *                    receiver node allow this
@@ -43,7 +43,7 @@ trait MethodCalls extends Base { self: Scalan =>
 
     /** Try invoke `method` on the node instance refered by `receiver`.
       * Each MC node contains enough information to perform invocation using
-      * `scalan.reflection.RMethod.invoke` method. However, this is not possible
+      * `sigma.reflection.RMethod.invoke` method. However, this is not possible
       * if the node pointed to by `receiver` don't implement this method,
       * for example when receiver is Lambda variable pointing to Variable node
       * instance (in which case this MC was created by adapter)
