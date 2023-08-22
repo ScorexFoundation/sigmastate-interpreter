@@ -1,7 +1,7 @@
 package org.ergoplatform.sdk
 
 import scalan.RType
-import special.collection.Coll
+import sigma.collection.Coll
 
 import scala.collection.{JavaConverters, mutable}
 import org.ergoplatform._
@@ -12,7 +12,7 @@ import sigmastate.serialization.{ErgoTreeSerializer, GroupElementSerializer, Sig
 import scorex.crypto.authds.ADKey
 import org.ergoplatform.settings.ErgoAlgos
 import sigmastate.eval.{CPreHeader, Colls, CostingSigmaDslBuilder, Digest32Coll, Evaluation}
-import special.sigma.{AnyValue, AvlTree, GroupElement, Header}
+import sigma.{AnyValue, AvlTree, GroupElement, Header}
 import sigmastate.utils.Helpers._  // don't remove, required for Scala 2.11
 
 import java.util
@@ -249,8 +249,8 @@ object JavaHelpers {
   implicit val JLongRType: RType[JLong] = RType.LongType.asInstanceOf[RType[JLong]]
   implicit val JBooleanRType: RType[JBoolean] = RType.BooleanType.asInstanceOf[RType[JBoolean]]
 
-  val HeaderRType: RType[Header] = special.sigma.HeaderRType
-  val PreHeaderRType: RType[special.sigma.PreHeader] = special.sigma.PreHeaderRType
+  val HeaderRType: RType[Header] = sigma.HeaderRType
+  val PreHeaderRType: RType[sigma.PreHeader] = sigma.PreHeaderRType
 
   def Algos: ErgoAlgos = org.ergoplatform.settings.ErgoAlgos
 
@@ -359,17 +359,17 @@ object JavaHelpers {
     DataInput(ADKey @@ boxIdBytes)
   }
 
-  def collRType[T](tItem: RType[T]): RType[Coll[T]] = special.collection.collRType(tItem)
+  def collRType[T](tItem: RType[T]): RType[Coll[T]] = sigma.collection.collRType(tItem)
 
-  def BigIntRType: RType[special.sigma.BigInt] = special.sigma.BigIntRType
+  def BigIntRType: RType[sigma.BigInt] = sigma.BigIntRType
 
-  def GroupElementRType: RType[special.sigma.GroupElement] = special.sigma.GroupElementRType
+  def GroupElementRType: RType[sigma.GroupElement] = sigma.GroupElementRType
 
-  def SigmaPropRType: RType[special.sigma.SigmaProp] = special.sigma.SigmaPropRType
+  def SigmaPropRType: RType[sigma.SigmaProp] = sigma.SigmaPropRType
 
-  def AvlTreeRType: RType[special.sigma.AvlTree] = special.sigma.AvlTreeRType
+  def AvlTreeRType: RType[sigma.AvlTree] = sigma.AvlTreeRType
 
-  def BoxRType: RType[special.sigma.Box] = special.sigma.BoxRType
+  def BoxRType: RType[sigma.Box] = sigma.BoxRType
 
   def SigmaDsl: CostingSigmaDslBuilder = sigmastate.eval.SigmaDsl
 
@@ -409,7 +409,7 @@ object JavaHelpers {
    * @return a mapping from asset id to to balance and total assets number
    */
   def extractAssets(boxes: IndexedSeq[ErgoBoxCandidate]): (Map[Digest32Coll, Long], Int) = {
-    import special.collection.Extensions.CollOps
+    import sigma.collection.Extensions.CollOps
     val map = mutable.Map[Digest32Coll, Long]()
     val assetsNum = boxes.foldLeft(0) { case (acc, box) =>
       require(box.additionalTokens.length <= SigmaConstants.MaxTokens.value, "too many assets in one box")

@@ -32,8 +32,8 @@ object ReflectionGenerator {
 
   val knownPackages = Array(
     "scalan.primitives.",
-    "special.collection.",
-    "special.sigma.",
+    "sigma.collection.",
+    "sigma.",
     "special.wrappers.",
     "sigmastate.Values.",
     "sigmastate.lang.Terms.",

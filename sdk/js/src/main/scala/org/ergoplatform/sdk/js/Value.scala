@@ -13,7 +13,7 @@ import sigmastate.fleetSdkCommon.distEsmTypesCommonMod
 import sigmastate.fleetSdkCommon.distEsmTypesRegistersMod.NonMandatoryRegisters
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.serialization.{ConstantSerializer, DataSerializer, SigmaSerializer}
-import special.collection.{Coll, CollType}
+import sigma.collection.{Coll, CollType}
 
 import java.math.BigInteger
 import scala.scalajs.js
@@ -85,19 +85,19 @@ object Value extends js.Object {
     case RType.BooleanType => data
     case RType.ByteType | RType.ShortType | RType.IntType => data
     case RType.LongType => java.lang.Long.parseLong(data.asInstanceOf[js.BigInt].toString(10))
-    case special.sigma.BigIntRType =>
+    case sigma.BigIntRType =>
       val v = data.asInstanceOf[js.BigInt]
       SigmaDsl.BigInt(new BigInteger(v.toString(16), 16))
-    case special.sigma.GroupElementRType =>
+    case sigma.GroupElementRType =>
       val ge = data.asInstanceOf[GroupElement]
       SigmaDsl.GroupElement(ge.point)
-    case special.sigma.SigmaPropRType =>
+    case sigma.SigmaPropRType =>
       val p = data.asInstanceOf[SigmaProp]
       SigmaDsl.SigmaProp(p.sigmaBoolean)
-    case special.sigma.AvlTreeRType =>
+    case sigma.AvlTreeRType =>
       val t = data.asInstanceOf[AvlTree]
       Isos.isoAvlTree.to(t)
-    case special.sigma.BoxRType =>
+    case sigma.BoxRType =>
       val t = data.asInstanceOf[Box[distEsmTypesCommonMod.Amount, NonMandatoryRegisters]]
       SigmaDsl.Box(Isos.isoBox.to(t))
     case ct: CollType[a] =>
@@ -125,17 +125,17 @@ object Value extends js.Object {
     case RType.BooleanType => value
     case RType.ByteType | RType.ShortType | RType.IntType => value
     case RType.LongType => js.BigInt(value.asInstanceOf[Long].toString)
-    case special.sigma.BigIntRType =>
-      val hex = SigmaDsl.toBigInteger(value.asInstanceOf[special.sigma.BigInt]).toString(10)
+    case sigma.BigIntRType =>
+      val hex = SigmaDsl.toBigInteger(value.asInstanceOf[sigma.BigInt]).toString(10)
       js.BigInt(hex)
-    case special.sigma.GroupElementRType =>
+    case sigma.GroupElementRType =>
       val point = value.asInstanceOf[CGroupElement].wrappedValue.asInstanceOf[Platform.Ecp]
       new GroupElement(point)
-    case special.sigma.SigmaPropRType =>
+    case sigma.SigmaPropRType =>
       new SigmaProp(value.asInstanceOf[CSigmaProp].wrappedValue)
-    case special.sigma.AvlTreeRType =>
+    case sigma.AvlTreeRType =>
       Isos.isoAvlTree.from(value.asInstanceOf[CAvlTree])
-    case special.sigma.BoxRType =>
+    case sigma.BoxRType =>
       Isos.isoBox.from(value.asInstanceOf[CostingBox].wrappedValue)
     case ct: CollType[a] =>
       val arr = value.asInstanceOf[Coll[a]].toArray
@@ -162,11 +162,11 @@ object Value extends js.Object {
       if (n < MinLong || n > MaxLong)
         throw new ArithmeticException(s"value $n is out of long range")
       n
-    case special.sigma.BigIntRType =>
+    case sigma.BigIntRType =>
       data.asInstanceOf[js.BigInt]
-    case special.sigma.GroupElementRType =>
+    case sigma.GroupElementRType =>
       data.asInstanceOf[GroupElement]
-    case special.sigma.SigmaPropRType =>
+    case sigma.SigmaPropRType =>
       data.asInstanceOf[SigmaProp]
     case PairType(l, r) => data match {
       case arr: js.Array[Any @unchecked] =>

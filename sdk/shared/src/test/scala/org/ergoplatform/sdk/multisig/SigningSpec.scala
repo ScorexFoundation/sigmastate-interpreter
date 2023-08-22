@@ -11,7 +11,7 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import scalan.util.CollectionUtil.AnyOps
 import sigmastate.TestsBase
 import sigmastate.Values.{Constant, ErgoTree}
-import special.sigma.SigmaTestingData
+import sigma.SigmaTestingData
 
 class SigningSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers
     with TestsBase

@@ -1,4 +1,3 @@
-package special
 
 import java.math.BigInteger
 import scalan.RType

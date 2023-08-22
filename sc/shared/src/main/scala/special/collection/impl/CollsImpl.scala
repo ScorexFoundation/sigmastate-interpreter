@@ -1,4 +1,4 @@
-package special.collection
+package sigma.collection
 
 import scala.language.{existentials,implicitConversions}
 import scalan._
@@ -20,8 +20,7 @@ import WOption._
 class CollCls extends EntityObject("Coll") {
   // entityConst: single const for each entity
   import Liftables._
-  import scala.reflect.{ClassTag, classTag}
-  type SColl[A] = special.collection.Coll[A]
+  type SColl[A] = sigma.collection.Coll[A]
   case class CollConst[SA, A](
         constValue: SColl[SA],
         lA: Liftable[SA, A]
@@ -496,8 +495,7 @@ object Coll extends CollCls
 object CollBuilder extends EntityObject("CollBuilder") {
   // entityConst: single const for each entity
   import Liftables._
-  import scala.reflect.{ClassTag, classTag}
-  type SCollBuilder = special.collection.CollBuilder
+  type SCollBuilder = sigma.collection.CollBuilder
   case class CollBuilderConst(
         constValue: SCollBuilder
       ) extends LiftedConst[SCollBuilder, CollBuilder] with CollBuilder
@@ -639,9 +637,9 @@ object CollBuilder extends EntityObject("CollBuilder") {
 
 }
 
-object CollsModule extends scalan.ModuleInfo("special.collection", "Colls") {
+object CollsModule extends scalan.ModuleInfo("sigma.collection", "Colls") {
   val reflection = GraphIRReflection
 }
 }
 
-trait CollsModule extends special.collection.impl.CollsDefs {self: Library =>}
+trait CollsModule extends sigma.collection.impl.CollsDefs {self: Library =>}

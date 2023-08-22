@@ -1,4 +1,4 @@
-package special.collections
+package sigma.collections
 
 import debox.Buffer
 import debox.cfor

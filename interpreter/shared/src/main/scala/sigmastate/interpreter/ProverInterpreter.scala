@@ -15,7 +15,7 @@ import sigmastate.crypto.{GF2_192, GF2_192_Poly}
 import sigmastate.eval.Extensions.ArrayOps
 import sigmastate.exceptions.InterpreterException
 import sigmastate.utils.Helpers
-import special.collection.Coll
+import sigma.collection.Coll
 
 import java.math.BigInteger
 import scala.util.Try

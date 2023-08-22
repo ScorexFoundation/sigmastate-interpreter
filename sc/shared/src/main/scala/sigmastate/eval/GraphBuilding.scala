@@ -393,7 +393,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
 
   import sigmastate._
 
-  protected implicit def groupElementToECPoint(g: special.sigma.GroupElement): EcPointType = CostingSigmaDslBuilder.toECPoint(g).asInstanceOf[EcPointType]
+  protected implicit def groupElementToECPoint(g: sigma.GroupElement): EcPointType = CostingSigmaDslBuilder.toECPoint(g).asInstanceOf[EcPointType]
 
   def error(msg: String) = throw new GraphBuildingException(msg, None)
   def error(msg: String, srcCtx: Option[SourceContext]) = throw new GraphBuildingException(msg, srcCtx)
@@ -471,7 +471,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         case box: SBox =>
           val boxV = liftConst(box)
           boxV
-        case tree: special.sigma.AvlTree =>
+        case tree: sigma.AvlTree =>
           val treeV = liftConst(tree)
           treeV
         case s: String =>

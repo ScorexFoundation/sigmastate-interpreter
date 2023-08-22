@@ -2,7 +2,7 @@ package org.ergoplatform.settings
 
 import scorex.crypto.hash.Blake2b256
 import scorex.util._
-import special.collection.Coll
+import sigma.collection.Coll
 
 import scala.util.Try
 

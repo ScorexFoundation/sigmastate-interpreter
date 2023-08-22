@@ -2,7 +2,7 @@ package sigmastate
 
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.crypto.{GF2_192, GF2_192_Poly}
-import special.sigma.SigmaTestingData
+import sigma.SigmaTestingData
 
 class SigmaProtocolSpecification extends SigmaTestingData {
 

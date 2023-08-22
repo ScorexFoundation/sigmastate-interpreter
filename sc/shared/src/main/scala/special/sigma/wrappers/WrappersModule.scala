@@ -1,4 +1,4 @@
-package special.sigma.wrappers
+package sigma.wrappers
 
 trait WrappersModule
   extends special.wrappers.WrappersModule

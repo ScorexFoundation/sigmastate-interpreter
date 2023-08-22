@@ -1,4 +1,4 @@
-package special
+package sigma
 
 import scalan.RType
 

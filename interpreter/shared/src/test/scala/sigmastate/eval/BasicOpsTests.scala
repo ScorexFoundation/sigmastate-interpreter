@@ -6,7 +6,7 @@ import org.scalatest.matchers.should.Matchers
 import java.math.BigInteger
 import sigmastate.TrivialProp
 import sigmastate.basics.SecP256K1Group
-import special.sigma.{ContractsTestkit, SigmaDslBuilder, SigmaProp}
+import sigma.{ContractsTestkit, SigmaDslBuilder, SigmaProp}
 
 import scala.language.implicitConversions
 

@@ -1,4 +1,4 @@
-package special.sigma
+package sigma
 
 import org.scalatest.BeforeAndAfterAll
 import scalan.RType
@@ -8,7 +8,7 @@ import sigmastate.Values.ErgoTree
 import sigmastate.eval.{CSigmaProp, Profiler, SigmaDsl}
 import sigmastate.helpers.SigmaPPrint
 import sigmastate.interpreter.{CostAccumulator, ErgoTreeEvaluator, EvalSettings, TracedCost}
-import special.collection.Coll
+import sigma.collection.Coll
 
 import scala.util.{Success, Try}
 

@@ -2,9 +2,8 @@ package sigmastate.basics
 
 import sigmastate.SigmaLeaf
 import sigmastate.basics.CryptoConstants.dlogGroup
-import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate.basics.VerifierMessage.Challenge
-import special.collection.Coll
+import sigma.collection.Coll
 import supertagged.TaggedType
 
 import java.math.BigInteger

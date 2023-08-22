@@ -12,8 +12,8 @@ import sigmastate.Values.{Constant, EvaluatedValue}
 import sigmastate._
 import sigmastate.lang.SigmaParser
 import sigmastate.eval._
-import special.collection.Coll
-import special.sigma._
+import sigma.collection.Coll
+import sigma._
 import debox.cfor
 import sigmastate.exceptions.SerializerException
 import scala.collection.compat.immutable.ArraySeq

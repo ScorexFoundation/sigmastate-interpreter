@@ -1,4 +1,4 @@
-package special.sigma {
+package sigma {
   import scalan._
   import sigmastate.eval.SigmaLibrary
 

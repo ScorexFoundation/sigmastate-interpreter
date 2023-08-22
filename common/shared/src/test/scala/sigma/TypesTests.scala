@@ -1,8 +1,8 @@
-package special
+package sigma
 
+import scalan.RType._
 import scalan.{BaseTests, RType}
-import RType._
-import Types._
+import sigma.Types._
 
 class TypesTests extends BaseTests {
 
@@ -10,7 +10,7 @@ class TypesTests extends BaseTests {
     def test[A](t: RType[A], n: String) = {
       t.name shouldBe n
     }
-    test(tupleRType(Array(IntType, LongType, RType[(Byte, special.sigma.BigInt)], RType[Option[Boolean]])),
+    test(tupleRType(Array(IntType, LongType, RType[(Byte, sigma.BigInt)], RType[Option[Boolean]])),
            "(Int, Long, (Byte, BigInt), Option[Boolean])")
   }
 

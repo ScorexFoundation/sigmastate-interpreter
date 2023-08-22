@@ -10,7 +10,7 @@ import sigmastate.basics.DLogProtocol.{ProveDlogProp, ProveDlog}
 import sigmastate.exceptions.SigmaException
 import sigmastate.serialization._
 import sigmastate.utxo.{DeserializeContext, Slice}
-import special.collection.Coll
+import sigma.collection.Coll
 
 import scala.util.Try
 

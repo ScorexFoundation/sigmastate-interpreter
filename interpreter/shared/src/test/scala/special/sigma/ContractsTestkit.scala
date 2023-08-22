@@ -1,6 +1,6 @@
-package special.sigma
+package sigma
 
-import special.collection.{Coll, CollOverArrayBuilder}
+import sigma.collection.{Coll, CollOverArrayBuilder}
 import scalan.RType
 import sigmastate.Values.ErgoTree
 import sigmastate.{AvlTreeData, Values}

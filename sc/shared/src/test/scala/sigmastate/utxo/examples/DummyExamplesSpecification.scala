@@ -4,8 +4,8 @@ import org.ergoplatform.ErgoBox
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, TestContractSpec}
 import scorex.crypto.hash
 import sigmastate.helpers.CompilerTestingCommons
-import special.collection.Coll
-import special.sigma.{Box, Context}
+import sigma.collection.Coll
+import sigma.{Box, Context}
 import sigmastate.eval.Extensions
 
 class DummyExamplesSpecification extends CompilerTestingCommons { suite =>

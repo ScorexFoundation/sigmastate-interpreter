@@ -1,4 +1,4 @@
-package special.sigma
+package sigma
 
 import debox.cfor
 import org.ergoplatform._
@@ -36,7 +36,7 @@ import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers._
 import sigmastate.utxo.{DeserializeContext, DeserializeRegister, GetVar, OptionGet}
 import sigmastate.{SOption, SSigmaProp, SType, SigmaLeaf, eval}
-import special.collection.{Coll, CollType}
+import sigma.collection.{Coll, CollType}
 
 import java.util
 import scala.collection.mutable
@@ -352,7 +352,7 @@ class SigmaDslTesting extends AnyPropSpec
             )
 
             // We add ctx as it's own variable with id = 1
-            val ctxVar = eval.Extensions.toAnyValue[special.sigma.Context](ctx)(special.sigma.ContextRType)
+            val ctxVar = eval.Extensions.toAnyValue[sigma.Context](ctx)(sigma.ContextRType)
             val carolVar = eval.Extensions.toAnyValue[Coll[Byte]](pkCarolBytes.toColl)(RType[Coll[Byte]])
             val newCtx = ctx
                 .withUpdatedVars(1 -> ctxVar, 2 -> carolVar)

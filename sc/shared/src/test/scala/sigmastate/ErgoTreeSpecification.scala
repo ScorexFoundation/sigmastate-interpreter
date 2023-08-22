@@ -19,8 +19,8 @@ import sigmastate.lang.Terms._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.utils.Helpers.TryOps
 import sigmastate.utxo._
-import special.collection._
-import special.sigma.{ContractsTestkit, SigmaDslTesting}
+import sigma.collection._
+import sigma.{ContractsTestkit, SigmaDslTesting}
 
 
 /** Regression tests with ErgoTree related test vectors.

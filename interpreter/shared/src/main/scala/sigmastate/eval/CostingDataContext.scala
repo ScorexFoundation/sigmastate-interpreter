@@ -23,8 +23,8 @@ import sigmastate.eval.Extensions._
 import sigmastate.interpreter.Interpreter
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.{GroupElementSerializer, SigmaSerializer}
-import special.collection._
-import special.sigma._
+import sigma.collection._
+import sigma._
 
 import java.math.BigInteger
 import java.util.Arrays
@@ -150,7 +150,7 @@ case class CSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[
   override def toString: String = s"SigmaProp(${wrappedValue.showToString})"
 }
 
-/** Implementation of the [[special.sigma.AvlTreeVerifier]] trait based on
+/** Implementation of the [[sigma.AvlTreeVerifier]] trait based on
   * [[scorex.crypto.authds.avltree.batch.BatchAVLVerifier]].
   *
   * @see BatchAVLVerifier, AvlTreeVerifier
@@ -534,7 +534,7 @@ class CostingSigmaDslBuilder extends SigmaDslBuilder { dsl =>
 
   /** Wraps the given [[ErgoBox]] into SigmaDsl value of type [[Box]].
     * @param ebox  the value to be wrapped
-    * @see [[sigmastate.SBox]], [[special.sigma.Box]]
+    * @see [[sigmastate.SBox]], [[sigma.Box]]
     */
   def Box(ebox: ErgoBox): Box = CostingBox(ebox)
 

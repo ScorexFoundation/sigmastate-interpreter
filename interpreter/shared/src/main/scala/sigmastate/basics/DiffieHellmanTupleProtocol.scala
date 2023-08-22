@@ -10,7 +10,7 @@ import sigmastate.eval.SigmaDsl
 import CryptoConstants.EcPointType
 import sigmastate.serialization.{OpCodes, GroupElementSerializer}
 import sigmastate.serialization.OpCodes.OpCode
-import special.sigma.SigmaProp
+import sigma.SigmaProp
 
 
 trait DiffieHellmanTupleProtocol extends SigmaProtocol[DiffieHellmanTupleProtocol] {

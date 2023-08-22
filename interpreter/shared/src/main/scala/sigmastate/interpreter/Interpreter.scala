@@ -171,7 +171,7 @@ trait Interpreter {
       val (resProp, cost) = {
         val ctx = context.asInstanceOf[ErgoLikeContext]
         ErgoTreeEvaluator.eval(ctx, ErgoTree.EmptyConstants, exp, evalSettings) match {
-          case (p: special.sigma.SigmaProp, c) => (p, c)
+          case (p: sigma.SigmaProp, c) => (p, c)
           case (res, _) =>
             sys.error(s"Invalid result type of $res: expected SigmaProp when evaluating $exp")
         }

@@ -4,7 +4,7 @@ import org.ergoplatform.ErgoBox.{BoxId, NonMandatoryRegisterId, TokenId}
 import sigmastate.interpreter.{CostedProverResult, ProverResult}
 import scalan.RType
 import org.ergoplatform.{ErgoLikeContext, ErgoBox}
-import special.sigma.{SigmaDslBuilder, AnyValue, SigmaProp}
+import sigma.{SigmaDslBuilder, AnyValue, SigmaProp}
 import sigmastate.Values.ErgoTree
 import sigmastate.eval.{IRContext, CostingSigmaDslBuilder}
 

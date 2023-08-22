@@ -10,10 +10,10 @@ import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.SCollection.SByteArray
 import sigmastate.basics.{ProveDHTuple, CryptoConstants}
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import special.sigma._
+import sigma._
 import sigmastate.eval._
 import sigmastate.helpers.NegativeTesting
-import special.collection.Coll
+import sigma.collection.Coll
 
 trait LangTests extends Matchers with NegativeTesting {
 

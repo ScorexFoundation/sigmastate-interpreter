@@ -1,14 +1,13 @@
-package special.sigma
+package sigma
 
-import org.scalatest.{BeforeAndAfterAll}
-import special.collection._
-
-import scala.language.reflectiveCalls
+import org.scalatest.BeforeAndAfterAll
 import scalan.{BaseCtxTests, BaseLiftableTests}
-import sigma.VersionContext
-import sigmastate.{eval, TrivialProp}
+import sigma.collection._
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
+import sigmastate.{TrivialProp, eval}
+
+import scala.language.reflectiveCalls
 
 class SigmaDslStaginTests extends BaseCtxTests with ErgoScriptTestkit with BaseLiftableTests with BeforeAndAfterAll {
   class Ctx extends TestContext with IRContext with LiftableTestKit {
@@ -17,13 +16,13 @@ class SigmaDslStaginTests extends BaseCtxTests with ErgoScriptTestkit with BaseL
   test("invokeUnlifted") {
     val cake = new Ctx
     import cake._
-    import Liftables._
-    import Context._
-    import Coll._
     import Box._
-    import SigmaProp._
-    import SigmaDslBuilder._
+    import Coll._
+    import Context._
     import EnvRep._
+    import Liftables._
+    import SigmaDslBuilder._
+    import SigmaProp._
 
     val dsl: SSigmaDslBuilder = eval.SigmaDsl
     type RSigmaDslBuilder = cake.SigmaDslBuilder
@@ -47,7 +46,7 @@ class SigmaDslStaginTests extends BaseCtxTests with ErgoScriptTestkit with BaseL
 
     cake.check(boxA1, { env: EnvRep[RBox] => for { obj <- env } yield obj.value }, boxA1.value)
     cake.check(boxA1, { env: EnvRep[RBox] => for { obj <- env } yield obj.creationInfo }, boxA1.creationInfo)
-    cake.check(boxA1, { env: EnvRep[RBox] => for { obj <- env; arg <- lifted(1) } yield obj.getReg[Coll[Byte]](arg) }, boxA1.getReg[special.collection.Coll[Byte]](1))
+    cake.check(boxA1, { env: EnvRep[RBox] => for { obj <- env; arg <- lifted(1) } yield obj.getReg[Coll[Byte]](arg) }, boxA1.getReg[sigma.collection.Coll[Byte]](1))
 
   }
 

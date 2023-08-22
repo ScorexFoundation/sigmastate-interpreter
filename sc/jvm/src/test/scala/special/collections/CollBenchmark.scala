@@ -1,10 +1,10 @@
-package special.collections
+package sigma.collections
 
 import org.scalameter.{execution, Executor}
 import org.scalameter.api._
 import org.scalameter.picklers.Implicits._
-import special.collection.Coll
-import special.collection.Extensions._
+import sigma.collection.Coll
+import sigma.collection.Extensions._
 import debox.cfor
 
 

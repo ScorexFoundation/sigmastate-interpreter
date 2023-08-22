@@ -1,4 +1,4 @@
-package special.sigma
+package sigma
 
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.settings.ErgoAlgos
@@ -22,13 +22,13 @@ import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers
 import sigmastate._
-import special.collection.Coll
+import sigma.collection.Coll
 
 import java.math.BigInteger
 import scala.reflect.ClassTag
 
 trait SigmaTestingData extends TestingCommons with ObjectGenerators {
-  /** Creates a [[special.collection.Coll]] with the given `items`. */
+  /** Creates a [[sigma.collection.Coll]] with the given `items`. */
   def Coll[T](items: T*)(implicit cT: RType[T]): Coll[T] =
     CostingSigmaDslBuilder.Colls.fromItems(items: _*)
 

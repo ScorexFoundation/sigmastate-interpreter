@@ -13,7 +13,7 @@ import sigmastate.eval.Extensions._
 import sigmastate.eval.{Evaluation, _}
 import sigmastate.basics.CryptoConstants.EcPointType
 import sigmastate.exceptions.SerializerException
-import special.sigma.{Box, AvlTree}
+import sigma.{Box, AvlTree}
 import sigmastate.serialization.SerializationSpecification
 
 class DataJsonEncoderSpecification extends SerializationSpecification {

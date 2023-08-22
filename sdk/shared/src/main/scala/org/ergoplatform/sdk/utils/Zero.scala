@@ -10,9 +10,9 @@ import sigmastate.Values.ErgoTree
 import sigmastate.basics.CryptoConstants
 import sigmastate.eval._
 import sigmastate.{AvlTreeData, AvlTreeFlags, TrivialProp}
-import special.Types.TupleType
-import special.collection.{Coll, CollType}
-import special.sigma.{AvlTree, AvlTreeRType, BigInt, BigIntRType, Box, BoxRType, GroupElement, GroupElementRType, SigmaProp, SigmaPropRType}
+import sigma.Types.TupleType
+import sigma.collection.{Coll, CollType}
+import sigma.{AvlTree, AvlTreeRType, BigInt, BigIntRType, Box, BoxRType, GroupElement, GroupElementRType, SigmaProp, SigmaPropRType}
 
 import java.math.BigInteger
 import scala.language.implicitConversions

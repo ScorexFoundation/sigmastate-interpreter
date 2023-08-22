@@ -1,7 +1,7 @@
-package special.collections
+package sigma.collections
 
 import org.scalameter.KeyValue
-import org.scalameter.api.{Gen, Bench, _}
+import org.scalameter.api.{Bench, Gen, _}
 
 trait BenchmarkGens extends CollGens { suite: Bench[Double] =>
   def maxSize = 100000

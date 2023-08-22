@@ -15,7 +15,7 @@ import sigmastate.interpreter.EvalSettings.EvaluationMode
 import sigmastate.interpreter.{CostedProverResult, ErgoTreeEvaluator, EvalSettings, Interpreter, ProverResult}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.utils.Helpers._
-import special.sigma.{Box, SigmaDslTesting}
+import sigma.{Box, SigmaDslTesting}
 
 /** Specification to verify that the interpreter behaves according to docs/aot-jit-switch.md.
   *

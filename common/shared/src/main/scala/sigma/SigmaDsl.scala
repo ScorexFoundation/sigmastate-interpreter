@@ -1,8 +1,8 @@
-package special.sigma
+package sigma
 
 import java.math.BigInteger
 
-import special.collection._
+import sigma.collection._
 import scalan._
 import scorex.crypto.authds.{ADDigest, ADValue}
 import scorex.crypto.authds.avltree.batch.Operation
@@ -694,7 +694,7 @@ trait Context {
     * @tparam T expected type of the variable.
     * @return Some(value) if the variable is defined in the context AND has the given type.
     *         None otherwise
-    * @throws special.sigma.InvalidType exception when the type of the variable value is
+    * @throws `sigmastate.eval.InvalidType` exception when the type of the variable value is
     *                                   different from cT.
     */
   def getVar[T](id: Byte)(implicit cT: RType[T]): Option[T]

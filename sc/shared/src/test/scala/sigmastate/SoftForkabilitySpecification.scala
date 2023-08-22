@@ -20,7 +20,7 @@ import sigmastate.serialization.SigmaSerializer.startReader
 import sigmastate.serialization._
 import sigmastate.utils.Helpers._
 import sigmastate.utxo.DeserializeContext
-import special.sigma.SigmaTestingData
+import sigma.SigmaTestingData
 
 class SoftForkabilitySpecification extends SigmaTestingData
     with CompilerTestingCommons

@@ -22,8 +22,8 @@ import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization._
 import sigmastate.utxo.{SimpleTransformerCompanion, Transformer}
-import special.collection.Coll
-import special.sigma.{GroupElement, SigmaProp}
+import sigma.collection.Coll
+import sigma.{GroupElement, SigmaProp}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -1177,7 +1177,7 @@ case class Exponentiate(override val left: Value[SGroupElement.type],
 
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val leftV = left.evalTo[GroupElement](env)
-    val rightV = right.evalTo[special.sigma.BigInt](env)
+    val rightV = right.evalTo[sigma.BigInt](env)
     addCost(Exponentiate.costKind)
     leftV.exp(rightV)
   }

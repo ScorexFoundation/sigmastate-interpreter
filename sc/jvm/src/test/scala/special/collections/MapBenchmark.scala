@@ -1,4 +1,4 @@
-package special.collections
+package sigma.collections
 
 import org.scalameter.api.Bench
 import scalan.{AVHashMap, Nullable}

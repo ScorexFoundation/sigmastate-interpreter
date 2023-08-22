@@ -55,10 +55,10 @@ trait CompilerTestingCommons extends TestingCommons
         // (ctx.HEIGHT method call compiled to Height IR node)
         // -------
         // We add ctx as it's own variable with id = 1
-        val ctxVar = Extensions.toAnyValue[special.sigma.Context](ctx)(special.sigma.ContextRType)
+        val ctxVar = Extensions.toAnyValue[sigma.Context](ctx)(sigma.ContextRType)
         val newVars = if (ctx.vars.length < 2) {
           val vars = ctx.vars.toArray
-          val buf = new Array[special.sigma.AnyValue](2)
+          val buf = new Array[sigma.AnyValue](2)
           Array.copy(vars, 0, buf, 0, vars.length)
           buf(1) = ctxVar
           CostingSigmaDslBuilder.Colls.fromArray(buf)

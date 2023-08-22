@@ -7,8 +7,8 @@ import scalan.RType
 import scorex.crypto.hash.Digest32
 import sigmastate.Values.SigmaBoolean
 import sigmastate.basics.CryptoConstants.EcPointType
-import special.collection.{Coll, CollBuilder}
-import special.sigma._
+import sigma.collection.{Coll, CollBuilder}
+import sigma._
 import supertagged.TaggedType
 
 import scala.language.implicitConversions
@@ -43,7 +43,7 @@ package object eval {
 
   /** Implicit conversions between Dsl type and the type wrapped by the corresponding type Dsl type.
     * Here BigInt is Dsl type and BigInteger is wrapped type.
-    * @see `special.sigma.CBigInt`
+    * @see `sigma.CBigInt`
     */
   implicit def bigIntegerToBigInt(bi: BigInteger): BigInt = SigmaDsl.BigInt(bi)
   implicit def bigIntToBigInteger(bi: BigInt): BigInteger = SigmaDsl.toBigInteger(bi)

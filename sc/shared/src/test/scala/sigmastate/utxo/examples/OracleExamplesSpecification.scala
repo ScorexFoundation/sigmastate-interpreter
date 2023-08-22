@@ -19,7 +19,7 @@ import sigmastate.crypto.{BigIntegers, CryptoFacade}
 import sigmastate.eval.Extensions.ArrayOps
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.utxo._
-import special.sigma.Context
+import sigma.Context
 import sigmastate.utils.Helpers._
 
 class OracleExamplesSpecification extends CompilerTestingCommons

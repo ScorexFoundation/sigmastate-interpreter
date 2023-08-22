@@ -17,8 +17,8 @@ import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.interpreter.ProverResult
 import sigmastate.lang.Terms._
-import special.collection.Coll
-import special.sigma.{AvlTree, Context}
+import sigma.collection.Coll
+import sigma.{AvlTree, Context}
 
 
 class AVLTreeScriptsSpecification extends CompilerTestingCommons

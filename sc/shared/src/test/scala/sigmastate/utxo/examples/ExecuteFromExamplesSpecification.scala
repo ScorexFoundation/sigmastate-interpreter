@@ -3,7 +3,7 @@ package sigmastate.utxo.examples
 import org.ergoplatform._
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, TestContractSpec}
 import sigmastate.helpers.CompilerTestingCommons
-import special.sigma.Context
+import sigma.Context
 import sigmastate.eval.Extensions._
 
 class ExecuteFromExamplesSpecification extends CompilerTestingCommons { suite =>

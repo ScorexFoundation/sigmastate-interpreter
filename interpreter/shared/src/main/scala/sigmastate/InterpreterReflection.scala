@@ -2,20 +2,18 @@ package sigmastate
 
 import org.ergoplatform.ErgoBox.RegisterId
 import scalan.reflection.CommonReflection.registerClassEntry
-import scalan.reflection.{SRConstructor, mkConstructor, mkMethod, SRMethod}
+import scalan.reflection.{mkConstructor, mkMethod}
+import sigma.collection.Coll
+import sigma.{AvlTree, CoreLibReflection, SigmaDslBuilder}
 import sigmastate.SAvlTree.KeyValueColl
-import sigmastate.SCollection.{SIntArray, SByteArray, SBooleanArray}
+import sigmastate.SCollection.{SBooleanArray, SByteArray, SIntArray}
 import sigmastate.Values._
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.crypto.GF2_192_Poly
 import sigmastate.interpreter.ErgoTreeEvaluator
 import sigmastate.lang.Terms._
-import sigmastate.lang.{CheckingSigmaBuilder, Terms}
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.utxo._
-import special.CoreLibReflection
-import special.collection.Coll
-import special.sigma.{SigmaDslBuilder, AvlTree}
 
 /** Reflection metadata for `interpreter` module.
   * For each class of this module that needs reflection metadata,

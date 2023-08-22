@@ -13,8 +13,8 @@ import sigmastate.eval.{Evaluation, SigmaDsl}
 import sigmastate.exceptions.InterpreterException
 import sigmastate.interpreter.ErgoTreeEvaluator
 import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv, error}
-import special.collection.Coll
-import special.sigma.{Box, SigmaProp}
+import sigma.collection.Coll
+import sigma.{Box, SigmaProp}
 
 // TODO refactor: remove this trait as it doesn't have semantic meaning
 
@@ -390,7 +390,7 @@ case class ExtractAmount(input: Value[SBox.type]) extends Extract[SLong.type] wi
 object ExtractAmount extends SimpleTransformerCompanion with FixedCostValueCompanion {
   val OpType = SFunc(SBox, SLong)
   override def opCode: OpCode = OpCodes.ExtractAmountCode
-  /** Cost of: 1) access `value` property of a [[special.sigma.Box]] */
+  /** Cost of: 1) access `value` property of a [[sigma.Box]] */
   override val costKind = FixedCost(JitCost(8))
   override def argInfos: Seq[ArgInfo] = ExtractAmountInfo.argInfos
 }
@@ -563,7 +563,7 @@ object DeserializeRegister extends ValueCompanion {
     baseCost = JitCost(1), perChunkCost = JitCost(10), chunkSize = 128)
 }
 
-/** See [[special.sigma.Context.getVar()]] for detailed description. */
+/** See [[sigma.Context.getVar()]] for detailed description. */
 case class GetVar[V <: SType](varId: Byte, override val tpe: SOption[V]) extends NotReadyValue[SOption[V]] {
   override def companion = GetVar
   override val opType = SFunc(SContext.ContextFuncDom, tpe)

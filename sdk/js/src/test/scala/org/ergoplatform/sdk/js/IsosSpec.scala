@@ -13,9 +13,8 @@ import sigmastate.Values.Constant
 import sigmastate.eval.Colls
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.generators.ObjectGenerators
-import special.collection.Coll
-import special.sigma
-import special.sigma.GroupElement
+import sigma.collection.Coll
+import sigma.GroupElement
 
 import scala.scalajs.js
 

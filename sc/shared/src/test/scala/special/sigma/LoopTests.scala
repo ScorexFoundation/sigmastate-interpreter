@@ -1,4 +1,4 @@
-package special.sigma
+package sigma
 
 import sigmastate.helpers.CompilerTestingCommons
 

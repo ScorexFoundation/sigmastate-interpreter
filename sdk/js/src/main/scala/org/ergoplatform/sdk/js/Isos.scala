@@ -21,10 +21,9 @@ import sigmastate.fleetSdkCommon.{distEsmTypesBoxesMod => boxesMod, distEsmTypes
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
 import sigmastate.{AvlTreeData, AvlTreeFlags, SType}
-import special.collection.Coll
-import special.collection.Extensions.CollBytesOps
-import special.sigma
-import special.sigma.GroupElement
+import sigma.collection.Coll
+import sigma.collection.Extensions.CollBytesOps
+import sigma.GroupElement
 
 import java.math.BigInteger
 import scala.collection.immutable.ListMap
@@ -111,7 +110,7 @@ object Isos {
     }
   }
 
-  implicit val isoHeader: Iso[Header, special.sigma.Header] = new Iso[Header, special.sigma.Header] {
+  implicit val isoHeader: Iso[Header, sigma.Header] = new Iso[Header, sigma.Header] {
     override def to(a: Header): sigma.Header = {
       CHeader(
         id = isoStringToColl.to(a.id),
@@ -153,7 +152,7 @@ object Isos {
     }
   }
 
-  implicit val isoPreHeader: Iso[PreHeader, special.sigma.PreHeader] = new Iso[PreHeader, special.sigma.PreHeader] {
+  implicit val isoPreHeader: Iso[PreHeader, sigma.PreHeader] = new Iso[PreHeader, sigma.PreHeader] {
     override def to(a: PreHeader): sigma.PreHeader = {
       CPreHeader(
         version = a.version,
@@ -255,7 +254,7 @@ object Isos {
     override def from(x: DataInput): inputsMod.DataInput = inputsMod.DataInput(x.boxId.convertTo[boxesMod.BoxId])
   }
 
-  implicit val isoBigInt: Iso[js.BigInt, special.sigma.BigInt] = new Iso[js.BigInt, special.sigma.BigInt] {
+  implicit val isoBigInt: Iso[js.BigInt, sigma.BigInt] = new Iso[js.BigInt, sigma.BigInt] {
     override def to(x: js.BigInt): sigma.BigInt = {
       CBigInt(new BigInteger(x.toString(10)))
     }

@@ -22,8 +22,8 @@ import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.lang.TransformingSigmaBuilder._
 import sigmastate._
 import sigmastate.utxo._
-import special.collection.Coll
-import special.sigma._
+import sigma.collection.Coll
+import sigma._
 
 import java.math.BigInteger
 import scala.collection.compat.immutable.ArraySeq
@@ -238,7 +238,7 @@ trait ObjectGenerators extends TypeGenerators
   val unsignedShortGen: Gen[Short] = Gen.chooseNum(0, Short.MaxValue).map(_.toShort)
 
   lazy val contextExtensionGen: Gen[ContextExtension] = for {
-    values: collection.Seq[(Byte, EvaluatedValue[SType])] <- Gen.sequence(contextExtensionValuesGen(0, 5))(Buildable.buildableSeq)
+    values: scala.collection.Seq[(Byte, EvaluatedValue[SType])] <- Gen.sequence(contextExtensionValuesGen(0, 5))(Buildable.buildableSeq)
   } yield ContextExtension(mutable.LinkedHashMap[Byte, EvaluatedValue[SType]](values.sortBy(_._1).toSeq:_*))
 
   lazy val serializedProverResultGen: Gen[ProverResult] = for {

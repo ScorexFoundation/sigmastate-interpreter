@@ -1,4 +1,4 @@
-package special.collection
+package sigma.collection
 
 import java.util
 import scalan._  // required

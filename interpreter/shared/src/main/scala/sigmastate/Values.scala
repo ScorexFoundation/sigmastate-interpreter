@@ -32,10 +32,10 @@ import sigmastate.lang.CheckingSigmaBuilder._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.transformers.ProveDHTupleSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import special.sigma.{AvlTree, Header, PreHeader, _}
+import sigma.{AvlTree, Header, PreHeader, _}
 import sigmastate.lang.SourceContext
 import sigma.util.safeNewArray
-import special.collection.Coll
+import sigma.collection.Coll
 
 import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable

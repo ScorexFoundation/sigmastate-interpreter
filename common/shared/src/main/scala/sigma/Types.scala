@@ -1,10 +1,11 @@
-package special
+package sigma
 
-import scalan.util.CollectionUtil
 import scalan.RType
-import scala.reflect.ClassTag
-import special.collection.Coll
 import scalan.RType.SomeType
+import scalan.util.CollectionUtil
+import sigma.collection.Coll
+
+import scala.reflect.ClassTag
 
 object Types {
   /** Generic representation of tuples values. */

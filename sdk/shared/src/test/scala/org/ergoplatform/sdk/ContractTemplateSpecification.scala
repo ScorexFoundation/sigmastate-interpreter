@@ -8,7 +8,7 @@ import sigmastate._
 import sigmastate.eval.CBigInt
 import sigmastate.helpers.NegativeTesting
 import sigmastate.serialization.{SerializationSpecification, SigmaSerializer}
-import special.sigma.ContractsTestkit
+import sigma.ContractsTestkit
 
 import java.math.BigInteger
 

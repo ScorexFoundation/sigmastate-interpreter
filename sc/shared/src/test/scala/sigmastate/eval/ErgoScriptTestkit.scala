@@ -14,7 +14,7 @@ import sigmastate.lang.Terms.ValueOps
 import sigmastate.lang.{CompilerResult, CompilerSettings, LangTests, SigmaCompiler}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.{AvlTreeData, CompilerTestsBase, SType}
-import special.sigma.{ContractsTestkit, Context => DContext}
+import sigma.{ContractsTestkit, Context => DContext}
 
 import scala.annotation.unused
 import scala.util.Success

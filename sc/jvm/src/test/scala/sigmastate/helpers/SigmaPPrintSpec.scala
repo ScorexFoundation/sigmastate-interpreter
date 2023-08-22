@@ -12,8 +12,8 @@ import sigmastate.lang.Terms.MethodCall
 import sigmastate.serialization.OpCodes
 import sigmastate.utils.Helpers
 import sigmastate.utxo.SelectField
-import special.collection.CollType
-import special.sigma.SigmaDslTesting
+import sigma.collection.CollType
+import sigma.SigmaDslTesting
 
 import java.math.BigInteger
 import scala.collection.mutable.ArrayBuffer

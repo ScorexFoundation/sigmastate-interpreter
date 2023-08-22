@@ -1,11 +1,10 @@
-package special
+package sigma
 
 import scalan.RType
 import scalan.reflection.CommonReflection.registerClassEntry
 import scalan.reflection._
-import special.collection.{CollBuilder, Coll}
-import special.sigma._
-import special.wrappers.{OptionWrapSpec, RTypeWrapSpec}
+import sigma._
+import sigma.collection._
 
 /** Registrations of reflection metadata for core-lib module.
   * For each class of this module that needs reflection metadata,
@@ -34,7 +33,7 @@ object CoreLibReflection {
     )
   }
 
-  { val clazz = classOf[special.sigma.BigInt]
+  { val clazz = classOf[sigma.BigInt]
     val paramTypes = Array[Class[_]](clazz)
     registerClassEntry(clazz,
       methods = Map(
@@ -78,32 +77,6 @@ object CoreLibReflection {
         mkMethod(clazz, "replicate", Array[Class[_]](classOf[Int], classOf[Object], classOf[RType[_]])) { (obj, args) =>
           obj.asInstanceOf[CollBuilder].replicate(args(0).asInstanceOf[Int],
             args(1).asInstanceOf[Any])(args(2).asInstanceOf[RType[Any]])
-        }
-      )
-    )
-  }
-
-  { val clazz = classOf[OptionWrapSpec]
-    registerClassEntry(clazz,
-      methods = Map(
-        mkMethod(clazz, "getOrElse", Array[Class[_]](classOf[Option[_]], classOf[Function0[_]])) { (obj, args) =>
-          val opt = args(0).asInstanceOf[Option[Any]]
-          val defaultFunc = args(1).asInstanceOf[Function0[Any]]
-          obj.asInstanceOf[OptionWrapSpec].getOrElse(opt, defaultFunc())
-        },
-        mkMethod(clazz, "isDefined", Array[Class[_]](classOf[Option[_]])) { (obj, args) =>
-          obj.asInstanceOf[OptionWrapSpec].isDefined(args(0).asInstanceOf[Option[_]])
-        },
-        mkMethod(clazz, "filter", Array[Class[_]](classOf[Option[_]], classOf[Function1[_,_]])) { (obj, args) =>
-          obj.asInstanceOf[OptionWrapSpec].filter(
-            args(0).asInstanceOf[Option[Any]], args(1).asInstanceOf[Any => Boolean])
-        },
-        mkMethod(clazz, "map", Array[Class[_]](classOf[Option[_]], classOf[Function1[_,_]])) { (obj, args) =>
-          obj.asInstanceOf[OptionWrapSpec].map(
-            args(0).asInstanceOf[Option[Any]], args(1).asInstanceOf[Any => Any])
-        },
-        mkMethod(clazz, "get", Array[Class[_]](classOf[Option[_]])) { (obj, args) =>
-          obj.asInstanceOf[OptionWrapSpec].get(args(0).asInstanceOf[Option[_]])
         }
       )
     )
@@ -431,13 +404,4 @@ object CoreLibReflection {
     )
   }
 
-  { val clazz = classOf[RTypeWrapSpec]
-    registerClassEntry(clazz,
-      methods = Map(
-        mkMethod(clazz, "name", Array[Class[_]](classOf[RType[_]])) { (obj, args) =>
-          obj.asInstanceOf[RTypeWrapSpec].name(args(0).asInstanceOf[RType[_]])
-        }
-      )
-    )
-  }
 }

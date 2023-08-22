@@ -13,7 +13,7 @@ import sigmastate.eval.CSigmaProp
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.serialization.ConstantSerializer
 import sigmastate.utils.Helpers
-import special.sigma.SigmaTestingData
+import sigma.SigmaTestingData
 
 import java.math.BigInteger
 

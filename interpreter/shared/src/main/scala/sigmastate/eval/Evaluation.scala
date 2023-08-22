@@ -6,7 +6,7 @@ import scalan.RType._
 import sigmastate.SType._
 import sigmastate.Values.SigmaBoolean
 import sigmastate._
-import special.Types._
+import sigma.Types._
 import debox.cfor
 import sigmastate.exceptions.CostLimitException
 import java.math.BigInteger
@@ -17,8 +17,8 @@ import scala.util.Try
 
 /** Helper methods used as part of ErgoTree evaluation. */
 object Evaluation {
-  import special.collection._
-  import special.sigma._
+  import sigma.collection._
+  import sigma._
 
   def msgCostLimitError(cost: Long, limit: Long) = s"Estimated execution cost $cost exceeds the limit $limit"
 
@@ -145,7 +145,7 @@ object Evaluation {
     case _: Unit  => UnitType
 
     case _: BigInteger => BigIntegerRType
-    case _: special.sigma.BigInt => BigIntRType
+    case _: sigma.BigInt => BigIntRType
 
     case _: GroupElement => GroupElementRType
 

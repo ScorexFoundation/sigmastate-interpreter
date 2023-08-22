@@ -19,8 +19,8 @@ import sigmastate.lang.{SigmaBuilder, Terms}
 import sigmastate.SCollection._
 import sigmastate.basics.CryptoConstants.{hashLength, EcPointType}
 import sigmastate.serialization.OpCodes
-import special.collection.Coll
-import special.sigma._
+import sigma.collection.Coll
+import sigma._
 
 import scala.language.implicitConversions
 import scala.reflect.{classTag, ClassTag}
@@ -2563,7 +2563,7 @@ case object SPreHeader extends SProduct with SPredefType with SMonoType {
 /** This type is introduced to unify handling of global and non-global (i.e. methods) operations.
   * It unifies implementation of global operation with implementation of methods and avoids code
   * duplication (following DRY principle https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
-  * The WrappedType is `special.sigma.SigmaDslBuilder`, which is an interface implemented by
+  * The WrappedType is `sigma.SigmaDslBuilder`, which is an interface implemented by
   * the singleton sigmastate.eval.CostingSigmaDslBuilder
   *
   * The Constant(...) tree node of this type are not allowed, as well as using it in register and

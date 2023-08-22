@@ -18,7 +18,7 @@ import sigmastate.eval.{CSigmaProp, Evaluation, IRContext, CAnyValue}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, CompilerTestingCommons}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.lang.Terms.ValueOps
-import special.sigma.{AnyValue, SigmaProp}
+import sigma.{AnyValue, SigmaProp}
 
 case class TestContractSpec(testSuite: CompilerTestingCommons)(implicit val IR: IRContext) extends ContractSpec {
 

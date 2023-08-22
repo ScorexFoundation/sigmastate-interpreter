@@ -6,7 +6,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, CompilerTestingCommons}
-import special.collection.Coll
+import sigma.collection.Coll
 
 
 class ContextEnrichingSpecification extends CompilerTestingCommons

@@ -4,7 +4,7 @@ import org.ergoplatform.ErgoAddressEncoder.{MainnetNetworkPrefix, NetworkPrefix}
 import org.ergoplatform.sdk.wallet.secrets.ExtendedSecretKey
 import sigmastate.basics.DLogProtocol.DLogProverInput
 import sigmastate.basics.{DLogProtocol, DiffieHellmanTupleProverInput}
-import special.sigma.GroupElement
+import sigma.GroupElement
 
 import java.math.BigInteger
 import scala.collection.mutable.ArrayBuffer

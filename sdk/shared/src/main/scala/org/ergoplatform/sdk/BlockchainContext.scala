@@ -1,8 +1,8 @@
 package org.ergoplatform.sdk
 
 import org.ergoplatform.sdk.wallet.protocol.context.BlockchainStateContext
-import special.collection.Coll
-import special.sigma.Header
+import sigma.collection.Coll
+import sigma.Header
 
 /** Represents a specific context of blockchain for execution
   * of transaction building scenario.

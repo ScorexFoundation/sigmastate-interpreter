@@ -1,4 +1,4 @@
-package special.sigma
+package sigma
 
 import scala.language.{existentials, implicitConversions}
 import scalan._
@@ -34,7 +34,7 @@ object BigInt extends EntityObject("BigInt") {
   // entityConst: single const for each entity
   import Liftables._
   import scala.reflect.{ClassTag, classTag}
-  type SBigInt = special.sigma.BigInt
+  type SBigInt = sigma.BigInt
   case class BigIntConst(
         constValue: SBigInt
       ) extends LiftedConst[SBigInt, BigInt] with BigInt
@@ -269,7 +269,7 @@ object GroupElement extends EntityObject("GroupElement") {
   // entityConst: single const for each entity
   import Liftables._
   import scala.reflect.{ClassTag, classTag}
-  type SGroupElement = special.sigma.GroupElement
+  type SGroupElement = sigma.GroupElement
   case class GroupElementConst(
         constValue: SGroupElement
       ) extends LiftedConst[SGroupElement, GroupElement] with GroupElement
@@ -409,7 +409,7 @@ object SigmaProp extends EntityObject("SigmaProp") {
   // entityConst: single const for each entity
   import Liftables._
   import scala.reflect.{ClassTag, classTag}
-  type SSigmaProp = special.sigma.SigmaProp
+  type SSigmaProp = sigma.SigmaProp
   case class SigmaPropConst(
         constValue: SSigmaProp
       ) extends LiftedConst[SSigmaProp, SigmaProp] with SigmaProp
@@ -573,7 +573,7 @@ object Box extends EntityObject("Box") {
   // entityConst: single const for each entity
   import Liftables._
   import scala.reflect.{ClassTag, classTag}
-  type SBox = special.sigma.Box
+  type SBox = sigma.Box
   case class BoxConst(
         constValue: SBox
       ) extends LiftedConst[SBox, Box] with Box
@@ -819,7 +819,7 @@ object AvlTree extends EntityObject("AvlTree") {
   // entityConst: single const for each entity
   import Liftables._
   import scala.reflect.{ClassTag, classTag}
-  type SAvlTree = special.sigma.AvlTree
+  type SAvlTree = sigma.AvlTree
   case class AvlTreeConst(
         constValue: SAvlTree
       ) extends LiftedConst[SAvlTree, AvlTree] with AvlTree
@@ -1092,7 +1092,7 @@ object PreHeader extends EntityObject("PreHeader") {
   // entityConst: single const for each entity
   import Liftables._
   import scala.reflect.{ClassTag, classTag}
-  type SPreHeader = special.sigma.PreHeader
+  type SPreHeader = sigma.PreHeader
   case class PreHeaderConst(
         constValue: SPreHeader
       ) extends LiftedConst[SPreHeader, PreHeader] with PreHeader
@@ -1253,7 +1253,7 @@ object Header extends EntityObject("Header") {
   // entityConst: single const for each entity
   import Liftables._
   import scala.reflect.{ClassTag, classTag}
-  type SHeader = special.sigma.Header
+  type SHeader = sigma.Header
   case class HeaderConst(
         constValue: SHeader
       ) extends LiftedConst[SHeader, Header] with Header
@@ -1526,7 +1526,7 @@ object Context extends EntityObject("Context") {
   // entityConst: single const for each entity
   import Liftables._
   import scala.reflect.{ClassTag, classTag}
-  type SContext = special.sigma.Context
+  type SContext = sigma.Context
   case class ContextConst(
         constValue: SContext
       ) extends LiftedConst[SContext, Context] with Context
@@ -1795,7 +1795,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
   // entityConst: single const for each entity
   import Liftables._
   import scala.reflect.{ClassTag, classTag}
-  type SSigmaDslBuilder = special.sigma.SigmaDslBuilder
+  type SSigmaDslBuilder = sigma.SigmaDslBuilder
   case class SigmaDslBuilderConst(
         constValue: SSigmaDslBuilder
       ) extends LiftedConst[SSigmaDslBuilder, SigmaDslBuilder] with SigmaDslBuilder
@@ -2339,9 +2339,9 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
   registerEntityObject("SigmaDslBuilder", SigmaDslBuilder)
 }
 
-object SigmaDslModule extends scalan.ModuleInfo("special.sigma", "SigmaDsl") {
+object SigmaDslModule extends scalan.ModuleInfo("sigma", "SigmaDsl") {
   val reflection = GraphIRReflection
 }
 }
 
-trait SigmaDslModule extends special.sigma.impl.SigmaDslDefs {self: SigmaLibrary =>}
+trait SigmaDslModule extends sigma.impl.SigmaDslDefs {self: SigmaLibrary =>}

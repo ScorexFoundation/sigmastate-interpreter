@@ -1,10 +1,10 @@
-package special.collections
+package sigma.collections
 
 import org.scalacheck.util.Buildable
 import org.scalacheck.{Arbitrary, Gen}
 import scalan._
 import scalan.RType
-import special.collection.{Coll, CollBuilder, CollOverArrayBuilder, PairColl}
+import sigma.collection.{Coll, CollBuilder, CollOverArrayBuilder, PairColl}
 import spire.scalacompat.BuilderCompat
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer

@@ -12,7 +12,7 @@ import sigmastate.basics.VerifierMessage.Challenge
 import CryptoConstants.{EcPointType, dlogGroup}
 import sigmastate.serialization.{OpCodes, GroupElementSerializer}
 import sigmastate.serialization.OpCodes.OpCode
-import special.sigma.SigmaProp
+import sigma.SigmaProp
 
 object DLogProtocol {
 

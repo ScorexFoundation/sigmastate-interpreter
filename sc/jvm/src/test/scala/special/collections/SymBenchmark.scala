@@ -1,4 +1,4 @@
-package special.collections
+package sigma.collections
 
 import debox.{Set => DSet, Map => DMap}
 import scalan.TestLibrary

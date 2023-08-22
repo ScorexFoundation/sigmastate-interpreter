@@ -21,7 +21,7 @@ import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.{GroupElementSerializer, ValueSerializer}
 import sigmastate.utils.Helpers._
 import sigmastate.{CompilerCrossVersionProps, SType, SigmaAnd}
-import special.sigma.SigmaDslTesting
+import sigma.SigmaDslTesting
 
 import java.math.BigInteger
 

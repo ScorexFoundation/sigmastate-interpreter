@@ -3,8 +3,8 @@ package sigmastate.crypto
 import scalan.RType
 import scorex.util.encode.Base16
 import sigmastate._
-import special.collection.Coll
-import special.sigma._
+import sigma.collection.Coll
+import sigma._
 
 import java.math.BigInteger
 import scala.scalajs.js
