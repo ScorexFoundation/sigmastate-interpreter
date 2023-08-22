@@ -6,7 +6,7 @@ import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, Te
 import scorex.crypto.hash.Blake2b256
 import sigmastate.eval.Digest32Coll
 import sigmastate.helpers.CompilerTestingCommons
-import sigma.collection.Coll
+import sigma.Coll
 import sigma.Context
 
 class OracleDataInputsExamplesSpecification extends CompilerTestingCommons { suite =>

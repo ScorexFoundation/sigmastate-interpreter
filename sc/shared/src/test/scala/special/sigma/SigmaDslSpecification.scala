@@ -20,8 +20,8 @@ import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigmastate.lang.Terms.{MethodCall, PropertyCall}
 import sigmastate.utxo._
-import sigma.collection._
-import sigma.collection.Extensions._
+import sigma._
+import sigma.Extensions._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.utils.Helpers
 import sigmastate.utils.Helpers._
@@ -6891,7 +6891,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         )),
         preGeneratedSamples = Some(samples))
     } else {
-      def error = new java.lang.NoSuchMethodException("sigmastate.SCollection$.forall_eval(sigmastate.lang.Terms$MethodCall,sigma.collection.Coll,scala.Function1,sigmastate.interpreter.ErgoTreeEvaluator))")
+      def error = new java.lang.NoSuchMethodException("sigmastate.SCollection$.forall_eval(sigmastate.lang.Terms$MethodCall,sigma.Coll,scala.Function1,sigmastate.interpreter.ErgoTreeEvaluator))")
       verifyCases(
         Seq((Coll[Box](), Expected(error))),
         existingFeature[Coll[Box], Boolean]({ (x: Coll[Box]) => throw error },
@@ -6967,7 +6967,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         )),
         preGeneratedSamples = Some(samples))
     } else {
-      def error = new java.lang.NoSuchMethodException("sigmastate.SCollection$.exist_eval(sigmastate.lang.Terms$MethodCall,sigma.collection.Coll,scala.Function1,sigmastate.interpreter.ErgoTreeEvaluator))")
+      def error = new java.lang.NoSuchMethodException("sigmastate.SCollection$.exist_eval(sigmastate.lang.Terms$MethodCall,sigma.Coll,scala.Function1,sigmastate.interpreter.ErgoTreeEvaluator))")
       verifyCases(
         Seq((Coll[Box](), Expected(error))),
         existingFeature[Coll[Box], Boolean]({ (x: Coll[Box]) => throw error },
@@ -7072,7 +7072,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             )
           )))
     } else {
-      def error = new java.lang.NoSuchMethodException("sigmastate.SCollection$.exist_eval(sigmastate.lang.Terms$MethodCall,sigma.collection.Coll,scala.Function1,sigmastate.interpreter.ErgoTreeEvaluator))")
+      def error = new java.lang.NoSuchMethodException("sigmastate.SCollection$.exist_eval(sigmastate.lang.Terms$MethodCall,sigma.Coll,scala.Function1,sigmastate.interpreter.ErgoTreeEvaluator))")
       verifyCases(
         Seq( (Coll[BigInt](), Expected(error)) ),
         existingFeature[Coll[BigInt], Boolean](
@@ -7187,7 +7187,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           )
         )))
     } else {
-      def error = new java.lang.NoSuchMethodException("sigmastate.SCollection$.exist_eval(sigmastate.lang.Terms$MethodCall,sigma.collection.Coll,scala.Function1,sigmastate.interpreter.ErgoTreeEvaluator))")
+      def error = new java.lang.NoSuchMethodException("sigmastate.SCollection$.exist_eval(sigmastate.lang.Terms$MethodCall,sigma.Coll,scala.Function1,sigmastate.interpreter.ErgoTreeEvaluator))")
       verifyCases(
         Seq( (Coll[BigInt](), Expected(error)) ),
         existingFeature[Coll[BigInt], Boolean](
@@ -7795,7 +7795,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             )
           )))
     } else {
-      def error = new java.lang.NoSuchMethodException("sigmastate.SCollection$.fold_eval(sigmastate.lang.Terms$MethodCall,sigma.collection.Coll,java.lang.Object,scala.Function1,sigmastate.interpreter.ErgoTreeEvaluator))")
+      def error = new java.lang.NoSuchMethodException("sigmastate.SCollection$.fold_eval(sigmastate.lang.Terms$MethodCall,sigma.Coll,java.lang.Object,scala.Function1,sigmastate.interpreter.ErgoTreeEvaluator))")
       verifyCases(
         Seq( ((Coll[Byte](),  0), Expected(error)) ),
         existingFeature[(Coll[Byte], Int), Int](
@@ -8073,7 +8073,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             )
           ) ))
     } else {
-      def error = new java.lang.NoSuchMethodException("sigmastate.SCollection$.fold_eval(sigmastate.lang.Terms$MethodCall,sigma.collection.Coll,int,int,sigmastate.interpreter.ErgoTreeEvaluator))")
+      def error = new java.lang.NoSuchMethodException("sigmastate.SCollection$.fold_eval(sigmastate.lang.Terms$MethodCall,sigma.Coll,int,int,sigmastate.interpreter.ErgoTreeEvaluator))")
       verifyCases(
         Seq( ((Coll[Byte](),  0), Expected(error)) ),
         existingFeature(
@@ -8739,7 +8739,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         )),
         preGeneratedSamples = Some(samples))
     } else {
-      def error = new java.lang.NoSuchMethodException("sigmastate.SCollection$.slice_eval(sigmastate.lang.Terms$MethodCall,sigma.collection.Coll,int,int,sigmastate.interpreter.ErgoTreeEvaluator))")
+      def error = new java.lang.NoSuchMethodException("sigmastate.SCollection$.slice_eval(sigmastate.lang.Terms$MethodCall,sigma.Coll,int,int,sigmastate.interpreter.ErgoTreeEvaluator))")
       verifyCases(
         Seq( (Coll[Int](), (-1, 0)) -> Expected(error) ),
         existingFeature({ (x: (Coll[Int], (Int, Int))) => throw error; x._1.slice(x._2._1, x._2._2) },
@@ -8818,7 +8818,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           )
         )))
     } else {
-      def error = new java.lang.NoSuchMethodException("sigmastate.SCollection$.append_eval(sigmastate.lang.Terms$MethodCall,sigma.collection.Coll,sigma.collection.Coll,sigmastate.interpreter.ErgoTreeEvaluator))")
+      def error = new java.lang.NoSuchMethodException("sigmastate.SCollection$.append_eval(sigmastate.lang.Terms$MethodCall,sigma.Coll,sigma.Coll,sigmastate.interpreter.ErgoTreeEvaluator))")
       verifyCases(
         Seq( (Coll[Int](), Coll[Int]()) -> Expected(error) ),
         existingFeature(
@@ -9948,7 +9948,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         preGeneratedSamples = Some(Seq.empty)
       )
     } else {
-      def error = new java.lang.NoSuchMethodException("sigmastate.SCollection$.fold_eval(sigmastate.lang.Terms$MethodCall,sigma.collection.Coll,java.lang.Object,scala.Function1,sigmastate.interpreter.ErgoTreeEvaluator))")
+      def error = new java.lang.NoSuchMethodException("sigmastate.SCollection$.fold_eval(sigmastate.lang.Terms$MethodCall,sigma.Coll,java.lang.Object,scala.Function1,sigmastate.interpreter.ErgoTreeEvaluator))")
       verifyCases(
         Seq( (keys, initial) -> Expected(error) ),
         existingFeature[(Coll[Coll[Byte]], Coll[Byte]), Coll[Byte]](

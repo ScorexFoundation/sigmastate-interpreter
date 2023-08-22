@@ -19,7 +19,7 @@ import sigmastate.lang.Terms._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.utils.Helpers.TryOps
 import sigmastate.utxo._
-import sigma.collection._
+import sigma._
 import sigma.{ContractsTestkit, SigmaDslTesting}
 
 

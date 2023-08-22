@@ -12,7 +12,7 @@ import sigmastate.lang.Terms.MethodCall
 import sigmastate.serialization.OpCodes
 import sigmastate.utils.Helpers
 import sigmastate.utxo.SelectField
-import sigma.collection.CollType
+import sigma.CollType
 import sigma.SigmaDslTesting
 
 import java.math.BigInteger

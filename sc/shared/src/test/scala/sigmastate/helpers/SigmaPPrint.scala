@@ -17,8 +17,7 @@ import sigmastate.lang.Terms.MethodCall
 import sigmastate.serialization.GroupElementSerializer
 import sigmastate.utxo.SelectField
 import sigmastate.interpreter.{CompanionDesc, ErgoTreeEvaluator, FixedCostItem, MethodDesc}
-import sigma.collection.{Coll, CollType}
-import sigma.GroupElement
+import sigma.{Coll, CollType, GroupElement}
 
 import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable

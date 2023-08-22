@@ -1,4 +1,4 @@
-package sigma.collection
+package sigma
 
 import java.util
 import scalan._  // required
@@ -139,7 +139,7 @@ class CollOverArray[@specialized A](val toArray: Array[A], val builder: CollBuil
 
   override def equals(obj: scala.Any): Boolean = (this eq obj.asInstanceOf[AnyRef]) || (obj match {
     case obj: CollOverArray[_] if obj.tItem == this.tItem =>
-      util.Objects.deepEquals(obj.toArray, toArray)
+      java.util.Objects.deepEquals(obj.toArray, toArray)
     case _ => false
   })
 

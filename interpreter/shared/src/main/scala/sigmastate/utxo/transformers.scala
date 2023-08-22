@@ -13,7 +13,7 @@ import sigmastate.eval.{Evaluation, SigmaDsl}
 import sigmastate.exceptions.InterpreterException
 import sigmastate.interpreter.ErgoTreeEvaluator
 import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv, error}
-import sigma.collection.Coll
+import sigma.Coll
 import sigma.{Box, SigmaProp}
 
 // TODO refactor: remove this trait as it doesn't have semantic meaning

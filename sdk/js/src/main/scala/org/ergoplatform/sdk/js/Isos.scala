@@ -21,8 +21,8 @@ import sigmastate.fleetSdkCommon.{distEsmTypesBoxesMod => boxesMod, distEsmTypes
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
 import sigmastate.{AvlTreeData, AvlTreeFlags, SType}
-import sigma.collection.Coll
-import sigma.collection.Extensions.CollBytesOps
+import sigma.Coll
+import sigma.Extensions.CollBytesOps
 import sigma.GroupElement
 
 import java.math.BigInteger

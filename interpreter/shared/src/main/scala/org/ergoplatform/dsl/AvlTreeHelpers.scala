@@ -1,6 +1,6 @@
 package org.ergoplatform.dsl
 
-import sigma.collection.Coll
+import sigma.Coll
 import sigmastate.eval.{CAvlTree, CostingSigmaDslBuilder}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Digest32, Blake2b256}

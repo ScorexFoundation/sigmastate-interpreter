@@ -1,4 +1,4 @@
-package sigma.collections
+package sigma
 
 import org.scalameter.api._
 import debox.cfor

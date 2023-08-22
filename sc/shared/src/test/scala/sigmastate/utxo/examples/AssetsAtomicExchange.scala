@@ -3,7 +3,7 @@ package sigmastate.utxo.examples
 import org.ergoplatform.dsl.ContractSyntax.Token
 import sigma.Context
 import org.ergoplatform.ErgoBox.{R4, TokenId}
-import sigma.collection.Coll
+import sigma.Coll
 import org.ergoplatform.dsl.{SigmaContractSyntax, ContractSpec, StdContracts}
 
 /** Contract specification for assets atomic exchange transactions.

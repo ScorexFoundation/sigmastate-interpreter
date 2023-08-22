@@ -11,7 +11,7 @@ import sigmastate.crypto.{CryptoFacade, Ecp}
 import sigmastate.lang.{CheckingSigmaBuilder, TransformingSigmaBuilder}
 import sigmastate.utils.Helpers
 import sigmastate.{Platform, SCollection, SCollectionType, SType}
-import sigma.collection.Coll
+import sigma.Coll
 import sigma._
 
 import java.math.BigInteger

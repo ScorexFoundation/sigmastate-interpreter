@@ -17,7 +17,7 @@ import scala.util.Try
 
 /** Helper methods used as part of ErgoTree evaluation. */
 object Evaluation {
-  import sigma.collection._
+  import sigma._
   import sigma._
 
   def msgCostLimitError(cost: Long, limit: Long) = s"Estimated execution cost $cost exceeds the limit $limit"

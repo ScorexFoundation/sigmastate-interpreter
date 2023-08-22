@@ -3,10 +3,10 @@ package org.ergoplatform.sdk
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import sigma.collection.Coll
+import sigma.Coll
 import org.ergoplatform.sdk.Extensions.{CollBuilderOps, CollOps, GenIterableOps, PairCollOps}
 import scalan.RType
-import sigma.collections.CollGens
+import sigma.CollGens
 import sigmastate.eval.CostingSigmaDslBuilder
 
 class ExtensionsSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers with CollGens {

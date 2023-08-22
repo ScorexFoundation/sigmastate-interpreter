@@ -17,7 +17,7 @@ import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.interpreter.ProverResult
 import sigmastate.lang.Terms._
-import sigma.collection.Coll
+import sigma.Coll
 import sigma.{AvlTree, Context}
 
 

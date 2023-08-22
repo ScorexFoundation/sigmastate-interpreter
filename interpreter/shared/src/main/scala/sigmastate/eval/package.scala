@@ -7,7 +7,7 @@ import scalan.RType
 import scorex.crypto.hash.Digest32
 import sigmastate.Values.SigmaBoolean
 import sigmastate.basics.CryptoConstants.EcPointType
-import sigma.collection.{Coll, CollBuilder}
+import sigma.{Coll, CollBuilder}
 import sigma._
 import supertagged.TaggedType
 

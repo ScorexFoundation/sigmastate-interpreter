@@ -23,7 +23,6 @@ import sigmastate.eval.Extensions._
 import sigmastate.interpreter.Interpreter
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.{GroupElementSerializer, SigmaSerializer}
-import sigma.collection._
 import sigma._
 
 import java.math.BigInteger

@@ -8,7 +8,7 @@ import sigmastate.Values.ErgoTree
 import sigmastate.eval.{CSigmaProp, Profiler, SigmaDsl}
 import sigmastate.helpers.SigmaPPrint
 import sigmastate.interpreter.{CostAccumulator, ErgoTreeEvaluator, EvalSettings, TracedCost}
-import sigma.collection.Coll
+import sigma.Coll
 
 import scala.util.{Success, Try}
 

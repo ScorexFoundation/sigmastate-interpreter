@@ -2,7 +2,6 @@ package sigma
 
 import java.math.BigInteger
 
-import sigma.collection._
 import scalan._
 import scorex.crypto.authds.{ADDigest, ADValue}
 import scorex.crypto.authds.avltree.batch.Operation

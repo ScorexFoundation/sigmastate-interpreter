@@ -3,7 +3,7 @@ package sigmastate
 import org.ergoplatform.ErgoBox.RegisterId
 import scalan.reflection.CommonReflection.registerClassEntry
 import scalan.reflection.{mkConstructor, mkMethod}
-import sigma.collection.Coll
+import sigma.Coll
 import sigma.{AvlTree, CoreLibReflection, SigmaDslBuilder}
 import sigmastate.SAvlTree.KeyValueColl
 import sigmastate.SCollection.{SBooleanArray, SByteArray, SIntArray}

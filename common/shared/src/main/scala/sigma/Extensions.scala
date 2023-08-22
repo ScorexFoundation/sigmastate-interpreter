@@ -1,4 +1,4 @@
-package sigma.collection
+package sigma
 
 import debox.cfor
 import scorex.util.encode.Base16

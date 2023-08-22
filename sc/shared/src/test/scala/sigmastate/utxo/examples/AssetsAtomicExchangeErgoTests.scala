@@ -3,7 +3,7 @@ package sigmastate.utxo.examples
 import sigmastate.helpers.CompilerTestingCommons
 import org.ergoplatform.dsl.ContractSyntax.Token
 import org.ergoplatform.dsl.ErgoContractSpec
-import sigma.collection.Coll
+import sigma.Coll
 import scorex.crypto.hash.Blake2b256
 import sigmastate.eval.Digest32Coll
 

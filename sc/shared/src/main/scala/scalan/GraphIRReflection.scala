@@ -5,7 +5,7 @@ import scalan.reflection.CommonReflection.registerClassEntry
 import scalan.reflection.{CommonReflection, mkConstructor, mkMethod}
 import sigma.CoreLibReflection
 import sigmastate.eval.SigmaLibrary
-import sigma.collection.Colls
+import sigma.Colls
 import sigma.SigmaDsl
 import special.wrappers.{OptionWrapSpec, RTypeWrapSpec}
 import wrappers.scalan.WRTypes

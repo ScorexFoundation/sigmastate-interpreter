@@ -4,7 +4,7 @@ import org.ergoplatform.ErgoBox.TokenId
 import scorex.util.{ModifierId, idToBytes}
 import scorex.utils.{Ints, Longs, Shorts}
 import sigmastate.eval.{Digest32Coll, SigmaDsl}
-import sigma.collection.Coll
+import sigma.Coll
 
 object Extensions {
   implicit class ByteOpsForSigma(val b: Byte) extends AnyVal {

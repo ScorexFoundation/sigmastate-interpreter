@@ -1,4 +1,4 @@
-package sigma.collection
+package sigma
 
 import scalan.RType
 

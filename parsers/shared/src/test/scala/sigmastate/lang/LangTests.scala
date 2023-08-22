@@ -13,7 +13,7 @@ import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigma._
 import sigmastate.eval._
 import sigmastate.helpers.NegativeTesting
-import sigma.collection.Coll
+import sigma.Coll
 
 trait LangTests extends Matchers with NegativeTesting {
 

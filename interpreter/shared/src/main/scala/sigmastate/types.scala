@@ -19,7 +19,7 @@ import sigmastate.lang.{SigmaBuilder, Terms}
 import sigmastate.SCollection._
 import sigmastate.basics.CryptoConstants.{hashLength, EcPointType}
 import sigmastate.serialization.OpCodes
-import sigma.collection.Coll
+import sigma.Coll
 import sigma._
 
 import scala.language.implicitConversions

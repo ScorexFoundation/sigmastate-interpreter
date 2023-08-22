@@ -13,7 +13,7 @@ import sigmastate.fleetSdkCommon.distEsmTypesCommonMod
 import sigmastate.fleetSdkCommon.distEsmTypesRegistersMod.NonMandatoryRegisters
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.serialization.{ConstantSerializer, DataSerializer, SigmaSerializer}
-import sigma.collection.{Coll, CollType}
+import sigma.{Coll, CollType}
 
 import java.math.BigInteger
 import scala.scalajs.js

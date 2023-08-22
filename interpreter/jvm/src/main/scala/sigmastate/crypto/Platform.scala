@@ -10,7 +10,7 @@ import scalan.RType
 import java.math.BigInteger
 import sigmastate._
 import sigmastate.basics.BcDlogGroup
-import sigma.collection.Coll
+import sigma.Coll
 import sigma._
 
 import java.text.Normalizer.Form.NFKD

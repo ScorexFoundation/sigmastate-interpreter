@@ -8,7 +8,7 @@ import sigmastate.AvlTreeData
 import sigmastate.Values.ErgoTree
 import sigmastate.eval.{CostingSigmaDslBuilder, _}
 import sigmastate.interpreter.ContextExtension
-import sigma.collection.{Coll, CollOverArray, PairOfCols}
+import sigma.{Coll, CollOverArray, PairOfCols}
 import sigma.{Header, PreHeader}
 
 import scala.collection.compat.immutable.ArraySeq

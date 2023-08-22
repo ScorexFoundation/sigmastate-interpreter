@@ -15,7 +15,7 @@ import sigmastate.lang.Terms.{STypeSubst, _}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.utxo._
-import sigma.collection.Coll
+import sigma.Coll
 import sigma.AnyValue
 
 import scala.util.DynamicVariable

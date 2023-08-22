@@ -1,6 +1,6 @@
 package org.ergoplatform.sdk.wallet.protocol.context
 
-import sigma.collection.Coll
+import sigma.Coll
 
 /** Blockchain context used in tx signing.
   *

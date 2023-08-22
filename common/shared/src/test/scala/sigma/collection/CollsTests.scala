@@ -1,4 +1,4 @@
-package sigma.collections
+package sigma
 
 import org.scalacheck.Gen
 import org.scalatest.exceptions.TestFailedException
@@ -6,14 +6,12 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import scalan._
-import sigma.{VersionContext, VersionTestingProperty}
-import sigma.collection.{Coll, CollOverArray, PairOfCols}
 
 import scala.language.{existentials}
 
 class CollsTests extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers with CollGens with VersionTestingProperty { testSuite =>
   import Gen._
-  import sigma.collection.Extensions._
+  import sigma.Extensions._
 
   def squared[A](f: A => A): ((A, A)) => (A, A) = (p: (A, A)) => (f(p._1), f(p._2))
 
@@ -491,8 +489,8 @@ class CollsTests extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers
     /* TODO: simplify the above code
      * match-case removal gives the following compilation error:
         type mismatch;
-        found   : sigma.collection.PairColl[_$1(in value res),_$2(in value res)] where type _$2(in value res), type _$1(in value res)
-        required: sigma.collection.Coll[(_$1(in method getSuperGen), _$2(in method getSuperGen))]
+        found   : sigma.PairColl[_$1(in value res),_$2(in value res)] where type _$2(in value res), type _$1(in value res)
+        required: sigma.Coll[(_$1(in method getSuperGen), _$2(in method getSuperGen))]
           val res = col1.unionSet(col1)
      */
   }
@@ -511,8 +509,8 @@ class CollsTests extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers
     /* TODO: simplify the above code
      * match-case removal gives the following compilation error:
         type mismatch;
-        found   : sigma.collection.PairColl[_$1(in value res),_$2(in value res)] where type _$2(in value res), type _$1(in value res)
-        required: sigma.collection.Coll[(_$1(in method getSuperGen), _$2(in method getSuperGen))]
+        found   : sigma.PairColl[_$1(in value res),_$2(in value res)] where type _$2(in value res), type _$1(in value res)
+        required: sigma.Coll[(_$1(in method getSuperGen), _$2(in method getSuperGen))]
           val res = col.diff(col)
      */
     builder.replicate(2, 10).diff(builder.replicate(1, 10)).toArray shouldBe Array(10)

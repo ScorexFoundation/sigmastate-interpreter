@@ -10,7 +10,6 @@ import sigmastate.Values.SigmaBoolean
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate._
 import sigmastate.eval.{Evaluation, _}
-import sigma.collection._
 import sigma._
 import debox.cfor
 import sigmastate.exceptions.SerializerException

@@ -11,7 +11,7 @@ import sigmastate.interpreter.{ContextExtension, ErgoTreeEvaluator, Interpreter,
 import sigmastate.exceptions.InterpreterException
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
-import sigma.collection.Coll
+import sigma.Coll
 import sigma.{AnyValue, Header, PreHeader}
 import debox.cfor
 

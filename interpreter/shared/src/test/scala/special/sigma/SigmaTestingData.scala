@@ -22,13 +22,13 @@ import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers
 import sigmastate._
-import sigma.collection.Coll
+import sigma.Coll
 
 import java.math.BigInteger
 import scala.reflect.ClassTag
 
 trait SigmaTestingData extends TestingCommons with ObjectGenerators {
-  /** Creates a [[sigma.collection.Coll]] with the given `items`. */
+  /** Creates a [[sigma.Coll]] with the given `items`. */
   def Coll[T](items: T*)(implicit cT: RType[T]): Coll[T] =
     CostingSigmaDslBuilder.Colls.fromItems(items: _*)
 

@@ -1,7 +1,7 @@
 package scalan
 
 import scala.language.implicitConversions
-import sigma.collection._
+import sigma._
 import special.wrappers.WrappersModule
 import scalan.util.MemoizedFunc
 import scalan.ExactIntegral._

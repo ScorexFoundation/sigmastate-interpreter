@@ -4,7 +4,7 @@ import sigmastate.basics.CryptoConstants
 import sigmastate.eval.Colls
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigma.collection.Coll
+import sigma.Coll
 
 
 case class AvlTreeFlags(insertAllowed: Boolean, updateAllowed: Boolean, removeAllowed: Boolean) {

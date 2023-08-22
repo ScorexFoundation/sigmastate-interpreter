@@ -9,13 +9,13 @@ import sigmastate._
 import sigmastate.SType.AnyOps
 import sigmastate.serialization.{SigmaSerializer, ValueSerializer}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigma.collection.Coll
+import sigma.Coll
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigma.util.safeNewArray
 import debox.cfor
-import sigma.collection.Extensions.CollOps
+import sigma.Extensions.CollOps
 
 import scala.collection.{immutable, mutable}
 import scala.runtime.ScalaRunTime

@@ -8,7 +8,7 @@ import scorex.utils.Ints
 import sigma.Environment
 import sigmastate.eval.{CAnyValue, Colls, SigmaDsl}
 import sigmastate.basics.CryptoConstants.EcPointType
-import sigma.collection.Coll
+import sigma.Coll
 import sigma.GroupElement
 
 import java.util

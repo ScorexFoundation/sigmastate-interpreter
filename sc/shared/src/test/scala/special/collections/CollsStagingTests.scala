@@ -1,4 +1,4 @@
-package sigma.collections
+package sigma
 
 import scala.language.reflectiveCalls
 import special.wrappers.WrappersTests
@@ -47,7 +47,7 @@ class CollsStagingTests extends WrappersTests {
     import EnvRep._
     import Liftables._
 
-    val Cols: SCollBuilder = new sigma.collection.CollOverArrayBuilder
+    val Cols: SCollBuilder = new sigma.CollOverArrayBuilder
     val arr = Array(1, 2, 3)
     val col = Cols.fromArray(arr)
 
@@ -63,7 +63,7 @@ class CollsStagingTests extends WrappersTests {
     import Coll._
     import CollBuilder._
 
-    val Cols: SCollBuilder = new sigma.collection.CollOverArrayBuilder
+    val Cols: SCollBuilder = new sigma.CollOverArrayBuilder
     val colData = Cols.replicate(10, 10)
     val colSym = colBuilder.replicate(10, 10)
     val resSym = colSym.append(colSym)

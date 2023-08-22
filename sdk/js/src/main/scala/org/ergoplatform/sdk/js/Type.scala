@@ -73,6 +73,6 @@ object Type extends js.Object {
     * @param elemType type descriptor of collection elements
     */
   def collType(elemType: Type): Type = {
-    new Type(sigma.collection.collRType(elemType.rtype))
+    new Type(sigma.collRType(elemType.rtype))
   }
 }

@@ -15,7 +15,7 @@ import sigmastate.SType._
 import sigmastate.helpers.TestingHelpers.copyTransaction
 import sigmastate.utils.Helpers
 import sigma.SigmaDslTesting
-import sigma.collection.Extensions._
+import sigma.Extensions._
 
 class ErgoLikeTransactionSpec extends SigmaDslTesting {
 

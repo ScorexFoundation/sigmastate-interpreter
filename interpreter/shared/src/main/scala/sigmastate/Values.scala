@@ -35,7 +35,7 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigma.{AvlTree, Header, PreHeader, _}
 import sigmastate.lang.SourceContext
 import sigma.util.safeNewArray
-import sigma.collection.Coll
+import sigma.Coll
 
 import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable

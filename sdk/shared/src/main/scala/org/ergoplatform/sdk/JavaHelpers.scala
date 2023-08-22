@@ -1,7 +1,7 @@
 package org.ergoplatform.sdk
 
 import scalan.RType
-import sigma.collection.Coll
+import sigma.Coll
 
 import scala.collection.{JavaConverters, mutable}
 import org.ergoplatform._
@@ -359,7 +359,7 @@ object JavaHelpers {
     DataInput(ADKey @@ boxIdBytes)
   }
 
-  def collRType[T](tItem: RType[T]): RType[Coll[T]] = sigma.collection.collRType(tItem)
+  def collRType[T](tItem: RType[T]): RType[Coll[T]] = sigma.collRType(tItem)
 
   def BigIntRType: RType[sigma.BigInt] = sigma.BigIntRType
 
@@ -409,7 +409,7 @@ object JavaHelpers {
    * @return a mapping from asset id to to balance and total assets number
    */
   def extractAssets(boxes: IndexedSeq[ErgoBoxCandidate]): (Map[Digest32Coll, Long], Int) = {
-    import sigma.collection.Extensions.CollOps
+    import sigma.Extensions.CollOps
     val map = mutable.Map[Digest32Coll, Long]()
     val assetsNum = boxes.foldLeft(0) { case (acc, box) =>
       require(box.additionalTokens.length <= SigmaConstants.MaxTokens.value, "too many assets in one box")

@@ -103,7 +103,7 @@ case class JitEvalResult[A](value: A, cost: JitCost)
   * transaction. No additional transformation is performed.
   * ErgoTree is interpreted directly and all the intermediate data is stored in the
   * runtime types.
-  * The runtime types are such types as [[sigma.collection.Coll]],
+  * The runtime types are such types as [[sigma.Coll]],
   * [[sigma.SigmaProp]], [[sigma.AvlTree]], [[BigInt]], etc.
   * It also use immutable Map to keep current [[DataEnv]] of computed [[ValDef]]s, as
   * result only addition is used from the map, and deletion is essentially a garbage

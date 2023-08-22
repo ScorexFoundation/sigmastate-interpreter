@@ -11,7 +11,7 @@ import sigmastate.basics.CryptoConstants
 import sigmastate.eval._
 import sigmastate.{AvlTreeData, AvlTreeFlags, TrivialProp}
 import sigma.Types.TupleType
-import sigma.collection.{Coll, CollType}
+import sigma.{Coll, CollType}
 import sigma.{AvlTree, AvlTreeRType, BigInt, BigIntRType, Box, BoxRType, GroupElement, GroupElementRType, SigmaProp, SigmaPropRType}
 
 import java.math.BigInteger

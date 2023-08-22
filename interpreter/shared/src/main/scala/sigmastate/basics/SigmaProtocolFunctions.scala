@@ -3,7 +3,7 @@ package sigmastate.basics
 import sigmastate.SigmaLeaf
 import sigmastate.basics.CryptoConstants.dlogGroup
 import sigmastate.basics.VerifierMessage.Challenge
-import sigma.collection.Coll
+import sigma.Coll
 import supertagged.TaggedType
 
 import java.math.BigInteger

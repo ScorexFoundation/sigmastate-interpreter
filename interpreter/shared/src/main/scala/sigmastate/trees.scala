@@ -22,7 +22,7 @@ import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization._
 import sigmastate.utxo.{SimpleTransformerCompanion, Transformer}
-import sigma.collection.Coll
+import sigma.Coll
 import sigma.{GroupElement, SigmaProp}
 
 import scala.collection.mutable

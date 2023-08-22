@@ -1,10 +1,10 @@
-package sigma.collection {
+package sigma {
   import scalan._
 
   /** Staged version of collection interfaces which is used in graph-based IR to represent
     * methods of Coll and CollBuilder.
     * Each method of Coll and CollBuilder in Colls corresponds to a method of the original
-    * non-staged class [[sigma.collection.Coll]] and [[sigma.collection.CollBuilder]].
+    * non-staged class [[sigma.Coll]] and [[sigma.CollBuilder]].
     * The semantics of each method is the same as in the original class, please look there
     * for details.
     */

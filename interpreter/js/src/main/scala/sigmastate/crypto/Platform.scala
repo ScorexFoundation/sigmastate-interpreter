@@ -3,7 +3,7 @@ package sigmastate.crypto
 import scalan.RType
 import scorex.util.encode.Base16
 import sigmastate._
-import sigma.collection.Coll
+import sigma.Coll
 import sigma._
 
 import java.math.BigInteger

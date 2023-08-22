@@ -2,7 +2,6 @@ package sigma
 
 import org.scalatest.BeforeAndAfterAll
 import scalan.{BaseCtxTests, BaseLiftableTests}
-import sigma.collection._
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigmastate.{TrivialProp, eval}
@@ -46,7 +45,7 @@ class SigmaDslStaginTests extends BaseCtxTests with ErgoScriptTestkit with BaseL
 
     cake.check(boxA1, { env: EnvRep[RBox] => for { obj <- env } yield obj.value }, boxA1.value)
     cake.check(boxA1, { env: EnvRep[RBox] => for { obj <- env } yield obj.creationInfo }, boxA1.creationInfo)
-    cake.check(boxA1, { env: EnvRep[RBox] => for { obj <- env; arg <- lifted(1) } yield obj.getReg[Coll[Byte]](arg) }, boxA1.getReg[sigma.collection.Coll[Byte]](1))
+    cake.check(boxA1, { env: EnvRep[RBox] => for { obj <- env; arg <- lifted(1) } yield obj.getReg[Coll[Byte]](arg) }, boxA1.getReg[sigma.Coll[Byte]](1))
 
   }
 

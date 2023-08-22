@@ -17,7 +17,7 @@ import sigmastate.eval.Digest32Coll
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.SerializationSpecification
 import sigmastate.utils.Helpers.DecoderResultOps  // required for Scala 2.11 (extension method toTry)
-import sigma.collection.Coll
+import sigma.Coll
 import sigma.{Header, PreHeader}
 import org.ergoplatform.{DataInput, ErgoBox, ErgoBoxCandidate, ErgoLikeContext, ErgoLikeTransaction, ErgoLikeTransactionTemplate, Input, UnsignedErgoLikeTransaction, UnsignedInput}
 

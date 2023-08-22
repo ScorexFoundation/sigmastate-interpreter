@@ -3,7 +3,6 @@ package sigma
 import scalan.RType
 import scalan.RType.SomeType
 import scalan.util.CollectionUtil
-import sigma.collection.Coll
 
 import scala.reflect.ClassTag
 

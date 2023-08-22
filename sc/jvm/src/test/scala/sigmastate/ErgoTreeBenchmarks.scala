@@ -2,7 +2,7 @@ package sigmastate
 
 import debox.cfor
 import org.scalameter.api.Bench
-import sigma.collections.BenchmarkGens
+import sigma.BenchmarkGens
 import sigmastate.Values.{IntConstant, SValue}
 import sigmastate.serialization.OpCodes.PlusCode
 

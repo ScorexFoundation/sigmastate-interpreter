@@ -1,4 +1,4 @@
-package sigma.collections
+package sigma
 
 import org.scalameter.KeyValue
 import org.scalameter.api.{Bench, Gen, _}

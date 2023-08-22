@@ -36,7 +36,7 @@ import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers._
 import sigmastate.utxo.{DeserializeContext, DeserializeRegister, GetVar, OptionGet}
 import sigmastate.{SOption, SSigmaProp, SType, SigmaLeaf, eval}
-import sigma.collection.{Coll, CollType}
+import sigma.{Coll, CollType}
 
 import java.util
 import scala.collection.mutable
