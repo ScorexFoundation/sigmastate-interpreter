@@ -3,39 +3,35 @@ package sigmastate
 import java.math.BigInteger
 import org.ergoplatform._
 import org.ergoplatform.validation._
-import scalan.{RType, Nullable}
+import scalan.{Nullable, RType}
 import scalan.RType.GeneralType
-import sigmastate.SType.{TypeCode, AnyOps}
+import sigmastate.SType.TypeCode
 import sigmastate.interpreter._
 import sigmastate.utils.Overloading.Overload1
-import sigmastate.utils.SparseArrayContainer
-import scalan.util.Extensions._
-import scorex.crypto.authds.{ADValue, ADKey}
-import scorex.crypto.authds.avltree.batch.{Lookup, Remove, Insert, Update}
-import scorex.crypto.hash.Blake2b256
+import scorex.crypto.authds.{ADKey, ADValue}
+import scorex.crypto.authds.avltree.batch.{Insert, Lookup, Remove, Update}
 import sigmastate.Values._
 import sigmastate.lang.Terms._
 import sigmastate.lang.{SigmaBuilder, Terms}
 import sigmastate.SCollection._
-import sigmastate.basics.CryptoConstants.{hashLength, EcPointType}
+import sigmastate.basics.CryptoConstants.EcPointType
 import sigmastate.serialization.OpCodes
 import sigma.Coll
 import sigma._
 
 import scala.language.implicitConversions
-import scala.reflect.{classTag, ClassTag}
+import scala.reflect.{ClassTag, classTag}
 import scala.collection.compat.immutable.ArraySeq
-import sigmastate.SMethod.{InvokeDescBuilder, MethodCostFunc, givenCost, javaMethodOf, MethodCallIrBuilder}
+import sigmastate.SMethod.{InvokeDescBuilder, MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
 import sigmastate.utxo._
 import sigmastate.lang.Terms.STypeSubst
 import sigmastate.eval.Evaluation.stypeToRType
 import sigmastate.eval._
-import sigmastate.exceptions.MethodNotFound
 import debox.cfor
-import sigma.reflection.{CommonReflection, RClass, RMethod}
+import sigma.reflection.{RClass, RMethod}
+import sigma.util.Extensions.{IntOps, LongOps, ShortOps}
 
-import scala.collection.mutable
-import scala.util.{Success, Failure}
+import scala.util.{Failure, Success}
 
 /** Base type for all AST nodes of sigma lang. */
 trait SigmaNode extends Product

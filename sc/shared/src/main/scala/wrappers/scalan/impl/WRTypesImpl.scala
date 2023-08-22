@@ -99,7 +99,7 @@ class WRTypeCls extends EntityObject("WRType") {
         Elem.declaredWrapperMethods(_RTypeWrapSpec, RClass(classOf[WRType[A]]), Set("name"))
     }
 
-    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs("A" -> (eA -> scalan.util.Invariant))
+    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs("A" -> (eA -> scalan.core.Invariant))
   }
 
   implicit final def wRTypeElement[A](implicit eA: Elem[A]): Elem[WRType[A]] =

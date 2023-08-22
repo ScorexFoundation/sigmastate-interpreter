@@ -2,7 +2,7 @@ package scalan
 
 import debox.{cfor, Buffer => DBuffer}
 import scalan.OverloadHack.Overloaded1
-import scalan.util.StringUtil
+import sigma.util.StringUtil
 import sigma.reflection.RConstructor
 
 import java.util.Arrays

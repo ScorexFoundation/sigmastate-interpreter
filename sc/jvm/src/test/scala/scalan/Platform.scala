@@ -1,7 +1,7 @@
 package scalan
 
 import scalan.compilation.GraphVizExport
-import scalan.util.FileUtil
+import sigma.util.FileUtil
 import org.scalatest.Assertions
 
 object Platform {

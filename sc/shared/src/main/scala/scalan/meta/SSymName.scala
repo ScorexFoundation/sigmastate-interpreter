@@ -1,6 +1,6 @@
 package scalan.meta
 
-import scalan.util.StringUtil._
+import sigma.util.StringUtil.StringUtilExtensions
 
 case class ImportItem(packageName: String, importedNames: List[String])
 

@@ -1,10 +1,8 @@
 package sigma
 
-import scalan.util.CollectionUtil
-
 import scala.reflect.ClassTag
 
-object util {
+package object util {
   /** Maximum length of an allocatable array. */
   val MaxArrayLength: Int = 100000
 
@@ -24,7 +22,8 @@ object util {
 
   /** Concatenate two arrays checking length limit of the resulting array.
     * Should be used in implementation of Coll operations of v5.0 and above. */
-  final def safeConcatArrays_v5[A](arr1: Array[A], arr2: Array[A])(implicit tA: ClassTag[A]): Array[A] = {
+  final def safeConcatArrays_v5[A](arr1: Array[A], arr2: Array[A])
+      (implicit tA: ClassTag[A]): Array[A] = {
     checkLength[A](arr1.length + arr2.length)
     CollectionUtil.concatArrays_v5(arr1, arr2)
   }

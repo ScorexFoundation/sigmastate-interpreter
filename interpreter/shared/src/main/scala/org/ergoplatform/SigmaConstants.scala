@@ -1,6 +1,6 @@
 package org.ergoplatform
 
-import scalan.util.CollectionUtil.TraversableOps // used in Scala 2.11
+import sigma.util.CollectionUtil.TraversableOps // used in Scala 2.11
 import sigmastate.basics.CryptoConstants
 
 /** Descriptor of a constant which represents some size value.

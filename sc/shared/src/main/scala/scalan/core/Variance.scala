@@ -1,4 +1,4 @@
-package scalan.util
+package scalan.core
 
 sealed trait Variance extends Product with Serializable
 case object Invariant extends Variance

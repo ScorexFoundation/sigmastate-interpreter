@@ -15,11 +15,10 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import scalan.Platform.threadSleepOrNoOp
 import scalan.RType
 import scalan.RType._
-import scalan.util.BenchmarkUtil
-import scalan.util.CollectionUtil._
-import scalan.util.Extensions._
-import scalan.util.StringUtil.StringUtilExtensions
-import sigma.VersionContext
+import sigma.util.BenchmarkUtil
+import sigma.util.CollectionUtil._
+import sigma.util.Extensions._
+import sigma.util.StringUtil.StringUtilExtensions
 import sigmastate.SType.AnyOps
 import sigmastate.Values.{ByteArrayConstant, Constant, ConstantNode, ErgoTree, IntConstant, SValue}
 import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}

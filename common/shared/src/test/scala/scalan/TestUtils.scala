@@ -1,10 +1,10 @@
 package scalan
 
-import scalan.util.StringUtil
 import org.scalactic.TripleEquals
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{TestSuite, Inside}
-import scalan.util.StringUtil.{cleanFileName, StringUtilExtensions}
+import org.scalatest.{Inside, TestSuite}
+import sigma.util.StringUtil
+import sigma.util.StringUtil.{StringUtilExtensions, cleanFileName}
 
 /**
   * Created by slesarenko on 11/10/2017.

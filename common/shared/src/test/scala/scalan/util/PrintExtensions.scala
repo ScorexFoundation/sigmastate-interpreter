@@ -1,4 +1,4 @@
-package scalan.util
+package sigma.util
 
 /** Helper methods for pretty printing of collections and optional values. */
 object PrintExtensions {

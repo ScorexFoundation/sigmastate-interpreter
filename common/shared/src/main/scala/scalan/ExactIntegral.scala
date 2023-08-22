@@ -1,6 +1,6 @@
 package scalan
 
-import scalan.util.Extensions._
+import sigma.util.Extensions.{ByteOps, ShortOps}
 
 /** Type-class which defines the operations on Integral types (Byte, Short, Int, Long, BigInt)
   * with overflow checks.

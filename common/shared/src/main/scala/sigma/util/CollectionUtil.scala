@@ -1,4 +1,4 @@
-package scalan.util
+package sigma.util
 
 import scala.collection.{Seq, mutable, GenIterable}
 import scala.collection.mutable.{HashMap, ArrayBuffer}

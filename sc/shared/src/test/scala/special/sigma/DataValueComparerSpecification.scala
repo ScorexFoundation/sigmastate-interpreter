@@ -2,7 +2,7 @@ package sigma
 
 import org.scalatest.BeforeAndAfterAll
 import scalan.RType
-import scalan.util.BenchmarkUtil
+import sigma.util.BenchmarkUtil
 import sigmastate.{DataValueComparer, JitCost, TrivialProp}
 import sigmastate.Values.ErgoTree
 import sigmastate.eval.{CSigmaProp, Profiler, SigmaDsl}

@@ -5,7 +5,7 @@ import sigmastate.Values.SValue
 import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.ValueSerializer.getSerializer
-import scalan.util.Extensions.ByteOps
+import sigma.util.Extensions.ByteOps
 import debox.{Buffer => DBuffer, Map => DMap}
 import debox.sp
 import sigmastate.eval.Extensions.DBufferOps

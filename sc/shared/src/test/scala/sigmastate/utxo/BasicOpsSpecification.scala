@@ -19,7 +19,7 @@ import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultEvalSettings
 import sigmastate.interpreter.EvalSettings
 import sigmastate.utils.Helpers._
-import scalan.util.StringUtil._
+import sigma.util.StringUtil._
 
 class BasicOpsSpecification extends CompilerTestingCommons
   with CompilerCrossVersionProps {

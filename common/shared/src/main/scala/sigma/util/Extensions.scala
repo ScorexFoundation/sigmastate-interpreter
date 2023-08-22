@@ -1,4 +1,4 @@
-package scalan.util
+package sigma.util
 
 import java.math.BigInteger
 import java.nio.ByteBuffer

@@ -5,7 +5,7 @@ import org.ergoplatform.validation.{SigmaValidationSettings, ValidationRules}
 import org.ergoplatform.{ErgoBox, SigmaConstants}
 import scalan.OverloadHack.Overloaded1
 import scalan.RType
-import scalan.util.Extensions.BigIntegerOps
+import sigma.util.Extensions.BigIntegerOps
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue, SerializedAdProof}
 import scorex.crypto.hash.{Blake2b256, Digest32, Sha256}

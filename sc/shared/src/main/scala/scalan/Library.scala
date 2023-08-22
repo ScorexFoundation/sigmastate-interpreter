@@ -3,8 +3,7 @@ package scalan
 import scala.language.implicitConversions
 import sigma._
 import special.wrappers.WrappersModule
-import scalan.util.MemoizedFunc
-import scalan.ExactIntegral._
+import sigma.util.MemoizedFunc
 
 trait Library extends Scalan
   with WrappersModule

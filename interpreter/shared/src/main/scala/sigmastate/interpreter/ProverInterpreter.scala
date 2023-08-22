@@ -1,7 +1,7 @@
 package sigmastate.interpreter
 
 import sigma.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
-import scalan.util.CollectionUtil._
+import sigma.util.CollectionUtil._
 import sigma.VersionContext
 import sigma.kiama.rewriting.Strategy
 import sigmastate.TrivialProp.{FalseProp, TrueProp}

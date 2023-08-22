@@ -6,7 +6,7 @@ import org.ergoplatform.validation.{ValidationException, ValidationSpecification
 import org.scalacheck.Arbitrary.arbByte
 import org.scalacheck.Gen
 import org.scalatest.Assertion
-import scalan.util.BenchmarkUtil
+import sigma.util.BenchmarkUtil
 import scalan.{RType, TestContexts, TestUtils}
 import sigmastate.Values.{Constant, ErgoTree, SValue, SigmaBoolean, SigmaPropValue}
 import sigmastate.eval._

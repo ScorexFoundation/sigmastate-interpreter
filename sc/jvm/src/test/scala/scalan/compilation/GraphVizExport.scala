@@ -3,7 +3,8 @@ package scalan.compilation
 import java.awt.Desktop
 import java.io.{File, PrintWriter}
 import scalan.Scalan
-import scalan.util.{StringUtil, ScalaNameUtil, FileUtil, ProcessUtil}
+import scalan.core.ScalaNameUtil
+import sigma.util.{FileUtil, ProcessUtil, StringUtil}
 
 import scala.collection.immutable.StringOps
 

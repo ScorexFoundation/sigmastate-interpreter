@@ -1,4 +1,4 @@
-package scalan.util
+package scalan.core
 
 import scalan.BaseTests
 import sigma.reflection.CommonReflection.registerClassEntry

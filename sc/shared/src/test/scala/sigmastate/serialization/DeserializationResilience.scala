@@ -4,7 +4,7 @@ import org.ergoplatform.validation.ValidationException
 import org.ergoplatform.validation.ValidationRules.CheckPositionLimit
 import org.ergoplatform.{ErgoBoxCandidate, Outputs}
 import org.scalacheck.Gen
-import scalan.util.BenchmarkUtil
+import sigma.util.BenchmarkUtil
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}

@@ -1,7 +1,7 @@
 package sigmastate.utxo
 
 import org.ergoplatform._
-import scalan.util.BenchmarkUtil
+import sigma.util.BenchmarkUtil
 import sigmastate.helpers.CompilerTestingCommons
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.generators.ObjectGenerators

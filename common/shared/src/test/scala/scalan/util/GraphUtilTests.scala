@@ -1,4 +1,4 @@
-package scalan.util
+package sigma.util
 
 import scalan.{BaseNestedTests, DFunc}
 import debox.{Set => DSet, Buffer => DBuffer}

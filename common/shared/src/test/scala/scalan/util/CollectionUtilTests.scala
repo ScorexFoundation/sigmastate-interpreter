@@ -1,4 +1,4 @@
-package scalan.util
+package sigma.util
 
 import scalan.BaseTests
 
@@ -6,7 +6,7 @@ import scala.collection.{Seq, mutable}
 import scala.reflect.ClassTag
 
 class CollectionUtilTests extends BaseTests {
-  import scalan.util.CollectionUtil._
+  import sigma.util.CollectionUtil._
 
   test("updateMany") {
     val xs: Seq[Byte] = Array[Byte](1,2,3)

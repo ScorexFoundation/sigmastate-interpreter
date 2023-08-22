@@ -1,7 +1,7 @@
-package scalan.util
+package scalan.core
 
 object ScalaNameUtil {
-  val opChars = Set('+', '-', '*', '/', ':', '>', '<', '=', '!', '@', '#', '%',
+  val opChars: Set[Char] = Set('+', '-', '*', '/', ':', '>', '<', '=', '!', '@', '#', '%',
     '&', '~', '?', '|', '\\', '^')
 
   def cleanNestedClassName(className: String): String =

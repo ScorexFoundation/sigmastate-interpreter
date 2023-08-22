@@ -1,6 +1,6 @@
 package scalan
 
-import scalan.util.BenchmarkUtil._
+import sigma.util.BenchmarkUtil.{measure, measureTime}
 
 class Benchmark[T <: Scalan](createContext: => T) {
   val printDebugInfo: Boolean = false

@@ -1,8 +1,8 @@
 package scalan.staged
 
-import scalan.{DFunc, Scalan, Nullable}
+import scalan.{DFunc, Nullable, Scalan}
 import debox.{Buffer => DBuffer}
-import scalan.util.GraphUtil
+import sigma.util.GraphUtil
 import debox.cfor
 
 import scala.collection.compat.immutable.ArraySeq

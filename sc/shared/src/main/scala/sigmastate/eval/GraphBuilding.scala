@@ -3,7 +3,7 @@ package sigmastate.eval
 import org.ergoplatform._
 import scalan.ExactIntegral.{ByteIsExactIntegral, IntIsExactIntegral, LongIsExactIntegral, ShortIsExactIntegral}
 import scalan.ExactOrdering.{ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering, ShortIsExactOrdering}
-import scalan.util.Extensions.ByteOps
+import sigma.util.Extensions.ByteOps
 import scalan.{ExactIntegral, ExactNumeric, ExactOrdering, Lazy, MutableLazy, Nullable}
 import sigmastate.Values.Value.Typed
 import sigmastate.Values._
@@ -14,7 +14,8 @@ import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
 import sigmastate._
 import sigmastate.basics.CryptoConstants.EcPointType
-import sigmastate.exceptions.{SigmaException, GraphBuildingException}
+import sigmastate.exceptions.{GraphBuildingException, SigmaException}
+
 import scala.collection.mutable.ArrayBuffer
 
 /** Perform translation of typed expression given by [[Value]] to a graph in IRContext.

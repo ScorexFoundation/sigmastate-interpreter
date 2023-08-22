@@ -1,4 +1,4 @@
-package scalan.util
+package sigma.util
 
 import java.io.File
 import scala.collection.mutable

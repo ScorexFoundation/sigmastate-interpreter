@@ -5,6 +5,7 @@ import scala.reflect.ClassTag
 import debox.{Buffer => DBuffer}
 import debox.cfor
 import sigma.reflection.RMethod
+import sigma.util.CollectionUtil.TraversableOps
 
 trait MethodCalls extends Base { self: Scalan =>
 
@@ -62,7 +63,6 @@ trait MethodCalls extends Base { self: Scalan =>
         )
       }
 
-    import scalan.util.CollectionUtil.TraversableOps
     override def equals(other: Any): Boolean = (this eq other.asInstanceOf[AnyRef]) || {
       other match {
         case other: MethodCall =>

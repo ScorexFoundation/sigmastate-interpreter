@@ -1,7 +1,7 @@
 package sigma
 
 import scalan._  // required
-import scalan.util.CollectionUtil
+import sigma.util.CollectionUtil
 import scalan.RType
 import debox.Buffer
 import scalan.RType._

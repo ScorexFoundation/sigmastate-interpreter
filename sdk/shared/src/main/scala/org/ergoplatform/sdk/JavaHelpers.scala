@@ -27,7 +27,7 @@ import org.ergoplatform.sdk.Extensions.{CollBuilderOps, PairCollOps}
 import org.ergoplatform.sdk.wallet.{Constants, TokensMap}
 import org.ergoplatform.sdk.wallet.secrets.{DerivationPath, ExtendedSecretKey}
 import scalan.ExactIntegral.LongIsExactIntegral
-import scalan.util.StringUtil.StringUtilExtensions
+import sigma.util.StringUtil.StringUtilExtensions
 import sigmastate.basics.CryptoConstants.EcPointType
 import sigmastate.basics.{DiffieHellmanTupleProverInput, ProveDHTuple}
 import sigmastate.crypto.CryptoFacade

@@ -2,7 +2,7 @@ package org.ergoplatform.validation
 
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import scalan.util.Extensions.{IntOps, LongOps}
+import sigma.util.Extensions.IntOps
 import sigmastate.exceptions.SerializerException
 
 // TODO v5.x: remove unused class and related json encoders

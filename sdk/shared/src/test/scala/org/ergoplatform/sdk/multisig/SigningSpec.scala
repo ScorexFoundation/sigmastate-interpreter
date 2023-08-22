@@ -8,7 +8,7 @@ import org.ergoplatform.sdk.{BlockchainContext, BlockchainParameters, ExtendedIn
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import scalan.util.CollectionUtil.AnyOps
+import sigma.util.CollectionUtil.AnyOps
 import sigmastate.TestsBase
 import sigmastate.Values.{Constant, ErgoTree}
 import sigma.SigmaTestingData

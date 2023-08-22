@@ -7,7 +7,7 @@ import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
 import scalan.BaseCtxTests
 import sigmastate.lang.LangTests
-import scalan.util.BenchmarkUtil._
+import sigma.util.BenchmarkUtil._
 import sigmastate._
 import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer

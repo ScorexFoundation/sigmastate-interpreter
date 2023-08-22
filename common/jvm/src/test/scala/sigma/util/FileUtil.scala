@@ -1,7 +1,7 @@
-package scalan.util
+package sigma.util
 
-import scalan.util.CollectionUtil.AnyOps
-import scalan.util.StringUtil.cleanFileName
+import sigma.util.CollectionUtil.AnyOps
+import sigma.util.StringUtil.cleanFileName
 
 import java.io._
 import java.net.{JarURLConnection, URL}

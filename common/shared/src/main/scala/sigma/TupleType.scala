@@ -2,7 +2,7 @@ package sigma
 
 import scalan.RType
 import scalan.RType.SomeType
-import scalan.util.CollectionUtil
+import sigma.util.CollectionUtil
 
 import scala.reflect.ClassTag
 

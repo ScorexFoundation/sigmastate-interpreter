@@ -347,7 +347,7 @@ class CollCls extends EntityObject("Coll") {
         ))
     }
 
-    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs("A" -> (eA -> scalan.util.Invariant))
+    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs("A" -> (eA -> scalan.core.Invariant))
   }
 
   implicit final def collElement[A](implicit eA: Elem[A]): Elem[Coll[A]] =

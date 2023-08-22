@@ -1,8 +1,8 @@
 package sigmastate.utils
 
-import scalan.util.Extensions.ByteOps
-import scalan.util.FileUtil
-import scalan.util.PrintExtensions._
+import sigma.util.Extensions.ByteOps
+import sigma.util.FileUtil
+import sigma.util.PrintExtensions._
 import sigmastate.lang.Terms.{MethodCall, PropertyCall}
 import sigmastate.serialization.ValueSerializer._
 

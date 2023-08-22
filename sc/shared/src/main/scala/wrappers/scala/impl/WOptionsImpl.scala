@@ -168,7 +168,7 @@ class WOptionCls extends EntityObject("WOption") {
         ))
     }
 
-    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs("A" -> (eA -> scalan.util.Invariant))
+    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs("A" -> (eA -> scalan.core.Invariant))
   }
 
   implicit final def wOptionElement[A](implicit eA: Elem[A]): Elem[WOption[A]] =

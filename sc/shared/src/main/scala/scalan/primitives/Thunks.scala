@@ -4,9 +4,9 @@ import scala.language.{existentials, implicitConversions}
 import scalan._
 import debox.{Buffer => DBuffer, Set => DSet}
 import debox.cfor
+import scalan.core.Covariant
 import sigma.reflection.RClass
-
-import scalan.util.{Covariant, GraphUtil}
+import sigma.util.GraphUtil
 
 import scala.collection.Seq
 

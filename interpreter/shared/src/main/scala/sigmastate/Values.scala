@@ -6,7 +6,7 @@ import sigma.kiama.rewriting.Rewriter.{count, everywherebu, strategy}
 import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.validation.ValidationException
 import scalan.{Nullable, RType}
-import scalan.util.CollectionUtil._
+import sigma.util.CollectionUtil._
 import sigmastate.SCollection.{SByteArray, SIntArray}
 import sigmastate.basics.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CompanionDesc, ErgoTreeEvaluator, Interpreter, NamedDesc}
@@ -20,7 +20,7 @@ import sigmastate.lang.Terms._
 import sigmastate.utxo._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
-import scalan.util.Extensions.ByteOps
+import sigma.util.Extensions.ByteOps
 import sigmastate.interpreter.ErgoTreeEvaluator._
 import debox.cfor
 import scorex.util.encode.Base16
