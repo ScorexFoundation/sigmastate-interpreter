@@ -1,7 +1,5 @@
 package scalan.util
 
-import java.util
-
 import scala.collection.{Seq, mutable, GenIterable}
 import scala.collection.mutable.{HashMap, ArrayBuffer}
 import scala.reflect.ClassTag
@@ -52,15 +50,15 @@ object CollectionUtil {
     * @param arr the input array for which the deep hash code is to be calculated
     */
   def deepHashCode[T](arr: Array[T]): Int = arr match {
-    case arr: Array[AnyRef] => util.Arrays.deepHashCode(arr)
-    case arr: Array[Byte] => util.Arrays.hashCode(arr)
-    case arr: Array[Short] => util.Arrays.hashCode(arr)
-    case arr: Array[Int] => util.Arrays.hashCode(arr)
-    case arr: Array[Long] => util.Arrays.hashCode(arr)
-    case arr: Array[Char] => util.Arrays.hashCode(arr)
-    case arr: Array[Float] => util.Arrays.hashCode(arr)
-    case arr: Array[Double] => util.Arrays.hashCode(arr)
-    case arr: Array[Boolean] => util.Arrays.hashCode(arr)
+    case arr: Array[AnyRef] => java.util.Arrays.deepHashCode(arr)
+    case arr: Array[Byte] => java.util.Arrays.hashCode(arr)
+    case arr: Array[Short] => java.util.Arrays.hashCode(arr)
+    case arr: Array[Int] => java.util.Arrays.hashCode(arr)
+    case arr: Array[Long] => java.util.Arrays.hashCode(arr)
+    case arr: Array[Char] => java.util.Arrays.hashCode(arr)
+    case arr: Array[Float] => java.util.Arrays.hashCode(arr)
+    case arr: Array[Double] => java.util.Arrays.hashCode(arr)
+    case arr: Array[Boolean] => java.util.Arrays.hashCode(arr)
   }
 
   /** Group the given sequence of pairs by first values as keys.

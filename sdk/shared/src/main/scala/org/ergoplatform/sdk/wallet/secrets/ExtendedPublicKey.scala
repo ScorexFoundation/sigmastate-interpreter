@@ -29,15 +29,15 @@ final class ExtendedPublicKey(/*private[secrets] */val keyBytes: Array[Byte],
 
   override def equals(obj: Any): Boolean = (this eq obj.asInstanceOf[AnyRef]) || (obj match {
     case that: ExtendedPublicKey =>
-      util.Arrays.equals(that.keyBytes, this.keyBytes) &&
-          util.Arrays.equals(that.chainCode, this.chainCode) &&
+      java.util.Arrays.equals(that.keyBytes, this.keyBytes) &&
+          java.util.Arrays.equals(that.chainCode, this.chainCode) &&
           that.path == this.path
     case _ => false
   })
 
   override def hashCode(): Int = {
-    var h = util.Arrays.hashCode(keyBytes)
-    h = 31 * h + util.Arrays.hashCode(chainCode)
+    var h = java.util.Arrays.hashCode(keyBytes)
+    h = 31 * h + java.util.Arrays.hashCode(chainCode)
     h = 31 * h + path.hashCode()
     h
   }

@@ -113,7 +113,7 @@ class GF2_192 extends AnyRef {
     }
   }
 
-  override def hashCode = util.Arrays.hashCode(word)
+  override def hashCode = java.util.Arrays.hashCode(word)
 
   /**
     *

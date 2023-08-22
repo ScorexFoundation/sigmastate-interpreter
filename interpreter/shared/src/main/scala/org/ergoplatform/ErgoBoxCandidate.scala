@@ -85,7 +85,7 @@ class ErgoBoxCandidate(val value: Long,
 
   override def equals(arg: Any): Boolean = {
     arg match {
-      case x: ErgoBoxCandidate => util.Arrays.equals(bytesWithNoRef, x.bytesWithNoRef)
+      case x: ErgoBoxCandidate => java.util.Arrays.equals(bytesWithNoRef, x.bytesWithNoRef)
       case _ => false
     }
   }

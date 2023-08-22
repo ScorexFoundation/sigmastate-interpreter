@@ -275,7 +275,7 @@ class SigmaDslTesting extends AnyPropSpec
       val txOutputCandidates = ctx.outputs.toArray.map(SigmaDsl.toErgoBox)
       val tx = new ErgoLikeTransaction(
         txInputs, txDataInputs, txOutputCandidates.toIndexedSeq)
-      val selfIndex = boxesToSpend.indexWhere(b => util.Arrays.equals(b.id, ctx.selfBox.id.toArray))
+      val selfIndex = boxesToSpend.indexWhere(b => java.util.Arrays.equals(b.id, ctx.selfBox.id.toArray))
 
       val extension = ContextExtension(
         values = ctx.vars.toArray.zipWithIndex.collect {

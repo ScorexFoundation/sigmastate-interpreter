@@ -13,12 +13,12 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
   * @param extension - user-defined variables to be put into context
   */
 class ProverResult(val proof: Array[Byte], val extension: ContextExtension) {
-  override def hashCode(): Int = util.Arrays.hashCode(proof) * 31 + extension.hashCode()
+  override def hashCode(): Int = java.util.Arrays.hashCode(proof) * 31 + extension.hashCode()
 
   override def equals(obj: scala.Any): Boolean =
   (this eq obj.asInstanceOf[AnyRef]) || (obj match {
     case obj: ProverResult =>
-      util.Arrays.equals(proof, obj.proof) && extension == obj.extension
+      java.util.Arrays.equals(proof, obj.proof) && extension == obj.extension
     case _ => false
   })
 

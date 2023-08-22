@@ -1,6 +1,5 @@
 package sigma
 
-import java.util
 import scalan._  // required
 import scalan.util.CollectionUtil
 import scalan.RType
@@ -8,7 +7,6 @@ import debox.Buffer
 import scalan.RType._
 import sigma.util.{MaxArrayLength, safeConcatArrays_v5}
 import debox.cfor
-import sigma.VersionContext
 
 class CollOverArray[@specialized A](val toArray: Array[A], val builder: CollBuilder)
                                    (implicit tA: RType[A]) extends Coll[A] {
@@ -398,7 +396,7 @@ class PairOfCols[@specialized L, @specialized R](val ls: Coll[L], val rs: Coll[R
   }
 
   override def unionSet(that: Coll[(L, R)]): Coll[(L, R)] = {
-    val set = new util.HashSet[(L,R)](32)
+    val set = new java.util.HashSet[(L,R)](32)
     implicit val ctL = ls.tItem.classTag
     implicit val ctR = rs.tItem.classTag
     val resL = Buffer.empty[L]

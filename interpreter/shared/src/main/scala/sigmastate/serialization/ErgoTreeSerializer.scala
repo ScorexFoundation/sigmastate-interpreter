@@ -275,7 +275,7 @@ class ErgoTreeSerializer {
     // allocate array of back references: forall i: positionsBackref(i) is index in `positions`
     val positionsBackref = safeNewArray[Int](positionsRange)
     // mark all positions are not assigned
-    util.Arrays.fill(positionsBackref, -1)
+    java.util.Arrays.fill(positionsBackref, -1)
 
     cfor(0)(_ < positions.length, _ + 1) { iPos =>
       val pos = positions(iPos)
