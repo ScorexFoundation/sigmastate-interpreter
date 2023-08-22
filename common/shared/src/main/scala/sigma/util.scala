@@ -1,4 +1,4 @@
-package sigmastate
+package sigma
 
 import scalan.util.CollectionUtil
 

@@ -1,4 +1,4 @@
-package sigmastate
+package sigma
 
 import org.scalactic.source.Position
 import org.scalatest.propspec.AnyPropSpec

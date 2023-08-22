@@ -4,6 +4,7 @@ import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.validation.ValidationSpecification
 import org.ergoplatform.{Context => _, _}
 import scalan.BaseCtxTests
+import sigma.VersionContext
 import sigmastate.Values.{BigIntArrayConstant, EvaluatedValue, SValue, SigmaPropConstant, Value}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting}
@@ -12,7 +13,7 @@ import sigmastate.interpreter.{ContextExtension, ErgoTreeEvaluator}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.lang.{CompilerResult, CompilerSettings, LangTests, SigmaCompiler}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.{AvlTreeData, CompilerTestsBase, SType, VersionContext}
+import sigmastate.{AvlTreeData, CompilerTestsBase, SType}
 import special.sigma.{ContractsTestkit, Context => DContext}
 
 import scala.annotation.unused

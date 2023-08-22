@@ -1,4 +1,4 @@
-package sigmastate
+package sigma
 
 /** Descriptor of a runtime platform. Can be used to conditionally execute code. */
 sealed trait RuntimePlatform {

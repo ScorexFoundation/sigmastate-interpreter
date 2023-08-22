@@ -9,7 +9,7 @@ import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigmastate.interpreter.ProverResult
 import sigmastate.serialization.{SigmaSerializer, ValueSerializer}
-import sigmastate.util.safeNewArray
+import sigma.util.safeNewArray
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import debox.cfor
 

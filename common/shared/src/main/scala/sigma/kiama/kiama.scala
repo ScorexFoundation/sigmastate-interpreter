@@ -1,4 +1,4 @@
-package sigmastate
+package sigma
 
 /**
   * Kiama is a Scala library for language processing. It is a project of the

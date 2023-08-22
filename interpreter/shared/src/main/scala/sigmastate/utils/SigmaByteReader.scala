@@ -6,7 +6,7 @@ import scorex.util.serialization.Reader
 import sigmastate.SType
 import sigmastate.Values.{SValue, Value}
 import sigmastate.serialization._
-import sigmastate.util.safeNewArray
+import sigma.util.safeNewArray
 import debox.cfor
 import sigmastate.exceptions.DeserializeCallDepthExceeded
 

@@ -3,10 +3,10 @@ package special.sigma
 import java.math.BigInteger
 import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
-import org.scalacheck.{Gen, Arbitrary}
-import scalan.{ExactOrdering, RType, ExactIntegral, ExactNumeric}
+import org.scalacheck.{Arbitrary, Gen}
+import scalan.{ExactIntegral, ExactNumeric, ExactOrdering, RType}
 import scorex.crypto.authds.avltree.batch._
-import scorex.crypto.authds.{ADDigest, ADValue, ADKey}
+import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scalan.util.Extensions._
 import sigmastate.utils.Extensions._
@@ -27,7 +27,7 @@ import sigmastate.utils.Helpers
 import sigmastate.utils.Helpers._
 import sigmastate.helpers.TestingHelpers._
 
-import scala.util.{Try, Success, Failure}
+import scala.util.{Failure, Success, Try}
 import OrderingOps._
 import org.ergoplatform.ErgoBox.AdditionalRegisters
 import org.scalacheck.Arbitrary._
@@ -38,8 +38,10 @@ import scorex.util.ModifierId
 import sigmastate.basics.ProveDHTuple
 import sigmastate.interpreter._
 import org.scalactic.source.Position
+import sigma.VersionContext
 import sigmastate.helpers.SigmaPPrint
 import sigmastate.exceptions.GraphBuildingException
+
 import scala.collection.compat.immutable.ArraySeq
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to

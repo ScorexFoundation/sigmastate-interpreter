@@ -9,7 +9,7 @@ import sigmastate.basics.{CryptoConstants, ProveDHTuple, SecondDHTupleProverMess
 import sigmastate.interpreter.ErgoTreeEvaluator.{fixedCostOp, perItemCostOp}
 import sigmastate.interpreter.{ErgoTreeEvaluator, NamedDesc, OperationCostInfo}
 import sigmastate.serialization.SigmaSerializer
-import sigmastate.util.safeNewArray
+import sigma.util.safeNewArray
 import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
 import debox.cfor
 import sigmastate.eval.Extensions.ArrayOps

@@ -1,15 +1,14 @@
 package sigmastate.interpreter
 
 import java.util
-import sigmastate.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
-import sigmastate.kiama.rewriting.Strategy
+import sigma.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
 import org.ergoplatform.ErgoLikeContext
 import org.ergoplatform.validation.SigmaValidationSettings
 import org.ergoplatform.validation.ValidationRules._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
-import sigmastate.basics.DLogProtocol.{ProveDlog, DLogInteractiveProver, FirstDLogProverMessage}
+import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage, ProveDlog}
 import sigmastate.basics._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.serialization.{SigmaSerializer, ValueSerializer}
@@ -23,7 +22,10 @@ import sigmastate.interpreter.ErgoTreeEvaluator.fixedCostOp
 import sigmastate.utils.Helpers._
 import sigmastate.lang.Terms.ValueOps
 import debox.cfor
+import sigma.VersionContext
+import sigma.kiama.rewriting.Strategy
 import sigmastate.exceptions.{CostLimitException, InterpreterException}
+
 import scala.util.{Success, Try}
 
 /** Base (verifying) interpreter of ErgoTrees.

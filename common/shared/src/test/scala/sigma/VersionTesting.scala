@@ -1,4 +1,4 @@
-package sigmastate
+package sigma
 
 import debox.cfor
 
@@ -12,7 +12,7 @@ trait VersionTesting {
   protected val activatedVersions: Seq[Byte] =
     (0 to VersionContext.MaxSupportedScriptVersion).map(_.toByte).toArray[Byte]
 
-  private[sigmastate] val _currActivatedVersion = new DynamicVariable[Byte](2) // v5.x by default
+  private[sigma] val _currActivatedVersion = new DynamicVariable[Byte](2) // v5.x by default
 
   /** Current activated version used in tests. */
   def activatedVersionInTests: Byte = _currActivatedVersion.value
@@ -20,7 +20,7 @@ trait VersionTesting {
   val ergoTreeVersions: Seq[Byte] =
     (0 to VersionContext.MaxSupportedScriptVersion).map(_.toByte).toArray[Byte]
 
-  private[sigmastate] val _currErgoTreeVersion = new DynamicVariable[Byte](0)
+  private[sigma] val _currErgoTreeVersion = new DynamicVariable[Byte](0)
 
   /** Current ErgoTree version assigned dynamically. */
   def ergoTreeVersionInTests: Byte = _currErgoTreeVersion.value

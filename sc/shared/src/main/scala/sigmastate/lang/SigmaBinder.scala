@@ -1,9 +1,9 @@
 package sigmastate.lang
 
-import sigmastate.kiama.rewriting.CallbackRewriter
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform._
 import scalan.Nullable
+import sigma.kiama.rewriting.CallbackRewriter
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.interpreter.Interpreter.ScriptEnv

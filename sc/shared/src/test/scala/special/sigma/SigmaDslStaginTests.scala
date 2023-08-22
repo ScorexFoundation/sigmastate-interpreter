@@ -5,7 +5,8 @@ import special.collection._
 
 import scala.language.reflectiveCalls
 import scalan.{BaseCtxTests, BaseLiftableTests}
-import sigmastate.{VersionContext, eval, TrivialProp}
+import sigma.VersionContext
+import sigmastate.{eval, TrivialProp}
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
 

@@ -8,8 +8,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package sigmastate.kiama
-package rewriting
+package sigma.kiama.rewriting
 
 /**
   * Any-rewriting strategies. A strategy is a function that takes a term

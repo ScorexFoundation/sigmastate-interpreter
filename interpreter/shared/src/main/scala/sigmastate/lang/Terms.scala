@@ -1,6 +1,6 @@
 package sigmastate.lang
 
-import sigmastate.kiama.rewriting.Rewriter._
+import sigma.kiama.rewriting.Rewriter._
 import scalan.Nullable
 import sigmastate.SCollection.{SIntArray, SByteArray}
 import sigmastate.Values._

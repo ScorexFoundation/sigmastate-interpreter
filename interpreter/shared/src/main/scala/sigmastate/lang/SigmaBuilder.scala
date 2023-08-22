@@ -3,6 +3,7 @@ package sigmastate.lang
 import debox.cfor
 import org.ergoplatform.ErgoBox.RegisterId
 import scalan.Nullable
+import sigma.Environment
 import sigmastate.SCollection.{SByteArray, SIntArray}
 import sigmastate.SOption.SIntOption
 import sigmastate.Values._

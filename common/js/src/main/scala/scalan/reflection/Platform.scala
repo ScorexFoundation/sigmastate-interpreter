@@ -1,7 +1,6 @@
 package scalan.reflection
 
-import sigmastate.RuntimePlatform
-
+import sigma.RuntimePlatform
 import scala.collection.mutable
 
 /** JS Platform dependent implementation of reflection methods. */

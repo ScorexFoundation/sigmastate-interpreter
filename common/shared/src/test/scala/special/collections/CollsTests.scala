@@ -6,7 +6,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import scalan._
-import sigmastate.{VersionContext, VersionTestingProperty}
+import sigma.{VersionContext, VersionTestingProperty}
 import special.collection.{Coll, CollOverArray, PairOfCols}
 
 import scala.language.{existentials}

@@ -3,7 +3,7 @@ package sigmastate.serialization
 import sigmastate.basics.CryptoConstants
 import sigmastate.crypto.CryptoFacade
 import CryptoConstants.EcPointType
-import sigmastate.util.safeNewArray
+import sigma.util.safeNewArray
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 /**

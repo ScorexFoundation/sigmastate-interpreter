@@ -9,6 +9,7 @@ import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.serialization.{Reader, VLQByteBufferReader}
+import sigma.Environment
 import sigmastate.Values.{BlockValue, GetVarInt, IntConstant, SValue, SigmaBoolean, SigmaPropValue, Tuple, ValDef, ValUse}
 import sigmastate._
 import sigmastate.basics.CryptoConstants
@@ -18,7 +19,7 @@ import sigmastate.exceptions.{DeserializeCallDepthExceeded, InvalidTypePrefix, R
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}
 import sigmastate.serialization.OpCodes._
-import sigmastate.util.safeNewArray
+import sigma.util.safeNewArray
 import sigmastate.utils.Helpers._
 import sigmastate.utils.SigmaByteReader
 import sigmastate.utxo.SizeOf

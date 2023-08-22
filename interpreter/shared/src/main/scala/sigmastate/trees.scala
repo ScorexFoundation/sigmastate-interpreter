@@ -8,6 +8,7 @@ import scalan.ExactOrdering._
 import scalan.OverloadHack.Overloaded1
 import scalan.{ExactIntegral, ExactOrdering}
 import scorex.crypto.hash.{Blake2b256, CryptographicHash32, Sha256}
+import sigma.VersionContext
 import sigmastate.ArithOp.OperationImpl
 import sigmastate.Operations._
 import sigmastate.SCollection.{SByteArray, SIntArray}

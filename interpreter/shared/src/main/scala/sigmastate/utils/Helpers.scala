@@ -5,7 +5,7 @@ import io.circe.Decoder
 import org.ergoplatform.settings.ErgoAlgos
 import scalan.{OverloadHack, RType}
 import scorex.utils.Ints
-import sigmastate.Environment
+import sigma.Environment
 import sigmastate.eval.{CAnyValue, Colls, SigmaDsl}
 import sigmastate.basics.CryptoConstants.EcPointType
 import special.collection.Coll

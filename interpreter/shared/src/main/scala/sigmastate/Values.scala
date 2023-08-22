@@ -2,7 +2,7 @@ package sigmastate
 
 import java.math.BigInteger
 import java.util.{Arrays, Objects}
-import sigmastate.kiama.rewriting.Rewriter.{count, everywherebu, strategy}
+import sigma.kiama.rewriting.Rewriter.{count, everywherebu, strategy}
 import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.validation.ValidationException
 import scalan.{Nullable, RType}
@@ -34,7 +34,7 @@ import sigmastate.serialization.transformers.ProveDHTupleSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import special.sigma.{AvlTree, Header, PreHeader, _}
 import sigmastate.lang.SourceContext
-import sigmastate.util.safeNewArray
+import sigma.util.safeNewArray
 import special.collection.Coll
 
 import scala.collection.compat.immutable.ArraySeq

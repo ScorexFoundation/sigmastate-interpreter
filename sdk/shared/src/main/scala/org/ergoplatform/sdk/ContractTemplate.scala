@@ -13,7 +13,7 @@ import sigmastate.eval.{Colls, _}
 import sigmastate.exceptions.SerializerException
 import sigmastate.lang.{DeserializationSigmaBuilder, StdSigmaBuilder}
 import sigmastate.serialization._
-import sigmastate.util.safeNewArray
+import sigma.util.safeNewArray
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 import java.util.Objects

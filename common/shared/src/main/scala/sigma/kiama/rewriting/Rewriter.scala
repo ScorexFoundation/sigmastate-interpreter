@@ -8,10 +8,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package sigmastate.kiama
+package sigma.kiama
 package rewriting
 
 import scalan.reflection.{Platform, RClass, RConstructor}
+//import sigma.kiama.==>
 
 /**
   * Strategy-based term rewriting in the style of Stratego (http://strategoxt.org/).
@@ -23,8 +24,8 @@ import scalan.reflection.{Platform, RClass, RConstructor}
   */
 trait Rewriter {
 
-  import sigmastate.kiama.util.Comparison.same
-  import sigmastate.kiama.util.Collections.{CanBuildFrom, Factory, newBuilder}
+  import sigma.kiama.util.Comparison.same
+  import sigma.kiama.util.Collections.{CanBuildFrom, Factory, newBuilder}
 
   /**
     * Rewrite a term.  Apply the strategy `s` to a term returning the result term

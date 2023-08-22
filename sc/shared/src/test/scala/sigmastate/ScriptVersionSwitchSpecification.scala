@@ -5,7 +5,7 @@ import org.ergoplatform._
 import scorex.util.ModifierId
 import sigmastate.Values.ErgoTree.{DefaultHeader, updateVersionBits}
 import sigmastate.Values._
-import sigmastate.VersionContext.MaxSupportedScriptVersion
+import sigma.VersionContext.MaxSupportedScriptVersion
 import sigmastate.eval._
 import sigmastate.exceptions.InterpreterException
 import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter}

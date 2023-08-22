@@ -8,8 +8,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package sigmastate.kiama
-package util
+package sigma.kiama.util
 
 /**
   * Utility module for comparison routines.

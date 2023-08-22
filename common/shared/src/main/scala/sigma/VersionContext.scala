@@ -1,6 +1,6 @@
-package sigmastate
+package sigma
 
-import sigmastate.VersionContext.JitActivationVersion
+import VersionContext.JitActivationVersion
 
 import scala.util.DynamicVariable
 

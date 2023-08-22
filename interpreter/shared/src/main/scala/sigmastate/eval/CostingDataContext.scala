@@ -10,6 +10,7 @@ import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue, SerializedAdProof}
 import scorex.crypto.hash.{Blake2b256, Digest32, Sha256}
 import scorex.utils.{Ints, Longs}
+import sigma.VersionContext
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.Values.{ConstantNode, ErgoTree, EvaluatedValue, SValue, SigmaBoolean}

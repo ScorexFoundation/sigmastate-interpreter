@@ -1,11 +1,12 @@
 package sigmastate.interpreter
 
-import sigmastate.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
-import sigmastate.kiama.rewriting.Strategy
+import sigma.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
 import scalan.util.CollectionUtil._
+import sigma.VersionContext
+import sigma.kiama.rewriting.Strategy
 import sigmastate.TrivialProp.{FalseProp, TrueProp}
 import sigmastate.Values._
-import sigmastate.VersionContext.MaxSupportedScriptVersion
+import sigma.VersionContext.MaxSupportedScriptVersion
 import sigmastate._
 import sigmastate.basics.DLogProtocol._
 import sigmastate.basics.VerifierMessage.Challenge

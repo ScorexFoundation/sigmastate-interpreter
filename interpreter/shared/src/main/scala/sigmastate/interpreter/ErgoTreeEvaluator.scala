@@ -1,7 +1,7 @@
 package sigmastate.interpreter
 
 import org.ergoplatform.ErgoLikeContext
-import sigmastate.{PerItemCost, VersionContext, TypeBasedCost, FixedCost, SType, JitCost}
+import sigmastate.{PerItemCost, TypeBasedCost, FixedCost, SType, JitCost}
 import sigmastate.Values._
 import sigmastate.eval.Profiler
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
@@ -11,7 +11,7 @@ import scalan.util.Extensions._
 import sigmastate.interpreter.EvalSettings._
 import supertagged.TaggedType
 import debox.{Buffer => DBuffer}
-
+import sigma.VersionContext
 import scala.collection.compat.immutable.ArraySeq
 import scala.util.DynamicVariable
 

@@ -74,7 +74,7 @@ trait LangTests extends Matchers with NegativeTesting {
   def ty(s: String): SType = SigmaParser.parseType(s)
 
   def assertSrcCtxForAllNodes(tree: SValue): Unit = {
-    import sigmastate.kiama.rewriting.Rewriter._
+    import sigma.kiama.rewriting.Rewriter._
     rewrite(everywherebu(rule[Any] {
       case node: SValue =>
         withClue(s"Missing sourceContext for $node") { node.sourceContext.isDefined shouldBe true }

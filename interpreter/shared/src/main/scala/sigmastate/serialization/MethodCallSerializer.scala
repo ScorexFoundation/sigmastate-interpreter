@@ -4,7 +4,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.Terms.STypeSubst
 import sigmastate.lang.Terms.MethodCall
-import sigmastate.util.safeNewArray
+import sigma.util.safeNewArray
 import sigmastate.utils.SigmaByteWriter.{DataInfo, valuesItemInfo}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.ComplexityTable

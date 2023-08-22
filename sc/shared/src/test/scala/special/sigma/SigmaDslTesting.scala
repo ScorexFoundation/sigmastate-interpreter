@@ -19,6 +19,7 @@ import scalan.util.BenchmarkUtil
 import scalan.util.CollectionUtil._
 import scalan.util.Extensions._
 import scalan.util.StringUtil.StringUtilExtensions
+import sigma.VersionContext
 import sigmastate.SType.AnyOps
 import sigmastate.Values.{ByteArrayConstant, Constant, ConstantNode, ErgoTree, IntConstant, SValue}
 import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
@@ -34,7 +35,7 @@ import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers._
 import sigmastate.utxo.{DeserializeContext, DeserializeRegister, GetVar, OptionGet}
-import sigmastate.{SOption, SSigmaProp, SType, SigmaLeaf, VersionContext, eval}
+import sigmastate.{SOption, SSigmaProp, SType, SigmaLeaf, eval}
 import special.collection.{Coll, CollType}
 
 import java.util

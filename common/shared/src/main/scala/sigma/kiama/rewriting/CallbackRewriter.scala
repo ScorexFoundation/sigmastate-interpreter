@@ -8,8 +8,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package sigmastate.kiama
-package rewriting
+package sigma.kiama.rewriting
+
+import sigma.kiama.{===>, ==>}
 
 /**
   * Strategy-based term rewriting with callbacks. Clients can register

@@ -8,7 +8,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package sigmastate.kiama.rewriting
+package sigma.kiama.rewriting
 
 /**
   * Helper class to contain commonality of choice in non-deterministic

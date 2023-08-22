@@ -1,4 +1,4 @@
-package sigmastate
+package sigma
 
 /** Describes the current execution environment. */
 sealed abstract class Environment {
