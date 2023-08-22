@@ -1,7 +1,7 @@
 
 import java.math.BigInteger
 import scalan.RType
-import scalan.RType.GeneralType
+import scalan.RType.{GeneralType, SomeType}
 
 import scala.reflect.classTag
 
@@ -41,4 +41,14 @@ package object sigma {
   def requireSameLength[A, B](xs: Coll[A], ys: Coll[B]) = {
     require(xs.length == ys.length, sameLengthErrorMsg(xs, ys))
   }
+
+  /** Generic representation of tuples values. */
+  type TupleData = Coll[Any]
+
+  /** Returns an RType object representing a tuple type with the given SomeType array types.
+    *
+    * @param types An array of SomeType representing the types of each item in the tuple.
+    * @return An RType object for the tuple type.
+    */
+  def tupleRType(types: Array[SomeType]): RType[TupleData] = TupleType(types)
 }

@@ -6,7 +6,6 @@ import scalan.RType._
 import sigmastate.SType._
 import sigmastate.Values.SigmaBoolean
 import sigmastate._
-import sigma.Types._
 import debox.cfor
 import sigmastate.exceptions.CostLimitException
 import java.math.BigInteger

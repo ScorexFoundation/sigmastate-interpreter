@@ -1,13 +1,15 @@
 package scalan
 
-import scala.language.{implicitConversions}
+import scala.language.implicitConversions
 import scala.annotation.implicitNotFound
 import scala.collection.immutable.ListMap
 import scalan.util._
 import scalan.RType._
+
 import scala.collection.mutable
 import debox.cfor
-import scalan.reflection.{RClass, RMethod, RConstructor}
+import scalan.reflection.{RClass, RConstructor, RMethod}
+import special.wrappers.WrapSpec
 
 abstract class TypeDescs extends Base { self: Scalan =>
 
