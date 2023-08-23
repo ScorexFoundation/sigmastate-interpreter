@@ -1,7 +1,7 @@
 package sigmastate.lang
 
 import sigma.kiama.rewriting.Rewriter._
-import scalan.Nullable
+import sigma.core.Nullable
 import sigmastate.SCollection.{SIntArray, SByteArray}
 import sigmastate.Values._
 import sigmastate.utils.Overloading.Overload1

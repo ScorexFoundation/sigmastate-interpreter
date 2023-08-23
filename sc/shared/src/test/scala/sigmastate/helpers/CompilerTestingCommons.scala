@@ -7,7 +7,9 @@ import org.scalacheck.Arbitrary.arbByte
 import org.scalacheck.Gen
 import org.scalatest.Assertion
 import sigma.util.BenchmarkUtil
-import scalan.{RType, TestContexts, TestUtils}
+import scalan.TestContexts
+import sigma.TestUtils
+import sigma.core.RType
 import sigmastate.Values.{Constant, ErgoTree, SValue, SigmaBoolean, SigmaPropValue}
 import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._

@@ -5,7 +5,7 @@ import java.nio.charset.StandardCharsets
 
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.validation.ValidationRules.CheckSerializableTypeCode
-import scalan.RType
+import sigma.core.RType
 import sigmastate.Values.SigmaBoolean
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate._

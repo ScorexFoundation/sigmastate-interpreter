@@ -1,4 +1,4 @@
-package scalan
+package sigma
 
 import org.scalactic.TripleEquals
 import org.scalatest.matchers.should.Matchers

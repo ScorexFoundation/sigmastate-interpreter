@@ -1,7 +1,7 @@
 package sigma
 
-import scalan.RType
-import scalan.RType.SomeType
+import sigma.core.RType
+import sigma.core.RType.SomeType
 import sigma.util.CollectionUtil
 
 import scala.reflect.ClassTag

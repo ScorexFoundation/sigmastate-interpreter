@@ -5,8 +5,8 @@ import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
 import org.ergoplatform.settings.ErgoAlgos
 import pprint.{PPrinter, Tree}
-import scalan.RType
-import scalan.RType.PrimitiveType
+import sigma.core.RType
+import sigma.core.RType.PrimitiveType
 import sigmastate.SCollection._
 import sigmastate.Values.{ConstantNode, ErgoTree, FuncValue, ValueCompanion}
 import sigmastate._

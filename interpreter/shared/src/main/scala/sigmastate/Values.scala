@@ -5,7 +5,7 @@ import java.util.{Arrays, Objects}
 import sigma.kiama.rewriting.Rewriter.{count, everywherebu, strategy}
 import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.validation.ValidationException
-import scalan.{Nullable, RType}
+import sigma.core.{Nullable, RType}
 import sigma.util.CollectionUtil._
 import sigmastate.SCollection.{SByteArray, SIntArray}
 import sigmastate.basics.CryptoConstants.EcPointType

@@ -1,4 +1,4 @@
-package scalan
+package sigma.core
 
 import scala.math.Numeric.{ByteIsIntegral, LongIsIntegral, ShortIsIntegral, IntIsIntegral}
 

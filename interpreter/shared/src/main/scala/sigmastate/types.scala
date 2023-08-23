@@ -3,8 +3,8 @@ package sigmastate
 import java.math.BigInteger
 import org.ergoplatform._
 import org.ergoplatform.validation._
-import scalan.{Nullable, RType}
-import scalan.RType.GeneralType
+import sigma.core.{Nullable, RType}
+import sigma.core.RType.GeneralType
 import sigmastate.SType.TypeCode
 import sigmastate.interpreter._
 import sigmastate.utils.Overloading.Overload1

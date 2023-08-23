@@ -1,4 +1,4 @@
-package scalan
+package sigma.core
 
 import scala.reflect.ClassTag
 import scala.annotation.{implicitNotFound, unused}

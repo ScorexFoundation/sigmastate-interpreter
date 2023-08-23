@@ -1,6 +1,6 @@
 package sigma.util
 
-import scalan.DFunc
+import sigma.core.DFunc
 import debox.{Set => DSet, Buffer => DBuffer}
 import debox.cfor
 import scala.reflect.ClassTag

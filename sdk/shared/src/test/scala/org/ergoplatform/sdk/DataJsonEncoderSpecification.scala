@@ -4,7 +4,7 @@ package org.ergoplatform.sdk
 import java.math.BigInteger
 
 import org.scalacheck.Arbitrary._
-import scalan.RType
+import sigma.core.RType
 import sigmastate.SCollection.SByteArray
 import sigmastate.SType.AnyOps
 import sigmastate.Values.SigmaBoolean

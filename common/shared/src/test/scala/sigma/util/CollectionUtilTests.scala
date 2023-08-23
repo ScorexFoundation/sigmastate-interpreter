@@ -1,6 +1,6 @@
 package sigma.util
 
-import scalan.BaseTests
+import sigma.BaseTests
 
 import scala.collection.{Seq, mutable}
 import scala.reflect.ClassTag

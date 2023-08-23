@@ -3,7 +3,7 @@ package sigmastate.serialization
 import java.math.BigInteger
 import org.ergoplatform.ErgoBox
 import org.scalacheck.Arbitrary._
-import scalan.RType
+import sigma.core.RType
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.{ErgoTree, SigmaBoolean}
 import sigmastate._

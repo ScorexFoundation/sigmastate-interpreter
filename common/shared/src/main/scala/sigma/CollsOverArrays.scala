@@ -1,10 +1,10 @@
 package sigma
 
-import scalan._  // required
+import sigma.core._
 import sigma.util.CollectionUtil
-import scalan.RType
+import sigma.core.RType
 import debox.Buffer
-import scalan.RType._
+import sigma.core.RType._
 import sigma.util.{MaxArrayLength, safeConcatArrays_v5}
 import debox.cfor
 

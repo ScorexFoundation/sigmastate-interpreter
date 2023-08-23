@@ -3,7 +3,7 @@ package wrappers.scalan {
 
   import impl._
 
-  import scalan.RType
+  import sigma.core.RType
 
   import special.wrappers.WrappersModule
 

@@ -3,7 +3,7 @@ package org.ergoplatform.sdk
 import org.ergoplatform.ErgoBox.TokenId
 import org.ergoplatform.sdk.JavaHelpers.collRType
 import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, SigmaConstants}
-import scalan.RType
+import sigma.core.RType
 import sigmastate.SType
 import sigmastate.Values.{Constant, ErgoTree, EvaluatedValue}
 import sigmastate.eval.Colls

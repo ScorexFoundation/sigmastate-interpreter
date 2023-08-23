@@ -1,4 +1,4 @@
-package scalan
+package sigma.core
 
 import java.util.HashMap
 

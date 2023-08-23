@@ -2,9 +2,10 @@ package scalan.staged
 
 import java.util
 import scala.language.existentials
-import scalan.{Lazy, Nullable, Scalan}
+import scalan.Scalan
 import debox.{Buffer => DBuffer}
 import debox.cfor
+import sigma.core.{Lazy, Nullable}
 import sigma.reflection.RMethod
 
 trait Transforming { self: Scalan =>

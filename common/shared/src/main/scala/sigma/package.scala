@@ -1,7 +1,7 @@
 
 import java.math.BigInteger
-import scalan.RType
-import scalan.RType.{GeneralType, SomeType}
+import sigma.core.RType
+import sigma.core.RType.{GeneralType, SomeType}
 
 import scala.reflect.classTag
 

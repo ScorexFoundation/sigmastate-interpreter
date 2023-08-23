@@ -1,7 +1,7 @@
 package sigma
 
 import org.scalatest.BeforeAndAfterAll
-import scalan.RType
+import sigma.core.RType
 import sigma.util.BenchmarkUtil
 import sigmastate.{DataValueComparer, JitCost, TrivialProp}
 import sigmastate.Values.ErgoTree

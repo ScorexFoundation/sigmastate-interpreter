@@ -1,8 +1,8 @@
 package org.ergoplatform.sdk.js
 
 import org.ergoplatform.sdk.js.Value.toRuntimeData
-import scalan.RType
-import scalan.RType.PairType
+import sigma.core.RType
+import sigma.core.RType.PairType
 import scorex.util.Extensions.{IntOps, LongOps}
 import scorex.util.encode.Base16
 import sigmastate.SType

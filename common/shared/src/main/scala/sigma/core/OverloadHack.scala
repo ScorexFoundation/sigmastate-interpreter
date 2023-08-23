@@ -1,4 +1,4 @@
-package scalan
+package sigma.core
 
 /** Scala specific trick to appease erasure of methods argument types.
   * Example usage:

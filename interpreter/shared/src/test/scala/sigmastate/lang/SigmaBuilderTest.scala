@@ -3,7 +3,7 @@ package sigmastate.lang
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import scalan.{Nullable, RType}
+import sigma.core.{Nullable, RType}
 import sigma.{Environment, VersionContext}
 import sigmastate.Values._
 import sigmastate._

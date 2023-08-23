@@ -1,9 +1,10 @@
 package scalan.staged
 
 import scala.collection._
-import scalan.{Base, Scalan, emptyDBufferOfInt}
+import scalan.Scalan
 import debox.cfor
-import debox.{Set => DSet, Buffer => DBuffer, Map => DMap}
+import debox.{Buffer => DBuffer, Map => DMap, Set => DSet}
+import sigma.core.emptyDBufferOfInt
 
 
 trait AstGraphs extends Transforming { self: Scalan =>

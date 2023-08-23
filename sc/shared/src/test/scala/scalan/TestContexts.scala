@@ -1,7 +1,7 @@
 package scalan
 
 import sigma.reflection.RMethod
-import sigma.CoreLibReflection
+import sigma.{BaseNestedTests, BaseShouldTests, BaseTests, CoreLibReflection, TestUtils}
 
 trait TestContexts extends TestUtils {
 

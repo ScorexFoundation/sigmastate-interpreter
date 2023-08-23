@@ -1,6 +1,6 @@
 package sigma.util
 
-import scalan.BaseNestedTests
+import sigma.BaseNestedTests
 
 class FileUtilTests extends BaseNestedTests {
   import FileUtil._

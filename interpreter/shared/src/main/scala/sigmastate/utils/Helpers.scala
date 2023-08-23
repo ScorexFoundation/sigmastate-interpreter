@@ -3,7 +3,7 @@ package sigmastate.utils
 import debox.cfor
 import io.circe.Decoder
 import org.ergoplatform.settings.ErgoAlgos
-import scalan.{OverloadHack, RType}
+import sigma.core.{OverloadHack, RType}
 import scorex.utils.Ints
 import sigma.Environment
 import sigmastate.eval.{CAnyValue, Colls, SigmaDsl}

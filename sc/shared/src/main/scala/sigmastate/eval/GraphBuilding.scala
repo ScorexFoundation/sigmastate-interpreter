@@ -1,10 +1,11 @@
 package sigmastate.eval
 
 import org.ergoplatform._
-import scalan.ExactIntegral.{ByteIsExactIntegral, IntIsExactIntegral, LongIsExactIntegral, ShortIsExactIntegral}
-import scalan.ExactOrdering.{ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering, ShortIsExactOrdering}
+import scalan.MutableLazy
+import sigma.core.ExactIntegral.{ByteIsExactIntegral, IntIsExactIntegral, LongIsExactIntegral, ShortIsExactIntegral}
+import sigma.core.ExactOrdering.{ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering, ShortIsExactOrdering}
 import sigma.util.Extensions.ByteOps
-import scalan.{ExactIntegral, ExactNumeric, ExactOrdering, Lazy, MutableLazy, Nullable}
+import sigma.core.{ExactIntegral, ExactNumeric, ExactOrdering, Lazy, Nullable}
 import sigmastate.Values.Value.Typed
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter.ScriptEnv

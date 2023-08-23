@@ -1,6 +1,6 @@
 package org.ergoplatform.sdk.js
 
-import scalan.RType
+import sigma.core.RType
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel

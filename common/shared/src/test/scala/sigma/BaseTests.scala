@@ -1,4 +1,4 @@
-package scalan
+package sigma
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.funspec.AnyFunSpec

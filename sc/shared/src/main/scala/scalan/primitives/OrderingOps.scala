@@ -1,6 +1,8 @@
 package scalan.primitives
 
-import scalan.{Base, Scalan, ExactOrdering}
+import scalan.{Base, Scalan}
+import sigma.core.ExactOrdering
+
 import scala.language.implicitConversions
 
 /** Slice in Scala cake with definitions of comparison operations. */

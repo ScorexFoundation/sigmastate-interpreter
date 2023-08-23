@@ -1,5 +1,7 @@
 package scalan
 
+import sigma.core.ExactNumeric
+
 trait DefRewriting { scalan: Scalan =>
 
   /** Rewrites given node to another equivalent node and returns its reference.

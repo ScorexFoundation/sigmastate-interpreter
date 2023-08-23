@@ -1,4 +1,4 @@
-package scalan
+package sigma.core
 
 /** Non-thread safe (but efficient on single thread) immutable lazy value.
   * The `block` is executed only once. */

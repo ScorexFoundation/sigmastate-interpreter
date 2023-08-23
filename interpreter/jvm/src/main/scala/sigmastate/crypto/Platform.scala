@@ -5,7 +5,7 @@ import org.bouncycastle.crypto.ec.CustomNamedCurves
 import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator
 import org.bouncycastle.crypto.params.KeyParameter
 import org.bouncycastle.math.ec.{ECCurve, ECFieldElement, ECPoint}
-import scalan.RType
+import sigma.core.RType
 
 import java.math.BigInteger
 import sigmastate._

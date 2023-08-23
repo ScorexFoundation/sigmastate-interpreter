@@ -1,6 +1,6 @@
 package sigma
 
-import scalan._
+import sigma.core.RType
 
 /** Indexed (zero-based) collection of elements of type `A`.
   * NOTE: declaring it `abstract class` makes some performance benefits, but doesn't work

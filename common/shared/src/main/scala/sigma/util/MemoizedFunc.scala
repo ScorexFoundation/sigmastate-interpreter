@@ -1,6 +1,6 @@
 package sigma.util
 
-import scalan.AVHashMap
+import sigma.core.AVHashMap
 
 /** Transforms a given function into memoized equivalent function.
   * Memoization is implemented by computing function f only once for each

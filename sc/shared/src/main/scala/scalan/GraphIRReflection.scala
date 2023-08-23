@@ -7,6 +7,7 @@ import sigma.CoreLibReflection
 import sigmastate.eval.SigmaLibrary
 import sigma.Colls
 import sigma.SigmaDsl
+import sigma.core.RType
 import special.wrappers.{OptionWrapSpec, RTypeWrapSpec}
 import wrappers.scalan.WRTypes
 

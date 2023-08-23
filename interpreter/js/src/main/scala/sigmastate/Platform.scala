@@ -1,7 +1,7 @@
 package sigmastate
 
 import org.ergoplatform.ErgoBox
-import scalan.Nullable
+import sigma.core.Nullable
 import sigma.VersionContext
 import sigmastate.Values.{Constant, FalseLeaf, SigmaBoolean, TrueLeaf}
 import sigmastate.eval.{Evaluation, SigmaDsl}

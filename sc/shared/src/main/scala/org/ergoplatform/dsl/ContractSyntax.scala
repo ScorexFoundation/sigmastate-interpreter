@@ -1,7 +1,7 @@
 package org.ergoplatform.dsl
 
 import org.ergoplatform.ErgoBox.TokenId
-import scalan.RType
+import sigma.core.RType
 import sigmastate.SType
 import sigmastate.SType.AnyOps
 import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition}

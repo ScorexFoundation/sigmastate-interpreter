@@ -2,7 +2,7 @@ package sigmastate.eval
 
 import java.math.BigInteger
 
-import scalan.{ExactOrderingImpl, ExactIntegral}
+import sigma.core.{ExactOrderingImpl, ExactIntegral}
 
 import scala.math.{Integral, Ordering}
 import sigma._

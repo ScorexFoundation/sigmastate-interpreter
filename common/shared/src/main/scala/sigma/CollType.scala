@@ -1,6 +1,6 @@
 package sigma
 
-import scalan.RType
+import sigma.core.RType
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag

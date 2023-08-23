@@ -2,7 +2,7 @@ package sigmastate.lang
 
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress}
-import scalan.Nullable
+import sigma.core.Nullable
 import scorex.util.encode.{Base64, Base58, Base16}
 import sigmastate.SCollection.{SIntArray, SByteArray}
 import sigmastate.SOption._

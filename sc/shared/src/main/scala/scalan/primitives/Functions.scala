@@ -2,11 +2,12 @@ package scalan.primitives
 
 import java.util
 import scalan.staged.ProgramGraphs
-import scalan.{Base, Lazy, Nullable, Scalan, emptyDBufferOfInt}
+import scalan.{Base, Scalan}
 import debox.{Buffer => DBuffer}
 
 import scala.language.implicitConversions
 import debox.cfor
+import sigma.core.{Lazy, Nullable, emptyDBufferOfInt}
 import sigma.util.GraphUtil
 
 trait Functions extends Base with ProgramGraphs { self: Scalan =>

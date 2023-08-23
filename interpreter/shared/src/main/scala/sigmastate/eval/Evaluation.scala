@@ -1,8 +1,8 @@
 package sigmastate.eval
 
 import org.ergoplatform._
-import scalan.RType
-import scalan.RType._
+import sigma.core.RType
+import sigma.core.RType._
 import sigmastate.SType._
 import sigmastate.Values.SigmaBoolean
 import sigmastate._

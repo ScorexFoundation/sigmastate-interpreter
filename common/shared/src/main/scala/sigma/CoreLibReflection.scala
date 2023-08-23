@@ -1,6 +1,6 @@
 package sigma
 
-import scalan.RType
+import sigma.core.RType
 import sigma.reflection.CommonReflection.registerClassEntry
 import sigma.reflection._
 

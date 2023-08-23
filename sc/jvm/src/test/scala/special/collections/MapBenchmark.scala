@@ -1,7 +1,7 @@
 package sigma
 
 import org.scalameter.api.Bench
-import scalan.{AVHashMap, Nullable}
+import sigma.core.{AVHashMap, Nullable}
 import debox.cfor
 
 trait MapBenchmarkCases extends BenchmarkGens { suite: Bench[Double] =>

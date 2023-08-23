@@ -3,8 +3,8 @@ package sigmastate
 import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.validation.{ValidationException, ValidationRules}
 import org.ergoplatform.{ErgoAddressEncoder, ErgoBox, ErgoLikeContext, Self}
-import scalan.RType.asType
-import scalan.{Nullable, RType}
+import sigma.core.RType.asType
+import sigma.core.{Nullable, RType}
 import sigma.VersionContext
 import sigmastate.SCollection.{SByteArray, checkValidFlatmap}
 import sigmastate.Values._

@@ -1,6 +1,6 @@
 package special.wrappers
 
-import scalan.RType
+import sigma.core.RType
 
 import scala.language.reflectiveCalls
 

@@ -1,6 +1,6 @@
 package sigma.util
 
-import scalan.BaseTests
+import sigma.BaseTests
 
 class StronglyConnectedComponentsTests extends BaseTests {
 

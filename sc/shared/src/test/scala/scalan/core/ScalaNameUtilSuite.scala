@@ -1,6 +1,6 @@
 package scalan.core
 
-import scalan.BaseTests
+import sigma.BaseTests
 import sigma.reflection.CommonReflection.registerClassEntry
 import sigma.reflection.{RClass, mkMethod}
 

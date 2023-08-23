@@ -1,6 +1,6 @@
 package org.ergoplatform.sdk
 
-import scalan.RType
+import sigma.core.RType
 import sigma.Coll
 
 import scala.collection.{JavaConverters, mutable}
@@ -26,7 +26,7 @@ import org.ergoplatform.sdk.JavaHelpers.{TokenColl, TokenIdRType}
 import org.ergoplatform.sdk.Extensions.{CollBuilderOps, PairCollOps}
 import org.ergoplatform.sdk.wallet.{Constants, TokensMap}
 import org.ergoplatform.sdk.wallet.secrets.{DerivationPath, ExtendedSecretKey}
-import scalan.ExactIntegral.LongIsExactIntegral
+import sigma.core.ExactIntegral.LongIsExactIntegral
 import sigma.util.StringUtil.StringUtilExtensions
 import sigmastate.basics.CryptoConstants.EcPointType
 import sigmastate.basics.{DiffieHellmanTupleProverInput, ProveDHTuple}

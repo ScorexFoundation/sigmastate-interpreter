@@ -1,7 +1,9 @@
+package sigma
+
 
 import scala.reflect.ClassTag
 
-package object scalan {
+package object core {
 
   /** Allows implicit resolution to find appropriate instance of ClassTag in
     * the scope where RType is implicitly available. */

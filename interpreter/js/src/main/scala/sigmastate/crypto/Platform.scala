@@ -1,6 +1,6 @@
 package sigmastate.crypto
 
-import scalan.RType
+import sigma.core.RType
 import scorex.util.encode.Base16
 import sigmastate._
 import sigma.Coll

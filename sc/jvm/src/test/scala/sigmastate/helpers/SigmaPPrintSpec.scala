@@ -2,7 +2,7 @@ package sigmastate.helpers
 
 import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.{ErgoBox, Outputs}
-import scalan.RType
+import sigma.core.RType
 import scorex.util.ModifierId
 import sigmastate.Values._
 import sigmastate._

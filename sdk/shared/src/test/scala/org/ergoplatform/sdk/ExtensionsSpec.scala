@@ -5,7 +5,7 @@ import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import sigma.Coll
 import org.ergoplatform.sdk.Extensions.{CollBuilderOps, CollOps, GenIterableOps, PairCollOps}
-import scalan.RType
+import sigma.core.RType
 import sigma.CollGens
 import sigmastate.eval.CostingSigmaDslBuilder
 
