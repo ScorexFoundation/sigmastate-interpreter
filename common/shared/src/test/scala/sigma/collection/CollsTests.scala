@@ -1,13 +1,14 @@
-package sigma
+package sigma.collection
 
 import org.scalacheck.Gen
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import sigma.{Coll, CollOverArray, PairOfCols, VersionContext, VersionTestingProperty}
 import sigma.core._
 
-import scala.language.{existentials}
+import scala.language.existentials
 
 class CollsTests extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers with CollGens with VersionTestingProperty { testSuite =>
   import Gen._

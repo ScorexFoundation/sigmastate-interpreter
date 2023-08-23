@@ -2,6 +2,7 @@ package sigma
 
 import org.scalameter.KeyValue
 import org.scalameter.api.{Bench, Gen, _}
+import sigma.collection.CollGens
 
 trait BenchmarkGens extends CollGens { suite: Bench[Double] =>
   def maxSize = 100000
