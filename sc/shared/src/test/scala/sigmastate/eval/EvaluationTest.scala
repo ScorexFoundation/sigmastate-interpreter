@@ -9,7 +9,7 @@ import scalan.BaseCtxTests
 import sigmastate.lang.LangTests
 import sigma.util.BenchmarkUtil._
 import sigmastate._
-import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
+import sigmastate.crypto.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 
 class EvaluationTest extends BaseCtxTests

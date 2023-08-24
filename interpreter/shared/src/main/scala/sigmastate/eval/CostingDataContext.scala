@@ -15,9 +15,9 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.Values.{ConstantNode, ErgoTree, EvaluatedValue, SValue, SigmaBoolean}
 import sigmastate._
-import sigmastate.basics.CryptoConstants.EcPointType
-import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.{CryptoConstants, ProveDHTuple}
+import sigmastate.crypto.CryptoConstants.EcPointType
+import sigmastate.crypto.DLogProtocol.ProveDlog
+import sigmastate.crypto.{CryptoConstants, ProveDHTuple}
 import sigmastate.crypto.{CryptoFacade, Ecp}
 import sigmastate.eval.Extensions._
 import sigmastate.interpreter.Interpreter

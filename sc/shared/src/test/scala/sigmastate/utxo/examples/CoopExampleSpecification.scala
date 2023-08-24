@@ -3,7 +3,7 @@ package sigmastate.utxo.examples
 import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox}
 import org.scalatest.Assertion
 import org.scalatest.TryValues._
-import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
+import sigmastate.crypto.DLogProtocol.{ProveDlog, DLogProverInput}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values.{ByteArrayConstant, ErgoTree, BooleanConstant}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, CompilerTestingCommons, ErgoLikeTestInterpreter}

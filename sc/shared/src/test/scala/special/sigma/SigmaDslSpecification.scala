@@ -13,7 +13,7 @@ import sigmastate.utils.Extensions._
 import sigmastate.SCollection._
 import sigmastate.Values.IntConstant
 import sigmastate._
-import sigmastate.basics.DLogProtocol._
+import sigmastate.crypto.DLogProtocol._
 import sigmastate.Values._
 import sigmastate.lang.Terms.Apply
 import sigmastate.eval.Extensions._
@@ -35,7 +35,7 @@ import org.scalacheck.Gen.frequency
 import org.scalatest.{BeforeAndAfterAll, Tag}
 import sigma.core.RType._
 import scorex.util.ModifierId
-import sigmastate.basics.ProveDHTuple
+import sigmastate.crypto.ProveDHTuple
 import sigmastate.interpreter._
 import org.scalactic.source.Position
 import sigma.VersionContext

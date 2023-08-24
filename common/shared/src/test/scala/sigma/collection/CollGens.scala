@@ -1,9 +1,10 @@
 package sigma.collection
 
+import scala.language.implicitConversions
 import org.scalacheck.util.Buildable
 import org.scalacheck.{Arbitrary, Gen}
 import sigma.{Coll, CollBuilder, CollOverArrayBuilder, PairColl}
-import sigma.core._
+import sigma._
 import sigma.core.RType
 import spire.scalacompat.BuilderCompat
 

@@ -20,7 +20,7 @@ import java.lang.{Boolean => JBoolean, Byte => JByte, Integer => JInt, Long => J
 import java.util.{List => JList, Map => JMap}
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import scorex.util.encode.Base16
-import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.crypto.DLogProtocol.ProveDlog
 import scorex.util.{ModifierId, bytesToId, idToBytes}
 import org.ergoplatform.sdk.JavaHelpers.{TokenColl, TokenIdRType}
 import org.ergoplatform.sdk.Extensions.{CollBuilderOps, PairCollOps}
@@ -28,8 +28,8 @@ import org.ergoplatform.sdk.wallet.{Constants, TokensMap}
 import org.ergoplatform.sdk.wallet.secrets.{DerivationPath, ExtendedSecretKey}
 import sigma.core.ExactIntegral.LongIsExactIntegral
 import sigma.util.StringUtil.StringUtilExtensions
-import sigmastate.basics.CryptoConstants.EcPointType
-import sigmastate.basics.{DiffieHellmanTupleProverInput, ProveDHTuple}
+import sigmastate.crypto.CryptoConstants.EcPointType
+import sigmastate.crypto.{DiffieHellmanTupleProverInput, ProveDHTuple}
 import sigmastate.crypto.CryptoFacade
 
 import java.math.BigInteger

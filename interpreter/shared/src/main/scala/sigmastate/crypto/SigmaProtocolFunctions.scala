@@ -1,8 +1,8 @@
-package sigmastate.basics
+package sigmastate.crypto
 
 import sigmastate.SigmaLeaf
-import sigmastate.basics.CryptoConstants.dlogGroup
-import sigmastate.basics.VerifierMessage.Challenge
+import sigmastate.crypto.CryptoConstants.dlogGroup
+import sigmastate.crypto.VerifierMessage.Challenge
 import sigma.Coll
 import supertagged.TaggedType
 

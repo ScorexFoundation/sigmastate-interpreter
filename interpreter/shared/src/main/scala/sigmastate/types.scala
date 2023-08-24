@@ -14,7 +14,7 @@ import sigmastate.Values._
 import sigmastate.lang.Terms._
 import sigmastate.lang.{SigmaBuilder, Terms}
 import sigmastate.SCollection._
-import sigmastate.basics.CryptoConstants.EcPointType
+import sigmastate.crypto.CryptoConstants.EcPointType
 import sigmastate.serialization.OpCodes
 import sigma.Coll
 import sigma._

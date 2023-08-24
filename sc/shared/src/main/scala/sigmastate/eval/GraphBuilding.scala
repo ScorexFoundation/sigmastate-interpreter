@@ -14,7 +14,7 @@ import sigmastate.lang.Terms.{Ident, Select, Val, ValueOps}
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
 import sigmastate._
-import sigmastate.basics.CryptoConstants.EcPointType
+import sigmastate.crypto.CryptoConstants.EcPointType
 import sigmastate.exceptions.{GraphBuildingException, SigmaException}
 
 import scala.collection.mutable.ArrayBuffer

@@ -11,7 +11,7 @@ import sigmastate.Values.SigmaBoolean
 import sigmastate._
 import sigmastate.eval.Extensions._
 import sigmastate.eval.{Evaluation, _}
-import sigmastate.basics.CryptoConstants.EcPointType
+import sigmastate.crypto.CryptoConstants.EcPointType
 import sigmastate.exceptions.SerializerException
 import sigma.{Box, AvlTree}
 import sigmastate.serialization.SerializationSpecification

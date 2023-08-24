@@ -7,7 +7,7 @@ import sigma.core.{OverloadHack, RType}
 import scorex.utils.Ints
 import sigma.Environment
 import sigmastate.eval.{CAnyValue, Colls, SigmaDsl}
-import sigmastate.basics.CryptoConstants.EcPointType
+import sigmastate.crypto.CryptoConstants.EcPointType
 import sigma.Coll
 import sigma.GroupElement
 

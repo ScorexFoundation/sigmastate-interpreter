@@ -8,9 +8,9 @@ import sigmastate.TrivialProp.{FalseProp, TrueProp}
 import sigmastate.Values._
 import sigma.VersionContext.MaxSupportedScriptVersion
 import sigmastate._
-import sigmastate.basics.DLogProtocol._
-import sigmastate.basics.VerifierMessage.Challenge
-import sigmastate.basics._
+import sigmastate.crypto.DLogProtocol._
+import sigmastate.crypto.VerifierMessage.Challenge
+import sigmastate.crypto._
 import sigmastate.crypto.{GF2_192, GF2_192_Poly}
 import sigmastate.eval.Extensions.ArrayOps
 import sigmastate.exceptions.InterpreterException

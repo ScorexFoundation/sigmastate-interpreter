@@ -2,7 +2,7 @@ package sigmastate.crypto
 
 import java.math.BigInteger
 import org.scalacheck.Gen
-import sigmastate.basics.CryptoConstants
+import sigmastate.crypto.CryptoConstants
 import CryptoConstants.EcPointType
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks

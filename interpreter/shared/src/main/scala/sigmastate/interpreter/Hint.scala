@@ -3,8 +3,8 @@ package sigmastate.interpreter
 import java.math.BigInteger
 import sigmastate.{NodePosition, SigmaLeaf, UncheckedTree}
 import sigmastate.Values.SigmaBoolean
-import sigmastate.basics.FirstProverMessage
-import sigmastate.basics.VerifierMessage.Challenge
+import sigmastate.crypto.FirstProverMessage
+import sigmastate.crypto.VerifierMessage.Challenge
 
 /**
   * A hint for a prover which helps the prover to prove a statement. For example, if the statement is "pk1 && pk2",

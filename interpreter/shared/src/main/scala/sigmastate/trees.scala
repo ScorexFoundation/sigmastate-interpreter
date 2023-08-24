@@ -37,7 +37,7 @@ trait SigmaConjecture extends SigmaBoolean {
 
 /**
   * Basic trait for leafs of crypto-trees, such as
-  * [[sigmastate.basics.DLogProtocol.ProveDlog]] and [[sigmastate.basics.ProveDHTuple]]
+  * [[sigmastate.crypto.DLogProtocol.ProveDlog]] and [[sigmastate.crypto.ProveDHTuple]]
   * instances.
   * It plays the same role as [[SigmaConjecture]]. It used in prover to distinguish leafs from
   * other nodes and have logic common to leaves regardless of the concrete leaf type.

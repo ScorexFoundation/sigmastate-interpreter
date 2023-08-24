@@ -21,8 +21,8 @@ import sigma.util.Extensions._
 import sigma.util.StringUtil.StringUtilExtensions
 import sigmastate.SType.AnyOps
 import sigmastate.Values.{ByteArrayConstant, Constant, ConstantNode, ErgoTree, IntConstant, SValue}
-import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
-import sigmastate.basics.SigmaProtocolPrivateInput
+import sigmastate.crypto.DLogProtocol.{DLogProverInput, ProveDlog}
+import sigmastate.crypto.SigmaProtocolPrivateInput
 import sigmastate.eval.Extensions._
 import sigmastate.eval.{CompiletimeIRContext, CostingBox, CostingDataContext, Evaluation, IRContext, SigmaDsl}
 import sigmastate.helpers.TestingHelpers._

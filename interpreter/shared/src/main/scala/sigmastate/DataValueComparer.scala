@@ -4,10 +4,10 @@ import sigma.core.{AVHashMap, Nullable, RType}
 import debox.{cfor, sp}
 import sigma.core.RType._
 import sigmastate.Values.SigmaBoolean
-import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.ProveDHTuple
+import sigmastate.crypto.DLogProtocol.ProveDlog
+import sigmastate.crypto.ProveDHTuple
 import sigmastate.eval.SigmaDsl
-import sigmastate.basics.CryptoConstants.EcPointType
+import sigmastate.crypto.CryptoConstants.EcPointType
 import sigmastate.interpreter.{ErgoTreeEvaluator, NamedDesc, OperationCostInfo}
 import sigma.{AvlTree, AvlTreeRType, BigInt, BigIntRType, Box, BoxRType, GroupElement, GroupElementRType, Header, HeaderRType, PreHeader, PreHeaderRType, SigmaProp}
 import sigma.{Coll, CollOverArray, PairOfCols}

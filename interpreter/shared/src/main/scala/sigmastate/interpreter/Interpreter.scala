@@ -5,11 +5,11 @@ import sigma.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
 import org.ergoplatform.ErgoLikeContext
 import org.ergoplatform.validation.SigmaValidationSettings
 import org.ergoplatform.validation.ValidationRules._
-import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.crypto.DLogProtocol.ProveDlog
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
-import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage, ProveDlog}
-import sigmastate.basics._
+import sigmastate.crypto.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage, ProveDlog}
+import sigmastate.crypto._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.serialization.{SigmaSerializer, ValueSerializer}
 import sigmastate.utxo.DeserializeContext

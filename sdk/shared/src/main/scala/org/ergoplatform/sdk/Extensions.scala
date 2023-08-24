@@ -2,7 +2,7 @@ package org.ergoplatform.sdk
 
 import debox.cfor
 import sigma.core.RType
-import sigma.core.rtypeToClassTag // actually used
+import sigma.rtypeToClassTag // actually used
 import sigmastate.eval.CPreHeader
 import sigma.{Coll, CollBuilder, PairColl}
 import sigma.{Header, PreHeader}

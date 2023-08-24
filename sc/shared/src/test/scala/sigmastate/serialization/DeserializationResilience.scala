@@ -12,7 +12,7 @@ import scorex.util.serialization.{Reader, VLQByteBufferReader}
 import sigma.Environment
 import sigmastate.Values.{BlockValue, GetVarInt, IntConstant, SValue, SigmaBoolean, SigmaPropValue, Tuple, ValDef, ValUse}
 import sigmastate._
-import sigmastate.basics.CryptoConstants
+import sigmastate.crypto.CryptoConstants
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigmastate.exceptions.{DeserializeCallDepthExceeded, InvalidTypePrefix, ReaderPositionLimitExceeded, SerializerException}

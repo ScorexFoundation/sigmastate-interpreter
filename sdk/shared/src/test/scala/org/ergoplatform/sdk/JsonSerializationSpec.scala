@@ -11,8 +11,8 @@ import scorex.util.ModifierId
 import scorex.util.encode.Base16
 import sigmastate.{AvlTreeData, SType}
 import sigmastate.Values.{ByteArrayConstant, ByteConstant, ErgoTree, EvaluatedValue, IntConstant, LongArrayConstant, SigmaPropConstant}
-import sigmastate.basics.CryptoConstants
-import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.crypto.CryptoConstants
+import sigmastate.crypto.DLogProtocol.ProveDlog
 import sigmastate.eval.Digest32Coll
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.SerializationSpecification

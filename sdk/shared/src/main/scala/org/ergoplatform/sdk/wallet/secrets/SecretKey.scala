@@ -1,7 +1,7 @@
 package org.ergoplatform.sdk.wallet.secrets
 
-import sigmastate.basics.DLogProtocol.DLogProverInput
-import sigmastate.basics.{DiffieHellmanTupleProverInput, SigmaProtocolPrivateInput}
+import sigmastate.crypto.DLogProtocol.DLogProverInput
+import sigmastate.crypto.{DiffieHellmanTupleProverInput, SigmaProtocolPrivateInput}
 
 /**
   * Basic trait for secret data, encapsulating a corresponding private inputs for a Sigma protocol.

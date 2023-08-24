@@ -1,8 +1,8 @@
 package org.ergoplatform
 
 import org.ergoplatform.settings.MonetarySettings
-import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.CryptoConstants
+import sigmastate.crypto.DLogProtocol.ProveDlog
+import sigmastate.crypto.CryptoConstants
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.{LongConstant, SigmaPropConstant, IntArrayConstant, TrueSigmaProp, Value, FalseSigmaProp, SigmaPropValue, IntConstant, ErgoTree}

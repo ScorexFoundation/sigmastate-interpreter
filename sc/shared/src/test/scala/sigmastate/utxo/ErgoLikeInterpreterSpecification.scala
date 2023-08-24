@@ -12,8 +12,8 @@ import sigmastate._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import sigmastate.interpreter.Interpreter._
-import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.ProveDHTuple
+import sigmastate.crypto.DLogProtocol.ProveDlog
+import sigmastate.crypto.ProveDHTuple
 import sigmastate.helpers._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension.VarBinding
@@ -742,7 +742,7 @@ class ErgoLikeInterpreterSpecification extends CompilerTestingCommons
   }
 
   property("non-const ProveDHT") {
-    import sigmastate.basics.CryptoConstants.dlogGroup
+    import sigmastate.crypto.CryptoConstants.dlogGroup
     compile(Map("gA" -> dlogGroup.generator.toGroupElement),
       "proveDHTuple(gA, OUTPUTS(0).R4[GroupElement].get, gA, gA)"
     ).asInstanceOf[BlockValue].result shouldBe a [CreateProveDHTuple]

@@ -1,7 +1,6 @@
-package sigmastate.basics
+package sigmastate.crypto
 
 import java.math.BigInteger
-import sigmastate.crypto.{Ecp, CryptoFacade, SecureRandom}
 
 /** This is the general interface for the discrete logarithm prime-order group.
   * Every class in the DlogGroup family implements this interface.

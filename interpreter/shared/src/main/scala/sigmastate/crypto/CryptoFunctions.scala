@@ -1,4 +1,4 @@
-package sigmastate.basics
+package sigmastate.crypto
 
 import scorex.crypto.hash.Blake2b256
 

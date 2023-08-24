@@ -4,7 +4,7 @@ import org.ergoplatform.ErgoLikeContext.Height
 import org.ergoplatform._
 import org.ergoplatform.validation.{SigmaValidationSettings, ValidationRules}
 import sigmastate.AvlTreeData
-import sigmastate.basics.CryptoConstants
+import sigmastate.crypto.CryptoConstants
 import sigmastate.eval._
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultEvalSettings

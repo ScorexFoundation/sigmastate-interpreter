@@ -1,7 +1,7 @@
 package org.ergoplatform
 
 import sigma.util.CollectionUtil.TraversableOps // used in Scala 2.11
-import sigmastate.basics.CryptoConstants
+import sigmastate.crypto.CryptoConstants
 
 /** Descriptor of a constant which represents some size value.
   * @tparam T type of the constant value

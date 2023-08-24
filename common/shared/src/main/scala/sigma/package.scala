@@ -3,7 +3,7 @@ import java.math.BigInteger
 import sigma.core.RType
 import sigma.core.RType.{GeneralType, SomeType}
 
-import scala.reflect.classTag
+import scala.reflect.{ClassTag, classTag}
 
 /** The following implicit values are used as type descriptors of all the predefined Sigma types.
   * @see [[RType]] class
@@ -32,6 +32,11 @@ package object sigma {
 
   /** Implicit resolution of `Coll[A]` type descriptor, given a descriptor of `A`. */
   implicit def collRType[A](implicit tA: RType[A]): RType[Coll[A]] = CollType[A](tA)
+
+  /** Allows implicit resolution to find appropriate instance of ClassTag in
+    * the scope where RType is implicitly available.
+    */
+  implicit def rtypeToClassTag[A](implicit t: RType[A]): ClassTag[A] = t.classTag
 
   implicit val collBuilderRType: RType[CollBuilder] = RType.fromClassTag(classTag[CollBuilder])
 

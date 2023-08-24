@@ -6,7 +6,7 @@ import org.scalacheck.Arbitrary._
 import sigma.core.RType
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.{BigIntConstant, ByteArrayConstant, Constant, FalseLeaf, GroupGenerator, LongConstant, SValue, TrueLeaf}
-import sigmastate.basics.CryptoConstants.EcPointType
+import sigmastate.crypto.CryptoConstants.EcPointType
 import sigmastate._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._

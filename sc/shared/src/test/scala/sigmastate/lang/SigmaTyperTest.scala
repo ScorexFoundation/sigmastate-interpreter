@@ -8,8 +8,8 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import sigmastate.SCollection._
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.basics.CryptoConstants
-import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
+import sigmastate.crypto.CryptoConstants
+import sigmastate.crypto.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate.eval.Colls
 import sigmastate.exceptions.TyperException
 import sigmastate.interpreter.Interpreter.ScriptEnv

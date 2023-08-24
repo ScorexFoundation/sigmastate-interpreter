@@ -11,9 +11,9 @@ import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ModifierId
 import sigmastate.Values.{ByteArrayConstant, ConcreteCollection, ConstantPlaceholder, ErgoTree, FalseLeaf, IntConstant, LongConstant, SigmaPropConstant, TrueLeaf}
-import sigmastate.basics.CryptoConstants.EcPointType
-import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.ProveDHTuple
+import sigmastate.crypto.CryptoConstants.EcPointType
+import sigmastate.crypto.DLogProtocol.ProveDlog
+import sigmastate.crypto.ProveDHTuple
 import sigmastate.eval.{Colls, _}
 import sigmastate.eval.Extensions._
 import sigmastate.eval.{CAvlTree, CBigInt, CHeader, CPreHeader, CSigmaProp, CostingBox, CostingSigmaDslBuilder, SigmaDsl}

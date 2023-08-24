@@ -1,13 +1,6 @@
 package sigma
 
-
-import scala.reflect.ClassTag
-
 package object core {
-
-  /** Allows implicit resolution to find appropriate instance of ClassTag in
-    * the scope where RType is implicitly available. */
-  implicit def rtypeToClassTag[A](implicit t: RType[A]): ClassTag[A] = t.classTag
 
   /** Immutable empty array of integers, should be used instead of allocating new empty arrays. */
   val EmptyArrayOfInt = Array.empty[Int]

@@ -14,7 +14,7 @@ import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingIn
 import sigmastate.helpers.TestingHelpers._
 import org.ergoplatform._
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, TestContractSpec}
-import sigmastate.basics.CryptoConstants
+import sigmastate.crypto.CryptoConstants
 import sigmastate.crypto.{BigIntegers, CryptoFacade}
 import sigmastate.eval.Extensions.ArrayOps
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}

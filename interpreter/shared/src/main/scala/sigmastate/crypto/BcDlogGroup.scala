@@ -1,4 +1,4 @@
-package sigmastate.basics
+package sigmastate.crypto
 
 import java.math.BigInteger
 import sigmastate.crypto.BigIntegers

@@ -10,7 +10,7 @@ import sigmastate._
 import sigmastate.eval.Evaluation
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
-import sigmastate.basics.CryptoConstants.EcPointType
+import sigmastate.crypto.CryptoConstants.EcPointType
 import sigma.AvlTree
 import SType.AnyOps
 import sigmastate.exceptions.SerializerException

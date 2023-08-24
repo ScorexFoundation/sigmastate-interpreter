@@ -8,7 +8,7 @@ import sigma.{AvlTree, CoreLibReflection, SigmaDslBuilder}
 import sigmastate.SAvlTree.KeyValueColl
 import sigmastate.SCollection.{SBooleanArray, SByteArray, SIntArray}
 import sigmastate.Values._
-import sigmastate.basics.VerifierMessage.Challenge
+import sigmastate.crypto.VerifierMessage.Challenge
 import sigmastate.crypto.GF2_192_Poly
 import sigmastate.interpreter.ErgoTreeEvaluator
 import sigmastate.lang.Terms._

@@ -9,7 +9,6 @@ import sigma.core.RType
 
 import java.math.BigInteger
 import sigmastate._
-import sigmastate.basics.BcDlogGroup
 import sigma.Coll
 import sigma._
 

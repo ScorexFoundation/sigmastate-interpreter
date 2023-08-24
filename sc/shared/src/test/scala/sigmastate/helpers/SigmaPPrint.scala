@@ -11,7 +11,7 @@ import sigmastate.SCollection._
 import sigmastate.Values.{ConstantNode, ErgoTree, FuncValue, ValueCompanion}
 import sigmastate._
 import sigmastate.crypto.GF2_192_Poly
-import sigmastate.basics.CryptoConstants.EcPointType
+import sigmastate.crypto.CryptoConstants.EcPointType
 import sigmastate.lang.Terms
 import sigmastate.lang.Terms.MethodCall
 import sigmastate.serialization.GroupElementSerializer

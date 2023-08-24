@@ -7,7 +7,7 @@ import scorex.crypto.authds.avltree.batch.BatchAVLProver
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ModifierId
 import sigmastate.Values.ErgoTree
-import sigmastate.basics.CryptoConstants
+import sigmastate.crypto.CryptoConstants
 import sigmastate.eval._
 import sigmastate.{AvlTreeData, AvlTreeFlags, TrivialProp}
 import sigma._

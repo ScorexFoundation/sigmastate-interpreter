@@ -4,11 +4,11 @@ import org.scalacheck.Gen
 import scorex.util.encode.Base16
 import sigmastate.{AtLeast, COR, CAND}
 import sigmastate.Values.SigmaBoolean
-import sigmastate.basics.DLogProtocol.DLogProverInput
+import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.helpers.{ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter, TestingCommons}
 import sigmastate.interpreter.{HintsBag, ContextExtension, ProverResult}
 import sigmastate.serialization.transformers.ProveDHTupleSerializer
-import sigmastate.basics.ProveDHTuple
+import sigmastate.crypto.ProveDHTuple
 
 class SigningSpecification extends TestingCommons {
 

@@ -1,12 +1,10 @@
 package org.ergoplatform.sdk.wallet.secrets
 
-import org.ergoplatform.sdk.wallet.Constants
 import java.math.BigInteger
-import java.util
 import sigmastate.crypto.BigIntegers
-import sigmastate.basics.DLogProtocol
-import sigmastate.basics.DLogProtocol.DLogProverInput
-import sigmastate.basics.CryptoConstants
+import sigmastate.crypto.DLogProtocol
+import sigmastate.crypto.DLogProtocol.DLogProverInput
+import sigmastate.crypto.CryptoConstants
 import sigmastate.crypto.CryptoFacade
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}

@@ -1,7 +1,6 @@
-package sigmastate.basics
+package sigmastate.crypto
 
 import java.math.BigInteger
-import sigmastate.crypto.Ecp
 
 /** Constants used in crypto operations implementation. */
 object CryptoConstants {

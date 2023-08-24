@@ -13,11 +13,11 @@ import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.util.encode.{Base58, Base64}
 import scorex.util.{ModifierId, bytesToId}
 import sigmastate.Values._
-import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.{CryptoConstants, ProveDHTuple}
+import sigmastate.crypto.DLogProtocol.ProveDlog
+import sigmastate.crypto.{CryptoConstants, ProveDHTuple}
 import sigmastate.eval.Extensions._
 import sigmastate.eval.{CostingBox, SigmaDsl, _}
-import sigmastate.basics.CryptoConstants.{EcPointType, dlogGroup}
+import sigmastate.crypto.CryptoConstants.{EcPointType, dlogGroup}
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.lang.TransformingSigmaBuilder._
 import sigmastate._

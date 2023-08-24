@@ -1,11 +1,10 @@
-package sigmastate.basics
+package sigmastate.crypto
 
 import java.math.BigInteger
 
-import sigmastate.crypto.BigIntegers
 import sigmastate.Values.Value.PropositionCode
 import sigmastate._
-import sigmastate.basics.VerifierMessage.Challenge
+import sigmastate.crypto.VerifierMessage.Challenge
 import sigmastate.eval.SigmaDsl
 import CryptoConstants.EcPointType
 import sigmastate.serialization.{OpCodes, GroupElementSerializer}
@@ -44,7 +43,7 @@ object DiffieHellmanTupleProverInput {
 /** First message of Diffie Hellman tuple sigma protocol.
   * @param a commitment to secret randomness `a = g^r`, where `g` is default generator of the group
   * @param b commitment to secret randomness `b = h^r`, where `h` is another random generator of the group
-  * @see createRandomGenerator in [[sigmastate.basics.CryptoConstants.dlogGroup]]
+  * @see createRandomGenerator in [[sigmastate.crypto.CryptoConstants.dlogGroup]]
   */
 case class FirstDHTupleProverMessage(a: EcPointType, b: EcPointType)
   extends FirstProverMessage {

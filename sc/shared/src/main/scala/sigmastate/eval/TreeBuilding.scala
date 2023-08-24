@@ -10,8 +10,8 @@ import sigmastate.serialization.ConstantStore
 
 import scala.collection.mutable.ArrayBuffer
 import SType._
-import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.ProveDHTuple
+import sigmastate.crypto.DLogProtocol.ProveDlog
+import sigmastate.crypto.ProveDHTuple
 import sigmastate.lang.Terms
 
 /** Implementation of IR-graph to ErgoTree expression translation.

@@ -10,7 +10,7 @@ import scorex.util.Random
 import sigma.util.BenchmarkUtil.measure
 import sigmastate.Values.{ByteArrayConstant, CollectionConstant, ErgoTree, IntConstant, SigmaPropConstant}
 import sigmastate._
-import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
+import sigmastate.crypto.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}

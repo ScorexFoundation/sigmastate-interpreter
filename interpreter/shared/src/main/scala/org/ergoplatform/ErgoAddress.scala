@@ -6,7 +6,7 @@ import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.util.encode.Base58
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.basics.DLogProtocol.{ProveDlogProp, ProveDlog}
+import sigmastate.crypto.DLogProtocol.{ProveDlogProp, ProveDlog}
 import sigmastate.exceptions.SigmaException
 import sigmastate.serialization._
 import sigmastate.utxo.{DeserializeContext, Slice}

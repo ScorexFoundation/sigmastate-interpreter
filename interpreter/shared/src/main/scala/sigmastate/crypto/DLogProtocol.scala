@@ -1,14 +1,13 @@
-package sigmastate.basics
+package sigmastate.crypto
 
 import java.math.BigInteger
 
-import sigmastate.crypto.BigIntegers
 import sigmastate.Values._
 import Value.PropositionCode
 import scorex.util.encode.Base16
 import sigmastate._
 import sigmastate.eval._
-import sigmastate.basics.VerifierMessage.Challenge
+import sigmastate.crypto.VerifierMessage.Challenge
 import CryptoConstants.{EcPointType, dlogGroup}
 import sigmastate.serialization.{OpCodes, GroupElementSerializer}
 import sigmastate.serialization.OpCodes.OpCode
