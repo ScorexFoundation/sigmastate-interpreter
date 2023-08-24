@@ -1,15 +1,13 @@
-package sigma.collection
+package sigma
 
-import scala.language.implicitConversions
 import org.scalacheck.util.Buildable
 import org.scalacheck.{Arbitrary, Gen}
-import sigma.{Coll, CollBuilder, CollOverArrayBuilder, PairColl}
-import sigma._
 import sigma.core.RType
 import spire.scalacompat.BuilderCompat
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import scala.language.implicitConversions
 
 trait CollGens { testSuite =>
   import Gen._

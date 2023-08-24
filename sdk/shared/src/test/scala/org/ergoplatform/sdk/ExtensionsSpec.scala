@@ -3,9 +3,8 @@ package org.ergoplatform.sdk
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import sigma.Coll
+import sigma.{Coll, CollGens}
 import org.ergoplatform.sdk.Extensions.{CollBuilderOps, CollOps, GenIterableOps, PairCollOps}
-import sigma.collection.CollGens
 import sigma.core.RType
 import sigmastate.eval.CostingSigmaDslBuilder
 

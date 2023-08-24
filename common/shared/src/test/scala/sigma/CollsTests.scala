@@ -1,11 +1,10 @@
-package sigma.collection
+package sigma
 
 import org.scalacheck.Gen
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import sigma._
 import sigma.core._
 
 import scala.language.existentials
