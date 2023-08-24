@@ -1,4 +1,4 @@
-package sigma
+package special.sigma
 
 import java.math.BigInteger
 import org.ergoplatform._

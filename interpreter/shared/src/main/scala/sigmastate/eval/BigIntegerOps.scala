@@ -1,7 +1,5 @@
 package sigmastate.eval
 
-import java.math.BigInteger
-
 import sigma.core.{ExactOrderingImpl, ExactIntegral}
 
 import scala.math.{Integral, Ordering}
@@ -10,11 +8,6 @@ import sigmastate.eval.Extensions._
 
 object OrderingOps {
   def apply[T](implicit ord: Ordering[T]) = ord
-
-  trait BigIntegerOrdering extends Ordering[BigInteger] {
-    def compare(x: BigInteger, y: BigInteger) = x.compareTo(y)
-  }
-  implicit object BigIntegerOrdering extends BigIntegerOrdering
 
   trait BigIntOrdering extends Ordering[BigInt] {
     def compare(x: BigInt, y: BigInt) = x.compareTo(y)

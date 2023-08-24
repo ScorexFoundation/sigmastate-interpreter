@@ -98,12 +98,8 @@ object Evaluation {
     case StringType => SString
     case AnyType => SAny
     case UnitType => SUnit
-
-    case BigIntegerRType => SBigInt
     case BigIntRType => SBigInt
-
     case GroupElementRType => SGroupElement
-
     case AvlTreeRType => SAvlTree
     case ot: OptionType[_] => sigmastate.SOption(rtypeToSType(ot.tA))
     case BoxRType => SBox
@@ -142,19 +138,15 @@ object Evaluation {
     case _: Long  => LongType
     case _: String  => StringType
     case _: Unit  => UnitType
-
-    case _: BigInteger => BigIntegerRType
     case _: sigma.BigInt => BigIntRType
-
     case _: GroupElement => GroupElementRType
-
-    case _: ErgoBox => ErgoBoxRType
+    case _: ErgoBox => ErgoBoxRType  // TODO remove this RType
     case _: Box => BoxRType
 
-    case _: AvlTreeData => AvlTreeDataRType
+    case _: AvlTreeData => AvlTreeDataRType // TODO remove this RType
     case _: AvlTree => AvlTreeRType
 
-    case _: SigmaBoolean => SigmaBooleanRType
+    case _: SigmaBoolean => SigmaBooleanRType // TODO remove this RType
     case _: SigmaProp => SigmaPropRType
     case _: Context => ContextRType
     case _ =>

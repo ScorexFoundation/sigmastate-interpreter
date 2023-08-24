@@ -10,7 +10,6 @@ import java.math.BigInteger
 import scala.scalajs.js
 import scala.scalajs.js.UnicodeNormalizationForm
 import scala.scalajs.js.typedarray.Uint8Array
-import scala.util.Random
 
 /** JVM specific implementation of crypto methods (NOT yet implemented). */
 object Platform {

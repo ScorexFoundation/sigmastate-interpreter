@@ -115,6 +115,7 @@ object SType {
   implicit def typeCollection[V <: SType](implicit tV: V): SCollection[V] = SCollection[V](tV)
 
   /** RType descriptors for predefined types used in AOTC-based interpreter. */
+  def rtypeToClassTag = ???
   implicit val SigmaBooleanRType: RType[SigmaBoolean] = RType.fromClassTag(classTag[SigmaBoolean])
   implicit val ErgoBoxRType: RType[ErgoBox] = RType.fromClassTag(classTag[ErgoBox])
   implicit val ErgoBoxCandidateRType: RType[ErgoBoxCandidate] = RType.fromClassTag(classTag[ErgoBoxCandidate])
@@ -269,7 +270,7 @@ object SType {
       case SShort => reflect.classTag[Short]
       case SInt => reflect.classTag[Int]
       case SLong => reflect.classTag[Long]
-      case SBigInt => reflect.classTag[BigInteger]
+      case SBigInt => reflect.classTag[BigInt]
       case SAvlTree => reflect.classTag[AvlTree]
       case SGroupElement => reflect.classTag[EcPointType]
       case SSigmaProp => reflect.classTag[SigmaBoolean]

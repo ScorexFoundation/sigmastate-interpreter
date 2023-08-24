@@ -1,9 +1,8 @@
 
-import java.math.BigInteger
-import sigma.core.RType
+import sigma.core._
 import sigma.core.RType.{GeneralType, SomeType}
 
-import scala.reflect.{ClassTag, classTag}
+import scala.reflect.ClassTag
 
 /** The following implicit values are used as type descriptors of all the predefined Sigma types.
   * @see [[RType]] class
@@ -12,23 +11,20 @@ package object sigma {
   /** Forces reflection data initialization */
   val coreLibReflection = CoreLibReflection
 
-  implicit val BigIntRType: RType[BigInt] = GeneralType(classTag[BigInt])
-  implicit val GroupElementRType: RType[GroupElement] = GeneralType(classTag[GroupElement])
-  implicit val SigmaPropRType: RType[SigmaProp] = GeneralType(classTag[SigmaProp])
-  implicit val AvlTreeRType:   RType[AvlTree]   = GeneralType(classTag[AvlTree])
+  implicit val BigIntRType: RType[BigInt] = GeneralType(BigIntClassTag)
+  implicit val GroupElementRType: RType[GroupElement] = GeneralType(GroupElementClassTag)
+  implicit val SigmaPropRType: RType[SigmaProp] = GeneralType(SigmaPropClassTag)
+  implicit val AvlTreeRType:   RType[AvlTree]   = GeneralType(AvlTreeClassTag)
 
-  implicit val BoxRType:       RType[Box]       = GeneralType(classTag[Box])
-  implicit val ContextRType:   RType[Context]   = GeneralType(classTag[Context])
+  implicit val BoxRType:       RType[Box]       = GeneralType(BoxClassTag)
+  implicit val ContextRType:   RType[Context]   = GeneralType(ContextClassTag)
 
-  implicit val HeaderRType: RType[Header] = GeneralType(classTag[Header])
-  implicit val PreHeaderRType: RType[PreHeader] = GeneralType(classTag[PreHeader])
+  implicit val HeaderRType: RType[Header] = GeneralType(HeaderClassTag)
+  implicit val PreHeaderRType: RType[PreHeader] = GeneralType(PreHeaderClassTag)
 
-  implicit val AnyValueRType: RType[AnyValue] = RType.fromClassTag(classTag[AnyValue])
+  implicit val AnyValueRType: RType[AnyValue] = RType.fromClassTag(AnyValueClassTag)
 
-  implicit val SigmaContractRType: RType[SigmaContract] = RType.fromClassTag(classTag[SigmaContract])
-  implicit val SigmaDslBuilderRType: RType[SigmaDslBuilder] = RType.fromClassTag(classTag[SigmaDslBuilder])
-
-  implicit val BigIntegerRType: RType[BigInteger] = GeneralType(classTag[BigInteger])
+  implicit val SigmaDslBuilderRType: RType[SigmaDslBuilder] = RType.fromClassTag(SigmaDslBuilderClassTag)
 
   /** Implicit resolution of `Coll[A]` type descriptor, given a descriptor of `A`. */
   implicit def collRType[A](implicit tA: RType[A]): RType[Coll[A]] = CollType[A](tA)
@@ -38,7 +34,7 @@ package object sigma {
     */
   implicit def rtypeToClassTag[A](implicit t: RType[A]): ClassTag[A] = t.classTag
 
-  implicit val collBuilderRType: RType[CollBuilder] = RType.fromClassTag(classTag[CollBuilder])
+  implicit val collBuilderRType: RType[CollBuilder] = RType.fromClassTag(CollBuilderClassTag)
 
   private def sameLengthErrorMsg[A, B](xs: Coll[A], ys: Coll[B]) =
     s"Collections should have same length but was ${xs.length} and ${ys.length}:\n xs=$xs;\n ys=$ys"
