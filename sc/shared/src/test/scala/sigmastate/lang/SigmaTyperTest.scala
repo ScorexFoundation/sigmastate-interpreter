@@ -59,7 +59,7 @@ class SigmaTyperTest extends AnyPropSpec
         sourceContext.line shouldBe expectedLine
         sourceContext.column shouldBe expectedCol
         true
-      case pe: ParserException => true
+      case _: ParserException => true
       case t => throw t
     })
   }

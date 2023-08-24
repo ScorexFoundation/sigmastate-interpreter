@@ -361,17 +361,17 @@ abstract class TypeDescs extends Base { self: Scalan =>
   }
 
   /** Type descriptor for `Any`, cannot be used implicitly. */
-  val AnyElement: Elem[Any] = new BaseElemLiftable[Any](null, AnyType)
+  val AnyElement: Elem[Any] = new BaseElemLiftable[Any](null, sigma.AnyType)
 
   /** Predefined Lazy value saved here to be used in hotspot code. */
   val LazyAnyElement = Lazy(AnyElement)
 
-  implicit val BooleanElement: Elem[Boolean] = new BaseElemLiftable(false, BooleanType)
-  implicit val ByteElement: Elem[Byte] = new BaseElemLiftable(0.toByte, ByteType)
-  implicit val ShortElement: Elem[Short] = new BaseElemLiftable(0.toShort, ShortType)
-  implicit val IntElement: Elem[Int] = new BaseElemLiftable(0, IntType)
-  implicit val LongElement: Elem[Long] = new BaseElemLiftable(0L, LongType)
-  implicit val UnitElement: Elem[Unit] = new BaseElemLiftable((), UnitType)
+  implicit val BooleanElement: Elem[Boolean] = new BaseElemLiftable(false, sigma.BooleanType)
+  implicit val ByteElement: Elem[Byte] = new BaseElemLiftable(0.toByte, sigma.ByteType)
+  implicit val ShortElement: Elem[Short] = new BaseElemLiftable(0.toShort, sigma.ShortType)
+  implicit val IntElement: Elem[Int] = new BaseElemLiftable(0, sigma.IntType)
+  implicit val LongElement: Elem[Long] = new BaseElemLiftable(0L, sigma.LongType)
+  implicit val UnitElement: Elem[Unit] = new BaseElemLiftable((), sigma.UnitType)
   implicit val StringElement: Elem[String] = new BaseElemLiftable("", StringType)
 
   /** Implicitly defines element type for pairs. */

@@ -1,5 +1,6 @@
 package sigma
 
+import scala.annotation.nowarn
 import scala.reflect.classTag
 
 /** Contains cores definitions which serves as a basis for [[sigma]] package implementations. */
@@ -7,7 +8,7 @@ package object core {
   /** Shadow the implicit from sigma package so it doesn't interfere with the resolution
     * of ClassTags below.
     */
-  private def rtypeToClassTag = ???
+  @nowarn private def rtypeToClassTag = ???
 
   val BigIntClassTag = classTag[BigInt]
   val GroupElementClassTag = classTag[GroupElement]

@@ -242,12 +242,12 @@ object JavaHelpers {
     def toErgoTree: ErgoTree = decodeStringToErgoTree(base16)
   }
 
-  implicit val TokenIdRType: RType[TokenId] = collRType(RType.ByteType).asInstanceOf[RType[TokenId]]
-  implicit val JByteRType: RType[JByte] = RType.ByteType.asInstanceOf[RType[JByte]]
-  implicit val JShortRType: RType[JShort] = RType.ShortType.asInstanceOf[RType[JShort]]
-  implicit val JIntRType: RType[JInt] = RType.IntType.asInstanceOf[RType[JInt]]
-  implicit val JLongRType: RType[JLong] = RType.LongType.asInstanceOf[RType[JLong]]
-  implicit val JBooleanRType: RType[JBoolean] = RType.BooleanType.asInstanceOf[RType[JBoolean]]
+  implicit val TokenIdRType: RType[TokenId] = collRType(sigma.ByteType).asInstanceOf[RType[TokenId]]
+  implicit val JByteRType: RType[JByte] = sigma.ByteType.asInstanceOf[RType[JByte]]
+  implicit val JShortRType: RType[JShort] = sigma.ShortType.asInstanceOf[RType[JShort]]
+  implicit val JIntRType: RType[JInt] = sigma.IntType.asInstanceOf[RType[JInt]]
+  implicit val JLongRType: RType[JLong] = sigma.LongType.asInstanceOf[RType[JLong]]
+  implicit val JBooleanRType: RType[JBoolean] = sigma.BooleanType.asInstanceOf[RType[JBoolean]]
 
   val HeaderRType: RType[Header] = sigma.HeaderRType
   val PreHeaderRType: RType[sigma.PreHeader] = sigma.PreHeaderRType

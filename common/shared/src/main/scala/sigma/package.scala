@@ -1,6 +1,6 @@
 
 import sigma.core._
-import sigma.core.RType.{GeneralType, SomeType}
+import sigma.core.RType.{GeneralType, PrimitiveType, SomeType}
 
 import scala.reflect.ClassTag
 
@@ -10,6 +10,20 @@ import scala.reflect.ClassTag
 package object sigma {
   /** Forces reflection data initialization */
   val coreLibReflection = CoreLibReflection
+
+  val AnyType: RType[Any] = GeneralType[Any](ClassTag.Any)
+
+  implicit val BooleanType: RType[Boolean] = PrimitiveType[Boolean](ClassTag.Boolean, Array.emptyBooleanArray)
+
+  implicit val ByteType   : RType[Byte]    = PrimitiveType[Byte](ClassTag.Byte, Array.emptyByteArray)
+
+  implicit val ShortType  : RType[Short]   = PrimitiveType[Short](ClassTag.Short, Array.emptyShortArray)
+
+  implicit val IntType    : RType[Int]     = PrimitiveType[Int](ClassTag.Int, Array.emptyIntArray)
+
+  implicit val LongType   : RType[Long]    = PrimitiveType[Long](ClassTag.Long, Array.emptyLongArray)
+
+  implicit val UnitType   : RType[Unit]    = PrimitiveType[Unit](ClassTag.Unit, Array[Unit]()(ClassTag.Unit))
 
   implicit val BigIntRType: RType[BigInt] = GeneralType(BigIntClassTag)
   implicit val GroupElementRType: RType[GroupElement] = GeneralType(GroupElementClassTag)

@@ -1,7 +1,7 @@
 package sigmastate.eval
 
 import org.ergoplatform._
-import sigma.core.{CollType, RType}
+import sigma.core.{CollType, RType, TupleType}
 import sigma.core.RType._
 import sigmastate.SType._
 import sigmastate.Values.SigmaBoolean
@@ -156,7 +156,7 @@ object Evaluation {
   /** Convert SigmaDsl representation of tuple to ErgoTree serializable representation. */
   def fromDslTuple(value: Any, tupleTpe: STuple): Coll[Any] = value match {
     case t: Tuple2[_,_] => TupleColl(t._1, t._2)
-    case a: Coll[Any]@unchecked if a.tItem == RType.AnyType => a
+    case a: Coll[Any]@unchecked if a.tItem == sigma.AnyType => a
     case _ =>
       sys.error(s"Cannot execute fromDslTuple($value, $tupleTpe)")
   }

@@ -2,15 +2,13 @@ package sigmastate
 
 import sigma.core.{AVHashMap, Nullable, RType}
 import debox.{cfor, sp}
-import sigma.core.RType._
 import sigmastate.Values.SigmaBoolean
 import sigmastate.crypto.DLogProtocol.ProveDlog
 import sigmastate.crypto.ProveDHTuple
 import sigmastate.eval.SigmaDsl
 import sigmastate.crypto.CryptoConstants.EcPointType
 import sigmastate.interpreter.{ErgoTreeEvaluator, NamedDesc, OperationCostInfo}
-import sigma.{AvlTree, AvlTreeRType, BigInt, BigIntRType, Box, BoxRType, GroupElement, GroupElementRType, Header, HeaderRType, PreHeader, PreHeaderRType, SigmaProp}
-import sigma.{Coll, CollOverArray, PairOfCols}
+import sigma._
 
 /** Implementation of data equality for two arbitrary ErgoTree data types.
   * @see [[DataValueComparer.equalDataValues]]

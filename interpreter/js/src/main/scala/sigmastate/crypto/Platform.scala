@@ -244,7 +244,7 @@ object Platform {
     */
   def isCorrectType[T <: SType](value: Any, tpe: T): Boolean = value match {
     case c: Coll[_] => tpe match {
-      case STuple(items) => c.tItem == RType.AnyType && c.length == items.length
+      case STuple(items) => c.tItem == sigma.AnyType && c.length == items.length
       case tpeColl: SCollection[_] => true
       case _ => sys.error(s"Collection value $c has unexpected type $tpe")
     }

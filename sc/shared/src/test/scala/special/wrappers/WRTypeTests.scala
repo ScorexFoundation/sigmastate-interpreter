@@ -19,7 +19,7 @@ class WRTypeTests extends WrappersTests {
   }
 
   test("Implicit conversion from RType to Elem") {
-    val eInt: Elem[Int] = RType.IntType
+    val eInt: Elem[Int] = sigma.IntType
     eInt shouldBe IntElement
 
     val ePair: Elem[(Int, Coll[Byte])] = RType[(Int, SColl[Byte])]

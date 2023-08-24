@@ -848,7 +848,7 @@ object Values {
 
     override lazy val value = {
       val xs = items.cast[EvaluatedValue[SAny.type]].map(_.value)
-      Colls.fromArray(xs.toArray(SAny.classTag.asInstanceOf[ClassTag[SAny.WrappedType]]))(RType.AnyType)
+      Colls.fromArray(xs.toArray(SAny.classTag.asInstanceOf[ClassTag[SAny.WrappedType]]))(sigma.AnyType)
     }
 
     protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {

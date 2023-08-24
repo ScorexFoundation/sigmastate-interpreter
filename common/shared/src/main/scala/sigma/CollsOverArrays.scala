@@ -1,6 +1,5 @@
 package sigma
 
-import sigma.core._
 import sigma.util.CollectionUtil
 import sigma.core.RType
 import debox.Buffer
@@ -245,8 +244,8 @@ class PairOfCols[@specialized L, @specialized R](val ls: Coll[L], val rs: Coll[R
   })
 
   override def hashCode() = ls.hashCode() * 41 + rs.hashCode()
-  @inline implicit def tL = ls.tItem
-  @inline implicit def tR = rs.tItem
+  @inline implicit def tL: RType[L] = ls.tItem
+  @inline implicit def tR: RType[R] = rs.tItem
 
   override lazy val tItem: RType[(L, R)] = {
     RType.pairRType(tL, tR)

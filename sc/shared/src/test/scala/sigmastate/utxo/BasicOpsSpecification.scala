@@ -338,7 +338,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
 
     val dataVar = (lastExtVar + 1).toByte
     val Colls = IR.sigmaDslBuilderValue.Colls
-    implicit val eAny = RType.AnyType
+    implicit val eAny = sigma.AnyType
     val data = Colls.fromItems((Array[Byte](1,2,3).toColl, 10L))
     val env1 = env + ("dataVar" -> CAnyValue(dataVar))
     val dataType = SCollection(STuple(SByteArray, SLong))

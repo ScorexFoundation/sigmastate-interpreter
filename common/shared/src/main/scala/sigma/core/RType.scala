@@ -30,12 +30,12 @@ object RType {
   @inline def asType[T](t: RType[_]): RType[T] = t.asInstanceOf[RType[T]]
 
   def fromClassTag[A](ctA: ClassTag[A]): RType[A] = (ctA match {
-    case ClassTag.Boolean => BooleanType
-    case ClassTag.Byte => ByteType
-    case ClassTag.Short => ShortType
-    case ClassTag.Int => IntType
-    case ClassTag.Long => LongType
-    case ClassTag.Unit => UnitType
+    case ClassTag.Boolean => sigma.BooleanType
+    case ClassTag.Byte => sigma.ByteType
+    case ClassTag.Short => sigma.ShortType
+    case ClassTag.Int => sigma.IntType
+    case ClassTag.Long => sigma.LongType
+    case ClassTag.Unit => sigma.UnitType
     case _ => GeneralType[A](ctA)
   }).asInstanceOf[RType[A]]
 
@@ -61,15 +61,6 @@ object RType {
                               override val emptyArray: Array[A]) extends RType[A] {
     override def name: String = classTag.toString()
   }
-
-  val AnyType      : RType[Any]      = GeneralType[Any]     (ClassTag.Any)
-
-  implicit val BooleanType : RType[Boolean]  = PrimitiveType[Boolean] (ClassTag.Boolean, Array.emptyBooleanArray)
-  implicit val ByteType    : RType[Byte]     = PrimitiveType[Byte]    (ClassTag.Byte, Array.emptyByteArray)
-  implicit val ShortType   : RType[Short]    = PrimitiveType[Short]   (ClassTag.Short, Array.emptyShortArray)
-  implicit val IntType     : RType[Int]      = PrimitiveType[Int]     (ClassTag.Int, Array.emptyIntArray)
-  implicit val LongType    : RType[Long]     = PrimitiveType[Long]    (ClassTag.Long, Array.emptyLongArray)
-  implicit val UnitType    : RType[Unit]     = PrimitiveType[Unit]    (ClassTag.Unit, Array[Unit]()(ClassTag.Unit))
 
   implicit case object StringType extends RType[String] {
     override def classTag: ClassTag[String] = ClassTag[String](classOf[String])

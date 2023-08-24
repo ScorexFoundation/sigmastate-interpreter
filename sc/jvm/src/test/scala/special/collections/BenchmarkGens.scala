@@ -14,11 +14,4 @@ trait BenchmarkGens extends CollGens { suite: Bench[Double] =>
   val arrays = ranges.map { case (r, i) => (r.toArray, i) }
 
   val colls = arrays.map { case (arr, i) => (builder.fromArray(arr), i) }
-
-  private val config = Seq[KeyValue](
-    exec.minWarmupRuns -> 5,
-    exec.maxWarmupRuns -> 10,
-    exec.benchRuns -> 30,
-    exec.requireGC -> true
-  )
 }

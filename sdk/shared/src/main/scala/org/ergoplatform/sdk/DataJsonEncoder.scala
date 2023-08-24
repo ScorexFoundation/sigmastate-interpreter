@@ -190,7 +190,7 @@ object DataJsonEncoder {
         cfor(1)(_ <= tArr.length, _ + 1) { i =>
           collSource += decodeData(json.hcursor.downField(s"_${i}").focus.get, tArr(i - 1))
         }
-        val coll = Colls.fromArray(collSource.result())(RType.AnyType)
+        val coll = Colls.fromArray(collSource.result())(sigma.AnyType)
         Evaluation.toDslTuple(coll, t)
       case SGroupElement =>
         val str = decodeBytes(json)

@@ -6,6 +6,7 @@ import scalan.Scalan
 import scalan.core.ScalaNameUtil
 import sigma.util.{FileUtil, ProcessUtil, StringUtil}
 
+import scala.annotation.unused
 import scala.collection.immutable.StringOps
 
 // TODO implement this outside of the cake
@@ -21,7 +22,7 @@ class GraphVizExport[Ctx <: Scalan](val scalan: Ctx) {
 
   // TODO it would be better to have nodeColor(elem: Elem[_], optDef: Option[Def[_]]) to
   // avoid looking up definition, but this leads to ClassFormatError (likely Scala bug)
-  protected def nodeColor(td: TypeDesc, d: Def[_])(implicit config: GraphVizConfig): String = d match {
+  protected def nodeColor(td: TypeDesc, d: Def[_])(implicit @unused config: GraphVizConfig): String = d match {
     case _ => nodeColor(td)
   }
 
@@ -137,7 +138,7 @@ class GraphVizExport[Ctx <: Scalan](val scalan: Ctx) {
     case _ => x.toString
   }
 
-  private def emitDepEdges(sym: Sym, rhs: Def[_])(implicit stream: PrintWriter, config: GraphVizConfig) = {
+  private def emitDepEdges(sym: Sym, rhs: Def[_])(implicit stream: PrintWriter, @unused config: GraphVizConfig) = {
     val (deps, lambdaVars) = rhs match {
       case l: Lambda[_, _] => lambdaDeps(l)
       case _ => (rhs.deps.toList, Nil)

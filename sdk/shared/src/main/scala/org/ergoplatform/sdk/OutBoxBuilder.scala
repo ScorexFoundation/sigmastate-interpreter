@@ -68,7 +68,7 @@ object OutBoxBuilder {
     val nRegs = registers.length
     require(nRegs <= nonMandatoryRegisters.length,
       s"Too many additional registers $nRegs. Max allowed ${nonMandatoryRegisters.length}")
-    implicit val TokenIdRType: RType[TokenId] = collRType(RType.ByteType).asInstanceOf[RType[TokenId]]
+    implicit val TokenIdRType: RType[TokenId] = collRType(sigma.ByteType).asInstanceOf[RType[TokenId]]
     val ts = Colls.fromItems(tokens.map(Iso.isoErgoTokenToPair.to(_)): _*)
     val rs = registers.zipWithIndex.map { case (c, i) =>
       val id = ErgoBox.nonMandatoryRegisters(i)

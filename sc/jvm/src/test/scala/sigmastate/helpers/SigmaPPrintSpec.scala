@@ -42,8 +42,8 @@ class SigmaPPrintSpec extends SigmaDslTesting {
     test(SCollectionType(SBoolean), "SBooleanArray")
     test(STuple(Vector(SBoolean, SInt)), "SPair(SBoolean, SInt)")
 
-    test(RType.BooleanType, "RType.BooleanType")
-    test(CollType(RType.ByteType), "CollType(RType.ByteType)")
+    test(sigma.BooleanType, "RType.BooleanType")
+    test(CollType(sigma.ByteType), "CollType(RType.ByteType)")
 
     // exception handlers
     test(new ArithmeticException("msg"), "new ArithmeticException(\"msg\")")

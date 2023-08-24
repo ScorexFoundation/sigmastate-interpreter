@@ -126,7 +126,7 @@ object DataSerializer {
         val arr = tuple.items.map { t =>
           deserialize(t, r)
         }.toArray[Any]
-        val coll = Colls.fromArray(arr)(RType.AnyType)
+        val coll = Colls.fromArray(arr)(sigma.AnyType)
         Evaluation.toDslTuple(coll, tuple)
       case t =>
         CheckSerializableTypeCode(t.typeCode)
@@ -147,7 +147,7 @@ object DataSerializer {
           case tTup: STuple if tTup.items.length == 2 =>
             Evaluation.stypeToRType(tpeElem)
           case _: STuple =>
-            collRType(RType.AnyType)
+            collRType(sigma.AnyType)
           case _ =>
             Evaluation.stypeToRType(tpeElem)
         }).asInstanceOf[RType[T#WrappedType]]

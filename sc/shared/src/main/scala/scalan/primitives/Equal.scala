@@ -2,6 +2,8 @@ package scalan.primitives
 
 import scalan.{Base, Scalan}
 
+import scala.annotation.unused
+
 trait Equal extends Base { self: Scalan =>
   /** Binary operation representing structural equality between arguments. */
   case class Equals[A: Elem]() extends BinOp[A, Boolean]("==") {
@@ -13,11 +15,11 @@ trait Equal extends Base { self: Scalan =>
     override def applySeq(x: A, y: A): Boolean = !equalValues[A](x, y)
   }
 
-  protected def equalValues[A](x: Any, y: Any)(implicit eA: Elem[A]) = x == y
+  protected def equalValues[A](x: Any, y: Any)(implicit @unused eA: Elem[A]) = x == y
 
   /** Extension methods to construct ApplyBinOp nodes */
   implicit class EqualOps[A](x: Ref[A]) {
-    implicit private val eA = x.elem
+    implicit private val eA: Elem[A] = x.elem
 
     /** Apply Equals binary operation and return Ref to ApplyBinOp node. */
     def ===(y: Ref[A]): Ref[Boolean] = Equals[A].apply(x, y)

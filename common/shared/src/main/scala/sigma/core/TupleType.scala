@@ -1,6 +1,6 @@
-package sigma
+package sigma.core
 
-import sigma.core.RType
+import sigma.TupleData
 import sigma.core.RType.SomeType
 import sigma.util.CollectionUtil
 

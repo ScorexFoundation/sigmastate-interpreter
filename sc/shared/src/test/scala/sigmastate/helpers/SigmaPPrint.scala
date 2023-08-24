@@ -146,7 +146,7 @@ object SigmaPPrint extends PPrinter {
     case Some(v) =>
       Tree.Apply("Some", treeifyMany(v))
 
-    case coll: Coll[Byte @unchecked] if coll.tItem == RType.ByteType =>
+    case coll: Coll[Byte @unchecked] if coll.tItem == sigma.ByteType =>
       val hexString = ErgoAlgos.encode(coll)
       Tree.Apply("Helpers.decodeBytes", treeifyMany(hexString))
 

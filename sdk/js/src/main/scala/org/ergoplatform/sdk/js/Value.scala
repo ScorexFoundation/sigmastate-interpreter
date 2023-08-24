@@ -82,9 +82,9 @@ object Value extends js.Object {
     * in register and [[sigmastate.Values.Constant]] nodes.
     */
   final private[js] def toRuntimeData(data: Any, rtype: RType[_]): Any = rtype match {
-    case RType.BooleanType => data
-    case RType.ByteType | RType.ShortType | RType.IntType => data
-    case RType.LongType => java.lang.Long.parseLong(data.asInstanceOf[js.BigInt].toString(10))
+    case sigma.BooleanType => data
+    case sigma.ByteType | sigma.ShortType | sigma.IntType => data
+    case sigma.LongType => java.lang.Long.parseLong(data.asInstanceOf[js.BigInt].toString(10))
     case sigma.BigIntRType =>
       val v = data.asInstanceOf[js.BigInt]
       SigmaDsl.BigInt(new BigInteger(v.toString(16), 16))
@@ -110,7 +110,7 @@ object Value extends js.Object {
       val x = toRuntimeData(p(0), pt.tFst).asInstanceOf[a]
       val y = toRuntimeData(p(1), pt.tSnd).asInstanceOf[b]
       (x, y)
-    case RType.UnitType => data
+    case sigma.UnitType => data
     case _ =>
       throw new IllegalArgumentException(s"Unsupported type $rtype")
   }
@@ -122,9 +122,9 @@ object Value extends js.Object {
     * @param rtype type descriptor of Sigma runtime value
     */
   final private[js] def fromRuntimeData(value: Any, rtype: RType[_]): Any = rtype match {
-    case RType.BooleanType => value
-    case RType.ByteType | RType.ShortType | RType.IntType => value
-    case RType.LongType => js.BigInt(value.asInstanceOf[Long].toString)
+    case sigma.BooleanType => value
+    case sigma.ByteType | sigma.ShortType | sigma.IntType => value
+    case sigma.LongType => js.BigInt(value.asInstanceOf[Long].toString)
     case sigma.BigIntRType =>
       val hex = SigmaDsl.toBigInteger(value.asInstanceOf[sigma.BigInt]).toString(10)
       js.BigInt(hex)
@@ -143,7 +143,7 @@ object Value extends js.Object {
     case pt: PairType[a, b] =>
       val p = value.asInstanceOf[(a, b)]
       js.Array(fromRuntimeData(p._1, pt.tFst), fromRuntimeData(p._2, pt.tSnd))
-    case RType.UnitType => value
+    case sigma.UnitType => value
     case _ =>
       throw new IllegalArgumentException(s"Unsupported type $rtype")
   }
@@ -154,10 +154,10 @@ object Value extends js.Object {
     * @param rtype type descriptor of Sigma runtime value
     */
   final private def checkJsData[T](data: T, rtype: RType[_]): Any = rtype match {
-    case RType.ByteType => data.asInstanceOf[Int].toByteExact
-    case RType.ShortType => data.asInstanceOf[Int].toShortExact
-    case RType.IntType => data.asInstanceOf[Int].toLong.toIntExact
-    case RType.LongType =>
+    case sigma.ByteType => data.asInstanceOf[Int].toByteExact
+    case sigma.ShortType => data.asInstanceOf[Int].toShortExact
+    case sigma.IntType => data.asInstanceOf[Int].toLong.toIntExact
+    case sigma.LongType =>
       val n = data.asInstanceOf[js.BigInt]
       if (n < MinLong || n > MaxLong)
         throw new ArithmeticException(s"value $n is out of long range")

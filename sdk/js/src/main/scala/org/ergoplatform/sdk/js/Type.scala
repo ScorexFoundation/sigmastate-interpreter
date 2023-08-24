@@ -20,16 +20,16 @@ class Type(private[js] final val rtype: RType[_]) extends js.Object {
 @JSExportTopLevel("TypeObj")
 object Type extends js.Object {
   /** Descriptor of ErgoScript type Byte. */
-  val Byte = new Type(RType.ByteType)
+  val Byte = new Type(sigma.ByteType)
 
   /** Descriptor of ErgoScript type Short. */
-  val Short = new Type(RType.ShortType)
+  val Short = new Type(sigma.ShortType)
 
   /** Descriptor of ErgoScript type Int. */
-  val Int = new Type(RType.IntType)
+  val Int = new Type(sigma.IntType)
 
   /** Descriptor of ErgoScript type Long. */
-  val Long = new Type(RType.LongType)
+  val Long = new Type(sigma.LongType)
 
   /** Descriptor of ErgoScript type BigInt. */
   val BigInt = new Type(sigma.BigIntRType)

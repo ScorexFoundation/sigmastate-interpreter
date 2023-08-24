@@ -31,7 +31,7 @@ package object eval {
     * Such long tuples are represented as Coll[Any].
     * This representaion of tuples is different from representation of pairs (x, y),
     * where Tuple2 type is used instead of Coll. */
-  def TupleColl(items: Any*): Coll[Any] = Colls.fromItems(items:_*)(RType.AnyType)
+  def TupleColl(items: Any*): Coll[Any] = Colls.fromItems(items:_*)(sigma.AnyType)
 
   trait BaseDigestColl extends TaggedType[Coll[Byte]]
 
