@@ -1,24 +1,24 @@
 package sigmastate.helpers
 
-import java.math.BigInteger
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
 import org.ergoplatform.settings.ErgoAlgos
 import pprint.{PPrinter, Tree}
-import sigma.core.RType
 import sigma.core.RType.PrimitiveType
+import sigma.core.{CollType, RType}
+import sigma.{Coll, GroupElement}
 import sigmastate.SCollection._
 import sigmastate.Values.{ConstantNode, ErgoTree, FuncValue, ValueCompanion}
 import sigmastate._
-import sigmastate.crypto.GF2_192_Poly
 import sigmastate.crypto.CryptoConstants.EcPointType
+import sigmastate.crypto.GF2_192_Poly
+import sigmastate.interpreter.{CompanionDesc, FixedCostItem, MethodDesc}
 import sigmastate.lang.Terms
 import sigmastate.lang.Terms.MethodCall
 import sigmastate.serialization.GroupElementSerializer
 import sigmastate.utxo.SelectField
-import sigmastate.interpreter.{CompanionDesc, ErgoTreeEvaluator, FixedCostItem, MethodDesc}
-import sigma.{Coll, CollType, GroupElement}
 
+import java.math.BigInteger
 import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer

@@ -2,7 +2,7 @@ package sigmastate.helpers
 
 import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.{ErgoBox, Outputs}
-import sigma.core.RType
+import sigma.core.{CollType, RType}
 import scorex.util.ModifierId
 import sigmastate.Values._
 import sigmastate._
@@ -12,7 +12,6 @@ import sigmastate.lang.Terms.MethodCall
 import sigmastate.serialization.OpCodes
 import sigmastate.utils.Helpers
 import sigmastate.utxo.SelectField
-import sigma.CollType
 import sigma.SigmaDslTesting
 
 import java.math.BigInteger

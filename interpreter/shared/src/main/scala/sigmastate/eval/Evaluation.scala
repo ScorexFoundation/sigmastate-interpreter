@@ -1,14 +1,14 @@
 package sigmastate.eval
 
 import org.ergoplatform._
-import sigma.core.RType
+import sigma.core.{CollType, RType}
 import sigma.core.RType._
 import sigmastate.SType._
 import sigmastate.Values.SigmaBoolean
 import sigmastate._
 import debox.cfor
 import sigmastate.exceptions.CostLimitException
-import java.math.BigInteger
+
 import scala.reflect.ClassTag
 import scala.util.Try
 

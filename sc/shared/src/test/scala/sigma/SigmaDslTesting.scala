@@ -13,7 +13,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import scalan.Platform.threadSleepOrNoOp
-import sigma.core.RType
+import sigma.core.{CollType, RType}
 import sigma.core.RType._
 import sigma.util.BenchmarkUtil
 import sigma.util.CollectionUtil._
@@ -35,9 +35,7 @@ import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers._
 import sigmastate.utxo.{DeserializeContext, DeserializeRegister, GetVar, OptionGet}
 import sigmastate.{SOption, SSigmaProp, SType, SigmaLeaf, eval}
-import sigma.{Coll, CollType}
 
-import java.util
 import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}

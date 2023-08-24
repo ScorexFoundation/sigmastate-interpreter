@@ -1,7 +1,7 @@
 package org.ergoplatform.sdk.js
 
 import org.ergoplatform.sdk.js.Value.toRuntimeData
-import sigma.core.RType
+import sigma.core.{CollType, RType}
 import sigma.core.RType.PairType
 import scorex.util.Extensions.{IntOps, LongOps}
 import scorex.util.encode.Base16
@@ -13,7 +13,7 @@ import sigmastate.fleetSdkCommon.distEsmTypesCommonMod
 import sigmastate.fleetSdkCommon.distEsmTypesRegistersMod.NonMandatoryRegisters
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.serialization.{ConstantSerializer, DataSerializer, SigmaSerializer}
-import sigma.{Coll, CollType}
+import sigma.Coll
 
 import java.math.BigInteger
 import scala.scalajs.js
