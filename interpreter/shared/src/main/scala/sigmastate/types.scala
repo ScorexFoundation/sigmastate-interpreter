@@ -4,7 +4,7 @@ import java.math.BigInteger
 import org.ergoplatform._
 import org.ergoplatform.validation._
 import sigma.core.{Nullable, RType}
-import sigma.core.RType.GeneralType
+import sigma.core.GeneralType
 import sigmastate.SType.TypeCode
 import sigmastate.interpreter._
 import sigmastate.utils.Overloading.Overload1
@@ -100,16 +100,16 @@ object SType {
 
   val DummyValue = 0.asWrappedType
 
-  implicit val typeByte = SByte
-  implicit val typeShort = SShort
-  implicit val typeInt = SInt
-  implicit val typeLong = SLong
-  implicit val typeBigInt = SBigInt
-  implicit val typeBoolean = SBoolean
-  implicit val typeAvlTree = SAvlTree
-  implicit val typeGroupElement = SGroupElement
-  implicit val typeSigmaProp = SSigmaProp
-  implicit val typeBox = SBox
+  implicit val typeByte        : SByte.type         = SByte
+  implicit val typeShort       : SShort.type        = SShort
+  implicit val typeInt         : SInt.type          = SInt
+  implicit val typeLong        : SLong.type         = SLong
+  implicit val typeBigInt      : SBigInt.type       = SBigInt
+  implicit val typeBoolean     : SBoolean.type      = SBoolean
+  implicit val typeAvlTree     : SAvlTree.type      = SAvlTree
+  implicit val typeGroupElement: SGroupElement.type = SGroupElement
+  implicit val typeSigmaProp   : SSigmaProp.type    = SSigmaProp
+  implicit val typeBox         : SBox.type          = SBox
 
   /** Costructs a collection type with the given type of elements. */
   implicit def typeCollection[V <: SType](implicit tV: V): SCollection[V] = SCollection[V](tV)

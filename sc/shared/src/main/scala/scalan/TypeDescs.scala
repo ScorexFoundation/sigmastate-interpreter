@@ -367,12 +367,12 @@ abstract class TypeDescs extends Base { self: Scalan =>
   val LazyAnyElement = Lazy(AnyElement)
 
   implicit val BooleanElement: Elem[Boolean] = new BaseElemLiftable(false, sigma.BooleanType)
-  implicit val ByteElement: Elem[Byte] = new BaseElemLiftable(0.toByte, sigma.ByteType)
-  implicit val ShortElement: Elem[Short] = new BaseElemLiftable(0.toShort, sigma.ShortType)
-  implicit val IntElement: Elem[Int] = new BaseElemLiftable(0, sigma.IntType)
-  implicit val LongElement: Elem[Long] = new BaseElemLiftable(0L, sigma.LongType)
-  implicit val UnitElement: Elem[Unit] = new BaseElemLiftable((), sigma.UnitType)
-  implicit val StringElement: Elem[String] = new BaseElemLiftable("", StringType)
+  implicit val ByteElement   : Elem[Byte]    = new BaseElemLiftable(0.toByte, sigma.ByteType)
+  implicit val ShortElement  : Elem[Short]   = new BaseElemLiftable(0.toShort, sigma.ShortType)
+  implicit val IntElement    : Elem[Int]     = new BaseElemLiftable(0, sigma.IntType)
+  implicit val LongElement   : Elem[Long]    = new BaseElemLiftable(0L, sigma.LongType)
+  implicit val UnitElement   : Elem[Unit]    = new BaseElemLiftable((), sigma.UnitType)
+  implicit val StringElement : Elem[String]  = new BaseElemLiftable("", sigma.StringType)
 
   /** Implicitly defines element type for pairs. */
   implicit final def pairElement[A, B](implicit ea: Elem[A], eb: Elem[B]): Elem[(A, B)] =

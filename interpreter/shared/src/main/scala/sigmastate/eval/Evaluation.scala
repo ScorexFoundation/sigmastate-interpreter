@@ -1,7 +1,7 @@
 package sigmastate.eval
 
 import org.ergoplatform._
-import sigma.core.{CollType, RType, TupleType}
+import sigma.core._
 import sigma.core.RType._
 import sigmastate.SType._
 import sigmastate.Values.SigmaBoolean

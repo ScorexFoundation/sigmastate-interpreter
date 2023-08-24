@@ -13,8 +13,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import scalan.Platform.threadSleepOrNoOp
-import sigma.core.{CollType, RType}
-import sigma.core.RType._
+import sigma.core.{CollType, OptionType, PairType, RType}
 import sigma.util.BenchmarkUtil
 import sigma.util.CollectionUtil._
 import sigma.util.Extensions._

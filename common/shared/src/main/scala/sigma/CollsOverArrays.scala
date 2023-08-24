@@ -1,7 +1,7 @@
 package sigma
 
 import sigma.util.CollectionUtil
-import sigma.core.RType
+import sigma.core.{PairType, RType}
 import debox.Buffer
 import sigma.core.RType._
 import sigma.util.{MaxArrayLength, safeConcatArrays_v5}

@@ -4,8 +4,7 @@ import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
 import org.ergoplatform.settings.ErgoAlgos
 import pprint.{PPrinter, Tree}
-import sigma.core.RType.PrimitiveType
-import sigma.core.{CollType, RType}
+import sigma.core.{CollType, PrimitiveType}
 import sigma.{Coll, GroupElement}
 import sigmastate.SCollection._
 import sigmastate.Values.{ConstantNode, ErgoTree, FuncValue, ValueCompanion}
