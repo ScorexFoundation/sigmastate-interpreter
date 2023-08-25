@@ -4,7 +4,7 @@ import debox.cfor
 import org.ergoplatform.validation.{SigmaValidationSettings, ValidationRules}
 import org.ergoplatform.{ErgoBox, SigmaConstants}
 import sigma.data.OverloadHack.Overloaded1
-import sigma.data.RType
+import sigma.data.{CollOverArrayBuilder, RType}
 import sigma.util.Extensions.BigIntegerOps
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue, SerializedAdProof}

@@ -1,6 +1,6 @@
 package sigmastate
 
-import sigma.data.{AVHashMap, Nullable, RType}
+import sigma.data.{AVHashMap, CollOverArray, Nullable, PairOfCols, RType}
 import debox.{cfor, sp}
 import sigmastate.Values.SigmaBoolean
 import sigmastate.crypto.DLogProtocol.ProveDlog

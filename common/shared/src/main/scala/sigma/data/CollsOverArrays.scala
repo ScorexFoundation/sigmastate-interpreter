@@ -1,11 +1,10 @@
-package sigma
+package sigma.data
 
-import sigma.util.CollectionUtil
-import sigma.data.{PairType, RType}
-import debox.Buffer
+import debox.{Buffer, cfor}
 import sigma.data.RType._
-import sigma.util.{MaxArrayLength, safeConcatArrays_v5}
-import debox.cfor
+import sigma.util.{CollectionUtil, MaxArrayLength, safeConcatArrays_v5}
+import sigma.{Coll, CollBuilder, PairColl, VersionContext, requireSameLength}
+import sigma.rtypeToClassTag
 
 class CollOverArray[@specialized A](val toArray: Array[A], val builder: CollBuilder)
                                    (implicit tA: RType[A]) extends Coll[A] {
