@@ -8,8 +8,6 @@ import scala.reflect.ClassTag
   * @see [[RType]] class
   */
 package object sigma {
-  /** Forces reflection data initialization */
-  val coreLibReflection = CoreLibReflection
 
   val AnyType: RType[Any] = GeneralType[Any](ClassTag.Any)
 

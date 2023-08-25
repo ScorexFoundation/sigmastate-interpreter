@@ -1,7 +1,7 @@
 package scalan
 
 import sigma.reflection.RMethod
-import sigma.{BaseNestedTests, BaseShouldTests, BaseTests, CoreLibReflection, TestUtils}
+import sigma.{BaseNestedTests, BaseShouldTests, BaseTests, TestUtils}
 
 trait TestContexts extends TestUtils {
 
@@ -35,7 +35,7 @@ trait TestContexts extends TestUtils {
 }
 
 abstract class BaseCtxTests extends BaseTests with TestContexts {
-  val reflection = (CoreLibReflection, GraphIRReflection)
+  val reflection = GraphIRReflection
 }
 
 abstract class BaseNestedCtxTests extends BaseNestedTests with TestContexts

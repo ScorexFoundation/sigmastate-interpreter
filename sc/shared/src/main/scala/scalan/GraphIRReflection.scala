@@ -3,7 +3,6 @@ package scalan
 import scalan.primitives.Thunks
 import sigma.reflection.CommonReflection.registerClassEntry
 import sigma.reflection.{CommonReflection, mkConstructor, mkMethod}
-import sigma.CoreLibReflection
 import sigmastate.eval.SigmaLibrary
 import sigma.Colls
 import sigma.SigmaDsl
@@ -18,7 +17,7 @@ import wrappers.scalan.WRTypes
   */
 object GraphIRReflection {
   /** Forces initialization of reflection data. */
-  val reflection = (CommonReflection, CoreLibReflection)
+  val reflection = CommonReflection
 
   { val clazz = classOf[wrappers.scala.WOptions#WOption[_]]
     val ctx = null.asInstanceOf[scalan.Library] // ok! type level only

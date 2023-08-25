@@ -2,9 +2,9 @@ package sigmastate
 
 import org.ergoplatform.ErgoBox.RegisterId
 import sigma.reflection.CommonReflection.registerClassEntry
-import sigma.reflection.{mkConstructor, mkMethod}
+import sigma.reflection.{CommonReflection, mkConstructor, mkMethod}
 import sigma.Coll
-import sigma.{AvlTree, CoreLibReflection, SigmaDslBuilder}
+import sigma.{AvlTree, SigmaDslBuilder}
 import sigmastate.SAvlTree.KeyValueColl
 import sigmastate.SCollection.{SBooleanArray, SByteArray, SIntArray}
 import sigmastate.Values._
@@ -21,7 +21,7 @@ import sigmastate.utxo._
   * Only information that is needed at runtime is registered.
   */
 object InterpreterReflection {
-  val reflection = CoreLibReflection
+  val reflection = CommonReflection
 
   registerClassEntry(classOf[AND],
     constructors = Array(

@@ -9,6 +9,7 @@ import org.ergoplatform.sdk.wallet.secrets.{DerivationPath, ExtendedSecretKey}
 import org.ergoplatform.sdk.wallet.{Constants, TokensMap}
 import org.ergoplatform.settings.ErgoAlgos
 import scorex.crypto.authds.ADKey
+import sigmastate.utils.Helpers._  // don't remove, required for Scala 2.11
 import scorex.util.encode.Base16
 import scorex.util.{ModifierId, bytesToId, idToBytes}
 import sigma.data.ExactIntegral.LongIsExactIntegral
