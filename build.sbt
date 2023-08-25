@@ -188,8 +188,8 @@ lazy val commonDependenies2 = libraryDependencies ++= Seq(
 
 val sigmajsCryptoFacadeVersion = "0.0.7"
 
-lazy val common = crossProject(JVMPlatform, JSPlatform)
-  .in(file("common"))
+lazy val core   = crossProject(JVMPlatform, JSPlatform)
+  .in(file("core"))
   .settings(commonSettings ++ testSettings2,
     commonDependenies2,
     testingDependencies2,
@@ -210,12 +210,12 @@ lazy val common = crossProject(JVMPlatform, JSPlatform)
     ),
     useYarn := true
   )
-lazy val commonJS = common.js
+lazy val coreJS = core.js
     .enablePlugins(ScalaJSBundlerPlugin)
 
 lazy val interpreter = crossProject(JVMPlatform, JSPlatform)
   .in(file("interpreter"))
-  .dependsOn(common % allConfigDependency)
+  .dependsOn(core % allConfigDependency)
   .settings(
     commonSettings ++ testSettings2,
     commonDependenies2,
@@ -278,7 +278,7 @@ lazy val parsersJS = parsers.js
 
 lazy val sdk = crossProject(JVMPlatform, JSPlatform)
     .in(file("sdk"))
-    .dependsOn(common % allConfigDependency, interpreter % allConfigDependency, parsers % allConfigDependency)
+    .dependsOn(core % allConfigDependency, interpreter % allConfigDependency, parsers % allConfigDependency)
     .settings(commonSettings ++ testSettings2,
       commonDependenies2,
       testingDependencies2,
@@ -355,13 +355,13 @@ lazy val scJS = sc.js
 
 
 lazy val sigma = (project in file("."))
-  .aggregate(common.jvm, interpreter.jvm, parsers.jvm, sdk.jvm, sc.jvm)
+  .aggregate(core.jvm, interpreter.jvm, parsers.jvm, sdk.jvm, sc.jvm)
   .settings(libraryDefSettings, rootSettings)
   .settings(publish / aggregate := false)
   .settings(publishLocal / aggregate := false)
 
 lazy val aggregateCompile = ScopeFilter(
-  inProjects(common.jvm, interpreter.jvm, parsers.jvm, sdk.jvm, sc.jvm),
+  inProjects(core.jvm, interpreter.jvm, parsers.jvm, sdk.jvm, sc.jvm),
   inConfigurations(Compile))
 
 lazy val rootSettings = Seq(
