@@ -5,11 +5,9 @@ import io.circe.Decoder
 import org.ergoplatform.settings.ErgoAlgos
 import sigma.data.{OverloadHack, RType}
 import scorex.utils.Ints
-import sigma.Environment
-import sigmastate.eval.{CAnyValue, Colls, SigmaDsl}
+import sigma.{Coll, Colls, Environment, GroupElement}
+import sigmastate.eval.{CAnyValue, SigmaDsl}
 import sigmastate.crypto.CryptoConstants.EcPointType
-import sigma.Coll
-import sigma.GroupElement
 
 import java.util
 import java.util.concurrent.locks.Lock

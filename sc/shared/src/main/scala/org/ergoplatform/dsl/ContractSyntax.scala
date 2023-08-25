@@ -8,7 +8,6 @@ import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition}
 import sigmastate.eval.{CostingSigmaDslBuilder, Evaluation}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigma.{SigmaProp, SigmaContract, Context, SigmaDslBuilder}
-import scala.language.implicitConversions
 
 /** Defines methods to be used in contract implementations based on [[SigmaContract]]. */
 trait ContractSyntax { contract: SigmaContract =>

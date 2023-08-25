@@ -3,7 +3,7 @@ package sigmastate.lang
 import debox.cfor
 import org.ergoplatform.ErgoBox.RegisterId
 import sigma.data.Nullable
-import sigma.Environment
+import sigma.{AnyValue, Coll, Colls, Environment}
 import sigmastate.SCollection.{SByteArray, SIntArray}
 import sigmastate.SOption.SIntOption
 import sigmastate.Values._
@@ -15,8 +15,6 @@ import sigmastate.lang.Terms.{STypeSubst, _}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.utxo._
-import sigma.Coll
-import sigma.AnyValue
 
 import scala.util.DynamicVariable
 

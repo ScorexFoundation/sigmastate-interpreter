@@ -7,6 +7,7 @@ import org.ergoplatform.settings.MonetarySettings
 import org.scalacheck.Gen
 import scorex.crypto.hash.Blake2b256
 import scorex.util.Random
+import sigma.Colls
 import sigma.util.BenchmarkUtil.measure
 import sigmastate.Values.{ByteArrayConstant, CollectionConstant, ErgoTree, IntConstant, SigmaPropConstant}
 import sigmastate._
@@ -18,7 +19,7 @@ import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.{ByIndex, ExtractCreationInfo, SelectField}
-import sigmastate.eval.{Colls, Digest32Coll}
+import sigmastate.eval.Digest32Coll
 import sigmastate.utils.Helpers._
 
 import scala.util.Try

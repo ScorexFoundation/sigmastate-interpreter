@@ -11,7 +11,7 @@ import scorex.util.ModifierId
 import scorex.util.encode.Base16
 import sigmastate.Values.{Constant, GroupElementConstant}
 import sigmastate.eval.Extensions.ArrayOps
-import sigmastate.eval.{CAvlTree, CBigInt, CHeader, CPreHeader, Colls, Digest32Coll, Evaluation}
+import sigmastate.eval.{CAvlTree, CBigInt, CHeader, CPreHeader, Digest32Coll, Evaluation}
 import sigmastate.fleetSdkCommon.distEsmTypesBoxesMod.Box
 import sigmastate.fleetSdkCommon.distEsmTypesCommonMod.HexString
 import sigmastate.fleetSdkCommon.distEsmTypesRegistersMod.NonMandatoryRegisters
@@ -21,9 +21,8 @@ import sigmastate.fleetSdkCommon.{distEsmTypesBoxesMod => boxesMod, distEsmTypes
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
 import sigmastate.{AvlTreeData, AvlTreeFlags, SType}
-import sigma.Coll
+import sigma.{Coll, Colls, GroupElement}
 import sigma.Extensions.CollBytesOps
-import sigma.GroupElement
 
 import java.math.BigInteger
 import scala.collection.immutable.ListMap

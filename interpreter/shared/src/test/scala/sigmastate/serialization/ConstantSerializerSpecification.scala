@@ -12,7 +12,7 @@ import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import sigmastate.Values._
 import sigmastate.eval.Evaluation
-import sigma.AvlTree
+import sigma.{AvlTree, Colls}
 import SType.AnyOps
 import scorex.util.encode.Base16
 import sigmastate.exceptions.SerializerException

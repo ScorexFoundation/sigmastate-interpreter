@@ -7,12 +7,11 @@ import spire.scalacompat.BuilderCompat
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scala.language.implicitConversions
 
 trait CollGens { testSuite =>
   import Gen._
 
-  val builder: CollBuilder = new CollOverArrayBuilder
+  val builder: CollBuilder = sigma.Colls
   val valGen = choose(-100, 100)
   val byteGen = choose[Byte](-100, 100)
   val indexGen = choose(0, 100)
@@ -115,8 +114,8 @@ trait CollGens { testSuite =>
   val superGenByte = getSuperGen(1, Gen.oneOf(bytesOverArrayGen, replBytesCollGen))
   val superGen = Gen.oneOf(superGenInt, superGenByte)
   val allGen = Gen.oneOf(superGen, collGen)
-  implicit val arbColl = Arbitrary(collGen)
-  implicit val arbBytes = Arbitrary(bytesGen)
+  implicit val arbColl : Arbitrary[Coll[Int]]  = Arbitrary(collGen)
+  implicit val arbBytes: Arbitrary[Coll[Byte]] = Arbitrary(bytesGen)
 
   def eq0(x: Int) = x == 0
 
@@ -139,7 +138,7 @@ trait CollGens { testSuite =>
     res
   }
 
-  implicit def buildableColl[T: RType] = new Buildable[T, Coll[T]] {
+  implicit def buildableColl[T: RType]: Buildable[T, Coll[T]] = new Buildable[T, Coll[T]] {
     def builder = new BuilderCompat[T, Coll[T]] {
       val al = new ArrayBuffer[T]
 

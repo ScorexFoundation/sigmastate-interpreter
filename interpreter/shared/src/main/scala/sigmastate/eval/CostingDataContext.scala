@@ -171,9 +171,6 @@ class CAvlTreeVerifier(startingDigest: ADDigest,
   * @see [[AvlTree]] for detailed descriptions
   */
 case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTreeData] {
-  val builder = CostingSigmaDslBuilder
-  val Colls = builder.Colls
-
   override def wrappedValue: AvlTreeData = treeData
 
   override def keyLength: Int = treeData.keyLength
@@ -494,7 +491,7 @@ class CostingSigmaDslBuilder extends SigmaDslBuilder { dsl =>
   implicit val validationSettings: SigmaValidationSettings = ValidationRules.currentSettings
 
   // manual fix
-  override val Colls: CollBuilder = new CollOverArrayBuilder
+  override val Colls: CollBuilder = sigma.Colls
 
   override def BigInt(n: BigInteger): BigInt = CBigInt(n)
 

@@ -14,7 +14,7 @@ import sigmastate.Values.{ByteArrayConstant, ConcreteCollection, ConstantPlaceho
 import sigmastate.crypto.CryptoConstants.EcPointType
 import sigmastate.crypto.DLogProtocol.ProveDlog
 import sigmastate.crypto.ProveDHTuple
-import sigmastate.eval.{Colls, _}
+import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import sigmastate.eval.{CAvlTree, CBigInt, CHeader, CPreHeader, CSigmaProp, CostingBox, CostingSigmaDslBuilder, SigmaDsl}
 import sigmastate.helpers.TestingCommons

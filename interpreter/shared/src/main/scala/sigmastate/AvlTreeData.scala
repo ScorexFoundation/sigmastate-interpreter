@@ -1,10 +1,9 @@
 package sigmastate
 
 import sigmastate.crypto.CryptoConstants
-import sigmastate.eval.Colls
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigma.Coll
+import sigma.{Coll, Colls}
 
 
 case class AvlTreeFlags(insertAllowed: Boolean, updateAllowed: Boolean, removeAllowed: Boolean) {

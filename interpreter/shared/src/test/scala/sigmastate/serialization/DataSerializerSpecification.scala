@@ -11,7 +11,7 @@ import sigmastate.eval.Evaluation
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import sigmastate.crypto.CryptoConstants.EcPointType
-import sigma.AvlTree
+import sigma.{AvlTree, Colls}
 import SType.AnyOps
 import sigmastate.exceptions.SerializerException
 import sigmastate.interpreter.{CostAccumulator, ErgoTreeEvaluator}

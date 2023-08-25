@@ -1,7 +1,5 @@
 package scalan
 
-import scala.language.higherKinds
-
 /** A slice in the Scalan cake with base classes for various descriptors. */
 trait Entities extends TypeDescs { self: Scalan =>
 

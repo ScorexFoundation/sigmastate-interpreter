@@ -16,8 +16,7 @@ import sigmastate.eval.{CPreHeader, WrapperOf, _}
 import sigmastate.exceptions.SigmaException
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.{AvlTreeData, AvlTreeFlags, SType}
-import sigma.Coll
-import sigma.{AnyValue, Header, PreHeader}
+import sigma.{AnyValue, Coll, Colls, Header, PreHeader}
 
 import scala.util.Try
 import sigmastate.utils.Helpers._  // required for Scala 2.11

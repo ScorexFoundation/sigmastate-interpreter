@@ -22,11 +22,6 @@ package object eval {
     */
   val SigmaDsl = CostingSigmaDslBuilder
 
-  /** The primary reference to global Coll operations. Can be used to create collections from Array etc.
-    * @see CollBuilder
-    */
-  val Colls: CollBuilder = SigmaDsl.Colls
-
   /** Constructor of tuple value with more than 2 items.
     * Such long tuples are represented as Coll[Any].
     * This representaion of tuples is different from representation of pairs (x, y),

@@ -1,21 +1,20 @@
 package org.ergoplatform
 
-import java.util
+import debox.cfor
 import org.ergoplatform.ErgoBox._
 import org.ergoplatform.settings.ErgoAlgos
 import scorex.util.{ModifierId, bytesToId}
+import sigma.Extensions.CollOps
+import sigma.util.safeNewArray
+import sigma.{Coll, Colls}
+import sigmastate.SType.AnyOps
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.SType.AnyOps
-import sigmastate.serialization.{SigmaSerializer, ValueSerializer}
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigma.Coll
-import sigmastate.eval._
 import sigmastate.eval.Extensions._
+import sigmastate.eval._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigma.util.safeNewArray
-import debox.cfor
-import sigma.Extensions.CollOps
+import sigmastate.serialization.SigmaSerializer
+import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 import scala.collection.{immutable, mutable}
 import scala.runtime.ScalaRunTime

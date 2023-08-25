@@ -15,7 +15,7 @@ import sigmastate.eval._
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.ExtractCreationInfo
-import sigma._
+import sigma.{Colls, _}
 
 /**
   * Box (aka coin, or an unspent output) is a basic concept of a UTXO-based cryptocurrency. In Bitcoin, such an object

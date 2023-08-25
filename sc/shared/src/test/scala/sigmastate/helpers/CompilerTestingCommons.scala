@@ -8,7 +8,7 @@ import org.scalacheck.Gen
 import org.scalatest.Assertion
 import sigma.util.BenchmarkUtil
 import scalan.TestContexts
-import sigma.TestUtils
+import sigma.{Colls, TestUtils}
 import sigma.data.RType
 import sigmastate.Values.{Constant, ErgoTree, SValue, SigmaBoolean, SigmaPropValue}
 import sigmastate.eval._
@@ -63,7 +63,7 @@ trait CompilerTestingCommons extends TestingCommons
           val buf = new Array[sigma.AnyValue](2)
           Array.copy(vars, 0, buf, 0, vars.length)
           buf(1) = ctxVar
-          CostingSigmaDslBuilder.Colls.fromArray(buf)
+          Colls.fromArray(buf)
         } else {
           ctx.vars.updated(1, ctxVar)
         }

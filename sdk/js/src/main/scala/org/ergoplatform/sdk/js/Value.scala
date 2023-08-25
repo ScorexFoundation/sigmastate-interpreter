@@ -7,13 +7,13 @@ import scorex.util.Extensions.{IntOps, LongOps}
 import scorex.util.encode.Base16
 import sigmastate.SType
 import sigmastate.crypto.Platform
-import sigmastate.eval.{CAvlTree, CGroupElement, CSigmaProp, Colls, CostingBox, Evaluation, SigmaDsl}
+import sigmastate.eval.{CAvlTree, CGroupElement, CSigmaProp, CostingBox, Evaluation, SigmaDsl}
 import sigmastate.fleetSdkCommon.distEsmTypesBoxesMod.Box
 import sigmastate.fleetSdkCommon.distEsmTypesCommonMod
 import sigmastate.fleetSdkCommon.distEsmTypesRegistersMod.NonMandatoryRegisters
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.serialization.{ConstantSerializer, DataSerializer, SigmaSerializer}
-import sigma.Coll
+import sigma.{Coll, Colls}
 
 import java.math.BigInteger
 import scala.scalajs.js

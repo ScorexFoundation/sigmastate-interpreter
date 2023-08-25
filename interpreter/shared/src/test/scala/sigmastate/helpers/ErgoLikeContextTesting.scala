@@ -9,8 +9,7 @@ import sigmastate.eval._
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultEvalSettings
 import sigmastate.serialization.{GroupElementSerializer, SigmaSerializer}
-import sigma.Coll
-import sigma.{Box, Header, PreHeader}
+import sigma.{Box, Coll, Colls, Header, PreHeader}
 
 object ErgoLikeContextTesting {
   /* NO HF PROOF:

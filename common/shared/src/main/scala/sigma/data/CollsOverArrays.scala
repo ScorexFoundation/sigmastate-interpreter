@@ -142,7 +142,7 @@ class CollOverArray[@specialized A](val toArray: Array[A], val builder: CollBuil
   override def hashCode() = CollectionUtil.deepHashCode(toArray)
 }
 
-class CollOverArrayBuilder extends CollBuilder { builder =>
+private[sigma] class CollOverArrayBuilder extends CollBuilder { builder =>
 
   @inline override def pairColl[@specialized A, @specialized B](as: Coll[A], bs: Coll[B]): PairColl[A, B] = {
     if (VersionContext.current.isJitActivated) {
@@ -250,7 +250,7 @@ class PairOfCols[@specialized L, @specialized R](val ls: Coll[L], val rs: Coll[R
     RType.pairRType(tL, tR)
   }
 
-  override def builder: CollBuilder = new CollOverArrayBuilder
+  override def builder: CollBuilder = ls.builder
   override def toArray: Array[(L, R)] = ls.toArray.zip(rs.toArray)
   @inline override def length: Int = if (ls.length <= rs.length) ls.length else rs.length
   @inline override def apply(i: Int): (L, R) = (ls(i), rs(i))

@@ -1,17 +1,18 @@
 package org.ergoplatform
 
+import debox.cfor
 import org.ergoplatform.ErgoBox.TokenId
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.Blake2b256
 import scorex.util._
+import sigma.Colls
+import sigma.util.safeNewArray
 import sigmastate.SType._
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigmastate.interpreter.ProverResult
-import sigmastate.serialization.{SigmaSerializer, ValueSerializer}
-import sigma.util.safeNewArray
+import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import debox.cfor
 
 import scala.util.Try
 

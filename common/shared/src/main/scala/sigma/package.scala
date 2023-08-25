@@ -68,4 +68,10 @@ package object sigma {
     * @return An RType object for the tuple type.
     */
   def tupleRType(types: Array[SomeType]): RType[TupleData] = TupleType(types)
+
+  /** The primary reference to global Coll operations. Can be used to create collections from Array etc.
+    *
+    * @see CollBuilder
+    */
+  val Colls: CollBuilder = new CollOverArrayBuilder
 }

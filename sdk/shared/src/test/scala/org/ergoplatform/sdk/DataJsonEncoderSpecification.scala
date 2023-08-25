@@ -13,7 +13,7 @@ import sigmastate.eval.Extensions._
 import sigmastate.eval.{Evaluation, _}
 import sigmastate.crypto.CryptoConstants.EcPointType
 import sigmastate.exceptions.SerializerException
-import sigma.{AvlTree, Box}
+import sigma.{AvlTree, Box, Colls}
 import sigmastate.serialization.SerializationSpecification
 
 import scala.annotation.nowarn

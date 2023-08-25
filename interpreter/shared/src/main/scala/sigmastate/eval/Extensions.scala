@@ -17,7 +17,6 @@ import sigma._
 import java.math.BigInteger
 
 object Extensions {
-  private val Colls = CostingSigmaDslBuilder.Colls
 
   implicit class ByteExt(val b: Byte) extends AnyVal {
     @inline def toBigInt: BigInt = CostingSigmaDslBuilder.BigInt(BigInteger.valueOf(b.toLong))

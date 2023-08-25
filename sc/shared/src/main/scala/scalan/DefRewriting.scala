@@ -14,18 +14,19 @@ trait DefRewriting { scalan: Scalan =>
     case Tup(Def(First(a)), Def(Second(b))) if a == b => a
 
     // Rule: convert(eFrom, eTo, x, conv) if x.elem <:< eFrom  ==>  conv(x)
-    case Convert(eFrom: Elem[from], eTo: Elem[to], x,  conv) if x.elem <:< eFrom =>
+    case Convert(eFrom: Elem[from], _: Elem[to], x,  conv) if x.elem <:< eFrom =>
       mkApply(conv, x)
 
     case Apply(f @ Def(l: Lambda[a,b]), x, mayInline) if mayInline && l.mayInline =>
       mkApply(f, x)
 
-    case call @ MethodCall(receiver, m, args, neverInvoke) =>
+    case call @ MethodCall(receiver, m, args, _) =>
       call.tryInvoke match {
         // Rule: receiver.m(args) ==> body(m).subst{xs -> args}
         case InvokeSuccess(res) => res
         case InvokeFailure(e) if !e.isInstanceOf[DelayInvokeException] =>
           throwInvocationException("Method invocation in rewriteDef", e, receiver, m, args)
+        case InvokeFailure(ex) => throw ex
         case InvokeImpossible =>
           val res = rewriteNonInvokableMethodCall(call)
           if (res != null) res

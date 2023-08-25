@@ -7,7 +7,7 @@ import sigma.util.StringUtil
 import sigma.reflection.RConstructor
 
 import java.util.Arrays
-import scala.annotation.implicitNotFound
+import scala.annotation.{implicitNotFound, unused}
 import scala.annotation.unchecked.uncheckedVariance
 import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
@@ -453,7 +453,7 @@ abstract class Base { scalan: Scalan =>
     }
     /** Apply this transformer to the nodes present in the sequence,
       * and leave non-Ref items unchanged. */
-    final def apply(xs: Seq[Any])(implicit o: Overloaded1): Seq[Any] = {
+    final def apply(xs: Seq[Any])(implicit @unused o: Overloaded1): Seq[Any] = {
       val len = xs.length
       if (len == 0) ArraySeq.empty
       else {
