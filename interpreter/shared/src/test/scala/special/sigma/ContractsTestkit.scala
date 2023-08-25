@@ -1,12 +1,12 @@
 package sigma
 
-import sigma.core.RType
+import sigma.data.RType
 import sigmastate.Values.ErgoTree
 import sigmastate.{AvlTreeData, Values}
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import sigmastate.helpers.TestingHelpers._
-import sigma.core._
+import sigma.data._
 
 import scala.annotation.nowarn  // imports implicit ClassTag
 

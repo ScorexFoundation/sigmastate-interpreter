@@ -1,6 +1,6 @@
 package sigmastate.eval
 
-import sigma.core.{ExactOrderingImpl, ExactIntegral}
+import sigma.data.{ExactOrderingImpl, ExactIntegral}
 
 import scala.math.{Integral, Ordering}
 import sigma._

@@ -1,4 +1,4 @@
-package sigma.core
+package sigma.data
 
 /** Scala specific trick to appease erasure of methods argument types.
   * Example usage:

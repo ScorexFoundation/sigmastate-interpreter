@@ -2,7 +2,7 @@ package sigmastate.lang
 
 import debox.cfor
 import org.ergoplatform.ErgoBox.RegisterId
-import sigma.core.Nullable
+import sigma.data.Nullable
 import sigma.Environment
 import sigmastate.SCollection.{SByteArray, SIntArray}
 import sigmastate.SOption.SIntOption

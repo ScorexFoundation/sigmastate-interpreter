@@ -9,7 +9,7 @@ import org.scalatest.Assertion
 import sigma.util.BenchmarkUtil
 import scalan.TestContexts
 import sigma.TestUtils
-import sigma.core.RType
+import sigma.data.RType
 import sigmastate.Values.{Constant, ErgoTree, SValue, SigmaBoolean, SigmaPropValue}
 import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._

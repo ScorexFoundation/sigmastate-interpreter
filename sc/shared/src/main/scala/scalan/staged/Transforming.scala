@@ -5,7 +5,7 @@ import scala.language.existentials
 import scalan.Scalan
 import debox.{Buffer => DBuffer}
 import debox.cfor
-import sigma.core.{Lazy, Nullable}
+import sigma.data.{Lazy, Nullable}
 import sigma.reflection.RMethod
 
 trait Transforming { self: Scalan =>

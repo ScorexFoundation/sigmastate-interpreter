@@ -1,4 +1,4 @@
-package sigma.core
+package sigma.data
 
 /** Non-thread safe (but efficient on single thread) immutable lazy value.
   * The `block` is executed only once. */

@@ -3,10 +3,10 @@ package sigmastate
 import debox.{cfor, Map => DMap}
 import org.ergoplatform.SigmaConstants
 import org.ergoplatform.validation.SigmaValidationSettings
-import sigma.core.ExactIntegral._
-import sigma.core.ExactOrdering._
-import sigma.core.OverloadHack.Overloaded1
-import sigma.core.{ExactIntegral, ExactOrdering}
+import sigma.data.ExactIntegral._
+import sigma.data.ExactOrdering._
+import sigma.data.OverloadHack.Overloaded1
+import sigma.data.{ExactIntegral, ExactOrdering}
 import scorex.crypto.hash.{Blake2b256, CryptographicHash32, Sha256}
 import sigma.VersionContext
 import sigmastate.ArithOp.OperationImpl

@@ -1,8 +1,8 @@
 package org.ergoplatform.sdk.utils
 
 import org.ergoplatform.ErgoBox
-import sigma.core.{CollType, FuncType, OptionType, PairType, RType, TupleType}
-import sigma.core.RType._
+import sigma.data.{CollType, FuncType, OptionType, PairType, RType, TupleType}
+import sigma.data.RType._
 import scorex.crypto.authds.avltree.batch.BatchAVLProver
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ModifierId

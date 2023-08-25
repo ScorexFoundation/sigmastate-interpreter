@@ -3,7 +3,7 @@ package sigmastate
 import java.math.BigInteger
 
 import org.ergoplatform.ErgoBox
-import sigma.core.RType
+import sigma.data.RType
 import scorex.crypto.hash.Digest32
 import sigmastate.Values.SigmaBoolean
 import sigmastate.crypto.CryptoConstants.EcPointType

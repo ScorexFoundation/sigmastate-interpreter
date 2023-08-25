@@ -1,7 +1,7 @@
 package sigma
 
-import sigma.core.RType._
-import sigma.core.RType
+import sigma.data.RType._
+import sigma.data.RType
 
 class TypesTests extends BaseTests {
 

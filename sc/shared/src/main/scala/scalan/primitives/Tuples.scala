@@ -6,7 +6,7 @@ package scalan.primitives
 
 import scalan.{Base, Scalan}
 import scala.language.implicitConversions
-import sigma.core.{AVHashMap}
+import sigma.data.{AVHashMap}
 
 trait Tuples extends Base { self: Scalan =>
   object Pair {

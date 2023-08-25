@@ -1,7 +1,7 @@
-package sigma.core
+package sigma.data
 
 import sigma.{Coll, TupleData}
-import sigma.core.RType.{SomeType, ThunkData}
+import sigma.data.RType.{SomeType, ThunkData}
 import sigma.util.CollectionUtil
 
 import scala.reflect.ClassTag

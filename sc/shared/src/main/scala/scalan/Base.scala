@@ -1,8 +1,8 @@
 package scalan
 
 import debox.{cfor, Buffer => DBuffer}
-import sigma.core.{AVHashMap, Nullable, RType}
-import sigma.core.OverloadHack.Overloaded1
+import sigma.data.{AVHashMap, Nullable, RType}
+import sigma.data.OverloadHack.Overloaded1
 import sigma.util.StringUtil
 import sigma.reflection.RConstructor
 

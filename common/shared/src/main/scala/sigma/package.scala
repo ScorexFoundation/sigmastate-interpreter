@@ -1,6 +1,6 @@
 
-import sigma.core._
-import sigma.core.RType.SomeType
+import sigma.data._
+import sigma.data.RType.SomeType
 
 import scala.reflect.ClassTag
 
@@ -25,7 +25,7 @@ package object sigma {
 
   implicit val UnitType   : RType[Unit]    = PrimitiveType[Unit](ClassTag.Unit, Array[Unit]()(ClassTag.Unit))
 
-  implicit val StringType : RType[String]  = core.StringType()
+  implicit val StringType : RType[String]  = sigma.data.StringType()
 
   implicit val BigIntRType: RType[BigInt] = GeneralType(BigIntClassTag)
   implicit val GroupElementRType: RType[GroupElement] = GeneralType(GroupElementClassTag)

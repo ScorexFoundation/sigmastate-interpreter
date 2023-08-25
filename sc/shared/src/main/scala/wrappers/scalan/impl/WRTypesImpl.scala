@@ -1,7 +1,7 @@
 package wrappers.scalan
 
 import scala.language.{existentials,implicitConversions}
-import sigma.core.RType
+import sigma.data.RType
 import special.wrappers.WrappersModule
 import special.wrappers.RTypeWrapSpec
 import scala.collection.compat.immutable.ArraySeq

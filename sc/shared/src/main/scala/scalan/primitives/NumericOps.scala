@@ -1,7 +1,7 @@
 package scalan.primitives
 
 import scalan.{Base, Scalan}
-import sigma.core.{ExactIntegral, ExactNumeric}
+import sigma.data.{ExactIntegral, ExactNumeric}
 
 /** Slice in Scala cake with definitions of numeric operations. */
 trait NumericOps extends Base { self: Scalan =>

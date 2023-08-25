@@ -4,7 +4,7 @@ import java.math.BigInteger
 import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
 import org.scalacheck.{Arbitrary, Gen}
-import sigma.core.{ExactIntegral, ExactNumeric, ExactOrdering, RType}
+import sigma.data.{ExactIntegral, ExactNumeric, ExactOrdering, RType}
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
@@ -33,7 +33,7 @@ import org.ergoplatform.ErgoBox.AdditionalRegisters
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen.frequency
 import org.scalatest.{BeforeAndAfterAll, Tag}
-import sigma.core.RType._
+import sigma.data.RType._
 import scorex.util.ModifierId
 import sigmastate.crypto.ProveDHTuple
 import sigmastate.interpreter._

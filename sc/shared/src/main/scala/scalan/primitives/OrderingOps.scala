@@ -1,7 +1,7 @@
 package scalan.primitives
 
 import scalan.{Base, Scalan}
-import sigma.core.ExactOrdering
+import sigma.data.ExactOrdering
 
 import scala.language.implicitConversions
 

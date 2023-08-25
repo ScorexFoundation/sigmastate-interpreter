@@ -2,7 +2,7 @@ package scalan
 
 import scala.language.implicitConversions
 import sigma._
-import sigma.core.{Nullable, RType}
+import sigma.data.{Nullable, RType}
 import special.wrappers.WrappersModule
 import sigma.util.MemoizedFunc
 

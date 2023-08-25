@@ -2,7 +2,7 @@ package sigma.util
 
 import sigma.{BaseNestedTests}
 import debox.{Set => DSet, Buffer => DBuffer}
-import sigma.core.DFunc
+import sigma.data.DFunc
 
 class GraphUtilTests extends BaseNestedTests {
   import GraphUtil._

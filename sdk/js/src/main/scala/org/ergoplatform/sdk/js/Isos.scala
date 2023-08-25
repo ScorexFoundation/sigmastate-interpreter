@@ -5,7 +5,7 @@ import org.ergoplatform.sdk.JavaHelpers.UniversalConverter
 import org.ergoplatform.sdk.{ExtendedInputBox, Iso}
 import org.ergoplatform.sdk.wallet.protocol.context
 import org.ergoplatform._
-import sigma.core.RType
+import sigma.data.RType
 import scorex.crypto.authds.ADKey
 import scorex.util.ModifierId
 import scorex.util.encode.Base16

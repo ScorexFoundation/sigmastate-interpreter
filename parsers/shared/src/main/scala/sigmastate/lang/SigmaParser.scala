@@ -3,7 +3,7 @@ package sigmastate.lang
 import fastparse.internal.Logger
 import sigmastate._
 import Values._
-import sigma.core.Nullable
+import sigma.data.Nullable
 import sigmastate.lang.Terms._
 import sigmastate.lang.syntax.Basic._
 import sigmastate.lang.syntax.{Core, Exprs}

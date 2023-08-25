@@ -4,7 +4,7 @@ import scalan.Scalan
 import debox.{Buffer => DBuffer}
 import sigma.util.GraphUtil
 import debox.cfor
-import sigma.core.{DFunc, Nullable}
+import sigma.data.{DFunc, Nullable}
 import scala.collection.compat.immutable.ArraySeq
 
 trait ProgramGraphs extends AstGraphs { self: Scalan =>

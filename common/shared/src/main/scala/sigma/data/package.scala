@@ -4,7 +4,7 @@ import scala.annotation.nowarn
 import scala.reflect.classTag
 
 /** Contains cores definitions which serves as a basis for [[sigma]] package implementations. */
-package object core {
+package object data {
   /** Shadow the implicit from sigma package so it doesn't interfere with the resolution
     * of ClassTags below.
     */

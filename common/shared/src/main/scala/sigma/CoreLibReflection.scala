@@ -1,6 +1,6 @@
 package sigma
 
-import sigma.core.RType
+import sigma.data.RType
 import sigma.reflection.CommonReflection.registerClassEntry
 import sigma.reflection._
 

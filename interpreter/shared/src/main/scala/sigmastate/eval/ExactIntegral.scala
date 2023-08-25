@@ -1,4 +1,4 @@
-package sigma.core
+package sigma.data
 
 import sigma.util.Extensions.{ByteOps, ShortOps}
 

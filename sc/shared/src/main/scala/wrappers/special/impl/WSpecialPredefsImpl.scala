@@ -5,7 +5,7 @@ import scalan._
 import special.wrappers.WrappersModule
 
 package impl {
-  import sigma.core.Nullable
+  import sigma.data.Nullable
   import sigma.reflection.RClass
 
   // Abs -----------------------------------

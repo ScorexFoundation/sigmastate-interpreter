@@ -3,12 +3,12 @@ package scalan
 import scala.language.implicitConversions
 import scala.annotation.implicitNotFound
 import scala.collection.immutable.ListMap
-import sigma.core.RType._
+import sigma.data.RType._
 
 import scala.collection.mutable
 import debox.cfor
 import scalan.core.{Contravariant, Covariant, Variance}
-import sigma.core.{AVHashMap, Lazy, Nullable, RType}
+import sigma.data.{AVHashMap, Lazy, Nullable, RType}
 import sigma.reflection.{RClass, RConstructor, RMethod}
 import sigma.util.CollectionUtil
 import special.wrappers.WrapSpec
@@ -70,7 +70,7 @@ abstract class TypeDescs extends Base { self: Scalan =>
 
   // TODO optimize performance hot spot (45% of invokeUnlifted time), reduce allocation of Some
   final def getSourceValues(dataEnv: DataEnv, forWrapper: Boolean, stagedValues: AnyRef*): Seq[AnyRef] = {
-    import sigma.core.OverloadHack._
+    import sigma.data.OverloadHack._
     val limit = stagedValues.length
     val res = mutable.ArrayBuilder.make[AnyRef]
     res.sizeHint(limit)

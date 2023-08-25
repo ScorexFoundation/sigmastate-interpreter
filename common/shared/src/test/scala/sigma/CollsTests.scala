@@ -5,7 +5,7 @@ import org.scalatest.exceptions.TestFailedException
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import sigma.core._
+import sigma.data._
 
 import scala.language.existentials
 

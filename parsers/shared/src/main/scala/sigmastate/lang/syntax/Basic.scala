@@ -3,7 +3,7 @@ package sigmastate.lang.syntax
 import fastparse._
 import NoWhitespace._
 import fastparse.CharPredicates._
-import sigma.core.Nullable
+import sigma.data.Nullable
 import sigmastate.lang.SourceContext
 import sigmastate.exceptions.CompilerException
 

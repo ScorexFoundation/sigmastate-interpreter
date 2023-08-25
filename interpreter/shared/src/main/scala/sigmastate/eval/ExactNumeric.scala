@@ -1,6 +1,6 @@
-package sigma.core
+package sigma.data
 
-import sigma.core.ExactIntegral._
+import sigma.data.ExactIntegral._
 
 /** Numeric operations with overflow checks.
   * Raise exception when overflow is detected.

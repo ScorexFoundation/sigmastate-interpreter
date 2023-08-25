@@ -7,7 +7,7 @@ import sigmastate._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.OpCodes
 import org.ergoplatform.ErgoBox.RegisterId
-import sigma.core.RType
+import sigma.data.RType
 import sigmastate.Operations._
 import sigmastate.eval.{Evaluation, SigmaDsl}
 import sigmastate.exceptions.InterpreterException

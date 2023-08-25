@@ -5,7 +5,7 @@ import scalan._
 import debox.{Buffer => DBuffer, Set => DSet}
 import debox.cfor
 import scalan.core.Covariant
-import sigma.core.{AVHashMap, DFunc, Lazy, Nullable, RType}
+import sigma.data.{AVHashMap, DFunc, Lazy, Nullable, RType}
 import sigma.reflection.RClass
 import sigma.util.GraphUtil
 
@@ -82,7 +82,7 @@ trait Thunks extends Functions { self: Scalan =>
 
   /** Implementation of Liftable type class for `Thunk[T]` given liftable for `T`. */
   case class LiftableThunk[ST, T](lT: Liftable[ST, T]) extends Liftable[SThunk[ST], Thunk[T]] {
-    import sigma.core.RType._
+    import sigma.data.RType._
     override def eW: Elem[Thunk[T]] = thunkElement(lT.eW)
     override def sourceType: RType[SThunk[ST]] = {
       implicit val tST = lT.sourceType

@@ -1,6 +1,6 @@
 package scalan
 
-import sigma.core.ExactNumeric
+import sigma.data.ExactNumeric
 
 trait DefRewriting { scalan: Scalan =>
 

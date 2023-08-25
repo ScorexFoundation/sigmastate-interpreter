@@ -3,7 +3,7 @@ package sigmastate.eval
 import debox.{cfor, Buffer => DBuffer}
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.TokenId
-import sigma.core.{Nullable, RType}
+import sigma.data.{Nullable, RType}
 import scorex.util.encode.Base16
 import sigmastate.SType.AnyOps
 import sigmastate.Values.{Constant, ConstantNode}

@@ -7,7 +7,7 @@ import debox.{Buffer => DBuffer}
 
 import scala.language.implicitConversions
 import debox.cfor
-import sigma.core.{Lazy, Nullable, emptyDBufferOfInt}
+import sigma.data.{Lazy, Nullable, emptyDBufferOfInt}
 import sigma.util.GraphUtil
 
 trait Functions extends Base with ProgramGraphs { self: Scalan =>
