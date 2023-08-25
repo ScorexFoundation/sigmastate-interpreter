@@ -1,8 +1,8 @@
 package sigmastate
 
 import org.ergoplatform.ErgoBox.RegisterId
-import sigma.reflection.CommonReflection.registerClassEntry
-import sigma.reflection.{CommonReflection, mkConstructor, mkMethod}
+import sigma.reflection.ReflectionData.registerClassEntry
+import sigma.reflection.{ReflectionData, mkConstructor, mkMethod}
 import sigma.Coll
 import sigma.{AvlTree, SigmaDslBuilder}
 import sigmastate.SAvlTree.KeyValueColl
@@ -21,7 +21,7 @@ import sigmastate.utxo._
   * Only information that is needed at runtime is registered.
   */
 object InterpreterReflection {
-  val reflection = CommonReflection
+  val reflection = ReflectionData
 
   registerClassEntry(classOf[AND],
     constructors = Array(

@@ -21,7 +21,7 @@ class FileUtilTests extends BaseNestedTests {
   }
 
   describe("File traversals") {
-    val root = file("common/shared/src/test/resources/root")
+    val root = file("core/shared/src/test/resources/root")
     val subdir = file(root, "subdir")
     val subsubdir = file(subdir, "subsubdir")
     val empty = { val dir = file(root, "empty"); dir.mkdir(); dir }

@@ -12,7 +12,7 @@ import scala.collection.immutable
   * we register a class entry with the necessary information.
   * Only information that is needed at runtime is registered.
   */
-object CommonReflection {
+object ReflectionData {
   /** Descriptors of classes. */
   val classes = mutable.HashMap.empty[Class[_], SRClass[_]]
 

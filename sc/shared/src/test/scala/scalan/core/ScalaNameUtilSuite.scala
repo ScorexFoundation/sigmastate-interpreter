@@ -1,7 +1,7 @@
 package scalan.core
 
 import sigma.BaseTests
-import sigma.reflection.CommonReflection.registerClassEntry
+import sigma.reflection.ReflectionData.registerClassEntry
 import sigma.reflection.{RClass, mkMethod}
 
 class ScalaNameUtilSuite extends BaseTests {
