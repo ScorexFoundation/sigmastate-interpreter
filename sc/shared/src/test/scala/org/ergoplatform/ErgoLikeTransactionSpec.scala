@@ -11,6 +11,7 @@ import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
+import sigmastate._
 import sigmastate.SType._
 import sigmastate.helpers.TestingHelpers.copyTransaction
 import sigmastate.utils.Helpers

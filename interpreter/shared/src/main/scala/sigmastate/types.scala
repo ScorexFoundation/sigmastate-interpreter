@@ -114,14 +114,6 @@ object SType {
   /** Costructs a collection type with the given type of elements. */
   implicit def typeCollection[V <: SType](implicit tV: V): SCollection[V] = SCollection[V](tV)
 
-  /** RType descriptors for predefined types used in AOTC-based interpreter. */
-  def rtypeToClassTag = ???
-  implicit val SigmaBooleanRType: RType[SigmaBoolean] = RType.fromClassTag(classTag[SigmaBoolean])
-  implicit val ErgoBoxRType: RType[ErgoBox] = RType.fromClassTag(classTag[ErgoBox])
-  implicit val ErgoBoxCandidateRType: RType[ErgoBoxCandidate] = RType.fromClassTag(classTag[ErgoBoxCandidate])
-  implicit val AvlTreeDataRType: RType[AvlTreeData] = GeneralType(classTag[AvlTreeData])
-  implicit val ErgoLikeContextRType: RType[ErgoLikeContext] = RType.fromClassTag(classTag[ErgoLikeContext])
-
   /** Named type variables and parameters used in generic types and method signatures.
     * Generic type terms like `(Coll[IV],(IV) => Boolean) => Boolean` are used to represent
     * method types of `Coll`` and `Option`` types. Each such type is an instance of [[SFunc]].

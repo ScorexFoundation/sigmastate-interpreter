@@ -1,8 +1,25 @@
+import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, ErgoLikeContext}
+import sigma.data.{GeneralType, RType}
 import sigmastate.Values._
 import sigmastate.lang.CheckingSigmaBuilder
 
+import scala.reflect.classTag
+
 package object sigmastate {
   import CheckingSigmaBuilder._
+
+  /** RType descriptors for predefined types used in AOTC-based interpreter. */
+  def rtypeToClassTag = ???
+
+  implicit val SigmaBooleanRType    : RType[SigmaBoolean]     = RType.fromClassTag(classTag[SigmaBoolean])
+
+  implicit val ErgoBoxRType         : RType[ErgoBox]          = RType.fromClassTag(classTag[ErgoBox])
+
+  implicit val ErgoBoxCandidateRType: RType[ErgoBoxCandidate] = RType.fromClassTag(classTag[ErgoBoxCandidate])
+
+  implicit val AvlTreeDataRType     : RType[AvlTreeData]      = GeneralType(classTag[AvlTreeData])
+
+  implicit val ErgoLikeContextRType : RType[ErgoLikeContext]  = RType.fromClassTag(classTag[ErgoLikeContext])
 
   /** Helper method to create "+" operation node. */
   def Plus[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
