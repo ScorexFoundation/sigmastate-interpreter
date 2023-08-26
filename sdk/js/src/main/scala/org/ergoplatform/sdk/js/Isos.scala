@@ -2,7 +2,7 @@ package org.ergoplatform.sdk.js
 
 import org.ergoplatform.ErgoBox._
 import org.ergoplatform.sdk.JavaHelpers.UniversalConverter
-import org.ergoplatform.sdk.{ExtendedInputBox, Iso}
+import org.ergoplatform.sdk.{Iso, ExtendedInputBox}
 import org.ergoplatform.sdk.wallet.protocol.context
 import org.ergoplatform._
 import scalan.RType
@@ -11,20 +11,19 @@ import scorex.util.ModifierId
 import scorex.util.encode.Base16
 import sigmastate.Values.{Constant, GroupElementConstant}
 import sigmastate.eval.Extensions.ArrayOps
-import sigmastate.eval.{CAvlTree, CBigInt, CHeader, CPreHeader, Colls, Digest32Coll, Evaluation}
+import sigmastate.eval.{CBigInt, Digest32Coll, Evaluation, CAvlTree, Colls, CGroupElement, CPreHeader, CHeader}
 import sigmastate.fleetSdkCommon.distEsmTypesBoxesMod.Box
 import sigmastate.fleetSdkCommon.distEsmTypesCommonMod.HexString
 import sigmastate.fleetSdkCommon.distEsmTypesRegistersMod.NonMandatoryRegisters
 import sigmastate.fleetSdkCommon.distEsmTypesTokenMod.TokenAmount
-import sigmastate.fleetSdkCommon.distEsmTypesTransactionsMod.{SignedTransaction, UnsignedTransaction}
-import sigmastate.fleetSdkCommon.{distEsmTypesBoxesMod => boxesMod, distEsmTypesCommonMod => commonMod, distEsmTypesContextExtensionMod => contextExtensionMod, distEsmTypesInputsMod => inputsMod, distEsmTypesProverResultMod => proverResultMod, distEsmTypesRegistersMod => registersMod, distEsmTypesTokenMod => tokenMod}
+import sigmastate.fleetSdkCommon.distEsmTypesTransactionsMod.{UnsignedTransaction, SignedTransaction}
+import sigmastate.fleetSdkCommon.{distEsmTypesProverResultMod => proverResultMod, distEsmTypesContextExtensionMod => contextExtensionMod, distEsmTypesInputsMod => inputsMod, distEsmTypesBoxesMod => boxesMod, distEsmTypesCommonMod => commonMod, distEsmTypesRegistersMod => registersMod, distEsmTypesTokenMod => tokenMod}
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
-import sigmastate.{AvlTreeData, AvlTreeFlags, SType}
+import sigmastate.{AvlTreeData, SType, AvlTreeFlags}
 import special.collection.Coll
 import special.collection.Extensions.CollBytesOps
 import special.sigma
-import special.sigma.GroupElement
 
 import java.math.BigInteger
 import scala.collection.immutable.ListMap
@@ -57,14 +56,23 @@ object Isos {
     override def from(x: Coll[Byte]): String = x.toHex
   }
 
-  val isoStringToGroupElement: Iso[String, GroupElement] = new Iso[String, GroupElement] {
-    override def to(x: String): GroupElement = {
+  val isoStringToGroupElement: Iso[String, sigma.GroupElement] = new Iso[String, sigma.GroupElement] {
+    override def to(x: String): sigma.GroupElement = {
       val bytes = Base16.decode(x).get
       ValueSerializer.deserialize(bytes).asInstanceOf[GroupElementConstant].value
     }
-    override def from(x: GroupElement): String = {
+    override def from(x: sigma.GroupElement): String = {
       val bytes = ValueSerializer.serialize(GroupElementConstant(x))
       Base16.encode(bytes)
+    }
+  }
+
+  val isoGroupElement: Iso[GroupElement, special.sigma.GroupElement] = new Iso[GroupElement, special.sigma.GroupElement] {
+    override def to(x: GroupElement): sigma.GroupElement = {
+      CGroupElement(x.point)
+    }
+    override def from(x: sigma.GroupElement): GroupElement = {
+      new GroupElement(x.asInstanceOf[CGroupElement].wrappedValue)
     }
   }
 
@@ -124,8 +132,8 @@ object Isos {
         nBits = isoBigIntToLong.to(a.nBits),
         height = a.height,
         extensionRoot = isoStringToColl.to(a.extensionRoot),
-        minerPk = isoStringToGroupElement.to(a.minerPk),
-        powOnetimePk = isoStringToGroupElement.to(a.powOnetimePk),
+        minerPk = isoGroupElement.to(a.minerPk),
+        powOnetimePk = isoGroupElement.to(a.powOnetimePk),
         powNonce = isoStringToColl.to(a.powNonce),
         powDistance = isoBigInt.to(a.powDistance),
         votes = isoStringToColl.to(a.votes)
@@ -144,8 +152,8 @@ object Isos {
         nBits = isoBigIntToLong.from(header.nBits),
         height = header.height,
         extensionRoot = isoStringToColl.from(header.extensionRoot),
-        minerPk = isoStringToGroupElement.from(header.minerPk),
-        powOnetimePk = isoStringToGroupElement.from(header.powOnetimePk),
+        minerPk = isoGroupElement.from(header.minerPk),
+        powOnetimePk = isoGroupElement.from(header.powOnetimePk),
         powNonce = isoStringToColl.from(header.powNonce),
         powDistance = isoBigInt.from(header.powDistance),
         votes = isoStringToColl.from(header.votes)
@@ -161,7 +169,7 @@ object Isos {
         timestamp = isoBigIntToLong.to(a.timestamp),
         nBits = isoBigIntToLong.to(a.nBits),
         height = a.height,
-        minerPk = isoStringToGroupElement.to(a.minerPk),
+        minerPk = isoGroupElement.to(a.minerPk),
         votes = isoStringToColl.to(a.votes)
       )
     }
@@ -173,8 +181,41 @@ object Isos {
         timestamp = isoBigIntToLong.from(header.timestamp),
         nBits = isoBigIntToLong.from(header.nBits),
         height = header.height,
-        minerPk = isoStringToGroupElement.from(header.minerPk),
+        minerPk = isoGroupElement.from(header.minerPk),
         votes = isoStringToColl.from(header.votes)
+      )
+    }
+  }
+
+  val isoBlockchainParameters: Iso[BlockchainParameters, sdk.BlockchainParameters] = new Iso[BlockchainParameters, sdk.BlockchainParameters] {
+    override def to(a: BlockchainParameters): sdk.BlockchainParameters = {
+      sdk.BlockchainParameters(
+        storageFeeFactor = a.storageFeeFactor,
+        minValuePerByte = a.minValuePerByte,
+        maxBlockSize = a.maxBlockSize,
+        tokenAccessCost = a.tokenAccessCost,
+        inputCost = a.inputCost,
+        dataInputCost = a.dataInputCost,
+        outputCost = a.outputCost,
+        maxBlockCost = a.maxBlockCost,
+        softForkStartingHeight = Isos.isoUndefOr[Int, Int](Iso.identityIso).to(a.softForkStartingHeight),
+        softForkVotesCollected = Isos.isoUndefOr[Int, Int](Iso.identityIso).to(a.softForkVotesCollected),
+        blockVersion = a.blockVersion
+      )
+    }
+    override def from(b: sdk.BlockchainParameters): BlockchainParameters = {
+      new BlockchainParameters(
+        storageFeeFactor = b.storageFeeFactor,
+        minValuePerByte = b.minValuePerByte,
+        maxBlockSize = b.maxBlockSize,
+        tokenAccessCost = b.tokenAccessCost,
+        inputCost = b.inputCost,
+        dataInputCost = b.dataInputCost,
+        outputCost = b.outputCost,
+        maxBlockCost = b.maxBlockCost,
+        softForkStartingHeight = Isos.isoUndefOr[Int, Int](Iso.identityIso).from(b.softForkStartingHeight),
+        softForkVotesCollected = Isos.isoUndefOr[Int, Int](Iso.identityIso).from(b.softForkVotesCollected),
+        blockVersion = b.blockVersion
       )
     }
   }
