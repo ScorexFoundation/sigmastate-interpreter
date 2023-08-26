@@ -2183,7 +2183,7 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
   def createVerifier(tree: AvlTree, proof: Coll[Byte])(implicit E: ErgoTreeEvaluator) = {
     // the cost of tree reconstruction from proof is O(proof.length)
     E.addSeqCost(CreateAvlVerifier_Info, proof.length) { () =>
-      tree.createVerifier(proof)
+      AvlTreeVerifier(tree, proof)
     }
   }
 

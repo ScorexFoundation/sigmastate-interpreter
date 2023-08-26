@@ -149,22 +149,30 @@ case class CSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[
   override def toString: String = s"SigmaProp(${wrappedValue.showToString})"
 }
 
-/** Implementation of the [[sigma.AvlTreeVerifier]] trait based on
+/** Implements operations of AVL tree verifier based on
   * [[scorex.crypto.authds.avltree.batch.BatchAVLVerifier]].
   *
-  * @see BatchAVLVerifier, AvlTreeVerifier
+  * @see BatchAVLVerifier
   */
-class CAvlTreeVerifier(startingDigest: ADDigest,
+class AvlTreeVerifier(startingDigest: ADDigest,
                        proof: SerializedAdProof,
                        override val keyLength: Int,
                        override val valueLengthOpt: Option[Int])
     extends BatchAVLVerifier[Digest32, Blake2b256.type](
-      startingDigest, proof, keyLength, valueLengthOpt)
-        with AvlTreeVerifier {
-  override def treeHeight: Int = rootNodeHeight
+      startingDigest, proof, keyLength, valueLengthOpt) {
+  def treeHeight: Int = rootNodeHeight
 
   /** Override default logging which outputs stack trace to the console. */
   override protected def logError(t: Throwable): Unit = {}
+}
+object AvlTreeVerifier {
+  def apply(tree: AvlTree, proof: Coll[Byte]): AvlTreeVerifier = {
+    val treeData = tree.asInstanceOf[CAvlTree].treeData
+    val adProof = SerializedAdProof @@ proof.toArray
+    val bv      = new AvlTreeVerifier(
+      ADDigest @@ treeData.digest.toArray, adProof, treeData.keyLength, treeData.valueLengthOpt)
+    bv
+  }
 }
 
 /** A default implementation of [[AvlTree]] interface.
@@ -197,16 +205,9 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
     this.copy(treeData = td)
   }
 
-  override def createVerifier(proof: Coll[Byte]): AvlTreeVerifier = {
-    val adProof = SerializedAdProof @@ proof.toArray
-    val bv = new CAvlTreeVerifier(
-      ADDigest @@ treeData.digest.toArray, adProof, treeData.keyLength, treeData.valueLengthOpt)
-    bv
-  }
-
   override def contains(key: Coll[Byte], proof: Coll[Byte]): Boolean = {
     val keyBytes = key.toArray
-    val bv = createVerifier(proof)
+    val bv = AvlTreeVerifier(this, proof)
     bv.performOneOperation(Lookup(ADKey @@ keyBytes)) match {
       case Success(r) => r match {
         case Some(_) => true
@@ -218,7 +219,7 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
 
   override def get(key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]] = {
     val keyBytes = key.toArray
-    val bv = createVerifier(proof)
+    val bv = AvlTreeVerifier(this, proof)
     bv.performOneOperation(Lookup(ADKey @@ keyBytes)) match {
       case Success(r) => r match {
         case Some(v) => Some(Colls.fromArray(v))
@@ -229,7 +230,7 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
   }
 
   override def getMany(keys: Coll[Coll[Byte]], proof: Coll[Byte]): Coll[Option[Coll[Byte]]] = {
-    val bv = createVerifier(proof)
+    val bv = AvlTreeVerifier(this, proof)
     keys.map { key =>
       bv.performOneOperation(Lookup(ADKey @@ key.toArray)) match {
         case Success(r) => r match {
@@ -245,7 +246,7 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
     if (!isInsertAllowed) {
       None
     } else {
-      val bv = createVerifier(proof)
+      val bv = AvlTreeVerifier(this, proof)
       entries.forall { case (key, value) =>
         val insertRes = bv.performOneOperation(Insert(ADKey @@ key.toArray, ADValue @@ value.toArray))
         if (insertRes.isFailure) {
@@ -264,7 +265,7 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
     if (!isUpdateAllowed) {
       None
     } else {
-      val bv = createVerifier(proof)
+      val bv = AvlTreeVerifier(this, proof)
       operations.forall { case (key, value) =>
         bv.performOneOperation(Update(ADKey @@ key.toArray, ADValue @@ value.toArray)).isSuccess
       }
@@ -279,7 +280,7 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
     if (!isRemoveAllowed) {
       None
     } else {
-      val bv = createVerifier(proof)
+      val bv = AvlTreeVerifier(this, proof)
       cfor(0)(_ < operations.length, _ + 1) { i =>
         val key = operations(i).toArray
         bv.performOneOperation(Remove(ADKey @@ key))

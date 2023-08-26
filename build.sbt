@@ -193,7 +193,7 @@ lazy val core   = crossProject(JVMPlatform, JSPlatform)
   .settings(commonSettings ++ testSettings2,
     commonDependenies2,
     testingDependencies2,
-    scryptoDependency,
+    scorexUtilDependency,
     publish / skip := true
   )
   .jvmSettings( crossScalaSettings )
@@ -220,7 +220,7 @@ lazy val interpreter = crossProject(JVMPlatform, JSPlatform)
     commonSettings ++ testSettings2,
     commonDependenies2,
     testingDependencies2,
-    scorexUtilDependency, fastparseDependency, circeDependency,
+    scorexUtilDependency, fastparseDependency, circeDependency, scryptoDependency,
     publish / skip := true
   )
   .jvmSettings( crossScalaSettings )

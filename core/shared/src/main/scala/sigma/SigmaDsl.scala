@@ -3,10 +3,6 @@ package sigma
 import java.math.BigInteger
 
 import sigma.data._
-import scorex.crypto.authds.{ADDigest, ADValue}
-import scorex.crypto.authds.avltree.batch.Operation
-
-import scala.util.Try
 
 /**
   * All `modQ` operations assume that Q is a global constant (an order of the only one cryptographically strong group
@@ -484,47 +480,14 @@ trait AvlTree {
     */
   def remove(operations: Coll[Coll[Byte]], proof: Coll[Byte]): Option[AvlTree]
 
-  /** Creates a new instance of [[AvlTreeVerifier]] with the given `proof` and using
-    * properties of this AvlTree (digest, keyLength, valueLengthOpt) for constructor
-    * arguments.
-    *
-    * @param proof bytes of the serialized proof which is used to represent the tree.
-    */
-  def createVerifier(proof: Coll[Byte]): AvlTreeVerifier
+//  /** Creates a new instance of [[AvlTreeVerifier]] with the given `proof` and using
+//    * properties of this AvlTree (digest, keyLength, valueLengthOpt) for constructor
+//    * arguments.
+//    *
+//    * @param proof bytes of the serialized proof which is used to represent the tree.
+//    */
+//  def createVerifier(proof: Coll[Byte]): AvlTreeVerifier
 }
-
-/** Represents operations of AVL tree verifier in an abstract (implementation independent)
-  * way which allows declaration of the [[AvlTree.createVerifier()]] method.
-  */
-trait AvlTreeVerifier {
-  /**
-    * If operation.key exists in the tree and the operation succeeds,
-    * returns Success(Some(v)), where v is the value associated with operation.key
-    * before the operation.
-    * If operation.key does not exists in the tree and the operation succeeds, returns Success(None).
-    * Returns Failure if the operation fails or the proof does not verify.
-    * After one failure, all subsequent operations will fail and digest
-    * is None.
-    *
-    * @param operation an operation descriptor
-    * @return - Success(Some(old value)), Success(None), or Failure
-    */
-  def performOneOperation(operation: Operation): Try[Option[ADValue]]
-
-  /** Returns the max height of the tree extracted from the root digest. */
-  def treeHeight: Int
-
-  /**
-    * Returns Some[the current digest of the authenticated data structure],
-    * where the digest contains the root hash and the root height
-    * Returns None if the proof verification failed at construction
-    * or during any of the operations.
-    *
-    * @return - Some[digest] or None
-    */
-  def digest: Option[ADDigest]
-}
-
 
 /** Only header fields that can be predicted by a miner. */
 trait PreHeader {

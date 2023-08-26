@@ -2,7 +2,7 @@ package sigma
 
 import org.scalacheck.util.Buildable
 import org.scalacheck.{Arbitrary, Gen}
-import sigma.data.{CollOverArrayBuilder, RType}
+import sigma.data.RType
 import spire.scalacompat.BuilderCompat
 
 import scala.collection.mutable
