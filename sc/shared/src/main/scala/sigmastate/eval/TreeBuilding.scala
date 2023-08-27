@@ -7,12 +7,11 @@ import sigmastate._
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.ConstantStore
+import sigma.ast._
 
 import scala.collection.mutable.ArrayBuffer
-import SType._
-import sigmastate.crypto.DLogProtocol.ProveDlog
-import sigmastate.crypto.ProveDHTuple
 import sigmastate.lang.Terms
+import sigmastate.serialization.ValueCodes.OpCode
 
 /** Implementation of IR-graph to ErgoTree expression translation.
   * This, in a sense, is inverse to [[GraphBuilding]], however roundtrip identity is not
@@ -273,12 +272,12 @@ trait TreeBuilding extends SigmaLibrary { IR: IRContext =>
         val args = argsSyms.map(_.asInstanceOf[Sym]).map(recurse)
         val col = recurse(colSym).asCollection[SType]
         val colTpe = col.tpe
-        val method = SCollection.methods.find(_.name == m.getName).getOrElse(error(s"unknown method Coll.${m.getName}"))
+        val method = SCollectionMethods.methods.find(_.name == m.getName).getOrElse(error(s"unknown method Coll.${m.getName}"))
         val typeSubst = (method, args) match {
-          case (mth @ SCollection.FlatMapMethod, Seq(f)) =>
+          case (mth @ SCollectionMethods.FlatMapMethod, Seq(f)) =>
             val typeSubst = Map(SCollection.tOV -> f.asFunc.tpe.tRange.asCollection.elemType)
             typeSubst
-          case (mth @ SCollection.ZipMethod, Seq(coll)) =>
+          case (mth @ SCollectionMethods.ZipMethod, Seq(coll)) =>
             val typeSubst = Map(SCollection.tOV -> coll.asCollection[SType].tpe.elemType)
             typeSubst
           case (mth, _) => Terms.EmptySubst

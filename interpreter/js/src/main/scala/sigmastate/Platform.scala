@@ -7,6 +7,7 @@ import sigmastate.Values.{Constant, FalseLeaf, SigmaBoolean, TrueLeaf}
 import sigmastate.eval.SigmaDsl
 import sigmastate.lang.SigmaBuilder
 import sigma.Coll
+import sigma.ast._
 import sigma.{AnyValue, AvlTree, GroupElement, SigmaProp}
 
 import java.math.BigInteger

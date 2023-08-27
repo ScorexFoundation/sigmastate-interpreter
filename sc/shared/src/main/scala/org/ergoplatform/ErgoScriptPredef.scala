@@ -1,9 +1,9 @@
 package org.ergoplatform
 
-import sigmastate.SType
 import sigmastate.lang.SigmaCompiler
 import sigmastate.eval.IRContext
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
+import sigma.ast.SType
 import sigmastate.Values.{SigmaPropValue, Value}
 import sigmastate.lang.Terms.ValueOps
 

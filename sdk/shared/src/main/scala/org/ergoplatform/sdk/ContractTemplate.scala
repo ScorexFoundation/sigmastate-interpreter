@@ -7,6 +7,7 @@ import io.circe.syntax.EncoderOps
 import org.ergoplatform.sdk.utils.SerializationUtils.{parseString, serializeString}
 import org.ergoplatform.sdk.utils.Zero
 import sigma.Evaluation
+import sigma.ast.SType
 import sigma.util.safeNewArray
 import sigmastate.Values.ErgoTree.headerWithVersion
 import sigmastate.Values.{ErgoTree, _}

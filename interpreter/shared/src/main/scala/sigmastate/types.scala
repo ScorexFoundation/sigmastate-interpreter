@@ -240,6 +240,14 @@ trait NumericTypeMethods extends MonoTypeMethods {
     case _ => None  // the method in not numeric type cast
   }
 }
+object NumericTypeMethods {
+  def isCastMethod(numTpe: SNumericType, methodName: String): Boolean = {
+    MethodsContainer.containers.get(numTpe.typeId) match {
+      case Some(m: NumericTypeMethods) => m.isCastMethod(methodName)
+      case _ => false
+    }
+  }
+}
 
 /** Methods of ErgoTree type `Boolean`. */
 case object SBooleanMethods extends MonoTypeMethods {

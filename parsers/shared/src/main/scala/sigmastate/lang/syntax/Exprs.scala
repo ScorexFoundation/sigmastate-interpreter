@@ -2,9 +2,9 @@ package sigmastate.lang.syntax
 
 import fastparse._
 import ScalaWhitespace._
-import sigmastate._
+import sigma.ast._
 import sigmastate.Values._
-import sigmastate.lang.Terms.{Val, Ident, ValueOps}
+import sigmastate.lang.Terms.{Ident, Val, ValueOps}
 import sigmastate.lang._
 import sigmastate.lang.SigmaPredef._
 import sigmastate.lang.syntax.Basic._

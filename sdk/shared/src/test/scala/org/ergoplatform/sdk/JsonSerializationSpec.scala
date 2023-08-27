@@ -9,7 +9,7 @@ import org.scalacheck.Arbitrary.arbitrary
 import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.util.ModifierId
 import scorex.util.encode.Base16
-import sigmastate.{AvlTreeData, SType}
+import sigmastate.AvlTreeData
 import sigmastate.Values.{ByteArrayConstant, ByteConstant, ErgoTree, EvaluatedValue, IntConstant, LongArrayConstant, SigmaPropConstant}
 import sigmastate.crypto.CryptoConstants
 import sigmastate.crypto.DLogProtocol.ProveDlog
@@ -19,8 +19,8 @@ import sigmastate.serialization.SerializationSpecification
 import sigmastate.utils.Helpers.DecoderResultOps  // required for Scala 2.11 (extension method toTry)
 import sigma.Coll
 import sigma.{Header, PreHeader}
-import org.ergoplatform.{DataInput, ErgoBox, ErgoBoxCandidate, ErgoLikeContext, ErgoLikeTransaction, ErgoLikeTransactionTemplate, Input, UnsignedErgoLikeTransaction, UnsignedInput}
-
+import org.ergoplatform.{DataInput, ErgoBox, ErgoLikeContext, ErgoLikeTransaction, ErgoLikeTransactionTemplate, Input, UnsignedErgoLikeTransaction, UnsignedInput}
+import sigma.ast.SType
 import scala.collection.mutable
 
 class JsonSerializationSpec extends SerializationSpecification with JsonCodecs {

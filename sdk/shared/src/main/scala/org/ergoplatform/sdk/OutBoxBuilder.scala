@@ -4,8 +4,8 @@ import org.ergoplatform.ErgoBox.TokenId
 import org.ergoplatform.sdk.JavaHelpers.collRType
 import org.ergoplatform.{ErgoBox, ErgoBoxCandidate}
 import sigma.Colls
+import sigma.ast.SType
 import sigma.data.{RType, SigmaConstants}
-import sigmastate.SType
 import sigmastate.Values.{Constant, ErgoTree, EvaluatedValue}
 
 import scala.collection.mutable.ArrayBuffer
