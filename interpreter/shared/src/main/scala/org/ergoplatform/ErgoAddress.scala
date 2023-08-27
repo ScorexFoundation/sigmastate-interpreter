@@ -2,15 +2,16 @@ package org.ergoplatform
 
 import scorex.utils.Ints
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.encode.Base58
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.crypto.DLogProtocol.{ProveDlogProp, ProveDlog}
+import sigmastate.crypto.DLogProtocol.{ProveDlog, ProveDlogProp}
 import sigmastate.exceptions.SigmaException
 import sigmastate.serialization._
 import sigmastate.utxo.{DeserializeContext, Slice}
 import sigma.Coll
+import sigma.ast.{SInt, SSigmaProp}
 
 import scala.util.Try
 

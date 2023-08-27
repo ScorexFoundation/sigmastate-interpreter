@@ -1,6 +1,7 @@
 package sigmastate.serialization.transformers
 
-import sigmastate.Values.{Value, SValue}
+import sigma.ast.{SNumericType, SType}
+import sigmastate.Values.{SValue, Value}
 import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer

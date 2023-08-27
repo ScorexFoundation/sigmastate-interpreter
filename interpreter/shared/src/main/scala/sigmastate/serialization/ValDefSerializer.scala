@@ -8,6 +8,7 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import ValueSerializer._
 import sigma.util.safeNewArray
 import debox.cfor
+import sigma.ast.{SType, STypeVar}
 
 case class ValDefSerializer(override val opDesc: ValueCompanion) extends ValueSerializer[ValDef] {
 

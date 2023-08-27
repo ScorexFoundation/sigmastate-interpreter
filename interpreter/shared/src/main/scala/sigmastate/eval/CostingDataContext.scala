@@ -2,16 +2,15 @@ package sigmastate.eval
 
 import debox.cfor
 import org.ergoplatform.validation.{SigmaValidationSettings, ValidationRules}
-import org.ergoplatform.{ErgoBox, SigmaConstants}
+import org.ergoplatform.ErgoBox
 import sigma.data.OverloadHack.Overloaded1
-import sigma.data.{CollOverArrayBuilder, RType}
+import sigma.data.{CBigInt, CollOverArrayBuilder, RType, SigmaConstants, WrapperOf}
 import sigma.util.Extensions.BigIntegerOps
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue, SerializedAdProof}
 import scorex.crypto.hash.{Blake2b256, Digest32, Sha256}
 import scorex.utils.{Ints, Longs}
 import sigma.VersionContext
-import sigmastate.SCollection.SByteArray
 import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.Values.{ConstantNode, ErgoTree, EvaluatedValue, SValue, SigmaBoolean}
 import sigmastate._
@@ -24,6 +23,8 @@ import sigmastate.interpreter.Interpreter
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.{GroupElementSerializer, SigmaSerializer}
 import sigma._
+import sigma.ast.SCollection.SByteArray
+import sigma.ast.{SInt, STuple, SType}
 
 import java.math.BigInteger
 import java.util.Arrays
@@ -31,65 +32,9 @@ import scala.annotation.unused
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success}
 
-/** Interface implmented by wrappers to provide access to the underlying wrapped value. */
-trait WrapperOf[T] {
-  /** The data value wrapped by this wrapper. */
-  def wrappedValue: T
-}
 
-/** A default implementation of [[BigInt]] interface.
-  * @see [[BigInt]] for detailed descriptions
-  */
-case class CBigInt(override val wrappedValue: BigInteger) extends BigInt with WrapperOf[BigInteger] {
-  val dsl = CostingSigmaDslBuilder
-  override def toByte : Byte  = wrappedValue.toByteExact
-  override def toShort: Short = wrappedValue.toShortExact
-  override def toInt  : Int   = wrappedValue.toIntExact
-  override def toLong : Long  = wrappedValue.toLongExact
 
-  override def toBytes: Coll[Byte] = dsl.Colls.fromArray(wrappedValue.toByteArray)
 
-  override def toAbs: BigInt = dsl.BigInt(wrappedValue.abs())
-
-  override def compareTo(that: BigInt): Int =
-    wrappedValue.compareTo(that.asInstanceOf[CBigInt].wrappedValue)
-
-  override def toBits: Coll[Boolean] = ???
-
-  override def modQ: BigInt = ???
-
-  override def plusModQ(other: BigInt): BigInt = ???
-
-  override def minusModQ(other: BigInt): BigInt = ???
-
-  override def multModQ(other: BigInt): BigInt = ???
-
-  override def inverseModQ: BigInt = ???
-
-  override def signum: Int = wrappedValue.signum()
-
-  override def add(that: BigInt): BigInt = dsl.BigInt(wrappedValue.add(that.asInstanceOf[CBigInt].wrappedValue).to256BitValueExact)
-
-  override def subtract(that: BigInt): BigInt = dsl.BigInt(wrappedValue.subtract(that.asInstanceOf[CBigInt].wrappedValue).to256BitValueExact)
-
-  override def multiply(that: BigInt): BigInt = dsl.BigInt(wrappedValue.multiply(that.asInstanceOf[CBigInt].wrappedValue).to256BitValueExact)
-
-  override def divide(that: BigInt): BigInt = dsl.BigInt(wrappedValue.divide(that.asInstanceOf[CBigInt].wrappedValue))
-
-  override def mod(m: BigInt): BigInt = dsl.BigInt(wrappedValue.mod(m.asInstanceOf[CBigInt].wrappedValue))
-
-  override def remainder(that: BigInt): BigInt = dsl.BigInt(wrappedValue.remainder(that.asInstanceOf[CBigInt].wrappedValue))
-
-  override def min(that: BigInt): BigInt = dsl.BigInt(wrappedValue.min(that.asInstanceOf[CBigInt].wrappedValue))
-
-  override def max(that: BigInt): BigInt = dsl.BigInt(wrappedValue.max(that.asInstanceOf[CBigInt].wrappedValue))
-
-  override def negate(): BigInt = dsl.BigInt(wrappedValue.negate().to256BitValueExact)
-
-  override def and(that: BigInt): BigInt = dsl.BigInt(wrappedValue.and(that.asInstanceOf[CBigInt].wrappedValue))
-
-  override def or(that: BigInt): BigInt = dsl.BigInt(wrappedValue.or(that.asInstanceOf[CBigInt].wrappedValue))
-}
 
 /** A default implementation of [[GroupElement]] interface.
   * @see [[GroupElement]] for detailed descriptions

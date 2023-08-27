@@ -1,10 +1,10 @@
 package sigmastate.utxo
 
 import sigmastate.serialization.ValueSerializer.getSerializer
-import sigmastate.serialization.OpCodes.OpCode
 import sigma.util.Extensions.ByteOps
 import sigmastate.SMethod
-import sigmastate.serialization.OpCodes
+import sigmastate.serialization.{OpCodes, ValueCodes}
+import sigmastate.serialization.ValueCodes.OpCode
 
 import scala.collection.mutable
 
@@ -51,7 +51,7 @@ object ComplexityTableStat {
       val time = avgTime / 1000
       val ser = getSerializer(opCode)
       val opName = ser.opDesc.typeName
-      (opName, (opCode.toUByte - OpCodes.LastConstantCode).toString, time, item.count.toString)
+      (opName, (opCode.toUByte - ValueCodes.LastConstantCode).toString, time, item.count.toString)
     }.toList.sortBy(_._3)(Ordering[Long].reverse)
 
     val mcLines = mcStat.map { case (id @ (typeId, methodId), item) =>

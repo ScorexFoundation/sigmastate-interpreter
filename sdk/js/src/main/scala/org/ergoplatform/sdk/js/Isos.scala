@@ -5,13 +5,13 @@ import org.ergoplatform.sdk.JavaHelpers.UniversalConverter
 import org.ergoplatform.sdk.{ExtendedInputBox, Iso}
 import org.ergoplatform.sdk.wallet.protocol.context
 import org.ergoplatform._
-import sigma.data.RType
+import sigma.data.{CBigInt, RType}
 import scorex.crypto.authds.ADKey
 import scorex.util.ModifierId
 import scorex.util.encode.Base16
 import sigmastate.Values.{Constant, GroupElementConstant}
 import sigmastate.eval.Extensions.ArrayOps
-import sigmastate.eval.{CAvlTree, CBigInt, CHeader, CPreHeader, Digest32Coll, Evaluation}
+import sigmastate.eval.{CAvlTree, CHeader, CPreHeader, Digest32Coll}
 import sigmastate.fleetSdkCommon.distEsmTypesBoxesMod.Box
 import sigmastate.fleetSdkCommon.distEsmTypesCommonMod.HexString
 import sigmastate.fleetSdkCommon.distEsmTypesRegistersMod.NonMandatoryRegisters
@@ -21,7 +21,7 @@ import sigmastate.fleetSdkCommon.{distEsmTypesBoxesMod => boxesMod, distEsmTypes
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
 import sigmastate.{AvlTreeData, AvlTreeFlags, SType}
-import sigma.{Coll, Colls, GroupElement}
+import sigma.{Coll, Colls, Evaluation, GroupElement}
 import sigma.Extensions.CollBytesOps
 
 import java.math.BigInteger

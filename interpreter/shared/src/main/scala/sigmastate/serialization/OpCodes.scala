@@ -1,23 +1,14 @@
 package sigmastate.serialization
 
-import sigmastate.serialization.OpCodes.OpCode
+import sigma.ast.TypeCodes
+import sigmastate.serialization.ValueCodes.OpCode
 import supertagged.TaggedType
 
-/** Encoding of types for serialization. */
-trait TypeCodes {
-  /** Decoding of types depends on the first byte and in general is a recursive procedure
-    * consuming some number of bytes from Reader.
-    * All data types are recognized by the first byte falling in the region [FirstDataType .. LastDataType] */
-  val FirstDataType: OpCode = OpCode @@ 1.toByte
-  val LastDataType : OpCode = OpCode @@ 111.toByte
-
-  /** SFunc types occupy remaining space of byte values [FirstFuncType .. 255] */
-  val FirstFuncType: OpCode = OpCode @@ (LastDataType + 1).toByte
-  val LastFuncType : OpCode = OpCode @@ 255.toByte
-}
-
 /** Encoding of values for serialization. */
-trait ValueCodes extends TypeCodes {
+object ValueCodes {
+  object OpCode extends TaggedType[Byte]
+  type OpCode = OpCode.Type
+
   /** We use optimized encoding of constant values to save space in serialization.
     * Since Box registers are stored as Constant nodes we save 1 byte for each register.
     * This is due to convention that Value.opCode falling in [1..LastDataType] region is a constant.
@@ -31,7 +22,7 @@ trait ValueCodes extends TypeCodes {
   /** The last constant code is equal to FirstFuncType which represent generic function type.
     * We use this single code to represent all functional constants, since we don't have enough space in single byte.
     * Subsequent bytes have to be read from Reader in order to decode the type of the function and the corresponding data. */
-  val LastConstantCode: OpCode = OpCode @@ (LastDataType + 1).toByte
+  val LastConstantCode: OpCode = OpCode @@ (TypeCodes.LastDataType + 1).toByte
 }
 
 /** The set of all possible IR graph nodes can be split in two subsets:
@@ -52,10 +43,8 @@ trait ValueCodes extends TypeCodes {
   * 1) For validation rule CheckValidOpCode we use OpCodes range, so we use single byte encoding.
   * 2) For CheckCostFuncOperation we use 1-511 range and extended encoding (see docs)
   */
-object OpCodes extends ValueCodes {
-
-  object OpCode extends TaggedType[Byte]
-  type OpCode = OpCode.Type
+object OpCodes {
+  import ValueCodes._
 
   private def newOpCode(shift: Short): OpCode = OpCode @@ (LastConstantCode + shift).toByte
 

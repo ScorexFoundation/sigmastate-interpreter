@@ -1,6 +1,7 @@
 package sigmastate.serialization
 
-import sigmastate.{Values, SType}
+import sigma.ast.SType
+import sigmastate.Values
 import sigmastate.lang.Terms._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.SigmaPropIsProven

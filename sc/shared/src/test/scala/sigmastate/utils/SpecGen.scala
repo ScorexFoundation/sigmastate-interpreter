@@ -2,7 +2,7 @@ package sigmastate.utils
 
 import sigma.util.PrintExtensions.IterableExtensions
 import sigmastate._
-import sigmastate.eval.Evaluation._
+import sigma.Evaluation._
 import sigma.util.Extensions.ByteOps
 import sigma.util.CollectionUtil
 import sigma.util.PrintExtensions._

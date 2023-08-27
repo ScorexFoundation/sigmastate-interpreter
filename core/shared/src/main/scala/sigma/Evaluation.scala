@@ -1,48 +1,16 @@
-package sigmastate.eval
+package sigma
 
-import org.ergoplatform._
-import sigma.data._
-import sigma.data.RType._
-import sigmastate.SType._
-import sigmastate.Values.SigmaBoolean
-import sigmastate._
 import debox.cfor
-import sigmastate.exceptions.CostLimitException
+import sigma.ast.SType
+import sigma.data.RType._
+import sigma.data._
+import sigma.ast._
 
-import scala.reflect.ClassTag
-import scala.util.Try
 
 // TODO refactor: find better place for this methods after code cleanup and repo reorganization
 
 /** Helper methods used as part of ErgoTree evaluation. */
 object Evaluation {
-  import sigma._
-  import sigma._
-
-  def msgCostLimitError(cost: Long, limit: Long) = s"Estimated execution cost $cost exceeds the limit $limit"
-
-  /** Helper method to accumulate cost while checking limit.
-    *
-    * @param current   current cost value
-    * @param delta     additional cost to add to the current value
-    * @param limit     total cost limit
-    * @param msgSuffix use case-specific error message suffix
-    * @return new increased cost when it doesn't exceed the limit
-    * @throws CostLimitException
-    */
-  def addCostChecked(current: Long, delta: Long, limit: Long, msgSuffix: => String = ""): Long = {
-    val newCost = java7.compat.Math.addExact(current, delta)
-    if (newCost > limit) {
-      throw new CostLimitException(
-        estimatedCost = newCost,
-        message = {
-          val suffix = if (msgSuffix.isEmpty) "" else s": $msgSuffix"
-          msgCostLimitError(newCost, limit) + suffix
-        },
-        cause = None)
-    }
-    newCost
-  }
 
   /** Transforms a serializable ErgoTree type descriptor to the corresponding RType descriptor of SigmaDsl,
     * which is used during evaluation.
@@ -101,14 +69,15 @@ object Evaluation {
     case BigIntRType => SBigInt
     case GroupElementRType => SGroupElement
     case AvlTreeRType => SAvlTree
-    case ot: OptionType[_] => sigmastate.SOption(rtypeToSType(ot.tA))
+    case ot: OptionType[_] => SOption(rtypeToSType(ot.tA))
     case BoxRType => SBox
     case ContextRType => SContext
     case SigmaDslBuilderRType => SGlobal
     case HeaderRType => SHeader
     case PreHeaderRType => SPreHeader
     case SigmaPropRType => SSigmaProp
-    case SigmaBooleanRType => SSigmaProp
+    // TODO remove commented code below after full sync test
+    // case SigmaBooleanRType => SSigmaProp  // this is not used in consensus code
     case tup: TupleType => STuple(tup.items.map(t => rtypeToSType(t)))
     case at: ArrayType[_] => SCollection(rtypeToSType(at.tA))
     case ct: CollType[_] => SCollection(rtypeToSType(ct.tItem))
@@ -116,42 +85,6 @@ object Evaluation {
     case pt: PairType[_,_] => STuple(rtypeToSType(pt.tFst), rtypeToSType(pt.tSnd))
     case _ => sys.error(s"Don't know how to convert RType $t to SType")
   }
-
-  /** Tries to reconstruct RType of the given value.
-    * If not successfull returns failure. */
-  def rtypeOf(value: Any): Try[RType[_]] = Try { value match {
-    case arr if arr.getClass.isArray =>
-      val itemClass = arr.getClass.getComponentType
-      if (itemClass.isPrimitive) {
-        val itemTag = ClassTag[Any](itemClass)
-        RType.fromClassTag(itemTag)
-      } else
-        sys.error(s"Cannot compute rtypeOf($value): non-primitive type of array items")
-
-    case coll: Coll[_] => collRType(coll.tItem)
-    
-    // all primitive types
-    case _: Boolean => BooleanType
-    case _: Byte  => ByteType
-    case _: Short => ShortType
-    case _: Int   => IntType
-    case _: Long  => LongType
-    case _: String  => StringType
-    case _: Unit  => UnitType
-    case _: sigma.BigInt => BigIntRType
-    case _: GroupElement => GroupElementRType
-    case _: ErgoBox => ErgoBoxRType  // TODO remove this RType
-    case _: Box => BoxRType
-
-    case _: AvlTreeData => AvlTreeDataRType // TODO remove this RType
-    case _: AvlTree => AvlTreeRType
-
-    case _: SigmaBoolean => SigmaBooleanRType // TODO remove this RType
-    case _: SigmaProp => SigmaPropRType
-    case _: Context => ContextRType
-    case _ =>
-      sys.error(s"Don't know how to compute typeOf($value)")
-  }}
 
   /** Convert SigmaDsl representation of tuple to ErgoTree serializable representation. */
   def fromDslTuple(value: Any, tupleTpe: STuple): Coll[Any] = value match {

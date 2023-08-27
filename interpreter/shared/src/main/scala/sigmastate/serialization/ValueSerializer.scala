@@ -2,12 +2,13 @@ package sigmastate.serialization
 
 import org.ergoplatform.validation.ValidationRules.CheckValidOpCode
 import org.ergoplatform._
+import sigma.ast.SCollection.SByteArray
+import sigma.ast._
 import sigma.util.Extensions.toUByte
-import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.DeserializationSigmaBuilder
-import sigmastate.serialization.OpCodes._
+import sigmastate.serialization.ValueCodes.{LastConstantCode, OpCode}
 import sigmastate.serialization.transformers._
 import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer}
 import sigmastate.utils.SigmaByteWriter.DataInfo
@@ -49,7 +50,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   private val constantSerializer = ConstantSerializer(builder)
   private val constantPlaceholderSerializer = ConstantPlaceholderSerializer(mkConstantPlaceholder)
 
-  val serializers = SparseArrayContainer.buildForSerializers(Seq[ValueSerializer[_ <: Value[SType]]](
+  val serializers = new SparseArrayContainer(Seq[ValueSerializer[_ <: Value[SType]]](
     constantSerializer,
     constantPlaceholderSerializer,
     TupleSerializer(mkTuple),
@@ -158,7 +159,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     LogicalNotSerializer(mkLogicalNot),
     OneArgumentOperationSerializer(Negation, mkNegation[SNumericType]),
     OneArgumentOperationSerializer(BitInversion, mkBitInversion[SNumericType])
-  ))
+  ).map(s => (s.opCode, s)))
 
   private def serializable(v: Value[SType]): Value[SType] = v match {
     case upcast: Upcast[SType, _]@unchecked =>

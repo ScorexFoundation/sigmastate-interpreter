@@ -1,5 +1,7 @@
 package sigmastate
 
+import sigma.ast.SType
+
 import scala.runtime.Statics
 
 /** Cost descriptor of a single operation, usually associated with

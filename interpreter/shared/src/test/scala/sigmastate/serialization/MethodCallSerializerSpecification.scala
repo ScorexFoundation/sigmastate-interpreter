@@ -1,6 +1,7 @@
 package sigmastate.serialization
 
 import org.ergoplatform.Outputs
+import sigma.ast.{SBox, SByte, SCollection}
 import sigmastate.Values.{FuncValue, ValUse}
 import sigmastate.lang.Terms.MethodCall
 import sigmastate.utxo.ExtractScriptBytes
@@ -10,7 +11,7 @@ class MethodCallSerializerSpecification extends SerializationSpecification {
 
   property("MethodCall deserialization round trip") {
     val expr = MethodCall(Outputs,
-      SCollection.FlatMapMethod.withConcreteTypes(Map(SCollection.tIV -> SBox, SCollection.tOV -> SByte)),
+      SCollectionMethods.FlatMapMethod.withConcreteTypes(Map(SCollection.tIV -> SBox, SCollection.tOV -> SByte)),
       Vector(FuncValue(1, SBox, ExtractScriptBytes(ValUse(1, SBox)))),
       Map()
     )
@@ -19,7 +20,7 @@ class MethodCallSerializerSpecification extends SerializationSpecification {
 
   property("MethodCall deserialization round trip (non-generic method)") {
     val expr = MethodCall(Outputs,
-      SCollection.SizeMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
+      SCollectionMethods.SizeMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
       Vector(),
       Map()
     )

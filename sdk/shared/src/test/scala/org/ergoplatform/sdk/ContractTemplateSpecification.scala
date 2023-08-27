@@ -5,11 +5,10 @@ import org.scalatest.compatible.Assertion
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.eval.CBigInt
 import sigmastate.helpers.NegativeTesting
 import sigmastate.serialization.{SerializationSpecification, SigmaSerializer}
 import sigma.ContractsTestkit
-
+import sigma.data.CBigInt
 import java.math.BigInteger
 
 class ContractTemplateSpecification extends SerializationSpecification 

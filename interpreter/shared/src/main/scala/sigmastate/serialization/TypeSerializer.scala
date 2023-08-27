@@ -6,12 +6,13 @@ import sigmastate._
 import sigma.util.safeNewArray
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import debox.cfor
+import sigma.ast.SCollectionType.{CollectionTypeCode, NestedCollectionTypeCode}
+import sigma.ast._
 import sigmastate.exceptions.InvalidTypePrefix
 
 /** Serialization of types according to specification in TypeSerialization.md. */
 object TypeSerializer {
 
-  import sigmastate.SCollectionType._
 
   /** The list of embeddable types, i.e. types that can be combined with type constructor for optimized encoding.
     * For each embeddable type `T`, and type constructor `C`, the type `C[T]` can be represented by single byte. */

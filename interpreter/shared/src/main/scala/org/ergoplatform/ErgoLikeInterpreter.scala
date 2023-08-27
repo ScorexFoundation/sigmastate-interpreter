@@ -1,6 +1,6 @@
 package org.ergoplatform
 
-import sigmastate.SCollection.SByteArray
+import sigma.ast.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter
 import sigmastate.utxo._

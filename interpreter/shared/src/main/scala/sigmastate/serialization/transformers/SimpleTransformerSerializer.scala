@@ -1,12 +1,12 @@
 package sigmastate.serialization.transformers
 
-import sigmastate.SType
-import sigmastate.Values.{Value, SValue}
+import sigma.ast.SType
+import sigmastate.Values.{SValue, Value}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.SigmaByteWriter.DataInfo
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.utxo.{Transformer, SimpleTransformerCompanion}
+import sigmastate.utxo.{SimpleTransformerCompanion, Transformer}
 
 case class SimpleTransformerSerializer[I <: SType, O <: SType]
 (opDesc: SimpleTransformerCompanion,

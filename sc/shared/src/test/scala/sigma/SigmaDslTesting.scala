@@ -23,7 +23,7 @@ import sigmastate.Values.{ByteArrayConstant, Constant, ConstantNode, ErgoTree, I
 import sigmastate.crypto.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate.crypto.SigmaProtocolPrivateInput
 import sigmastate.eval.Extensions._
-import sigmastate.eval.{CompiletimeIRContext, CostingBox, CostingDataContext, Evaluation, IRContext, SigmaDsl}
+import sigmastate.eval.{CompiletimeIRContext, CostingBox, CostingDataContext, IRContext, SigmaDsl}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaPPrint}
 import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}

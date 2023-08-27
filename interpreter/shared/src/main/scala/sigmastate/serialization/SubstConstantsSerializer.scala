@@ -1,11 +1,12 @@
 package sigmastate.serialization
 
-import sigmastate.SCollection.{SIntArray, SByteArray}
+import sigma.ast.SCollection.{SIntArray, SByteArray}
 import sigmastate.Values.{Value, SValue}
 import sigmastate.lang.Terms._
 import sigmastate.utils.SigmaByteWriter.DataInfo
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.{SCollection, SubstConstants, SType}
+import sigma.ast.{SCollection, SType}
+import sigmastate.SubstConstants
 
 object SubstConstantsSerializer extends ValueSerializer[SubstConstants[SType]] {
   import sigmastate.Operations.SubstConstantsInfo._

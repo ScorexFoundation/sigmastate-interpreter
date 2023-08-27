@@ -1,5 +1,6 @@
 package sigmastate.serialization.trees
 
+import sigma.ast.{SBoolean, SType}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.serialization.OpCodes._

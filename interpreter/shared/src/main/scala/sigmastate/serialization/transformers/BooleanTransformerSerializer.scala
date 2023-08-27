@@ -6,7 +6,7 @@ import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.SigmaByteWriter.DataInfo
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.{BooleanTransformer, BooleanTransformerCompanion}
-import sigmastate.{SCollection, SBoolean, SType, SFunc}
+import sigma.ast.{SCollection, SBoolean, SType, SFunc}
 
 case class BooleanTransformerSerializer[T <: SType]
     (opDesc: BooleanTransformerCompanion,

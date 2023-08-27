@@ -2,7 +2,7 @@ package sigmastate.serialization
 
 import org.scalacheck.Arbitrary._
 import org.scalatest.Assertion
-import sigmastate._
+import sigma.ast._
 
 class TypeSerializerSpecification extends SerializationSpecification {
 

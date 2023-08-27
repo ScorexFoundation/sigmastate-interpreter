@@ -5,11 +5,11 @@ import org.ergoplatform.validation.{ValidationException, ValidationRules}
 import org.ergoplatform.{ErgoAddressEncoder, ErgoBox, ErgoLikeContext, Self}
 import sigma.data.RType.asType
 import sigma.data.{Nullable, RType}
-import sigma.VersionContext
+import sigma.{Evaluation, VersionContext}
 import sigmastate.SCollection.{SByteArray, checkValidFlatmap}
 import sigmastate.Values._
 import sigma.VersionContext._
-import sigmastate.eval.{CostingBox, Evaluation, Profiler}
+import sigmastate.eval.{CostingBox, Profiler}
 import sigmastate.exceptions.{CostLimitException, InterpreterException}
 import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}
 import sigmastate.interpreter.{ErgoTreeEvaluator, EvalSettings}

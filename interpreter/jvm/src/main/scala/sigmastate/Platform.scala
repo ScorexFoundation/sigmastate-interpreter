@@ -2,11 +2,12 @@ package sigmastate
 
 import org.ergoplatform.ErgoBox
 import sigma.data.Nullable
-import sigma.VersionContext
+import sigma.{Evaluation, VersionContext}
 import sigmastate.Values.{Constant, FalseLeaf, SigmaBoolean, TrueLeaf}
-import sigmastate.eval.{Evaluation, SigmaDsl}
+import sigmastate.eval.SigmaDsl
 import sigmastate.lang.SigmaBuilder
 import sigma.Coll
+import sigma.ast._
 import sigma.{AvlTree, GroupElement, SigmaProp}
 
 import java.math.BigInteger

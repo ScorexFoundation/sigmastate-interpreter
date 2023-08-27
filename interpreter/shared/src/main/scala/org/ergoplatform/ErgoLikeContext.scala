@@ -1,7 +1,6 @@
 package org.ergoplatform
 
 import org.ergoplatform.validation.SigmaValidationSettings
-import sigmastate.SType._
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval.Extensions._
@@ -10,10 +9,13 @@ import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.interpreter.{ContextExtension, ErgoTreeEvaluator, Interpreter, InterpreterContext}
 import sigmastate.exceptions.InterpreterException
 import sigmastate.serialization.OpCodes
-import sigmastate.serialization.OpCodes.OpCode
 import sigma.Coll
 import sigma.{AnyValue, Header, PreHeader}
 import debox.cfor
+import sigma.ast.{SBox, SCollection, SContext, SFunc, SGlobal, SInt, SType, SUnit}
+import sigma.ast.SType.TypeCode
+import sigma.data.SigmaConstants
+import sigmastate.serialization.ValueCodes.OpCode
 
 /** Represents a script evaluation context to be passed to a prover and a verifier to execute and
   * validate guarding proposition of input boxes of a transaction.
@@ -137,7 +139,7 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
     ErgoLikeContext.copy(this)(spendingTransaction = newSpendingTransaction)
 
   override def toSigmaContext(extensions: Map[Byte, AnyValue] = Map()): sigma.Context = {
-    import Evaluation._
+    import sigma.Evaluation._
 
     def contextVars(m: Map[Byte, AnyValue]): Coll[AnyValue] = {
       val maxKey = if (m.keys.isEmpty) 0 else m.keys.max  // TODO optimize: max takes 90% of this method

@@ -1,5 +1,6 @@
 package sigmastate.serialization.trees
 
+import sigma.ast.SType
 import sigmastate.Values._
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer

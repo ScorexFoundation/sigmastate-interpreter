@@ -2,9 +2,9 @@ package org.ergoplatform.sdk
 
 import org.ergoplatform.ErgoBox.TokenId
 import org.ergoplatform.sdk.JavaHelpers.collRType
-import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, SigmaConstants}
+import org.ergoplatform.{ErgoBox, ErgoBoxCandidate}
 import sigma.Colls
-import sigma.data.RType
+import sigma.data.{RType, SigmaConstants}
 import sigmastate.SType
 import sigmastate.Values.{Constant, ErgoTree, EvaluatedValue}
 

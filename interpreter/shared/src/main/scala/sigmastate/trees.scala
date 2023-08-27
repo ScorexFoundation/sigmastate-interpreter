@@ -1,18 +1,19 @@
 package sigmastate
 
 import debox.{cfor, Map => DMap}
-import org.ergoplatform.SigmaConstants
 import org.ergoplatform.validation.SigmaValidationSettings
 import sigma.data.ExactIntegral._
 import sigma.data.ExactOrdering._
 import sigma.data.OverloadHack.Overloaded1
-import sigma.data.{ExactIntegral, ExactOrdering}
+import sigma.data.{ExactIntegral, ExactOrdering, SigmaConstants}
 import scorex.crypto.hash.{Blake2b256, CryptographicHash32, Sha256}
+import sigma.ast.SCollection
+import sigma.ast.SCollection.{SByteArray, SIntArray}
+import sigma.ast.SOption.SIntOption
 import sigma.{Coll, Colls, GroupElement, SigmaProp, VersionContext}
 import sigmastate.ArithOp.OperationImpl
 import sigmastate.Operations._
-import sigmastate.SCollection.{SByteArray, SIntArray}
-import sigmastate.SOption.SIntOption
+import sigma.ast._
 import sigmastate.Values._
 import sigmastate.eval.Extensions.EvalCollOps
 import sigmastate.eval.NumericOps.{BigIntIsExactIntegral, BigIntIsExactOrdering}
@@ -20,6 +21,7 @@ import sigmastate.eval.SigmaDsl
 import sigmastate.interpreter.ErgoTreeEvaluator
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.serialization.OpCodes._
+import sigmastate.serialization.ValueCodes.OpCode
 import sigmastate.serialization._
 import sigmastate.utxo.{SimpleTransformerCompanion, Transformer}
 
@@ -1464,7 +1466,7 @@ case class TreeLookup(tree: Value[SAvlTree.type],
     key: Value[SByteArray],
     proof: Value[SByteArray]) extends Quadruple[SAvlTree.type, SByteArray, SByteArray, SOption[SByteArray]] {
   override def companion = TreeLookup
-  override def tpe = SOption[SByteArray]
+  override def tpe = SOption[SByteArray](SByteArray)
   override lazy val first = tree
   override lazy val second = key
   override lazy val third = proof
