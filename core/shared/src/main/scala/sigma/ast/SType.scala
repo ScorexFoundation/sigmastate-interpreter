@@ -115,6 +115,32 @@ object SType {
     SGlobal, SHeader, SPreHeader, SAvlTree, SGroupElement, SSigmaProp, SString, SBox,
     SUnit, SAny)
 
+  /** A mapping of object types supporting MethodCall operations. For each serialized
+    * typeId this map contains a companion object which can be used to access the list of
+    * corresponding methods.
+    *
+    * NOTE: in the current implementation only monomorphic methods are supported (without
+    * type parameters)
+    *
+    * NOTE2: in v3.x SNumericType.typeId is silently shadowed by SGlobal.typeId as part of
+    * `toMap` operation. As a result, the methods collected into SByte.methods cannot be
+    * resolved (using SMethod.fromIds()) for all numeric types (SByte, SShort, SInt,
+    * SLong, SBigInt). See the corresponding regression `property("MethodCall on numerics")`.
+    * However, this "shadowing" is not a problem since all casting methods are implemented
+    * via Downcast, Upcast opcodes and the remaining `toBytes`, `toBits` methods are not
+    * implemented at all.
+    * In order to allow MethodCalls on numeric types in future versions the SNumericType.typeId
+    * should be changed and SGlobal.typeId should be preserved. The regression tests in
+    * `property("MethodCall Codes")` should pass.
+    */
+  // TODO v6.0: should contain all numeric types (including also SNumericType)
+  //  to support method calls like 10.toByte which encoded as MethodCall with typeId = 4, methodId = 1
+  //  see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/667
+  lazy val types: Map[Byte, STypeCompanion] = Seq(
+    SBoolean, SNumericType, SString, STuple, SGroupElement, SSigmaProp, SContext, SGlobal, SHeader, SPreHeader,
+    SAvlTree, SBox, SOption, SCollection, SBigInt
+  ).map { t => (t.typeId, t) }.toMap
+
   /** Checks that the type of the value corresponds to the descriptor `tpe`.
     * If the value has complex structure only root type constructor is checked.
     * NOTE, this method is used in ErgoTree evaluation to systematically check that each

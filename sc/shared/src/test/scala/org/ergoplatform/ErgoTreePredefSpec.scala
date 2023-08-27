@@ -8,6 +8,7 @@ import org.scalacheck.Gen
 import scorex.crypto.hash.Blake2b256
 import scorex.util.Random
 import sigma.Colls
+import sigma.ast.SByte
 import sigma.util.BenchmarkUtil.measure
 import sigmastate.Values.{ByteArrayConstant, CollectionConstant, ErgoTree, IntConstant, SigmaPropConstant}
 import sigmastate._

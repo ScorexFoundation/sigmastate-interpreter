@@ -5,19 +5,20 @@ import org.ergoplatform._
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, TestContractSpec}
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue, SerializedAdProof}
-import scorex.crypto.hash.{Digest32, Blake2b256}
-import sigmastate.SCollection.SByteArray
+import scorex.crypto.hash.{Blake2b256, Digest32}
+import sigma.ast.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval.{CSigmaProp, IRContext}
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, CompilerTestingCommons}
+import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.interpreter.ProverResult
 import sigmastate.lang.Terms._
 import sigma.Coll
+import sigma.ast.SAvlTree
 import sigma.{AvlTree, Context}
 
 
@@ -204,7 +205,7 @@ class AVLTreeScriptsSpecification extends CompilerTestingCommons
 
     val propExp = IR.builder.mkMethodCall(
       ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
-      SAvlTree.containsMethod,
+      SAvlTreeMethods.containsMethod,
       IndexedSeq(ByteArrayConstant(key), ByteArrayConstant(proof))
     ).asBoolValue.toSigmaProp
     prop shouldBe propExp
@@ -320,7 +321,7 @@ class AVLTreeScriptsSpecification extends CompilerTestingCommons
 
     val propExp = IR.builder.mkMethodCall(
       ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
-      SAvlTree.containsMethod,
+      SAvlTreeMethods.containsMethod,
       IndexedSeq(ExtractRegisterAs[SByteArray](Self, reg2).get, GetVarByteArray(proofId).get)
     ).asBoolValue.toSigmaProp
     prop shouldBe propExp

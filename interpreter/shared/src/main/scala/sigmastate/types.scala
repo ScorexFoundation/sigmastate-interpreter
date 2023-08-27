@@ -124,6 +124,16 @@ object MethodsContainer {
     SUnitMethods,
     SAnyMethods
   ).map(m => (m.typeId, m)))
+
+  /** Finds the method of the give type.
+    *
+    * @param tpe        type of the object for which the method is looked up
+    * @param methodName name of the method
+    * @return method descriptor or None if not found
+    */
+  def getMethod(tpe: SProduct, methodName: String): Option[SMethod] = {
+    containers.get(tpe.typeCode).flatMap(_.method(methodName))
+  }
 }
 
 trait MonoTypeMethods extends MethodsContainer {
@@ -149,9 +159,18 @@ trait MonoTypeMethods extends MethodsContainer {
         .withInfo(valueCompanion, "")
 }
 
-trait NumericTypeMethods extends MonoTypeMethods {
-  /** Array of all numeric types ordered by number of bytes in the representation. */
-  final val allNumericTypes = Array(SByte, SShort, SInt, SLong, SBigInt)
+trait SNumericTypeMethods extends MonoTypeMethods {
+  import SNumericTypeMethods.tNum
+  protected override def getMethods(): Seq[SMethod] = {
+    super.getMethods() ++ SNumericTypeMethods.methods.map {
+      m => m.copy(stype = Terms.applySubst(m.stype, Map(tNum -> this.ownerType)).asFunc)
+    }
+  }
+}
+
+object SNumericTypeMethods extends MethodsContainer {
+  /** Type for which this container defines methods. */
+  override def ownerType: STypeCompanion = SNumericType
 
   /** Type variable used in generic signatures of method descriptors. */
   val tNum = STypeVar("TNum")
@@ -159,47 +178,53 @@ trait NumericTypeMethods extends MonoTypeMethods {
   /** Cost function which is assigned for numeric cast MethodCall nodes in ErgoTree.
     * It is called as part of MethodCall.eval method. */
   val costOfNumericCast: MethodCostFunc = new MethodCostFunc {
-    override def apply(E: ErgoTreeEvaluator,
-                       mc: MethodCall,
-                       obj: Any,
-                       args: Array[Any]): CostDetails = {
+    override def apply(
+        E: ErgoTreeEvaluator,
+        mc: MethodCall,
+        obj: Any,
+        args: Array[Any]): CostDetails = {
       val targetTpe = mc.method.stype.tRange
-      val cast = getNumericCast(mc.obj.tpe, mc.method.name, targetTpe).get
-      val costKind = if (cast == Downcast) Downcast.costKind else Upcast.costKind
+      val cast      = getNumericCast(mc.obj.tpe, mc.method.name, targetTpe).get
+      val costKind  = if (cast == Downcast) Downcast.costKind else Upcast.costKind
       TracedCost(Array(TypeBasedCostItem(MethodDesc(mc.method), costKind, targetTpe)))
     }
   }
 
   /** The following SMethod instances are descriptors of methods available on all numeric
     * types.
+    *
     * @see `val methods` below
     * */
-  val ToByteMethod: SMethod = SMethod(this, "toByte", SFunc(tNum, SByte), 1, null)
-    .withCost(costOfNumericCast)
-    .withInfo(PropertyCall, "Converts this numeric value to \\lst{Byte}, throwing exception if overflow.")
-  val ToShortMethod: SMethod = SMethod(this, "toShort", SFunc(tNum, SShort), 2, null)
-    .withCost(costOfNumericCast)
-    .withInfo(PropertyCall, "Converts this numeric value to \\lst{Short}, throwing exception if overflow.")
-  val ToIntMethod: SMethod = SMethod(this, "toInt", SFunc(tNum, SInt), 3, null)
-    .withCost(costOfNumericCast)
-    .withInfo(PropertyCall, "Converts this numeric value to \\lst{Int}, throwing exception if overflow.")
-  val ToLongMethod: SMethod = SMethod(this, "toLong", SFunc(tNum, SLong), 4, null)
-    .withCost(costOfNumericCast)
-    .withInfo(PropertyCall, "Converts this numeric value to \\lst{Long}, throwing exception if overflow.")
+  val ToByteMethod  : SMethod = SMethod(this, "toByte", SFunc(tNum, SByte), 1, null)
+      .withCost(costOfNumericCast)
+      .withInfo(PropertyCall, "Converts this numeric value to \\lst{Byte}, throwing exception if overflow.")
+
+  val ToShortMethod : SMethod = SMethod(this, "toShort", SFunc(tNum, SShort), 2, null)
+      .withCost(costOfNumericCast)
+      .withInfo(PropertyCall, "Converts this numeric value to \\lst{Short}, throwing exception if overflow.")
+
+  val ToIntMethod   : SMethod = SMethod(this, "toInt", SFunc(tNum, SInt), 3, null)
+      .withCost(costOfNumericCast)
+      .withInfo(PropertyCall, "Converts this numeric value to \\lst{Int}, throwing exception if overflow.")
+
+  val ToLongMethod  : SMethod = SMethod(this, "toLong", SFunc(tNum, SLong), 4, null)
+      .withCost(costOfNumericCast)
+      .withInfo(PropertyCall, "Converts this numeric value to \\lst{Long}, throwing exception if overflow.")
+
   val ToBigIntMethod: SMethod = SMethod(this, "toBigInt", SFunc(tNum, SBigInt), 5, null)
-    .withCost(costOfNumericCast)
-    .withInfo(PropertyCall, "Converts this numeric value to \\lst{BigInt}")
+      .withCost(costOfNumericCast)
+      .withInfo(PropertyCall, "Converts this numeric value to \\lst{BigInt}")
 
   /** Cost of: 1) creating Byte collection from a numeric value */
   val ToBytes_CostKind = FixedCost(JitCost(5))
 
   val ToBytesMethod: SMethod = SMethod(
     this, "toBytes", SFunc(tNum, SByteArray), 6, ToBytes_CostKind)
-    .withIRInfo(MethodCallIrBuilder)
-    .withInfo(PropertyCall,
-      """ Returns a big-endian representation of this numeric value in a collection of bytes.
-        | For example, the \lst{Int} value \lst{0x12131415} would yield the
-        | collection of bytes \lst{[0x12, 0x13, 0x14, 0x15]}.
+      .withIRInfo(MethodCallIrBuilder)
+      .withInfo(PropertyCall,
+        """ Returns a big-endian representation of this numeric value in a collection of bytes.
+         | For example, the \lst{Int} value \lst{0x12131415} would yield the
+         | collection of bytes \lst{[0x12, 0x13, 0x14, 0x15]}.
           """.stripMargin)
 
   /** Cost of: 1) creating Boolean collection (one bool for each bit) from a numeric
@@ -208,18 +233,18 @@ trait NumericTypeMethods extends MonoTypeMethods {
 
   val ToBitsMethod: SMethod = SMethod(
     this, "toBits", SFunc(tNum, SBooleanArray), 7, ToBits_CostKind)
-    .withIRInfo(MethodCallIrBuilder)
-    .withInfo(PropertyCall,
-      """ Returns a big-endian representation of this numeric in a collection of Booleans.
-        |  Each boolean corresponds to one bit.
+      .withIRInfo(MethodCallIrBuilder)
+      .withInfo(PropertyCall,
+        """ Returns a big-endian representation of this numeric in a collection of Booleans.
+         |  Each boolean corresponds to one bit.
           """.stripMargin)
 
-  protected override def getMethods: Seq[SMethod] = super.getMethods() ++ Array(
-    ToByteMethod,  // see Downcast
-    ToShortMethod,  // see Downcast
-    ToIntMethod,  // see Downcast
-    ToLongMethod,  // see Downcast
-    ToBigIntMethod,  // see Downcast
+  protected override def getMethods: Seq[SMethod] = Array(
+    ToByteMethod, // see Downcast
+    ToShortMethod, // see Downcast
+    ToIntMethod, // see Downcast
+    ToLongMethod, // see Downcast
+    ToBigIntMethod, // see Downcast
     ToBytesMethod,
     ToBitsMethod
   )
@@ -227,26 +252,28 @@ trait NumericTypeMethods extends MonoTypeMethods {
   /** Collection of names of numeric casting methods (like `toByte`, `toInt`, etc). */
   val castMethods: Array[String] =
     Array(ToByteMethod, ToShortMethod, ToIntMethod, ToLongMethod, ToBigIntMethod)
-      .map(_.name)
+        .map(_.name)
 
-  /** Checks the given name is numeric type cast method (like toByte, toInt, etc.).*/
+  /** Checks the given name is numeric type cast method (like toByte, toInt, etc.). */
   def isCastMethod(name: String): Boolean = castMethods.contains(name)
 
   /** Convert the given method to a cast operation from fromTpe to resTpe. */
-  def getNumericCast(fromTpe: SType, methodName: String, resTpe: SType): Option[NumericCastCompanion] = (fromTpe, resTpe) match {
+  def getNumericCast(
+      fromTpe: SType,
+      methodName: String,
+      resTpe: SType): Option[NumericCastCompanion] = (fromTpe, resTpe) match {
     case (from: SNumericType, to: SNumericType) if isCastMethod(methodName) =>
       val op = if (to > from) Upcast else Downcast
       Some(op)
-    case _ => None  // the method in not numeric type cast
+    case _ => None // the method in not numeric type cast
   }
-}
-object NumericTypeMethods {
-  def isCastMethod(numTpe: SNumericType, methodName: String): Boolean = {
-    MethodsContainer.containers.get(numTpe.typeId) match {
-      case Some(m: NumericTypeMethods) => m.isCastMethod(methodName)
-      case _ => false
-    }
-  }
+
+//  def isCastMethod(numTpe: SNumericType, methodName: String): Boolean = {
+//    MethodsContainer.containers.get(numTpe.typeId) match {
+//      case Some(m: SNumericTypeMethods) => m.isCastMethod(methodName)
+//      case _ => false
+//    }
+//  }
 }
 
 /** Methods of ErgoTree type `Boolean`. */
@@ -265,31 +292,31 @@ case object SBooleanMethods extends MonoTypeMethods {
 }
 
 /** Methods of ErgoTree type `Byte`. */
-case object SByteMethods extends NumericTypeMethods {
+case object SByteMethods extends SNumericTypeMethods {
   /** Type for which this container defines methods. */
   override def ownerType: SMonoType = SByte
 }
 
 /** Methods of ErgoTree type `Short`. */
-case object SShortMethods extends NumericTypeMethods {
+case object SShortMethods extends SNumericTypeMethods {
   /** Type for which this container defines methods. */
   override def ownerType: SMonoType = ast.SShort
 }
 
 /** Descriptor of ErgoTree type `Int`. */
-case object SIntMethods extends NumericTypeMethods {
+case object SIntMethods extends SNumericTypeMethods {
   /** Type for which this container defines methods. */
   override def ownerType: SMonoType = SInt
 }
 
 /** Descriptor of ErgoTree type `Long`. */
-case object SLongMethods extends NumericTypeMethods {
+case object SLongMethods extends SNumericTypeMethods {
   /** Type for which this container defines methods. */
   override def ownerType: SMonoType = SLong
 }
 
 /** Methods of BigInt type. Implemented using [[java.math.BigInteger]]. */
-case object SBigIntMethods extends NumericTypeMethods {
+case object SBigIntMethods extends SNumericTypeMethods {
   /** Type for which this container defines methods. */
   override def ownerType: SMonoType = SBigInt
 

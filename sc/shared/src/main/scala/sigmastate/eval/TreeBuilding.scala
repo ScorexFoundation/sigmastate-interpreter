@@ -8,6 +8,8 @@ import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.ConstantStore
 import sigma.ast._
+import sigmastate.crypto.DLogProtocol.ProveDlog
+import sigmastate.crypto.ProveDHTuple
 
 import scala.collection.mutable.ArrayBuffer
 import sigmastate.lang.Terms
@@ -401,10 +403,15 @@ trait TreeBuilding extends SigmaLibrary { IR: IRContext =>
       case Def(MethodCall(objSym, m, argSyms, _)) =>
         val obj = recurse[SType](objSym)
         val args = argSyms.collect { case argSym: Sym => recurse[SType](argSym) }
-        val method = obj.tpe.asProduct.method(m.getName)
-          .getOrElse(error(s"Cannot find method ${m.getName} in object $obj"))
-        val specMethod = method.specializeFor(obj.tpe, args.map(_.tpe))
-        builder.mkMethodCall(obj, specMethod, args.toIndexedSeq, Map())
+        MethodsContainer.containers.get(obj.tpe.typeCode) match {
+          case Some(mc) =>
+            val method = mc.method(m.getName)
+              .getOrElse(error(s"Cannot find method ${m.getName} in object $obj"))
+            val specMethod = method.specializeFor(obj.tpe, args.map(_.tpe))
+            builder.mkMethodCall(obj, specMethod, args.toIndexedSeq, Map())
+          case None =>
+            error(s"Cannot find methods container for type ${obj.tpe}")
+        }
 
       case Def(d) =>
         !!!(s"Don't know how to buildValue($mainG, $s -> $d, $env, $defId)")

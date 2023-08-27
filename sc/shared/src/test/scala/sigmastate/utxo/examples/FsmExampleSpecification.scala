@@ -6,9 +6,10 @@ import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigma.Colls
-import sigmastate.SCollection.SByteArray
+import sigma.ast.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
+import sigma.ast._
 import sigmastate.eval._
 import sigmastate.lang.Terms._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
@@ -89,7 +90,7 @@ class FsmExampleSpecification extends CompilerTestingCommons
     val isMember = OptionIsDefined(
       IR.builder.mkMethodCall(
         OptionGet(ExtractRegisterAs[SAvlTree.type](Self, fsmDescRegister)),
-        SAvlTree.getMethod,
+        SAvlTreeMethods.getMethod,
         IndexedSeq(Append(
           ConcreteCollection.fromItems[SByte.type](
             OptionGet(ExtractRegisterAs[SByte.type](Self, currentStateRegister)),

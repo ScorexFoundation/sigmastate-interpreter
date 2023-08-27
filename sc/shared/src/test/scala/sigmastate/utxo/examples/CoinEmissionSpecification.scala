@@ -3,6 +3,7 @@ package sigmastate.utxo.examples
 import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
 import sigma.Colls
+import sigma.ast.{SBoolean, SBox, SInt, SLong, SOption}
 import sigmastate.Values.{BlockValue, ErgoTree, IntConstant, LongConstant, ValDef, ValUse}
 import sigmastate._
 import sigmastate.eval._

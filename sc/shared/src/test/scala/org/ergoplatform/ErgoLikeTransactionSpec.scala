@@ -4,15 +4,15 @@ import org.ergoplatform.ErgoBox.TokenId
 import org.ergoplatform.settings.ErgoAlgos
 import scorex.util.encode.Base16
 import scorex.util.{Random, ModifierId}
-import sigmastate.SCollection.SByteArray
-import sigmastate.{SSigmaProp, TrivialProp, SType, SPair, SInt}
+import sigma.ast.SCollection.SByteArray
+import sigma.ast.{SSigmaProp, SType, SPair, SInt}
 import sigmastate.Values._
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
-import sigmastate._
-import sigmastate.SType._
+import sigmastate.{TrivialProp, _}
+import sigma.ast.SType._
 import sigmastate.helpers.TestingHelpers.copyTransaction
 import sigmastate.utils.Helpers
 import sigma.SigmaDslTesting

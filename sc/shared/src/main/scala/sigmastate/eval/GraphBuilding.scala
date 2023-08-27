@@ -539,7 +539,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         eval(mkSelectField(tuple.asTuple, index))
 
       case Select(obj, method, Some(tRes: SNumericType))
-            if obj.tpe.isNumType && NumericTypeMethods.isCastMethod(obj.asNumValue.tpe, method) =>
+            if obj.tpe.isNumType && SNumericTypeMethods.isCastMethod(method) =>
         val numValue = obj.asNumValue
         if (numValue.tpe == tRes)
           eval(numValue)

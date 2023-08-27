@@ -5,7 +5,8 @@ import org.ergoplatform.sdk.JavaHelpers.UniversalConverter
 import org.ergoplatform.sdk.{ExtendedInputBox, Iso}
 import org.ergoplatform.sdk.wallet.protocol.context
 import org.ergoplatform._
-import sigma.data.{CBigInt, RType}
+import org.ergoplatform.sdk.Iso.inverseIso
+import sigma.data.{CBigInt, Iso, RType}
 import scorex.crypto.authds.ADKey
 import scorex.util.ModifierId
 import scorex.util.encode.Base16
@@ -20,9 +21,10 @@ import sigmastate.fleetSdkCommon.distEsmTypesTransactionsMod.{SignedTransaction,
 import sigmastate.fleetSdkCommon.{distEsmTypesBoxesMod => boxesMod, distEsmTypesCommonMod => commonMod, distEsmTypesContextExtensionMod => contextExtensionMod, distEsmTypesInputsMod => inputsMod, distEsmTypesProverResultMod => proverResultMod, distEsmTypesRegistersMod => registersMod, distEsmTypesTokenMod => tokenMod}
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
-import sigmastate.{AvlTreeData, AvlTreeFlags, SType}
+import sigmastate.{AvlTreeData, AvlTreeFlags}
 import sigma.{Coll, Colls, Evaluation, GroupElement}
 import sigma.Extensions.CollBytesOps
+import sigma.ast.SType
 
 import java.math.BigInteger
 import scala.collection.immutable.ListMap

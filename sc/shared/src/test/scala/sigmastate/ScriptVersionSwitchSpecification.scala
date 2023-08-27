@@ -6,6 +6,7 @@ import scorex.util.ModifierId
 import sigmastate.Values.ErgoTree.{DefaultHeader, updateVersionBits}
 import sigmastate.Values._
 import sigma.VersionContext.MaxSupportedScriptVersion
+import sigma.ast.{SBoolean, SBox, SCollection, SType}
 import sigmastate.eval._
 import sigmastate.exceptions.InterpreterException
 import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter}

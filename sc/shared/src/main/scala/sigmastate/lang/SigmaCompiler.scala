@@ -12,7 +12,9 @@ import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
 import sigmastate.lang.Terms.MethodCall
 import sigmastate.lang.syntax.ParserException
 import sigmastate.utxo._
-import sigmastate.{Exponentiate, MultiplyGroup, SCollection, SGlobal, SGroupElement, SType, STypeVar, Xor}
+import sigma.ast._
+import sigmastate.SCollectionMethods.{ExistsMethod, ForallMethod, MapMethod}
+import sigmastate.{Exponentiate, MultiplyGroup, SCollectionMethods, SGlobalMethods, SGroupElementMethods, Xor}
 
 /**
   * @param networkPrefix    network prefix to decode an ergo address from string (PK op)
@@ -104,9 +106,9 @@ class SigmaCompiler(settings: CompilerSettings) {
     import SCollection._
     val r = rule[Any]({
       case MultiplyGroup(l, r) =>
-        MethodCall(l, SGroupElement.MultiplyMethod, Vector(r), Map())
+        MethodCall(l, SGroupElementMethods.MultiplyMethod, Vector(r), Map())
       case Exponentiate(l, r) =>
-        MethodCall(l, SGroupElement.ExponentiateMethod, Vector(r), Map())
+        MethodCall(l, SGroupElementMethods.ExponentiateMethod, Vector(r), Map())
       case ForAll(xs, p) =>
         MethodCall(xs, ForallMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType)), Vector(p), Map())
       case Exists(xs, p) =>
@@ -117,21 +119,21 @@ class SigmaCompiler(settings: CompilerSettings) {
           Vector(f), Map())
       case Fold(xs, z, op) =>
         MethodCall(xs,
-          SCollection.FoldMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType, tOV -> z.tpe)),
+          SCollectionMethods.FoldMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType, tOV -> z.tpe)),
           Vector(z, op), Map())
       case Slice(xs, from, until) =>
         MethodCall(xs,
-          SCollection.SliceMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType)),
+          SCollectionMethods.SliceMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType)),
           Vector(from, until), Map())
       case Append(xs, ys) =>
         MethodCall(xs,
-          SCollection.AppendMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType)),
+          SCollectionMethods.AppendMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType)),
           Vector(ys), Map())
       case Xor(l, r) =>
-        MethodCall(Global, SGlobal.xorMethod, Vector(l, r), Map())
+        MethodCall(Global, SGlobalMethods.xorMethod, Vector(l, r), Map())
       case ByIndex(xs, index, Some(default)) =>
         MethodCall(xs,
-          SCollection.GetOrElseMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType)),
+          SCollectionMethods.GetOrElseMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType)),
           Vector(index, default), Map())
     })
     rewrite(everywherebu(r))(expr)

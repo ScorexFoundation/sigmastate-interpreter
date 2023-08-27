@@ -6,9 +6,10 @@ import org.ergoplatform._
 import org.ergoplatform.validation.ValidationException
 import org.scalatest.TryValues._
 import scorex.crypto.hash.Blake2b256
-import sigmastate.SCollection.SByteArray
+import sigma.ast.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
+import sigma.ast._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import sigmastate.interpreter.Interpreter._

@@ -13,6 +13,7 @@ import sigmastate.serialization.OpCodes
 import sigmastate.utils.Helpers
 import sigmastate.utxo.SelectField
 import sigma.SigmaDslTesting
+import sigma.ast._
 
 import java.math.BigInteger
 import scala.collection.mutable.ArrayBuffer
@@ -149,7 +150,7 @@ class SigmaPPrintSpec extends SigmaDslTesting {
     test(
       MethodCall.typed[Value[SCollection[SBox.type]]](
         ValUse(1, SContext),
-        SContext.getMethodByName("dataInputs"),
+        SContextMethods.getMethodByName("dataInputs"),
         Vector(),
         Map()
       ),
@@ -165,7 +166,7 @@ class SigmaPPrintSpec extends SigmaDslTesting {
     test(
       MethodCall.typed[Value[SCollection[SInt.type]]](
         ValUse(1, SCollectionType(SBox)),
-        SCollection.IndicesMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
+        SCollectionMethods.IndicesMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
         Vector(),
         Map()
       ),
