@@ -386,7 +386,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
         case Some(tyDesc) =>
           assert(canHaveMethods, s"Type $tyDesc should NOT have methods")
 
-          val mc = MethodsContainer.containers(tyDesc.typeId)
+          val mc = MethodsContainer(tyDesc.typeId)
           mc.methods.length shouldBe methods.length
           for (expectedMethod <- methods) {
             if (expectedMethod.isResolvableFromIds) {

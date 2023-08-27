@@ -4482,12 +4482,11 @@ class SigmaDslSpecification extends SigmaDslTesting
     val tA = RType[A]
     val typeName = tA.name
     val stypeA = Evaluation.rtypeToSType(tA)
-    val typeCompanion = stypeA.asInstanceOf[STypeCompanion]
-    val mc = MethodsContainer.containers(typeCompanion.typeId)
+    val m = MethodsContainer.getMethod(stypeA, propName).get
     existingFeature(scalaFunc,
       s"{ (x: $typeName) => x.$propName }",
       FuncValue(Vector((1, stypeA)),
-        MethodCall(ValUse(1, stypeA), mc.getMethodByName(propName), Vector(), Map() )
+        MethodCall(ValUse(1, stypeA), m, Vector(), Map() )
       ))
   }
 
@@ -10033,7 +10032,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     // TODO v6.0: Add support of SFunc in TypeSerializer (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/847)
     assertExceptionThrown(
       f.verifyCase(Coll[Int](), Expected(Success(Coll[Int]()), 0)),
-      exceptionLike[MatchError]("(SInt$) => SInt$ (of class sigmastate.SFunc)")
+      exceptionLike[MatchError]("(SInt$) => SInt$ (of class sigma.ast.SFunc)")
     )
   }
 

@@ -87,18 +87,10 @@ class SigmaTyper(val builder: SigmaBuilder,
       val newObj = assignType(env, obj)
       newObj.tpe match {
         case tNewObj: SProduct =>
-          val method = MethodsContainer.containers.get(tNewObj.typeCode) match {
-            case Some(mc) =>
-              val iField = mc.methodIndex(n)
-              if (iField != -1) {
-                mc.methods(iField)
-              } else
-                throw new MethodNotFound(
-                  s"Cannot find method '$n' in in the object $obj of Product type with methods ${mc.methods}", obj.sourceContext.toOption)
-            case None =>
-              throw new MethodNotFound(
-                s"Cannot find methods container for type $tNewObj.", obj.sourceContext.toOption)
-          }
+          val method = MethodsContainer.getMethod(tNewObj, n).getOrElse(
+            throw new MethodNotFound(
+              s"Cannot find method '$n' in in the object $obj of Product type with methods",
+              obj.sourceContext.toOption))
           val tMeth = method.stype
           val tRes = tMeth match {
             case SFunc(args, _, _) =>

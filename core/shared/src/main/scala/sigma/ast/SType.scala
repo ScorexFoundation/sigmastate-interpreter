@@ -782,17 +782,6 @@ object STuple extends STypeCompanion {
   /** Helper factory method. */
   def apply(items: SType*): STuple = STuple(items.toArray)
 
-  private val MaxTupleLength: Int = SigmaConstants.MaxTupleLength.value
-  private val componentNames = Array.tabulate(MaxTupleLength){ i => s"_${i + 1}" }
-
-  /** Returns method name for the tuple component accessor (i.e. `_1`, `_2`, etc.) */
-  def componentNameByIndex(i: Int): String =
-    try componentNames(i)
-    catch {
-      case e: IndexOutOfBoundsException =>
-        throw new IllegalArgumentException(
-          s"Tuple component '_${i+1}' is not defined: valid range (1 .. $MaxTupleLength)", e)
-    }
 }
 
 /** Type descriptor of `Box` type of ErgoTree. */

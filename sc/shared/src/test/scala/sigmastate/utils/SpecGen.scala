@@ -48,7 +48,7 @@ trait SpecGen {
   def collectMethods(): Seq[SMethod] = {
     for {
       tc <- typesWithMethods.sortBy(_.typeId)
-      mc = MethodsContainer.containers(tc.typeId)
+      mc = MethodsContainer(tc.typeId)
       m <- mc.methods.sortBy(_.methodId)
     } yield m
   }
@@ -217,7 +217,7 @@ trait SpecGen {
   }
 
   def printMethods(tc: STypeCompanion) = {
-    val mc = MethodsContainer.containers(tc.typeId)
+    val mc = MethodsContainer(tc.typeId)
     val methodSubsections = for { m <- mc.methods.sortBy(_.methodId) } yield {
       methodSubsection(tc.typeName, m)
     }

@@ -91,11 +91,8 @@ object Terms {
     override def companion = Select
     override val tpe: SType = resType.getOrElse(obj.tpe match {
       case p: SProduct =>
-        MethodsContainer.containers.get(p.typeCode) match {
-          case Some(container) =>
-            val i = container.methodIndex(field)
-            if (i == -1) NoType
-            else container.methods(i).stype
+        MethodsContainer.getMethod(p, field) match {
+          case Some(m) => m.stype
           case None => NoType
         }
       case _ => NoType

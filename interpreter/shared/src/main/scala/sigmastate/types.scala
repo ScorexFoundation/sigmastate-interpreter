@@ -5,30 +5,23 @@ import org.ergoplatform._
 import org.ergoplatform.validation._
 import scorex.crypto.authds.avltree.batch.{Insert, Lookup, Remove, Update}
 import scorex.crypto.authds.{ADKey, ADValue}
+import sigma.ast.SCollection.{SBooleanArray, SBoxArray, SByteArray, SByteArray2, SHeaderArray}
 import sigma.ast.SType.TypeCode
 import sigma.ast._
 import sigma.data.{Nullable, RType, SigmaConstants}
-import sigma.reflection.{RClass, RMethod}
-import sigma.util.Extensions.{IntOps, LongOps, ShortOps}
+import sigma.reflection.RClass
 import sigma.{Coll, _}
-import sigmastate.SMethod.{InvokeDescBuilder, MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
+import sigmastate.SMethod.{MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
 import sigmastate.Values._
-import Evaluation.stypeToRType
-import sigma.ast.SCollection.{SBooleanArray, SBoxArray, SByteArray, SByteArray2, SHeaderArray}
 import sigmastate.eval._
 import sigmastate.interpreter._
+import sigmastate.lang.Terms
 import sigmastate.lang.Terms._
-import sigmastate.lang.{SigmaBuilder, Terms}
-import sigmastate.serialization.OpCodes
 import sigmastate.utils.Overloading.Overload1
-import sigmastate.utxo._
-import sigmastate.lang.Terms._
 import sigmastate.utils.SparseArrayContainer
+import sigmastate.utxo._
 
-import java.math.BigInteger
-import scala.collection.compat.immutable.ArraySeq
 import scala.language.implicitConversions
-import scala.reflect.ClassTag
 import scala.util.{Failure, Success}
 
 /** Base type for all companions of AST nodes of sigma lang. */
@@ -46,6 +39,9 @@ trait MethodByNameUnapply extends MethodsContainer {
 sealed trait MethodsContainer {
   /** Type for which this container defines methods. */
   def ownerType: STypeCompanion
+
+  override def toString: String =
+    getClass.getSimpleName.stripSuffix("$") // e.g. SInt, SCollection, etc
 
   /** Represents class of `this`. */
   lazy val thisRClass: RClass[_] = RClass(this.getClass)
@@ -102,7 +98,7 @@ sealed trait MethodsContainer {
 
 }
 object MethodsContainer {
-  val containers = new SparseArrayContainer[MethodsContainer](Array(
+  private val containers = new SparseArrayContainer[MethodsContainer](Array(
     SByteMethods,
     SShortMethods,
     SIntMethods,
@@ -125,14 +121,21 @@ object MethodsContainer {
     SAnyMethods
   ).map(m => (m.typeId, m)))
 
+  def contains(typeId: TypeCode): Boolean = containers.contains(typeId)
+
+  def apply(typeId: TypeCode): MethodsContainer = containers(typeId)
+
   /** Finds the method of the give type.
     *
     * @param tpe        type of the object for which the method is looked up
     * @param methodName name of the method
     * @return method descriptor or None if not found
     */
-  def getMethod(tpe: SProduct, methodName: String): Option[SMethod] = {
-    containers.get(tpe.typeCode).flatMap(_.method(methodName))
+  def getMethod(tpe: SType, methodName: String): Option[SMethod] = tpe match {
+    case tup: STuple =>
+      STupleMethods.getTupleMethod(tup, methodName)
+    case _ =>
+      containers.get(tpe.typeCode).flatMap(_.method(methodName))
   }
 }
 
@@ -958,6 +961,10 @@ object STupleMethods extends MethodsContainer {
   /** Type for which this container defines methods. */
   override def ownerType: STypeCompanion = STuple
 
+  private val MaxTupleLength: Int = SigmaConstants.MaxTupleLength.value
+
+  private val componentNames = Array.tabulate(MaxTupleLength) { i => s"_${i + 1}" }
+
   /** A list of Coll methods inherited from Coll type and available as method of tuple. */
   lazy val colMethods: Seq[SMethod] = {
     val subst = Map(SType.tIV -> SAny)
@@ -965,6 +972,17 @@ object STupleMethods extends MethodsContainer {
     val activeMethods = Set(1.toByte /*Coll.size*/, 10.toByte /*Coll.apply*/)
     SCollectionMethods.methods.filter(m => activeMethods.contains(m.methodId)).map { m =>
       m.copy(stype = Terms.applySubst(m.stype, subst).asFunc)
+    }
+  }
+
+  def getTupleMethod(tup: STuple, name: String): Option[SMethod] = {
+    colMethods.find(_.name == name).orElse {
+      val iComponent = componentNames.lastIndexOf(name, end = tup.items.length - 1)
+      if (iComponent == -1) None
+      else
+        Some(SMethod(
+          STupleMethods, name, SFunc(tup, tup.items(iComponent)),
+          (iComponent + 1).toByte, SelectField.costKind))
     }
   }
 

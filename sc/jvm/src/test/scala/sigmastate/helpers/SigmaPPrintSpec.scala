@@ -156,7 +156,7 @@ class SigmaPPrintSpec extends SigmaDslTesting {
       ),
       """MethodCall.typed[Value[SCollection[SBox.type]]](
         |  ValUse(1, SContext),
-        |  SContext.getMethodByName("dataInputs"),
+        |  SContextMethods.getMethodByName("dataInputs"),
         |  Vector(),
         |  Map()
         |)""".stripMargin)
@@ -172,7 +172,7 @@ class SigmaPPrintSpec extends SigmaDslTesting {
       ),
       """MethodCall.typed[Value[SCollection[SInt.type]]](
         |  ValUse(1, SCollectionType(SBox)),
-        |  SCollection.getMethodByName("indices").withConcreteTypes(Map(STypeVar("IV") -> SBox)),
+        |  SCollectionMethods.getMethodByName("indices").withConcreteTypes(Map(STypeVar("IV") -> SBox)),
         |  Vector(),
         |  Map()
         |)""".stripMargin)

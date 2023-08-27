@@ -403,14 +403,12 @@ trait TreeBuilding extends SigmaLibrary { IR: IRContext =>
       case Def(MethodCall(objSym, m, argSyms, _)) =>
         val obj = recurse[SType](objSym)
         val args = argSyms.collect { case argSym: Sym => recurse[SType](argSym) }
-        MethodsContainer.containers.get(obj.tpe.typeCode) match {
-          case Some(mc) =>
-            val method = mc.method(m.getName)
-              .getOrElse(error(s"Cannot find method ${m.getName} in object $obj"))
+        MethodsContainer.getMethod(obj.tpe, m.getName) match {
+          case Some(method) =>
             val specMethod = method.specializeFor(obj.tpe, args.map(_.tpe))
             builder.mkMethodCall(obj, specMethod, args.toIndexedSeq, Map())
           case None =>
-            error(s"Cannot find methods container for type ${obj.tpe}")
+            error(s"Cannot find method ${m.getName} in object $obj")
         }
 
       case Def(d) =>

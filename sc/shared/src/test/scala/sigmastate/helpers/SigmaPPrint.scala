@@ -212,12 +212,12 @@ object SigmaPPrint extends PPrinter {
       Tree.Literal(s"FuncValue.AddToEnvironmentDesc")
     case MethodDesc(method) =>
       Tree.Apply("MethodDesc", Seq(methodLiteral(method)).iterator)
-    case sigmastate.SGlobalMethods =>
-      Tree.Literal(s"SGlobalMethods")
-    case sigmastate.SCollectionMethods =>
-      Tree.Literal(s"SCollectionMethods")
-    case sigmastate.SOptionMethods =>
-      Tree.Literal(s"SOptionMethods")
+    case SGlobal =>
+      Tree.Literal(s"SGlobal")
+    case SCollection =>
+      Tree.Literal(s"SCollection")
+    case SOption =>
+      Tree.Literal(s"SOption")
     case t: STypeCompanion if t.isInstanceOf[SType] =>
       Tree.Literal(s"S${t.typeName}")
     case c: ValueCompanion =>

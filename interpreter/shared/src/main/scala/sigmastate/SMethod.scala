@@ -315,9 +315,9 @@ object SMethod {
     *            `parse` method and hence it is part of consensus protocol
     */
   def fromIds(typeId: Byte, methodId: Byte): SMethod = {
-    ValidationRules.CheckTypeWithMethods(typeId, MethodsContainer.containers.contains(typeId))
-    val methods = MethodsContainer.containers(typeId)
-    val method = methods.methodById(methodId)
+    ValidationRules.CheckTypeWithMethods(typeId, MethodsContainer.contains(typeId))
+    val container = MethodsContainer(typeId)
+    val method = container.methodById(methodId)
     method
   }
 }
