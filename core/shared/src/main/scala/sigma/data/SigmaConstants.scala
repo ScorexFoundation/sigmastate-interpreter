@@ -1,5 +1,7 @@
 package sigma.data
 
+import sigma.util.CollectionUtil.TraversableOps // used in Scala 2.11
+
 /** Descriptor of a constant which represents some size value.
   * @tparam T type of the constant value
   * @param value value of the constant

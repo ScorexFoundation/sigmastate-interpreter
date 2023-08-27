@@ -13,7 +13,7 @@ import sigma.Coll
 import sigma.{AnyValue, Header, PreHeader}
 import debox.cfor
 import sigma.ast.{SBox, SCollection, SContext, SFunc, SGlobal, SInt, SType, SUnit}
-import sigma.ast.SType.TypeCode
+import sigma.ast.SType.{TypeCode, AnyOps}
 import sigma.data.SigmaConstants
 import sigmastate.serialization.ValueCodes.OpCode
 

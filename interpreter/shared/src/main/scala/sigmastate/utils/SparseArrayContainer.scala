@@ -1,5 +1,9 @@
 package sigmastate.utils
 
+import sigma.ast.SType
+import sigmastate.Values.Value
+import sigmastate.serialization.ValueSerializer
+
 import scala.reflect.ClassTag
 
 /**
@@ -62,3 +66,9 @@ class SparseArrayContainer[T: ClassTag](values: Seq[(Byte, T)]) {
   }
 }
 
+object SparseArrayContainer {
+  /**  Build a container for the given serializers. */
+  def buildForSerializers(sers: Seq[ValueSerializer[_ <: Value[SType]]]): SparseArrayContainer[ValueSerializer[_ <: Value[SType]]] = {
+    new SparseArrayContainer(sers.map(s => (s.opCode, s)))
+  }
+}
