@@ -381,14 +381,6 @@ object InterpreterReflection {
     )
   }
 
-  registerClassEntry(classOf[SCollectionType[_]],
-    constructors = Array(
-      mkConstructor(Array(classOf[SType])) { args =>
-        new SCollectionType(args(0).asInstanceOf[SType])
-      }
-    )
-  )
-
   { val clazz = SGlobalMethods.getClass
     registerClassEntry(clazz,
       methods = Map(
@@ -401,22 +393,6 @@ object InterpreterReflection {
       )
     )
   }
-
-  registerClassEntry(classOf[SOption[_]],
-    constructors = Array(
-      mkConstructor(Array(classOf[SType])) { args =>
-        new SOption(args(0).asInstanceOf[SType])
-      }
-    )
-  )
-
-  registerClassEntry(classOf[STuple],
-    constructors = Array(
-      mkConstructor(Array(classOf[IndexedSeq[_]])) { args =>
-        new STuple(args(0).asInstanceOf[IndexedSeq[SType]])
-      }
-    )
-  )
 
   registerClassEntry(classOf[SigmaAnd],
     constructors = Array(
