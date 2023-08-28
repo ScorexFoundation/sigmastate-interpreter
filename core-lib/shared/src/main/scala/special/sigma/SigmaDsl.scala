@@ -566,7 +566,7 @@ trait Header {
   /** Hash of ADProofs for transactions in a block */
   def ADProofsRoot: Coll[Byte] // Digest32. Can we build AvlTree out of it?
 
-  /** AvlTree) of a state after block application */
+  /** AvlTree of a state after block application */
   def stateRoot: AvlTree
 
   /** Root hash (for a Merkle tree) of transactions in a block. */
