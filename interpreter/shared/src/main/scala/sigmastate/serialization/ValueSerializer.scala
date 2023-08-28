@@ -357,7 +357,6 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     }
   }
 
-  // TODO v5.x: control maxTreeDepth same as in deserialize (see Reader.level property and SigmaSerializer.MaxTreeDepth)
   override def serialize(v: Value[SType], w: SigmaByteWriter): Unit = serializable(v) match {
     case c: Constant[SType] =>
       w.constantExtractionStore match {
