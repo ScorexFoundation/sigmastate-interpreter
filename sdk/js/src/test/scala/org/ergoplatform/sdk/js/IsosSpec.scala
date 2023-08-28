@@ -1,18 +1,17 @@
 package org.ergoplatform.sdk.js
 
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, BoxId, TokenId}
-import org.ergoplatform.sdk.{ExtendedInputBox, Iso}
 import org.ergoplatform._
-import org.ergoplatform.sdk.wallet.protocol.context.{CErgoLikeStateContext, ErgoLikeStateContext}
+import org.ergoplatform.sdk.wallet.protocol.context.BlockchainStateContext
+import org.ergoplatform.sdk.{ExtendedInputBox, Iso}
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import scorex.crypto.authds.ADDigest
 import sigmastate.SType
 import sigmastate.Values.Constant
 import sigmastate.eval.Colls
-import sigmastate.interpreter.ContextExtension
+import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.generators.ObjectGenerators
 import special.collection.Coll
 import special.sigma
@@ -27,19 +26,18 @@ class IsosSpec  extends AnyPropSpec with Matchers with ObjectGenerators with Sca
     extension <- contextExtensionGen
   } yield ExtendedInputBox(box, extension)
 
-  lazy val ergoLikeStateContextGen: Gen[ErgoLikeStateContext] = for {
+  lazy val blockchainStateContextGen: Gen[BlockchainStateContext] = for {
     stateRoot <- avlTreeGen
     headers <- headersGen(stateRoot)
     preHeader <- preHeaderGen(headers.headOption.map(_.id).getOrElse(modifierIdBytesGen.sample.get))
-  } yield CErgoLikeStateContext(
+  } yield BlockchainStateContext(
       sigmaLastHeaders = Colls.fromItems(headers:_*),
       previousStateDigest = stateRoot.digest,
       sigmaPreHeader = preHeader
     )
 
   def roundtrip[A,B](iso: Iso[A,B])(b: B): Unit = {
-    val invIso = iso.inverse
-    invIso.from(invIso.to(b)) shouldBe b
+    iso.to(iso.from(b)) shouldBe b
   }
 
   override implicit val generatorDrivenConfig: PropertyCheckConfiguration = PropertyCheckConfiguration(minSuccessful = 30)
@@ -93,7 +91,7 @@ class IsosSpec  extends AnyPropSpec with Matchers with ObjectGenerators with Sca
   }
 
   property("Iso.isoBlockchainStateContext") {
-    forAll(ergoLikeStateContextGen) { (c: ErgoLikeStateContext) =>
+    forAll(blockchainStateContextGen) { (c: BlockchainStateContext) =>
       roundtrip(Isos.isoBlockchainStateContext)(c)
     }
   }
@@ -104,9 +102,21 @@ class IsosSpec  extends AnyPropSpec with Matchers with ObjectGenerators with Sca
     }
   }
 
+  property("Iso.isoProverResult") {
+    forAll { (c: ProverResult) =>
+      roundtrip(Isos.isoProverResult)(c)
+    }
+  }
+
   property("Iso.isoUnsignedInput") {
     forAll { (c: UnsignedInput) =>
       roundtrip(Isos.isoUnsignedInput)(c)
+    }
+  }
+
+  property("Iso.isoSignedInput") {
+    forAll { (c: Input) =>
+      roundtrip(Isos.isoSignedInput)(c)
     }
   }
 
@@ -165,12 +175,6 @@ class IsosSpec  extends AnyPropSpec with Matchers with ObjectGenerators with Sca
     }
   }
 
-  ignore("Iso.isoUnsignedTransaction") {
-    forAll { (tx: UnsignedErgoLikeTransaction) =>
-      roundtrip(Isos.isoUnsignedTransaction)(tx)
-    }
-  }
-
   property("Iso.isoBox") {
     forAll { (b: ErgoBox) =>
       roundtrip(Isos.isoBox)(b)
@@ -183,4 +187,15 @@ class IsosSpec  extends AnyPropSpec with Matchers with ObjectGenerators with Sca
     }
   }
 
+  property("Iso.isoUnsignedTransaction") {
+    forAll { (tx: UnsignedErgoLikeTransaction) =>
+      roundtrip(Isos.isoUnsignedTransaction)(tx)
+    }
+  }
+
+  property("Iso.isoSignedTransaction") {
+    forAll { (tx: ErgoLikeTransaction) =>
+      roundtrip(Isos.isoSignedTransaction)(tx)
+    }
+  }
 }

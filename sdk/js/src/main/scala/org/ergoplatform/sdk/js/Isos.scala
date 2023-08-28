@@ -2,8 +2,8 @@ package org.ergoplatform.sdk.js
 
 import org.ergoplatform.ErgoBox._
 import org.ergoplatform.sdk.JavaHelpers.UniversalConverter
-import org.ergoplatform.sdk.wallet.protocol.context.{CErgoLikeStateContext, ErgoLikeStateContext}
-import org.ergoplatform.sdk.{ExtendedInputBox, Iso}
+import org.ergoplatform.sdk.{Iso, ExtendedInputBox}
+import org.ergoplatform.sdk.wallet.protocol.context
 import org.ergoplatform._
 import scalan.RType
 import scorex.crypto.authds.ADKey
@@ -11,20 +11,19 @@ import scorex.util.ModifierId
 import scorex.util.encode.Base16
 import sigmastate.Values.{Constant, GroupElementConstant}
 import sigmastate.eval.Extensions.ArrayOps
-import sigmastate.eval.{CAvlTree, CBigInt, CHeader, CPreHeader, Colls, Digest32Coll, Evaluation}
+import sigmastate.eval.{CBigInt, Digest32Coll, Evaluation, CAvlTree, Colls, CGroupElement, CPreHeader, CHeader}
 import sigmastate.fleetSdkCommon.distEsmTypesBoxesMod.Box
 import sigmastate.fleetSdkCommon.distEsmTypesCommonMod.HexString
 import sigmastate.fleetSdkCommon.distEsmTypesRegistersMod.NonMandatoryRegisters
 import sigmastate.fleetSdkCommon.distEsmTypesTokenMod.TokenAmount
-import sigmastate.fleetSdkCommon.distEsmTypesTransactionsMod.UnsignedTransaction
-import sigmastate.fleetSdkCommon.{distEsmTypesBoxesMod => boxesMod, distEsmTypesCommonMod => commonMod, distEsmTypesContextExtensionMod => contextExtensionMod, distEsmTypesInputsMod => inputsMod, distEsmTypesRegistersMod => registersMod, distEsmTypesTokenMod => tokenMod}
-import sigmastate.interpreter.ContextExtension
+import sigmastate.fleetSdkCommon.distEsmTypesTransactionsMod.{UnsignedTransaction, SignedTransaction}
+import sigmastate.fleetSdkCommon.{distEsmTypesProverResultMod => proverResultMod, distEsmTypesContextExtensionMod => contextExtensionMod, distEsmTypesInputsMod => inputsMod, distEsmTypesBoxesMod => boxesMod, distEsmTypesCommonMod => commonMod, distEsmTypesRegistersMod => registersMod, distEsmTypesTokenMod => tokenMod}
+import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
-import sigmastate.{AvlTreeData, AvlTreeFlags, SType}
+import sigmastate.{AvlTreeData, SType, AvlTreeFlags}
 import special.collection.Coll
 import special.collection.Extensions.CollBytesOps
 import special.sigma
-import special.sigma.GroupElement
 
 import java.math.BigInteger
 import scala.collection.immutable.ListMap
@@ -57,14 +56,23 @@ object Isos {
     override def from(x: Coll[Byte]): String = x.toHex
   }
 
-  val isoStringToGroupElement: Iso[String, GroupElement] = new Iso[String, GroupElement] {
-    override def to(x: String): GroupElement = {
+  val isoStringToGroupElement: Iso[String, sigma.GroupElement] = new Iso[String, sigma.GroupElement] {
+    override def to(x: String): sigma.GroupElement = {
       val bytes = Base16.decode(x).get
       ValueSerializer.deserialize(bytes).asInstanceOf[GroupElementConstant].value
     }
-    override def from(x: GroupElement): String = {
+    override def from(x: sigma.GroupElement): String = {
       val bytes = ValueSerializer.serialize(GroupElementConstant(x))
       Base16.encode(bytes)
+    }
+  }
+
+  val isoGroupElement: Iso[GroupElement, special.sigma.GroupElement] = new Iso[GroupElement, special.sigma.GroupElement] {
+    override def to(x: GroupElement): sigma.GroupElement = {
+      CGroupElement(x.point)
+    }
+    override def from(x: sigma.GroupElement): GroupElement = {
+      new GroupElement(x.asInstanceOf[CGroupElement].wrappedValue)
     }
   }
 
@@ -124,8 +132,8 @@ object Isos {
         nBits = isoBigIntToLong.to(a.nBits),
         height = a.height,
         extensionRoot = isoStringToColl.to(a.extensionRoot),
-        minerPk = isoStringToGroupElement.to(a.minerPk),
-        powOnetimePk = isoStringToGroupElement.to(a.powOnetimePk),
+        minerPk = isoGroupElement.to(a.minerPk),
+        powOnetimePk = isoGroupElement.to(a.powOnetimePk),
         powNonce = isoStringToColl.to(a.powNonce),
         powDistance = isoBigInt.to(a.powDistance),
         votes = isoStringToColl.to(a.votes)
@@ -144,8 +152,8 @@ object Isos {
         nBits = isoBigIntToLong.from(header.nBits),
         height = header.height,
         extensionRoot = isoStringToColl.from(header.extensionRoot),
-        minerPk = isoStringToGroupElement.from(header.minerPk),
-        powOnetimePk = isoStringToGroupElement.from(header.powOnetimePk),
+        minerPk = isoGroupElement.from(header.minerPk),
+        powOnetimePk = isoGroupElement.from(header.powOnetimePk),
         powNonce = isoStringToColl.from(header.powNonce),
         powDistance = isoBigInt.from(header.powDistance),
         votes = isoStringToColl.from(header.votes)
@@ -161,7 +169,7 @@ object Isos {
         timestamp = isoBigIntToLong.to(a.timestamp),
         nBits = isoBigIntToLong.to(a.nBits),
         height = a.height,
-        minerPk = isoStringToGroupElement.to(a.minerPk),
+        minerPk = isoGroupElement.to(a.minerPk),
         votes = isoStringToColl.to(a.votes)
       )
     }
@@ -173,22 +181,55 @@ object Isos {
         timestamp = isoBigIntToLong.from(header.timestamp),
         nBits = isoBigIntToLong.from(header.nBits),
         height = header.height,
-        minerPk = isoStringToGroupElement.from(header.minerPk),
+        minerPk = isoGroupElement.from(header.minerPk),
         votes = isoStringToColl.from(header.votes)
       )
     }
   }
 
-  implicit val isoBlockchainStateContext: Iso[BlockchainStateContext, ErgoLikeStateContext] = new Iso[BlockchainStateContext, ErgoLikeStateContext] {
-    override def to(a: BlockchainStateContext): ErgoLikeStateContext = {
-      CErgoLikeStateContext(
+  val isoBlockchainParameters: Iso[BlockchainParameters, sdk.BlockchainParameters] = new Iso[BlockchainParameters, sdk.BlockchainParameters] {
+    override def to(a: BlockchainParameters): sdk.BlockchainParameters = {
+      sdk.BlockchainParameters(
+        storageFeeFactor = a.storageFeeFactor,
+        minValuePerByte = a.minValuePerByte,
+        maxBlockSize = a.maxBlockSize,
+        tokenAccessCost = a.tokenAccessCost,
+        inputCost = a.inputCost,
+        dataInputCost = a.dataInputCost,
+        outputCost = a.outputCost,
+        maxBlockCost = a.maxBlockCost,
+        softForkStartingHeight = Isos.isoUndefOr[Int, Int](Iso.identityIso).to(a.softForkStartingHeight),
+        softForkVotesCollected = Isos.isoUndefOr[Int, Int](Iso.identityIso).to(a.softForkVotesCollected),
+        blockVersion = a.blockVersion
+      )
+    }
+    override def from(b: sdk.BlockchainParameters): BlockchainParameters = {
+      new BlockchainParameters(
+        storageFeeFactor = b.storageFeeFactor,
+        minValuePerByte = b.minValuePerByte,
+        maxBlockSize = b.maxBlockSize,
+        tokenAccessCost = b.tokenAccessCost,
+        inputCost = b.inputCost,
+        dataInputCost = b.dataInputCost,
+        outputCost = b.outputCost,
+        maxBlockCost = b.maxBlockCost,
+        softForkStartingHeight = Isos.isoUndefOr[Int, Int](Iso.identityIso).from(b.softForkStartingHeight),
+        softForkVotesCollected = Isos.isoUndefOr[Int, Int](Iso.identityIso).from(b.softForkVotesCollected),
+        blockVersion = b.blockVersion
+      )
+    }
+  }
+
+  implicit val isoBlockchainStateContext: Iso[BlockchainStateContext, context.BlockchainStateContext] = new Iso[BlockchainStateContext, context.BlockchainStateContext] {
+    override def to(a: BlockchainStateContext): context.BlockchainStateContext = {
+      context.BlockchainStateContext(
         sigmaLastHeaders = isoArrayToColl(isoHeader).to(a.sigmaLastHeaders),
         previousStateDigest = isoStringToColl.to(a.previousStateDigest),
         sigmaPreHeader = isoPreHeader.to(a.sigmaPreHeader)
       )
     }
 
-    override def from(b: ErgoLikeStateContext): BlockchainStateContext = {
+    override def from(b: context.BlockchainStateContext): BlockchainStateContext = {
       new BlockchainStateContext(
         sigmaLastHeaders = isoArrayToColl(isoHeader).from(b.sigmaLastHeaders),
         previousStateDigest = isoStringToColl.from(b.previousStateDigest),
@@ -200,7 +241,7 @@ object Isos {
   implicit val isoContextExtension: Iso[contextExtensionMod.ContextExtension, ContextExtension] = new Iso[contextExtensionMod.ContextExtension, ContextExtension] {
     override def to(x: contextExtensionMod.ContextExtension): ContextExtension = {
       var map = new ListMap[Byte, Constant[SType]]()
-      val keys = js.Object.keys(x)
+      val keys = js.Object.keys(x).sorted
       for ( k <- keys ) {
         val id = k.toInt.toByte
         val c = isoHexStringToConstant.to(x.apply(id).get.get)
@@ -225,6 +266,28 @@ object Isos {
 
     override def from(x: UnsignedInput): inputsMod.UnsignedInput =
       inputsMod.UnsignedInput(x.boxId.convertTo[boxesMod.BoxId], isoContextExtension.from(x.extension))
+  }
+
+  implicit val isoProverResult: Iso[proverResultMod.ProverResult, ProverResult] = new Iso[proverResultMod.ProverResult, ProverResult] {
+    override def to(a: proverResultMod.ProverResult): ProverResult = {
+      ProverResult(
+        proof = isoStringToArray.to(a.proofBytes),
+        extension = isoContextExtension.to(a.extension)
+      )
+    }
+    override def from(b: ProverResult): proverResultMod.ProverResult = {
+      proverResultMod.ProverResult(
+        isoContextExtension.from(b.extension),
+        isoStringToArray.from(b.proof)
+      )
+    }
+  }
+
+  implicit val isoSignedInput: Iso[inputsMod.SignedInput, Input] = new Iso[inputsMod.SignedInput, Input] {
+    override def to(x: inputsMod.SignedInput): Input =
+      Input(x.boxId.convertTo[ErgoBox.BoxId], isoProverResult.to(x.spendingProof))
+    override def from(x: Input): inputsMod.SignedInput =
+      inputsMod.SignedInput(x.boxId.convertTo[boxesMod.BoxId], isoProverResult.from(x.spendingProof))
   }
 
   implicit val isoDataInput: Iso[inputsMod.DataInput, DataInput] = new Iso[inputsMod.DataInput, DataInput] {
@@ -321,8 +384,8 @@ object Isos {
       }
     }
 
-  implicit val isoBoxCandidate: Iso[boxesMod.BoxCandidate[commonMod.Amount], ErgoBoxCandidate] = new Iso[boxesMod.BoxCandidate[commonMod.Amount], ErgoBoxCandidate] {
-    override def to(x: boxesMod.BoxCandidate[commonMod.Amount]): ErgoBoxCandidate = {
+  implicit val isoBoxCandidate: Iso[boxesMod.BoxCandidate[commonMod.Amount, NonMandatoryRegisters], ErgoBoxCandidate] = new Iso[boxesMod.BoxCandidate[commonMod.Amount, NonMandatoryRegisters], ErgoBoxCandidate] {
+    override def to(x: boxesMod.BoxCandidate[commonMod.Amount, NonMandatoryRegisters]): ErgoBoxCandidate = {
       val ergoBoxCandidate = new ErgoBoxCandidate(
         value = isoAmount.to(x.value),
         ergoTree = {
@@ -336,11 +399,11 @@ object Isos {
       ergoBoxCandidate
     }
 
-    override def from(x: ErgoBoxCandidate): boxesMod.BoxCandidate[commonMod.Amount] = {
+    override def from(x: ErgoBoxCandidate): boxesMod.BoxCandidate[commonMod.Amount, NonMandatoryRegisters] = {
       val ergoTree = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(x.ergoTree)
       val ergoTreeStr = Base16.encode(ergoTree)
       val assets = isoTokenArray.from(x.additionalTokens)
-      boxesMod.BoxCandidate[commonMod.Amount](
+      boxesMod.BoxCandidate[commonMod.Amount, NonMandatoryRegisters](
         ergoTree = ergoTreeStr,
         value = isoAmount.from(x.value),
         assets = assets,
@@ -350,27 +413,8 @@ object Isos {
     }
   }
 
-  // Implements Iso between UnsignedTransaction and UnsignedErgoLikeTransaction
-  val isoUnsignedTransaction: Iso[UnsignedTransaction, UnsignedErgoLikeTransaction] =
-    new Iso[UnsignedTransaction, UnsignedErgoLikeTransaction] {
-      override def to(a: UnsignedTransaction): UnsignedErgoLikeTransaction = {
-        new UnsignedErgoLikeTransaction(
-          inputs = isoArrayToIndexed(isoUnsignedInput).to(a.inputs),
-          dataInputs = isoArrayToIndexed(isoDataInput).to(a.dataInputs),
-          outputCandidates = isoArrayToIndexed(isoBoxCandidate).to(a.outputs),
-        )
-      }
-      override def from(b: UnsignedErgoLikeTransaction): UnsignedTransaction = {
-        UnsignedTransaction(
-          inputs = isoArrayToIndexed(isoUnsignedInput).from(b.inputs),
-          dataInputs = isoArrayToIndexed(isoDataInput).from(b.dataInputs),
-          outputs = isoArrayToIndexed(isoBoxCandidate).from(b.outputCandidates)
-        )
-      }
-    }
-
-  val isoBox: Iso[Box[commonMod.Amount], ErgoBox] = new Iso[Box[commonMod.Amount], ErgoBox] {
-    override def to(x: Box[commonMod.Amount]): ErgoBox = {
+  val isoBox: Iso[Box[commonMod.Amount, NonMandatoryRegisters], ErgoBox] = new Iso[Box[commonMod.Amount, NonMandatoryRegisters], ErgoBox] {
+    override def to(x: Box[commonMod.Amount, NonMandatoryRegisters]): ErgoBox = {
       val ergoBox = new ErgoBox(
         value = isoAmount.to(x.value),
         ergoTree = {
@@ -386,11 +430,11 @@ object Isos {
       ergoBox
     }
 
-    override def from(x: ErgoBox): Box[commonMod.Amount] = {
+    override def from(x: ErgoBox): Box[commonMod.Amount, NonMandatoryRegisters] = {
       val ergoTree = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(x.ergoTree)
       val ergoTreeStr = Base16.encode(ergoTree)
       val assets = isoTokenArray.from(x.additionalTokens)
-      Box[commonMod.Amount](
+      Box[commonMod.Amount, NonMandatoryRegisters](
         boxId = Base16.encode(x.id),
         ergoTree = ergoTreeStr,
         value = isoAmount.from(x.value),
@@ -406,7 +450,7 @@ object Isos {
   val isoEIP12UnsignedInput: Iso[inputsMod.EIP12UnsignedInput, ExtendedInputBox] =
     new Iso[inputsMod.EIP12UnsignedInput, ExtendedInputBox] {
       override def to(x: inputsMod.EIP12UnsignedInput): ExtendedInputBox = {
-        val box = Box[commonMod.Amount](
+        val box = Box[commonMod.Amount, NonMandatoryRegisters](
           boxId = x.boxId,
           ergoTree = x.ergoTree,
           value = x.value,
@@ -436,4 +480,42 @@ object Isos {
         )
       }
     }
+
+  val isoUnsignedTransaction: Iso[UnsignedTransaction, UnsignedErgoLikeTransaction] =
+    new Iso[UnsignedTransaction, UnsignedErgoLikeTransaction] {
+      override def to(a: UnsignedTransaction): UnsignedErgoLikeTransaction = {
+        new UnsignedErgoLikeTransaction(
+          inputs = isoArrayToIndexed(isoUnsignedInput).to(a.inputs),
+          dataInputs = isoArrayToIndexed(isoDataInput).to(a.dataInputs),
+          outputCandidates = isoArrayToIndexed(isoBoxCandidate).to(a.outputs),
+        )
+      }
+
+      override def from(b: UnsignedErgoLikeTransaction): UnsignedTransaction = {
+        UnsignedTransaction(
+          inputs = isoArrayToIndexed(isoUnsignedInput).from(b.inputs),
+          dataInputs = isoArrayToIndexed(isoDataInput).from(b.dataInputs),
+          outputs = isoArrayToIndexed(isoBoxCandidate).from(b.outputCandidates)
+        )
+      }
+    }
+
+  val isoSignedTransaction: Iso[SignedTransaction, ErgoLikeTransaction] =
+    new Iso[SignedTransaction, ErgoLikeTransaction] {
+      override def to(a: SignedTransaction): ErgoLikeTransaction = {
+        new ErgoLikeTransaction(
+          inputs = isoArrayToIndexed(isoSignedInput).to(a.inputs),
+          dataInputs = isoArrayToIndexed(isoDataInput).to(a.dataInputs),
+          outputCandidates = isoArrayToIndexed(isoBox).to(a.outputs),
+        )
+      }
+
+      override def from(tx: ErgoLikeTransaction): SignedTransaction = {
+        val inputs = isoArrayToIndexed(isoSignedInput).from(tx.inputs)
+        val dataInputs = isoArrayToIndexed(isoDataInput).from(tx.dataInputs)
+        val outputs = isoArrayToIndexed(isoBox).from(tx.outputs)
+        SignedTransaction(dataInputs, tx.id, inputs, outputs)
+      }
+    }
+
 }

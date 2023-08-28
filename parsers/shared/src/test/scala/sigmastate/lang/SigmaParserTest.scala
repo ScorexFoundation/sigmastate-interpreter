@@ -1,7 +1,8 @@
 package sigmastate.lang
 
 import fastparse.Parsed
-import org.ergoplatform.{ErgoAddressEncoder, ErgoBox}
+import fastparse.Parsed.Failure
+import org.ergoplatform.ErgoBox
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
@@ -25,9 +26,9 @@ class SigmaParserTest extends AnyPropSpec with ScalaCheckPropertyChecks with Mat
         v.sourceContext.isDefined shouldBe true
         assertSrcCtxForAllNodes(v)
         v
-      case f@Parsed.Failure(_, _, extra) =>
-        val traced = extra.traced
-        println(s"\nTRACE: ${traced.trace}")
+      case f: Failure =>
+        val traced = f.extra.trace()
+        println(s"\nTRACE: ${traced.msg}")
         f.get // force show error diagnostics
     }
   }

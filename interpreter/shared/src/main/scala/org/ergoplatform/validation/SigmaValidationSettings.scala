@@ -48,7 +48,7 @@ abstract class SigmaValidationSettings extends Iterable[(Short, (ValidationRule,
   def isSoftFork(ruleId: Short, ve: ValidationException): Boolean = {
     val infoOpt = get(ruleId)
     infoOpt match {
-      case Some((_, ReplacedRule(newRuleId))) => true
+      case Some((_, ReplacedRule(_))) => true
       case Some((rule, status)) => rule.isSoftFork(this, rule.id, status, ve.args)
       case None => false
     }

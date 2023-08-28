@@ -2,8 +2,10 @@ package org.ergoplatform.sdk
 
 import debox.cfor
 import scalan.RType
-import scalan.rtypeToClassTag // actually required
+import scalan.rtypeToClassTag // actually used
+import sigmastate.eval.CPreHeader
 import special.collection.{Coll, CollBuilder, PairColl}
+import special.sigma.{Header, PreHeader}
 
 import scala.collection.compat.BuildFrom
 import scala.collection.{GenIterable, immutable}
@@ -195,5 +197,15 @@ object Extensions {
       val (ks, vs) = Utils.mapToArrays(m)
       builder.pairCollFromArrays(ks, vs)
     }
+  }
+
+  implicit class HeaderOps(val h: Header) extends AnyVal {
+    def toPreHeader: PreHeader = {
+      CPreHeader(h.version, h.parentId, h.timestamp, h.nBits, h.height, h.minerPk, h.votes)
+    }
+  }
+
+  implicit class DoubleOps(val i: Double) extends AnyVal {
+    def erg: Long = (i * 1000000000L).toLong
   }
 }

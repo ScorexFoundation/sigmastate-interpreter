@@ -1,6 +1,9 @@
 package org.ergoplatform.sdk
 
+import org.ergoplatform.sdk.JavaHelpers.StringExtensions
 import org.ergoplatform.{ErgoBox, ErgoLikeTransaction, UnsignedErgoLikeTransaction}
+import sigmastate.eval.Extensions.ArrayByteOps
+import sigmastate.serialization.SigmaSerializer
 
 import java.util
 
@@ -45,7 +48,23 @@ case class UnreducedTransaction(
 }
 
 /** Represents results for transaction reduction by [[ReducingInterpreter]]. */
-case class ReducedTransaction(ergoTx: ReducedErgoLikeTransaction)
+case class ReducedTransaction(ergoTx: ReducedErgoLikeTransaction) {
+  /** Serialized bytes of this transaction in hex format. */
+  def toHex: String = {
+    val w = SigmaSerializer.startWriter()
+    ReducedErgoLikeTransactionSerializer.serialize(ergoTx, w)
+    w.toBytes.toHex
+  }
+}
+
+object ReducedTransaction {
+  /** Creates a [[ReducedTransaction]] from serialized bytes in hex format. */
+  def fromHex(hex: String): ReducedTransaction = {
+    val r = SigmaSerializer.startReader(hex.toBytes)
+    val tx = ReducedErgoLikeTransactionSerializer.parse(r)
+    ReducedTransaction(tx)
+  }
+}
 
 /** Represents results for transaction signing by a prover like [[SigmaProver]]. */
 case class SignedTransaction(ergoTx: ErgoLikeTransaction, cost: Int)
