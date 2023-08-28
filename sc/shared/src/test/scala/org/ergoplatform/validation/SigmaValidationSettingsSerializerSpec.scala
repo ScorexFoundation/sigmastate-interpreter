@@ -8,7 +8,7 @@ import sigmastate.serialization.SerializationSpecification
 class SigmaValidationSettingsSerializerSpec extends SerializationSpecification with CompilerTestingCommons {
 
   private def roundtrip(settings: SigmaValidationSettings) = {
-    implicit val set = SigmaValidationSettingsSerializer
+    implicit val set: SigmaValidationSettingsSerializer.type = SigmaValidationSettingsSerializer
     roundTripTest(settings)
     roundTripTestWithPos(settings)
   }

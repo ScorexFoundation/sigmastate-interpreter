@@ -21,7 +21,7 @@ import scala.collection.mutable.{HashMap, Map}
 
 abstract class ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
   import scala.language.implicitConversions
-  val companion = ValueSerializer
+  private val companion = ValueSerializer
 
   def getComplexity: Int = OpCodeComplexity.getOrElse(opCode, MinimalComplexity)
   lazy val complexity: Int = getComplexity
@@ -49,7 +49,8 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   private val constantSerializer = ConstantSerializer(builder)
   private val constantPlaceholderSerializer = ConstantPlaceholderSerializer(mkConstantPlaceholder)
 
-  val serializers = SparseArrayContainer.buildForSerializers(Seq[ValueSerializer[_ <: Value[SType]]](
+  val serializers: SparseArrayContainer[ValueSerializer[_ <: Value[SType]]] =
+    SparseArrayContainer.buildForSerializers(Seq[ValueSerializer[_ <: Value[SType]]](
     constantSerializer,
     constantPlaceholderSerializer,
     TupleSerializer(mkTuple),
@@ -161,7 +162,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   ))
 
   private def serializable(v: Value[SType]): Value[SType] = v match {
-    case upcast: Upcast[SType, _]@unchecked =>
+    case upcast: Upcast[SNumericType, _]@unchecked =>
       upcast.input
     case _ => v
   }
@@ -171,10 +172,10 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     CheckValidOpCode(serializer, opCode)
     serializer
   }
-  def addSerializer(opCode: OpCode, ser: ValueSerializer[_ <: Value[SType]]) = {
+  def addSerializer(opCode: OpCode, ser: ValueSerializer[_ <: Value[SType]]): Unit = {
     serializers.add(opCode, ser)
   }
-  def removeSerializer(opCode: OpCode) = {
+  def removeSerializer(opCode: OpCode): Unit = {
     serializers.remove(opCode)
   }
 
@@ -184,13 +185,13 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     def parent: Scope
     def children: ChildrenMap
     def get(name: String): Option[Scope] = children.find(_._1 == name).map(_._2)
-    def add(name: String, s: Scope) = {
+    def add(name: String, s: Scope): ChildrenMap = {
       assert(get(name).isEmpty, s"Error while adding scope $s: name $name already exists in $this")
       children += (name -> s)
     }
     def showInScope(v: String): String
 
-    def provideScope(n: String, createNewScope: => Scope) = {
+    def provideScope(n: String, createNewScope: => Scope): Scope = {
       val scope = get(n) match {
         case Some(saved) => saved
         case None =>
@@ -203,7 +204,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   }
 
   case class SerScope(opCode: OpCode, children: ChildrenMap) extends Scope {
-    def serializer = getSerializer(opCode)
+    private def serializer = getSerializer(opCode)
     def name = s"Serializer of ${serializer.opDesc}"
     override def parent: Scope = null
     override def showInScope(v: String): String = name + "/" + v
@@ -211,8 +212,8 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   }
 
   case class DataScope(parent: Scope, data: DataInfo[_]) extends Scope {
-    def name = data.info.name
-    override def children = mutable.ArrayBuffer.empty
+    override def name: String = data.info.name
+    override def children: ChildrenMap = mutable.ArrayBuffer.empty
     override def showInScope(v: String): String = parent.showInScope(s"DataInfo($data)")
     override def toString = s"DataScope($data)"
   }
@@ -250,7 +251,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   }
 
   val collectSerInfo: Boolean = false
-  val serializerInfo: Map[OpCode, SerScope] = HashMap.empty
+  val serializerInfo: mutable.Map[OpCode, SerScope] = mutable.HashMap.empty
   private var scopeStack: List[Scope] = Nil
 
   def printSerInfo(): String = {
@@ -347,7 +348,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     scope.get(prop.info.name) match {
       case None =>
         scope.add(prop.info.name, DataScope(scope, prop))
-        println(s"Added $prop to ${scope}")
+        println(s"Added $prop to $scope")
       case Some(saved) => saved match {
         case DataScope(_, data) =>
           assert(data == prop, s"Saved property $data is different from being added $prop: scope $scope")
