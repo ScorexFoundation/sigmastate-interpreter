@@ -436,7 +436,7 @@ object ExtractBytes extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.ExtractBytesCode
   /** The cost is fixed and doesn't include serialization of ErgoBox because
     * the ErgoBox is expected to be constructed with non-null `bytes`.
-    * TODO v5.x: This is not currently, but must be guaranteed by lazy ErgoBox deserializer. */
+    */
   override val costKind = FixedCost(JitCost(12))
   override def argInfos: Seq[ArgInfo] = ExtractBytesInfo.argInfos
 }
