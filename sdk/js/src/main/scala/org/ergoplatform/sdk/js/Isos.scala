@@ -11,7 +11,7 @@ import scorex.util.ModifierId
 import scorex.util.encode.Base16
 import sigmastate.Values.{Constant, GroupElementConstant}
 import sigmastate.eval.Extensions.ArrayOps
-import sigmastate.eval.{CBigInt, Digest32Coll, Evaluation, CAvlTree, Colls, CGroupElement, CPreHeader, CHeader}
+import sigmastate.eval.{CBigInt, Digest32Coll, Evaluation, CAvlTree, CGroupElement, CPreHeader, CHeader}
 import sigmastate.fleetSdkCommon.distEsmTypesBoxesMod.Box
 import sigmastate.fleetSdkCommon.distEsmTypesCommonMod.HexString
 import sigmastate.fleetSdkCommon.distEsmTypesRegistersMod.NonMandatoryRegisters
@@ -21,7 +21,7 @@ import sigmastate.fleetSdkCommon.{distEsmTypesProverResultMod => proverResultMod
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
 import sigmastate.{AvlTreeData, AvlTreeFlags, SType}
-import sigma.{Coll, Colls, GroupElement}
+import sigma.{Coll, Colls}
 import sigma.Extensions.CollBytesOps
 
 import java.math.BigInteger
@@ -66,7 +66,7 @@ object Isos {
     }
   }
 
-  val isoGroupElement: Iso[GroupElement, special.sigma.GroupElement] = new Iso[GroupElement, special.sigma.GroupElement] {
+  val isoGroupElement: Iso[GroupElement, sigma.GroupElement] = new Iso[GroupElement, sigma.GroupElement] {
     override def to(x: GroupElement): sigma.GroupElement = {
       CGroupElement(x.point)
     }
