@@ -370,7 +370,10 @@ class SigmaDslTesting extends AnyPropSpec
             val box = createBox(0, compiledTree, additionalRegisters = newRegisters)
 
             // make sure we are doing tests with the box with is actually serializable
-            try roundTripTest(box)(ErgoBox.sigmaSerializer)
+            try {
+              val parsed = roundTripTest(box)(ErgoBox.sigmaSerializer)
+              parsed.bytes shouldBe box.bytes
+            }
             catch {
               case ValidationException(_, r: CheckSerializableTypeCode.type, Seq(SOption.OptionTypeCode), _) =>
                 // ignore the problem with Option serialization, but test all the other cases

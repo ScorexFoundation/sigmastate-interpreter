@@ -35,6 +35,8 @@ import sigma.{Colls, _}
   * A transaction is unsealing a box. As a box can not be open twice, any further valid transaction can not be linked
   * to the same box.
   *
+  * Note, private constructor can only be used from within the ErgoBox companion object, e.g. by deserializer.
+  *
   * @param value               - amount of money associated with the box
   * @param ergoTree            - guarding script, which should be evaluated to true in order to open this box
   * @param additionalTokens    - secondary tokens the box contains
@@ -44,17 +46,28 @@ import sigma.{Colls, _}
   * @param creationHeight      - height when a transaction containing the box was created.
   *                            This height is declared by user and should not exceed height of the block,
   *                            containing the transaction with this box.
+  * @param _bytes              - serialized bytes of the box when not `null`
   * HOTSPOT: don't beautify the code of this class
   */
-class ErgoBox(
+class ErgoBox private (
          override val value: Long,
          override val ergoTree: ErgoTree,
-         override val additionalTokens: Coll[Token] = Colls.emptyColl[Token],
-         override val additionalRegisters: AdditionalRegisters = Map.empty,
+         override val additionalTokens: Coll[Token],
+         override val additionalRegisters: AdditionalRegisters,
          val transactionId: ModifierId,
          val index: Short,
-         override val creationHeight: Int
+         override val creationHeight: Int,
+         _bytes: Array[Byte]
        ) extends ErgoBoxCandidate(value, ergoTree, creationHeight, additionalTokens, additionalRegisters) {
+  /** This is public constructor has the same parameters as the private primary constructor, except bytes. */
+  def this(value: Long,
+           ergoTree: ErgoTree,
+           additionalTokens: Coll[Token] = Colls.emptyColl[Token],
+           additionalRegisters: AdditionalRegisters = Map.empty,
+           transactionId: ModifierId,
+           index: Short,
+           creationHeight: Int) =
+    this(value, ergoTree, additionalTokens, additionalRegisters, transactionId, index, creationHeight, null)
 
   import ErgoBox._
 
@@ -70,11 +83,15 @@ class ErgoBox(
     }
   }
 
-  // TODO optimize: avoid serialization by implementing lazy box deserialization
   /** Serialized content of this box.
     * @see [[ErgoBox.sigmaSerializer]]
     */
-  lazy val bytes: Array[Byte] = ErgoBox.sigmaSerializer.toBytes(this)
+  lazy val bytes: Array[Byte] = {
+    if (_bytes != null)
+      _bytes // bytes provided by deserializer
+    else
+      ErgoBox.sigmaSerializer.toBytes(this)
+  }
 
   override def equals(arg: Any): Boolean = arg match {
     case x: ErgoBox => java.util.Arrays.equals(id, x.id)
@@ -197,10 +214,16 @@ object ErgoBox {
     }
 
     override def parse(r: SigmaByteReader): ErgoBox = {
-      val ergoBoxCandidate = ErgoBoxCandidate.serializer.parse(r)
+      val start = r.position
+      val c = ErgoBoxCandidate.serializer.parse(r)
       val transactionId = r.getBytes(ErgoLikeTransaction.TransactionIdBytesSize).toModifierId
       val index = r.getUShort()
-      ergoBoxCandidate.toBox(transactionId, index.toShort)
+      val end = r.position
+      val len = end - start
+      r.position = start
+      val boxBytes = r.getBytes(len) // also moves position back to end
+      new ErgoBox(c.value, c.ergoTree, c.additionalTokens, c.additionalRegisters,
+        transactionId, index.toShort, c.creationHeight, boxBytes)
     }
   }
 }

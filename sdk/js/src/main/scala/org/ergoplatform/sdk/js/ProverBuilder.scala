@@ -17,7 +17,7 @@ import sigmastate.eval.SigmaDsl
   */
 @JSExportTopLevel("ProverBuilder")
 class ProverBuilder(parameters: BlockchainParameters, network: Byte) extends js.Object {
-  val _builder = new sdk.ProverBuilder(parameters, network)
+  val _builder = new sdk.ProverBuilder(Isos.isoBlockchainParameters.to(parameters), network)
 
   /** Configure this builder to use the given seed when building a new prover.
     *
