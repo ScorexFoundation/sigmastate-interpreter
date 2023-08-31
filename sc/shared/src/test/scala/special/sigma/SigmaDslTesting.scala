@@ -373,7 +373,10 @@ class SigmaDslTesting extends AnyPropSpec
             val box = createBox(0, compiledTree, additionalRegisters = newRegisters)
 
             // make sure we are doing tests with the box with is actually serializable
-            try roundTripTest(box)(ErgoBox.sigmaSerializer)
+            try {
+              val parsed = roundTripTest(box)(ErgoBox.sigmaSerializer)
+              parsed.bytes shouldBe box.bytes
+            }
             catch {
               case ValidationException(_, r: CheckSerializableTypeCode.type, Seq(SOption.OptionTypeCode), _) =>
                 // ignore the problem with Option serialization, but test all the other cases
@@ -844,7 +847,7 @@ class SigmaDslTesting extends AnyPropSpec
 
     /** in v5.x the old and the new interpreters are the same */
     val oldImpl = () => funcJit[A, B](script)
-    val newImpl = oldImpl // funcJit[A, B](script) // TODO v6.0 (16h): use actual new implementation here
+    val newImpl = oldImpl // funcJit[A, B](script) // TODO v6.0: use actual new implementation here (https://github.com/ScorexFoundation/sigmastate-interpreter/issues/910)
 
     /** In v5.x this method just checks the old implementations fails on the new feature. */
     override def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, CostDetails)] = {

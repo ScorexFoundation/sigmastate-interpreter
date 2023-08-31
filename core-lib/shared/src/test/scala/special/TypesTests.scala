@@ -10,8 +10,8 @@ class TypesTests extends BaseTests {
     def test[A](t: RType[A], n: String) = {
       t.name shouldBe n
     }
-    test(tupleRType(Array(IntType, LongType, RType[(String, Double)], RType[Option[Boolean]])),
-           "(Int, Long, (String, Double), Option[Boolean])")
+    test(tupleRType(Array(IntType, LongType, RType[(Byte, special.sigma.BigInt)], RType[Option[Boolean]])),
+           "(Int, Long, (Byte, BigInt), Option[Boolean])")
   }
 
   test("RType implements equality") {

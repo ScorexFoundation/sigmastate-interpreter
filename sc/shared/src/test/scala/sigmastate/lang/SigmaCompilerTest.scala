@@ -8,7 +8,7 @@ import sigmastate._
 import sigmastate.helpers.CompilerTestingCommons
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms.{Apply, Ident, Lambda, MethodCall, ZKProofBlock}
-import sigmastate.exceptions.{CosterException, InvalidArguments, TyperException}
+import sigmastate.exceptions.{GraphBuildingException, InvalidArguments, TyperException}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utxo.{ByIndex, ExtractAmount, GetVar, SelectField}
@@ -23,15 +23,15 @@ class SigmaCompilerTest extends CompilerTestingCommons with LangTests with Objec
   private def comp(x: String): Value[SType] = compile(env, x)
 
   private def testMissingCosting(script: String, expected: SValue): Unit = {
-    an [CosterException] should be thrownBy comp(env, script)
+    an [GraphBuildingException] should be thrownBy comp(env, script)
   }
 
   private def testMissingCostingWOSerialization(script: String, expected: SValue): Unit = {
-    an [CosterException] should be thrownBy comp(env, script)
+    an [GraphBuildingException] should be thrownBy comp(env, script)
   }
 
   private def costerFail(env: ScriptEnv, x: String, expectedLine: Int, expectedCol: Int): Unit = {
-    val exception = the[CosterException] thrownBy comp(env, x)
+    val exception = the[GraphBuildingException] thrownBy comp(env, x)
     withClue(s"Exception: $exception, is missing source context:") { exception.source shouldBe defined }
     val sourceContext = exception.source.get
     sourceContext.line shouldBe expectedLine
@@ -318,11 +318,6 @@ class SigmaCompilerTest extends CompilerTestingCommons with LangTests with Objec
           GE(ExtractAmount(ValUse(1, SBox)), LongConstant(1))
         )
       )
-  }
-
-  property("failed option constructors (not supported)") {
-    costerFail("None", 1, 1)
-    costerFail("Some(10)", 1, 1)
   }
 
   property("byteArrayToLong") {

@@ -433,24 +433,6 @@ class CollsTests extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers
 
       checkColls(repl, coll)
     }
-    forAll(charGen, indexGen, minSuccess) { (x, n) =>
-      val repl = builder.replicate(n, x)
-      val coll = builder.fromArray(Array.fill(n)(x))
-
-      checkColls(repl, coll)
-    }
-    forAll(floatGen, indexGen, minSuccess) { (x, n) =>
-      val repl = builder.replicate(n, x)
-      val coll = builder.fromArray(Array.fill(n)(x))
-
-      checkColls(repl, coll)
-    }
-    forAll (doubleGen, indexGen, minSuccess) { (x, n) =>
-      val repl = builder.replicate(n, x)
-      val coll = builder.fromArray(Array.fill(n)(x))
-
-      checkColls(repl, coll)
-    }
     forAll (indexGen, minSuccess) { (n) =>
       val replTrue = builder.replicate(n, true)
       val collTrue = builder.fromArray(Array.fill(n)(true))
@@ -479,13 +461,13 @@ class CollsTests extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers
 
       checkColls(repl, coll)
     }
-    forAll (byteGen, doubleGen, intGen, indexGen, minSuccess) { (b, d, i, n) =>
+    forAll (byteGen, longGen, intGen, indexGen, minSuccess) { (b, d, i, n) =>
       val repl = builder.replicate(n, (b, (i, (d, b))))
-      val coll = builder.fromArray(Array.fill[(Byte, (Int, (Double, Byte)))](n)((b, (i, (d, b)))))
+      val coll = builder.fromArray(Array.fill[(Byte, (Int, (Long, Byte)))](n)((b, (i, (d, b)))))
 
       checkColls(repl, coll)
     }
-    forAll (byteGen, doubleGen, intGen, indexGen, indexGen, minSuccess) { (b, d, i, n, m) =>
+    forAll (byteGen, longGen, intGen, indexGen, indexGen, minSuccess) { (b, d, i, n, m) =>
       val repl = builder.replicate(n, (b, ((i, (("string", builder.replicate(m, n)), Array(1, 2, 3, 4))), (d, b))))
       val coll = builder.fromArray(Array.fill(n)((b, ((i, (("string", builder.fromArray(Array.fill(m)(n))), Array(1, 2, 3, 4))), (d, b)))))
 

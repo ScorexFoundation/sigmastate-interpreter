@@ -282,7 +282,7 @@ trait Interpreter {
     * @throws InterpreterException when cannot proceed and no activation yet.
     */
   protected def checkSoftForkCondition(ergoTree: ErgoTree, context: CTX): Option[VerificationResult] = {
-    // TODO v6.0: the condition below should be revised if necessary
+    // TODO v6.0: the condition below should be revised if necessary (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/904)
     // The following conditions define behavior which depend on the version of ergoTree
     // This works in addition to more fine-grained soft-forkability mechanism implemented
     // using ValidationRules (see trySoftForkable method call here and in reduceToCrypto).

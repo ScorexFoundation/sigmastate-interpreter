@@ -132,7 +132,7 @@ trait SigmaTestingData extends TestingCommons with ObjectGenerators {
 
     def createBigIntMaxValue(): BigInt = BigIntMaxValue_instances.getNext
 
-    // TODO v6.0: this values have bitCount == 255 (see to256BitValueExact)
+    // TODO v6.0: this values have bitCount == 255 (see to256BitValueExact) (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/554)
     val BigIntMinValue = CBigInt(new BigInteger("-7F" + "ff" * 31, 16))
 
     val BigIntMaxValue = createBigIntMaxValue()

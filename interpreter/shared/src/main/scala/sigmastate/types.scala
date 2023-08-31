@@ -188,7 +188,7 @@ object SType {
     * should be changed and SGlobal.typeId should be preserved. The regression tests in
     * `property("MethodCall Codes")` should pass.
     */
-  // TODO v6.0 (h4): should contain all numeric types (including also SNumericType)
+  // TODO v6.0: should contain all numeric types (including also SNumericType)
   //  to support method calls like 10.toByte which encoded as MethodCall with typeId = 4, methodId = 1
   //  see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/667
   lazy val types: Map[Byte, STypeCompanion] = Seq(
@@ -793,7 +793,7 @@ object SNumericType extends STypeCompanion {
   /** Array of all numeric types ordered by number of bytes in the representation. */
   final val allNumericTypes = Array(SByte, SShort, SInt, SLong, SBigInt)
 
-  // TODO v6.0 (4h): this typeId is now shadowed by SGlobal.typeId
+  // TODO v6.0: this typeId is now shadowed by SGlobal.typeId
   //  see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/667
   override def typeId: TypeCode = 106: Byte
 
@@ -2326,7 +2326,7 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
           val insert = Insert(ADKey @@ key.toArray, ADValue @@ value.toArray)
           val insertRes = bv.performOneOperation(insert)
           // TODO v6.0: throwing exception is not consistent with update semantics
-          //  however it preserves v4.0 semantics
+          //  however it preserves v4.0 semantics (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/908)
           if (insertRes.isFailure) {
             Interpreter.error(s"Incorrect insert for $tree (key: $key, value: $value, digest: ${tree.digest}): ${insertRes.failed.get}}")
           }

@@ -141,9 +141,6 @@ object Evaluation {
     case _: Short => ShortType
     case _: Int   => IntType
     case _: Long  => LongType
-    case _: Char  => CharType
-    case _: Float  => FloatType
-    case _: Double  => DoubleType
     case _: String  => StringType
     case _: Unit  => UnitType
 

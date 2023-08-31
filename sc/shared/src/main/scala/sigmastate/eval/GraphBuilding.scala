@@ -1,7 +1,6 @@
 package sigmastate.eval
 
 import org.ergoplatform._
-import org.ergoplatform.validation.ValidationRules.CheckTupleType
 import scalan.ExactIntegral.{ByteIsExactIntegral, IntIsExactIntegral, LongIsExactIntegral, ShortIsExactIntegral}
 import scalan.ExactOrdering.{ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering, ShortIsExactOrdering}
 import scalan.util.Extensions.ByteOps
@@ -15,7 +14,7 @@ import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
 import sigmastate._
 import sigmastate.basics.CryptoConstants.EcPointType
-import sigmastate.exceptions.{SigmaException, CosterException}
+import sigmastate.exceptions.{SigmaException, GraphBuildingException}
 import scala.collection.mutable.ArrayBuffer
 
 /** Perform translation of typed expression given by [[Value]] to a graph in IRContext.
@@ -396,8 +395,8 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
 
   protected implicit def groupElementToECPoint(g: special.sigma.GroupElement): EcPointType = CostingSigmaDslBuilder.toECPoint(g).asInstanceOf[EcPointType]
 
-  def error(msg: String) = throw new CosterException(msg, None)
-  def error(msg: String, srcCtx: Option[SourceContext]) = throw new CosterException(msg, srcCtx)
+  def error(msg: String) = throw new GraphBuildingException(msg, None)
+  def error(msg: String, srcCtx: Option[SourceContext]) = throw new GraphBuildingException(msg, srcCtx)
 
   /** Translates the given typed expression to IR graph representing a function from
     * Context to some type T.

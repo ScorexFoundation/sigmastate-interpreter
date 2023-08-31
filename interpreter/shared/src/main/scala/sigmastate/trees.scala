@@ -204,7 +204,7 @@ object CreateProveDlog extends FixedCostValueCompanion {
   val OpType = SFunc(SGroupElement, SSigmaProp)
 }
 
-// TODO v6.0: implement `eval` method and add support in GraphBuilding
+// TODO v6.0: implement `eval` method and add support in GraphBuilding (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/907)
 /** Construct a new authenticated dictionary with given parameters and tree root digest.*/
 case class CreateAvlTree(operationFlags: ByteValue,
     digest: Value[SByteArray],
@@ -1092,7 +1092,7 @@ object BitOp {
   }
 }
 
-// TODO v6.0 (24h): implement modular operations
+// TODO v6.0: implement modular operations (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/327)
 case class ModQ(input: Value[SBigInt.type])
   extends NotReadyValue[SBigInt.type] {
   override def companion = ModQ
@@ -1122,12 +1122,10 @@ trait OpGroup[C <: ValueCompanion] {
 object ModQArithOp extends OpGroup[ModQArithOpCompanion] {
   import OpCodes._
   object PlusModQ extends ModQArithOpCompanion(PlusModQCode,  "PlusModQ") {
-    // TODO soft-fork:
     // override def argInfos: Seq[ArgInfo] = PlusModQInfo.argInfos
     override def argInfos: Seq[ArgInfo] = Seq(ArgInfo("this", ""), ArgInfo("other", ""))
   }
   object MinusModQ extends ModQArithOpCompanion(MinusModQCode, "MinusModQ") {
-    // TODO soft-fork:
     // override def argInfos: Seq[ArgInfo] = MinusModQInfo.argInfos
     override def argInfos: Seq[ArgInfo] = Seq(ArgInfo("this", ""), ArgInfo("other", ""))
   }

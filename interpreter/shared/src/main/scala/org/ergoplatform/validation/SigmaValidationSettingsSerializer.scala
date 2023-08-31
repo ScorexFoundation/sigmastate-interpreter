@@ -5,7 +5,6 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import scalan.util.Extensions.{IntOps, LongOps}
 import sigmastate.exceptions.SerializerException
 
-// TODO v5.x: remove unused class and related json encoders
 /** The rules are serialized ordered by ruleId.
   * This serializer preserves roundtrip identity `deserialize(serialize(_)) = identity`
   * however it may not preserve `serialize(deserialize(_)) = identity` */

@@ -755,7 +755,6 @@ object Values {
       val dhtSerializer = ProveDHTupleSerializer(ProveDHTuple.apply)
       val dlogSerializer = ProveDlogSerializer(ProveDlog.apply)
 
-      // TODO v5.x: control maxTreeDepth same as in deserialize
       override def serialize(data: SigmaBoolean, w: SigmaByteWriter): Unit = {
         w.put(data.opCode)
         data match {
@@ -876,31 +875,6 @@ object Values {
     /** Cost of: 1) allocating a new tuple (of limited max size)*/
     override val costKind = FixedCost(JitCost(15))
     def apply(items: Value[SType]*): Tuple = Tuple(items.toIndexedSeq)
-  }
-
-  trait OptionValue[T <: SType] extends Value[SOption[T]] {
-  }
-
-  // TODO v6.0 (4h): SomeValue and NoneValue are not used in ErgoTree and can be
-  //  either removed or implemented in v6.0
-  case class SomeValue[T <: SType](x: Value[T]) extends OptionValue[T] {
-    override def companion = SomeValue
-    val tpe = SOption(x.tpe)
-    def opType = SFunc(x.tpe, tpe)
-  }
-  object SomeValue extends ValueCompanion {
-    override val opCode = SomeValueCode
-    override def costKind: CostKind = Constant.costKind
-  }
-
-  case class NoneValue[T <: SType](elemType: T) extends OptionValue[T] {
-    override def companion = NoneValue
-    val tpe = SOption(elemType)
-    def opType = SFunc(elemType, tpe)
-  }
-  object NoneValue extends ValueCompanion {
-    override val opCode = NoneValueCode
-    override def costKind: CostKind = Constant.costKind
   }
 
   /** ErgoTree node which converts a collection of expressions into a collection of data
