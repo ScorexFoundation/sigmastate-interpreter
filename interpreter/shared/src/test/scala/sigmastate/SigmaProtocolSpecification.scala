@@ -7,8 +7,8 @@ import special.sigma.SigmaTestingData
 class SigmaProtocolSpecification extends SigmaTestingData {
 
   property("CThresholdUncheckedNode equality") {
-    val c1 = Challenge @@ Array[Byte](1)
-    val c2 = Challenge @@ Array[Byte](2)
+    val c1 = Challenge @@ Coll[Byte](1)
+    val c2 = Challenge @@ Coll[Byte](2)
     val n0 = CThresholdUncheckedNode(c1, Seq(), 0, None)
     val n1 = CThresholdUncheckedNode(c1, Seq(), 0, None)
     val n2 = CThresholdUncheckedNode(c2, Seq(), 0, None)

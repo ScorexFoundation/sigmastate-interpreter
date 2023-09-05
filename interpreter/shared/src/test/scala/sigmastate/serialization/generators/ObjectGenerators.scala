@@ -27,6 +27,7 @@ import special.sigma._
 
 import java.math.BigInteger
 import scala.collection.compat.immutable.ArraySeq
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 
@@ -209,7 +210,7 @@ trait ObjectGenerators extends TypeGenerators
   lazy val evaluatedValueGen: Gen[EvaluatedValue[SType]] =
     Gen.oneOf(booleanConstGen.asInstanceOf[Gen[EvaluatedValue[SType]]], byteArrayConstGen, longConstGen)
 
-  def additionalRegistersGen(cnt: Byte): Seq[Gen[(NonMandatoryRegisterId, EvaluatedValue[SType])]] = {
+  def additionalRegistersGen(cnt: Byte): Seq[Gen[(NonMandatoryRegisterId, EvaluatedValue[_ <: SType])]] = {
     scala.util.Random.shuffle((0 until cnt).toList)
       .map(_ + ErgoBox.startingNonMandatoryIndex)
       .map(rI => ErgoBox.registerByIndex(rI).asInstanceOf[NonMandatoryRegisterId])
@@ -237,8 +238,8 @@ trait ObjectGenerators extends TypeGenerators
   val unsignedShortGen: Gen[Short] = Gen.chooseNum(0, Short.MaxValue).map(_.toShort)
 
   lazy val contextExtensionGen: Gen[ContextExtension] = for {
-    values <- Gen.sequence(contextExtensionValuesGen(0, 5))(Buildable.buildableSeq)
-  } yield ContextExtension(values.toMap)
+    values: collection.Seq[(Byte, EvaluatedValue[SType])] <- Gen.sequence(contextExtensionValuesGen(0, 5))(Buildable.buildableSeq)
+  } yield ContextExtension(mutable.LinkedHashMap[Byte, EvaluatedValue[SType]](values.sortBy(_._1).toSeq:_*))
 
   lazy val serializedProverResultGen: Gen[ProverResult] = for {
     bytes <- arrayOfRange(1, 100, arbByte.arbitrary)
@@ -347,7 +348,8 @@ trait ObjectGenerators extends TypeGenerators
   lazy val additionalRegistersGen: Gen[AdditionalRegisters] = for {
     regNum <- Gen.chooseNum[Byte](0, ErgoBox.nonMandatoryRegistersCount)
     regs <- Gen.sequence(additionalRegistersGen(regNum))(Buildable.buildableSeq)
-  } yield regs.toMap
+  } yield
+    Map(regs.toIndexedSeq:_*)
 
   def ergoBoxTokens(availableTokens: Seq[TokenId]): Gen[Coll[Token]] = for {
     tokens <-

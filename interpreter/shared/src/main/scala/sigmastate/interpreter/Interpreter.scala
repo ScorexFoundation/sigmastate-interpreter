@@ -282,7 +282,7 @@ trait Interpreter {
     * @throws InterpreterException when cannot proceed and no activation yet.
     */
   protected def checkSoftForkCondition(ergoTree: ErgoTree, context: CTX): Option[VerificationResult] = {
-    // TODO v6.0: the condition below should be revised if necessary
+    // TODO v6.0: the condition below should be revised if necessary (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/904)
     // The following conditions define behavior which depend on the version of ergoTree
     // This works in addition to more fine-grained soft-forkability mechanism implemented
     // using ValidationRules (see trySoftForkable method call here and in reduceToCrypto).
@@ -383,7 +383,7 @@ trait Interpreter {
       * (and, if applicable,  the associated data). Reject otherwise.
       */
     val expectedChallenge = CryptoFunctions.hashFn(bytes)
-    util.Arrays.equals(newRoot.challenge, expectedChallenge)
+    util.Arrays.equals(newRoot.challenge.toArray, expectedChallenge)
   }
 
   /**
@@ -405,7 +405,7 @@ trait Interpreter {
       implicit val E = ErgoTreeEvaluator.getCurrentEvaluator
       fixedCostOp(ComputeCommitments_DHT) {
         val (a, b) = DiffieHellmanTupleInteractiveProver.computeCommitment(dh.proposition, dh.challenge, dh.secondMessage)
-        dh.copy(commitmentOpt = Some(FirstDiffieHellmanTupleProverMessage(a, b)))
+        dh.copy(commitmentOpt = Some(FirstDHTupleProverMessage(a, b)))
       }
 
     case _: UncheckedSigmaTree => ???

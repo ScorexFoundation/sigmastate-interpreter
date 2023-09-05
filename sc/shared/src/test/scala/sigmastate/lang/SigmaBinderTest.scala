@@ -143,19 +143,6 @@ class SigmaBinderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Mat
         If(EQ(IntConstant(10), IntConstant(11)), IntConstant(2), IntConstant(3)))
   }
 
-  // TODO v6.0 (4h): SomeValue and NoneValue are not used in ErgoTree and can be
-  //  either removed or implemented in v4.x
-  property("Option constructors") {
-    bind(env, "None") shouldBe NoneValue(NoType)
-    bind(env, "Some(None)") shouldBe SomeValue(NoneValue(NoType))
-    bind(env, "Some(10)") shouldBe SomeValue(IntConstant(10))
-    bind(env, "Some(X)") shouldBe SomeValue(Ident("X"))
-    bind(env, "Some(Some(X - 1))") shouldBe
-      SomeValue(SomeValue(mkMinus(Ident("X").asValue[SInt.type], IntConstant(1))))
-    bind(env, "Some(Some(X + 1))") shouldBe
-      SomeValue(SomeValue(plus(Ident("X").asValue[SInt.type], IntConstant(1))))
-  }
-
   property("lambdas") {
     bind(env, "{ (a: Int) => a - 1 }") shouldBe
       Lambda(IndexedSeq("a" -> SInt), NoType, mkMinus(IntIdent("a"), 1))
@@ -214,8 +201,4 @@ class SigmaBinderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Mat
     e.source shouldBe Some(SourceContext(2, 5, "val x = 10"))
   }
 
-  property("fail Some (invalid arguments)") {
-    fail(env, "Some(1, 2)", 1, 1)
-    fail(env, "Some()", 1, 1)
-  }
 }

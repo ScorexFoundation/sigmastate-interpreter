@@ -91,7 +91,7 @@ class ExtensionsSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matc
       val left = builder.pairColl(leftKeys, leftValues)
       val right = builder.pairColl(rightKeys, rightValues)
       val res = builder.outerJoin(left, right)(l => l._2 - 2, r => r._2 - 3, i => i._2._1 + 5)
-      val (ks, vs) = builder.unzip(res)
+      val (_, vs) = builder.unzip(res)
       vs.sum shouldBe (col.sum * 2 + col.map(_ + 5).sum)
     }
     //    test(builder.fromItems(0))

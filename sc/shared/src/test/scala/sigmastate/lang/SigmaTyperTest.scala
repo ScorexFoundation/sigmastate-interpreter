@@ -214,13 +214,6 @@ class SigmaTyperTest extends AnyPropSpec
     typefail(env, "Coll(1, false)", 1, 1)
   }
 
-  property("Option constructors") {
-    typecheck(env, "Some(10)") shouldBe SOption(SInt)
-    typecheck(env, "Some(x)") shouldBe SOption(SInt)
-    typecheck(env, "Some(x + 1)") shouldBe SOption(SInt)
-    typecheck(env, "Some(Some(10))") shouldBe SOption(SOption(SInt))
-  }
-
   property("methods returning Option") {
     typecheck(env, "getVar[Int](10)") shouldBe SOption(SInt)
     typecheck(env, "{ val v = getVar[Int](1); v.get }") shouldBe SInt

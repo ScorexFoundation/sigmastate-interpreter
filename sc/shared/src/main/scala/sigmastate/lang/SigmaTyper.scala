@@ -497,9 +497,6 @@ class SigmaTyper(val builder: SigmaBuilder,
     case Negation(i) => unmap[SNumericType](env, "-", i.asNumValue)(mkNegation)(tT)
     case BitInversion(i) => unmap[SNumericType](env, "~", i.asNumValue)(mkBitInversion)(tT)
 
-    case SomeValue(x) => SomeValue(assignType(env, x))
-    case v: NoneValue[_] => v
-
     case Global => Global
     case Context => Context
     case Height => Height

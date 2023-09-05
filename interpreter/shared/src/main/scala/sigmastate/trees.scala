@@ -1,34 +1,31 @@
 package sigmastate
 
+import debox.{cfor, Map => DMap}
 import org.ergoplatform.SigmaConstants
 import org.ergoplatform.validation.SigmaValidationSettings
-import scalan.{ExactIntegral, ExactNumeric, ExactOrdering, Nullable}
+import scalan.ExactIntegral._
+import scalan.ExactOrdering._
 import scalan.OverloadHack.Overloaded1
+import scalan.{ExactIntegral, ExactOrdering}
 import scorex.crypto.hash.{Blake2b256, CryptographicHash32, Sha256}
+import sigmastate.ArithOp.OperationImpl
 import sigmastate.Operations._
 import sigmastate.SCollection.{SByteArray, SIntArray}
 import sigmastate.SOption.SIntOption
 import sigmastate.Values._
-import sigmastate.basics.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
+import sigmastate.eval.Extensions.EvalCollOps
+import sigmastate.eval.NumericOps.{BigIntIsExactIntegral, BigIntIsExactOrdering}
+import sigmastate.eval.{Colls, SigmaDsl}
 import sigmastate.interpreter.ErgoTreeEvaluator
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization._
 import sigmastate.utxo.{SimpleTransformerCompanion, Transformer}
-import debox.{Map => DMap}
-import scalan.ExactIntegral._
-import scalan.ExactOrdering._
-import sigmastate.ArithOp.OperationImpl
-import sigmastate.eval.NumericOps.{BigIntIsExactIntegral, BigIntIsExactOrdering}
-import sigmastate.eval.{Colls, SigmaDsl}
-import sigmastate.lang.TransformingSigmaBuilder
 import special.collection.Coll
 import special.sigma.{GroupElement, SigmaProp}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import debox.cfor
-import sigmastate.eval.Extensions.EvalCollOps
 
 /**
   * Basic trait for inner nodes of crypto-trees, so AND/OR/THRESHOLD sigma-protocol connectives
@@ -38,10 +35,13 @@ trait SigmaConjecture extends SigmaBoolean {
 }
 
 /**
-  * Basic trait for leafs of crypto-trees, such as ProveDlog and ProveDiffieHellman instances
+  * Basic trait for leafs of crypto-trees, such as
+  * [[sigmastate.basics.DLogProtocol.ProveDlog]] and [[sigmastate.basics.ProveDHTuple]]
+  * instances.
+  * It plays the same role as [[SigmaConjecture]]. It used in prover to distinguish leafs from
+  * other nodes and have logic common to leaves regardless of the concrete leaf type.
   */
-trait SigmaProofOfKnowledgeLeaf[SP <: SigmaProtocol[SP], S <: SigmaProtocolPrivateInput[SP, _]]
-  extends SigmaBoolean with SigmaProtocolCommonInput[SP]
+trait SigmaLeaf extends SigmaBoolean
 
 
 /**
@@ -204,7 +204,7 @@ object CreateProveDlog extends FixedCostValueCompanion {
   val OpType = SFunc(SGroupElement, SSigmaProp)
 }
 
-// TODO v6.0: implement `eval` method and add support in GraphBuilding
+// TODO v6.0: implement `eval` method and add support in GraphBuilding (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/907)
 /** Construct a new authenticated dictionary with given parameters and tree root digest.*/
 case class CreateAvlTree(operationFlags: ByteValue,
     digest: Value[SByteArray],
@@ -1092,7 +1092,7 @@ object BitOp {
   }
 }
 
-// TODO v6.0 (24h): implement modular operations
+// TODO v6.0: implement modular operations (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/327)
 case class ModQ(input: Value[SBigInt.type])
   extends NotReadyValue[SBigInt.type] {
   override def companion = ModQ
@@ -1122,12 +1122,10 @@ trait OpGroup[C <: ValueCompanion] {
 object ModQArithOp extends OpGroup[ModQArithOpCompanion] {
   import OpCodes._
   object PlusModQ extends ModQArithOpCompanion(PlusModQCode,  "PlusModQ") {
-    // TODO soft-fork:
     // override def argInfos: Seq[ArgInfo] = PlusModQInfo.argInfos
     override def argInfos: Seq[ArgInfo] = Seq(ArgInfo("this", ""), ArgInfo("other", ""))
   }
   object MinusModQ extends ModQArithOpCompanion(MinusModQCode, "MinusModQ") {
-    // TODO soft-fork:
     // override def argInfos: Seq[ArgInfo] = MinusModQInfo.argInfos
     override def argInfos: Seq[ArgInfo] = Seq(ArgInfo("this", ""), ArgInfo("other", ""))
   }

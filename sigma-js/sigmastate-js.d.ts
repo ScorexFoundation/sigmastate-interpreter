@@ -20,6 +20,21 @@ declare module "sigmastate-js/main" {
     static fromHex(value: HexString): ErgoTree;
   }
 
+  export declare class GroupElement {
+    toPointHex(): HexString;
+  }
+
+  export declare class GroupElementObj {
+    static fromPointHex(value: HexString): GroupElement;
+  }
+
+  export declare class SigmaProp {
+  }
+
+  export declare class SigmaPropObj {
+    static fromPointHex(value: HexString): SigmaProp;
+  }
+
   export declare class Type {
     name: string;
     toString(): string;
@@ -55,8 +70,10 @@ declare module "sigmastate-js/main" {
     static ofInt(value: number): Value<number>;
     static ofLong(value: bigint): Value<bigint>;
     static ofBigInt(value: bigint): Value<bigint>;
+    static ofGroupElement(pointHex: string): Value<GroupElement>;
+    static ofSigmaProp(pointHex: string): Value<SigmaProp>;
     static pairOf<R, L>(left: Value<R>, right: Value<L>): Value<[R, L]>;
-    static collOf<T>(items: T[], type: Type): Value<T[]>;
+    static collOf<T>(items: T[], elemType: Type): Value<T[]>;
     static fromHex<T>(hex: HexString): Value<T>;
   }
 

@@ -199,8 +199,12 @@ object Platform {
     override def infinity(): crypto.Ecp =
       new Ecp(ctx.getInfinity())
 
-    override def decodePoint(encoded: Array[Byte]): crypto.Ecp =
+    override def decodePoint(encoded: Array[Byte]): crypto.Ecp = {
+      if (encoded(0) == 0) {
+        return infinity()
+      }
       new Ecp(ctx.decodePoint(Base16.encode(encoded)))
+    }
 
     override def generator: crypto.Ecp =
       new Ecp(ctx.getGenerator())

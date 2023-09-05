@@ -1,11 +1,11 @@
 package org.ergoplatform
 
-import scorex.utils.{Ints, Shorts}
-import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, Token}
+import org.ergoplatform.ErgoBox.{AdditionalRegisters, Token}
 import org.ergoplatform.settings.ErgoAlgos
 import scorex.crypto.authds.ADKey
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.Blake2b256
 import scorex.util._
+import scorex.utils.{Ints, Shorts}
 import sigmastate.SCollection.SByteArray
 import sigmastate.SType.AnyOps
 import sigmastate.Values._
@@ -13,11 +13,9 @@ import sigmastate._
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigmastate.serialization.SigmaSerializer
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter, Helpers}
+import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.ExtractCreationInfo
 import special.collection._
-
-import scala.runtime.ScalaRunTime
 
 /**
   * Box (aka coin, or an unspent output) is a basic concept of a UTXO-based cryptocurrency. In Bitcoin, such an object
@@ -37,6 +35,8 @@ import scala.runtime.ScalaRunTime
   * A transaction is unsealing a box. As a box can not be open twice, any further valid transaction can not be linked
   * to the same box.
   *
+  * Note, private constructor can only be used from within the ErgoBox companion object, e.g. by deserializer.
+  *
   * @param value               - amount of money associated with the box
   * @param ergoTree            - guarding script, which should be evaluated to true in order to open this box
   * @param additionalTokens    - secondary tokens the box contains
@@ -46,17 +46,28 @@ import scala.runtime.ScalaRunTime
   * @param creationHeight      - height when a transaction containing the box was created.
   *                            This height is declared by user and should not exceed height of the block,
   *                            containing the transaction with this box.
+  * @param _bytes              - serialized bytes of the box when not `null`
   * HOTSPOT: don't beautify the code of this class
   */
-class ErgoBox(
+class ErgoBox private (
          override val value: Long,
          override val ergoTree: ErgoTree,
-         override val additionalTokens: Coll[Token] = Colls.emptyColl[Token],
-         override val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map.empty,
+         override val additionalTokens: Coll[Token],
+         override val additionalRegisters: AdditionalRegisters,
          val transactionId: ModifierId,
          val index: Short,
-         override val creationHeight: Int
+         override val creationHeight: Int,
+         _bytes: Array[Byte]
        ) extends ErgoBoxCandidate(value, ergoTree, creationHeight, additionalTokens, additionalRegisters) {
+  /** This is public constructor has the same parameters as the private primary constructor, except bytes. */
+  def this(value: Long,
+           ergoTree: ErgoTree,
+           additionalTokens: Coll[Token] = Colls.emptyColl[Token],
+           additionalRegisters: AdditionalRegisters = Map.empty,
+           transactionId: ModifierId,
+           index: Short,
+           creationHeight: Int) =
+    this(value, ergoTree, additionalTokens, additionalRegisters, transactionId, index, creationHeight, null)
 
   import ErgoBox._
 
@@ -72,11 +83,15 @@ class ErgoBox(
     }
   }
 
-  // TODO optimize: avoid serialization by implementing lazy box deserialization
   /** Serialized content of this box.
     * @see [[ErgoBox.sigmaSerializer]]
     */
-  lazy val bytes: Array[Byte] = ErgoBox.sigmaSerializer.toBytes(this)
+  lazy val bytes: Array[Byte] = {
+    if (_bytes != null)
+      _bytes // bytes provided by deserializer
+    else
+      ErgoBox.sigmaSerializer.toBytes(this)
+  }
 
   override def equals(arg: Any): Boolean = arg match {
     case x: ErgoBox => java.util.Arrays.equals(id, x.id)
@@ -136,7 +151,7 @@ object ErgoBox {
   /** Represents id of optional registers of a box. */
   sealed abstract class NonMandatoryRegisterId(override val number: Byte) extends RegisterId
 
-  type AdditionalRegisters = Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]]
+  type AdditionalRegisters = scala.collection.Map[NonMandatoryRegisterId, EvaluatedValue[_ <: SType]]
 
   object R0 extends MandatoryRegisterId(0, "Monetary value, in Ergo tokens")
   object R1 extends MandatoryRegisterId(1, "Guarding script")
@@ -199,10 +214,16 @@ object ErgoBox {
     }
 
     override def parse(r: SigmaByteReader): ErgoBox = {
-      val ergoBoxCandidate = ErgoBoxCandidate.serializer.parse(r)
+      val start = r.position
+      val c = ErgoBoxCandidate.serializer.parse(r)
       val transactionId = r.getBytes(ErgoLikeTransaction.TransactionIdBytesSize).toModifierId
       val index = r.getUShort()
-      ergoBoxCandidate.toBox(transactionId, index.toShort)
+      val end = r.position
+      val len = end - start
+      r.position = start
+      val boxBytes = r.getBytes(len) // also moves position back to end
+      new ErgoBox(c.value, c.ergoTree, c.additionalTokens, c.additionalRegisters,
+        transactionId, index.toShort, c.creationHeight, boxBytes)
     }
   }
 }

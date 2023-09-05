@@ -192,8 +192,7 @@ trait BigInt {
   def |(that: BigInt): BigInt = or(that)
 }
 
-/** Base class for points on elliptic curves.
-  */
+/** Base class for points on elliptic curves. */
 trait GroupElement {
   /** Checks if the provided element is an identity element. */
   def isIdentity: Boolean
@@ -381,7 +380,6 @@ trait Box {
 trait AvlTree {
   /** Returns digest of the state represented by this tree.
     * Authenticated tree digest = root hash bytes ++ tree height
-    * @since 2.0
     */
   def digest: Coll[Byte]
 
@@ -529,10 +527,8 @@ trait AvlTreeVerifier {
 }
 
 
-/** Only header fields that can be predicted by a miner.
-  * @since 2.0
-  */
-trait PreHeader { // Testnet2
+/** Only header fields that can be predicted by a miner. */
+trait PreHeader {
   /** Block version, to be increased on every soft and hardfork. */
   def version: Byte
 
@@ -556,9 +552,7 @@ trait PreHeader { // Testnet2
   def votes: Coll[Byte]
 }
 
-/** Represents data of the block header available in Sigma propositions.
-  * @since 2.0
-  */
+/** Represents data of the block header available in Sigma propositions. */
 trait Header {
   /** Bytes representation of ModifierId of this Header */
   def id: Coll[Byte]
@@ -572,7 +566,7 @@ trait Header {
   /** Hash of ADProofs for transactions in a block */
   def ADProofsRoot: Coll[Byte] // Digest32. Can we build AvlTree out of it?
 
-  /** AvlTree) of a state after block application */
+  /** AvlTree of a state after block application */
   def stateRoot: AvlTree
 
   /** Root hash (for a Merkle tree) of transactions in a block. */

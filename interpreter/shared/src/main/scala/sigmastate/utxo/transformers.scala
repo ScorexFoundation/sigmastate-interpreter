@@ -412,7 +412,6 @@ object ExtractScriptBytes extends SimpleTransformerCompanion with FixedCostValue
   val OpType = SFunc(SBox, SByteArray)
   override def opCode: OpCode = OpCodes.ExtractScriptBytesCode
 
-  // TODO v5.x: ensure the following is true
   /** The cost is fixed and doesn't include serialization of ErgoTree because
     * the ErgoTree is expected to be constructed with non-null propositionBytes.
     * This is (and must be) guaranteed by ErgoTree deserializer.
@@ -437,7 +436,7 @@ object ExtractBytes extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.ExtractBytesCode
   /** The cost is fixed and doesn't include serialization of ErgoBox because
     * the ErgoBox is expected to be constructed with non-null `bytes`.
-    * TODO v5.x: This is not currently, but must be guaranteed by lazy ErgoBox deserializer. */
+    */
   override val costKind = FixedCost(JitCost(12))
   override def argInfos: Seq[ArgInfo] = ExtractBytesInfo.argInfos
 }
@@ -618,7 +617,7 @@ case class OptionGetOrElse[V <: SType](input: Value[SOption[V]], default: Value[
   override def tpe: V = input.tpe.elemType
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Option[V#WrappedType]](env)
-    val dV = default.evalTo[V#WrappedType](env)  // TODO v6.0: execute lazily
+    val dV = default.evalTo[V#WrappedType](env)  // TODO v6.0: execute lazily (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/906)
     Value.checkType(default, dV) // necessary because cast to V#WrappedType is erased
     addCost(OptionGetOrElse.costKind)
     inputV.getOrElse(dV)

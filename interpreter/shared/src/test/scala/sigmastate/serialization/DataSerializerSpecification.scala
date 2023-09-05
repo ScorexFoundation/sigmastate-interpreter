@@ -1,12 +1,11 @@
 package sigmastate.serialization
 
 import java.math.BigInteger
-
 import org.ergoplatform.ErgoBox
 import org.scalacheck.Arbitrary._
 import scalan.RType
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{SigmaBoolean, ErgoTree}
+import sigmastate.Values.{ErgoTree, SigmaBoolean}
 import sigmastate._
 import sigmastate.eval.Evaluation
 import sigmastate.eval._
@@ -14,11 +13,12 @@ import sigmastate.eval.Extensions._
 import sigmastate.basics.CryptoConstants.EcPointType
 import special.sigma.AvlTree
 import SType.AnyOps
-import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import sigmastate.exceptions.SerializerException
 import sigmastate.interpreter.{CostAccumulator, ErgoTreeEvaluator}
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultProfiler
 import sigmastate.utils.Helpers
+
+import scala.annotation.nowarn
 
 class DataSerializerSpecification extends SerializationSpecification {
 
@@ -30,13 +30,14 @@ class DataSerializerSpecification extends SerializationSpecification {
     val res = DataSerializer.deserialize(tpe, r)
     res shouldBe obj
 
+    val es = ErgoTreeEvaluator.DefaultEvalSettings
     val accumulator = new CostAccumulator(
       initialCost = JitCost(0),
-      costLimit = Some(JitCost.fromBlockCost(ScriptCostLimit.value)))
+      costLimit = Some(JitCost.fromBlockCost(es.scriptCostLimitInEvaluator)))
     val evaluator = new ErgoTreeEvaluator(
       context = null,
       constants = ErgoTree.EmptyConstants,
-      coster = accumulator, DefaultProfiler, ErgoTreeEvaluator.DefaultEvalSettings)
+      coster = accumulator, DefaultProfiler, es)
     val ok = DataValueComparer.equalDataValues(res, obj)(evaluator)
     ok shouldBe true
 
@@ -76,8 +77,8 @@ class DataSerializerSpecification extends SerializationSpecification {
 
   def testTuples[T <: SType](tpe: T) = {
     implicit val wWrapped = wrappedTypeGen(tpe)
-    implicit val tag = tpe.classTag[T#WrappedType]
-    implicit val tAny = RType.AnyType
+    @nowarn implicit val tag = tpe.classTag[T#WrappedType]
+    implicit val tAny: RType[Any] = RType.AnyType
     forAll { in: (T#WrappedType, T#WrappedType) =>
       val (x,y) = (in._1, in._2)
       roundtrip[SType]((x, y).asWrappedType, STuple(tpe, tpe))

@@ -1,9 +1,9 @@
 package org.ergoplatform.validation
 
 import scalan.util.Extensions.toUByte
-import sigmastate.Values.{SValue, ErgoTree}
+import sigmastate.Values.{ErgoTree, SValue}
 import sigmastate._
-import sigmastate.exceptions.{InvalidOpCode, SerializerException, ReaderPositionLimitExceeded, SigmaException, InterpreterException}
+import sigmastate.exceptions.{InterpreterException, InvalidOpCode, ReaderPositionLimitExceeded, SerializerException, SigmaException}
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.TypeSerializer.embeddableIdToType
 import sigmastate.serialization.{OpCodes, ValueSerializer}

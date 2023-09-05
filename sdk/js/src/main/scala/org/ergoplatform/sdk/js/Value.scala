@@ -10,6 +10,7 @@ import sigmastate.crypto.Platform
 import sigmastate.eval.{CAvlTree, CGroupElement, CSigmaProp, Colls, CostingBox, Evaluation, SigmaDsl}
 import sigmastate.fleetSdkCommon.distEsmTypesBoxesMod.Box
 import sigmastate.fleetSdkCommon.distEsmTypesCommonMod
+import sigmastate.fleetSdkCommon.distEsmTypesRegistersMod.NonMandatoryRegisters
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.serialization.{ConstantSerializer, DataSerializer, SigmaSerializer}
 import special.collection.{Coll, CollType}
@@ -88,8 +89,8 @@ object Value extends js.Object {
       val v = data.asInstanceOf[js.BigInt]
       SigmaDsl.BigInt(new BigInteger(v.toString(16), 16))
     case special.sigma.GroupElementRType =>
-      val point = data.asInstanceOf[Platform.Point]
-      SigmaDsl.GroupElement(new Platform.Ecp(point))
+      val ge = data.asInstanceOf[GroupElement]
+      SigmaDsl.GroupElement(ge.point)
     case special.sigma.SigmaPropRType =>
       val p = data.asInstanceOf[SigmaProp]
       SigmaDsl.SigmaProp(p.sigmaBoolean)
@@ -97,7 +98,7 @@ object Value extends js.Object {
       val t = data.asInstanceOf[AvlTree]
       Isos.isoAvlTree.to(t)
     case special.sigma.BoxRType =>
-      val t = data.asInstanceOf[Box[distEsmTypesCommonMod.Amount]]
+      val t = data.asInstanceOf[Box[distEsmTypesCommonMod.Amount, NonMandatoryRegisters]]
       SigmaDsl.Box(Isos.isoBox.to(t))
     case ct: CollType[a] =>
       val xs = data.asInstanceOf[js.Array[Any]]
@@ -128,8 +129,8 @@ object Value extends js.Object {
       val hex = SigmaDsl.toBigInteger(value.asInstanceOf[special.sigma.BigInt]).toString(10)
       js.BigInt(hex)
     case special.sigma.GroupElementRType =>
-      val point: Platform.Point = value.asInstanceOf[CGroupElement].wrappedValue.asInstanceOf[Platform.Ecp].point
-      point
+      val point = value.asInstanceOf[CGroupElement].wrappedValue.asInstanceOf[Platform.Ecp]
+      new GroupElement(point)
     case special.sigma.SigmaPropRType =>
       new SigmaProp(value.asInstanceOf[CSigmaProp].wrappedValue)
     case special.sigma.AvlTreeRType =>
@@ -163,6 +164,10 @@ object Value extends js.Object {
       n
     case special.sigma.BigIntRType =>
       data.asInstanceOf[js.BigInt]
+    case special.sigma.GroupElementRType =>
+      data.asInstanceOf[GroupElement]
+    case special.sigma.SigmaPropRType =>
+      data.asInstanceOf[SigmaProp]
     case PairType(l, r) => data match {
       case arr: js.Array[Any @unchecked] =>
         checkJsData(arr(0), l)
@@ -212,6 +217,22 @@ object Value extends js.Object {
     new Value(n, Type.BigInt)
   }
 
+  /** Creates a Value of GroupElement type from [[sigmastate.crypto.Platform.Point]] hex.
+    * @param pointHex hex of ASN representation of [[sigmastate.crypto.Platform.Point]]
+    */
+  def ofGroupElement(pointHex: String): Value = {
+    val ge = GroupElement.fromPointHex(pointHex)
+    new Value(ge, Type.GroupElement)
+  }
+
+  /** Creates a Value of SigmaProp type from [[sigmastate.crypto.Platform.Point]] hex.
+    * @param pointHex hex of ASN representation of [[sigmastate.crypto.Platform.Point]]
+    */
+  def ofSigmaProp(pointHex: String): Value = {
+    val sp = SigmaProp.fromPointHex(pointHex)
+    new Value(sp, Type.SigmaProp)
+  }
+
   /** Create Pair value from two values. */
   def pairOf(l: Value, r: Value): Value = {
     val data = js.Array(l.data, r.data) // the l and r data have been validated
@@ -237,7 +258,9 @@ object Value extends js.Object {
     * descriptor.
     * @param hex the string is obtained as hex encoding of serialized ConstantNode.
     *            (The bytes obtained by ConstantSerializer in sigma)
-    * @return new deserialized ErgoValue instance
+    * @return new deserialized Value instance containing:
+    *         - suitable JS value in its `data` field
+    *         - and [[Type]] descriptor in its `tpe` field
     */
   def fromHex(hex: String): Value = {
     val bytes = Base16.decode(hex).fold(t => throw t, identity)

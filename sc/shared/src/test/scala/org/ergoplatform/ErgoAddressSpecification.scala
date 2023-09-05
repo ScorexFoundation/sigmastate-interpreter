@@ -1,7 +1,6 @@
 package org.ergoplatform
 
 import org.ergoplatform.ErgoAddressEncoder.{MainnetNetworkPrefix, TestnetNetworkPrefix, hash256}
-import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.ergoplatform.validation.{ValidationException, ValidationRules}
 import org.scalatest.{Assertion, TryValues}
 import scorex.crypto.hash.Blake2b256
@@ -260,7 +259,7 @@ class ErgoAddressSpecification extends SigmaDslTesting
   property("negative cases: deserialized script + costing exceptions") {
    implicit lazy val IR = new TestingIRContext
 
-    def testPay2SHAddress(address: Pay2SHAddress, script: VarBinding, costLimit: Int = ScriptCostLimit.value): CostedProverResult = {
+    def testPay2SHAddress(address: Pay2SHAddress, script: VarBinding, costLimit: Int = scriptCostLimitInTests): CostedProverResult = {
       val boxToSpend = testBox(10, address.script, creationHeight = 5)
       val ctx = copyContext(ErgoLikeContextTesting.dummy(boxToSpend, activatedVersionInTests)
           .withExtension(ContextExtension(Seq(

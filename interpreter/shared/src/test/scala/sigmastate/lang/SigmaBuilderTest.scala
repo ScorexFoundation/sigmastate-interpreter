@@ -135,7 +135,7 @@ class SigmaBuilderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Ma
       val v = true
       val c = BooleanConstant(v)
       test[SBoolean.type](v, c)
-      testArray[SBoolean.type](v, c)  // TODO v6.0: arrays should not be liftable directly
+      testArray[SBoolean.type](v, c)  // TODO v6.0: arrays should not be liftable directly (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/905)
       testColl[SBoolean.type](v, c)
   }
 
@@ -144,7 +144,7 @@ class SigmaBuilderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Ma
       val c = ByteConstant(v)
       testNumeric[SByte.type](v, c)
       testLiftingOfCAnyValue[SByte.type](v, c)
-      testArray[SByte.type](v, c)  // TODO v6.0: arrays should not be liftable directly
+      testArray[SByte.type](v, c)  // TODO v6.0: arrays should not be liftable directly (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/905)
       testColl[SByte.type](v, c)
   }
 
@@ -153,7 +153,7 @@ class SigmaBuilderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Ma
     val c = ShortConstant(v)
     testNumeric[SShort.type](v, c)
     testLiftingOfCAnyValue[SShort.type](v, c)
-    testArray[SShort.type](v, c)   // TODO v6.0: arrays should not be liftable directly
+    testArray[SShort.type](v, c)   // TODO v6.0: arrays should not be liftable directly (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/905)
     testColl[SShort.type](v, c)
   }
 
@@ -161,7 +161,7 @@ class SigmaBuilderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Ma
     val v = 1
     val c = IntConstant(v)
     test[SInt.type](v, c)
-    testArray[SInt.type](v, c)     // TODO v6.0: arrays should not be liftable directly
+    testArray[SInt.type](v, c)     // TODO v6.0: arrays should not be liftable directly (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/905)
     testColl[SInt.type](v, c)
   }
 
@@ -169,7 +169,7 @@ class SigmaBuilderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Ma
     val v = 1L
     val c = LongConstant(v)
     test[SLong.type](v, c)
-    testArray[SLong.type](v, c)    // TODO v6.0: arrays should not be liftable directly
+    testArray[SLong.type](v, c)    // TODO v6.0: arrays should not be liftable directly (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/905)
     testColl[SLong.type](v, c)
   }
   
@@ -177,14 +177,14 @@ class SigmaBuilderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Ma
     val v = "abc"
     val c = StringConstant(v)
     test[SString.type](v, c)
-    testArray[SString.type](v, c)    // TODO v6.0: String should be liftable at all (not supported in ErgoTree)
+    testArray[SString.type](v, c)    // TODO v6.0: String should be liftable at all (not supported in ErgoTree) (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/905)
     testColl[SString.type](v, c)
   }
 
   property("liftToConstant BigInteger") {
     val v = BigInteger.valueOf(1L)
     val c = BigIntConstant(v)
-    testSuccess(v, c)             // TODO v6.0: both BigInteger and arrays should not be liftable directly
+    testSuccess(v, c)             // TODO v6.0: both BigInteger and arrays should not be liftable directly (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/905)
     val arr = Array.fill(10)(v)
     testSuccess(arr, TransformingSigmaBuilder.mkCollectionConstant[SBigInt.type](arr.map(SigmaDsl.BigInt), c.tpe))
   }
@@ -208,7 +208,7 @@ class SigmaBuilderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Ma
   property("liftToConstant ErgoBox") {
     val v = TestData.b2.asInstanceOf[CostingBox].wrappedValue
     val c = BoxConstant(TestData.b2)
-    testSuccess(v, c) // TODO v6.0: ErgoBox should not be liftable directly
+    testSuccess(v, c) // TODO v6.0: ErgoBox should not be liftable directly (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/905)
     testFailure(Array.fill(10)(v))
   }
 
@@ -235,7 +235,7 @@ class SigmaBuilderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Ma
   property("liftToConstant AvlTreeData") {
     val v = TestData.t1.asInstanceOf[CAvlTree].wrappedValue
     val c = AvlTreeConstant(SigmaDsl.avlTree(v))
-    testSuccess(v, c) // TODO v6.0: AvlTreeData should not be liftable directly
+    testSuccess(v, c) // TODO v6.0: AvlTreeData should not be liftable directly (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/905)
     testFailure(Array.fill(10)(v))
   }
 

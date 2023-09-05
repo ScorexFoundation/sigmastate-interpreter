@@ -31,4 +31,7 @@ trait TestsBase extends Matchers with VersionTesting {
   /** Transform sigma proposition into [[ErgoTree]] using current ergoTreeHeaderInTests. */
   def mkTestErgoTree(prop: SigmaBoolean): ErgoTree =
     ErgoTree.fromSigmaBoolean(ergoTreeHeaderInTests, prop)
+
+  /** Max cost of script execution in tests. */
+  val scriptCostLimitInTests: Int = 1000000
 }

@@ -34,7 +34,8 @@ abstract class BaseShouldTests extends AnyFlatSpec with TestUtils {
     }
   }
 
-  protected implicit def convertToInAndIgnoreMethods2(resultOfStringPassedToVerb: ResultOfStringPassedToVerb) =
+  protected implicit def convertToInAndIgnoreMethods2(
+      resultOfStringPassedToVerb: ResultOfStringPassedToVerb): InAndIgnoreMethods2 =
     new InAndIgnoreMethods2(resultOfStringPassedToVerb)
 
 }

@@ -16,17 +16,12 @@ import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.eval.Digest32Coll
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.SerializationSpecification
-import sigmastate.utils.Helpers._
+import sigmastate.utils.Helpers.DecoderResultOps  // required for Scala 2.11 (extension method toTry)
 import special.collection.Coll
 import special.sigma.{Header, PreHeader}
-import org.ergoplatform.ErgoLikeContext
-import org.ergoplatform.DataInput
-import org.ergoplatform.Input
-import org.ergoplatform.UnsignedInput
-import org.ergoplatform.ErgoBox
-import org.ergoplatform.ErgoLikeTransaction
-import org.ergoplatform.UnsignedErgoLikeTransaction
-import org.ergoplatform.ErgoLikeTransactionTemplate
+import org.ergoplatform.{DataInput, ErgoBox, ErgoBoxCandidate, ErgoLikeContext, ErgoLikeTransaction, ErgoLikeTransactionTemplate, Input, UnsignedErgoLikeTransaction, UnsignedInput}
+
+import scala.collection.mutable
 
 class JsonSerializationSpec extends SerializationSpecification with JsonCodecs {
 
@@ -36,7 +31,7 @@ class JsonSerializationSpec extends SerializationSpecification with JsonCodecs {
   }
 
   property("ErgoLikeContext should be encoded into JSON and decoded back correctly") {
-    forAll(ergoLikeContextGen) { v: ErgoLikeContext => jsonRoundTrip(v) }
+    forAll(ergoLikeContextGen, MinSuccessful(50)) { v: ErgoLikeContext => jsonRoundTrip(v) }
   }
 
   property("sigma.BigInt should be encoded into JSON and decoded back correctly") {
@@ -84,43 +79,49 @@ class JsonSerializationSpec extends SerializationSpecification with JsonCodecs {
   }
 
   property("Input should be encoded into JSON and decoded back correctly") {
-    forAll(inputGen) { v: Input => jsonRoundTrip(v) }
+    forAll(inputGen, MinSuccessful(50)) { v: Input => jsonRoundTrip(v) }
   }
 
   property("UnsignedInput should be encoded into JSON and decoded back correctly") {
-    forAll(unsignedInputGen) { v: UnsignedInput => jsonRoundTrip(v) }
+    forAll(unsignedInputGen, MinSuccessful(50)) { v: UnsignedInput => jsonRoundTrip(v) }
   }
 
   property("ContextExtension should be encoded into JSON and decoded back correctly") {
-    forAll(contextExtensionGen) { v: ContextExtension => jsonRoundTrip(v) }
+    forAll(contextExtensionGen, MinSuccessful(500)) { v: ContextExtension => jsonRoundTrip(v) }
+  }
+
+  property("AdditionalRegisters should be encoded into JSON and decoded back correctly") {
+    forAll(additionalRegistersGen, MinSuccessful(500)) { regs =>
+      jsonRoundTrip(regs)(registersEncoder, registersDecoder)
+    }
   }
 
   property("ProverResult should be encoded into JSON and decoded back correctly") {
-    forAll(serializedProverResultGen) { v: ProverResult => jsonRoundTrip(v) }
+    forAll(serializedProverResultGen, MinSuccessful(500)) { v: ProverResult => jsonRoundTrip(v) }
   }
 
   property("AvlTreeData should be encoded into JSON and decoded back correctly") {
-    forAll(avlTreeDataGen) { v: AvlTreeData => jsonRoundTrip(v) }
+    forAll(avlTreeDataGen, MinSuccessful(500)) { v: AvlTreeData => jsonRoundTrip(v) }
   }
 
   property("ErgoTree should be encoded into JSON and decoded back correctly") {
-    forAll(ergoTreeGen) { v: ErgoTree => jsonRoundTrip(v) }
+    forAll(ergoTreeGen, MinSuccessful(500)) { v: ErgoTree => jsonRoundTrip(v) }
   }
 
   property("ErgoBox should be encoded into JSON and decoded back correctly") {
-    forAll(ergoBoxGen) { v: ErgoBox => jsonRoundTrip(v) }
+    forAll(ergoBoxGen, MinSuccessful(500)) { v: ErgoBox => jsonRoundTrip(v) }
   }
 
   property("ErgoLikeTransaction should be encoded into JSON and decoded back correctly") {
-    forAll(ergoLikeTransactionGen) { v: ErgoLikeTransaction => jsonRoundTrip(v) }
+    forAll(ergoLikeTransactionGen, MinSuccessful(50)) { v: ErgoLikeTransaction => jsonRoundTrip(v) }
   }
 
   property("UnsignedErgoLikeTransaction should be encoded into JSON and decoded back correctly") {
-    forAll(unsignedErgoLikeTransactionGen) { v: UnsignedErgoLikeTransaction => jsonRoundTrip(v) }
+    forAll(unsignedErgoLikeTransactionGen, MinSuccessful(50)) { v: UnsignedErgoLikeTransaction => jsonRoundTrip(v) }
   }
 
   property("ErgoLikeTransactionTemplate should be encoded into JSON and decoded back correctly") {
-    forAll(ergoLikeTransactionTemplateGen) { v: ErgoLikeTransactionTemplate[_ <: UnsignedInput] =>
+    forAll(ergoLikeTransactionTemplateGen, MinSuccessful(50)) { v: ErgoLikeTransactionTemplate[_ <: UnsignedInput] =>
       v.asJson.as(ergoLikeTransactionTemplateDecoder).toTry.get shouldEqual v
     }
   }
@@ -136,7 +137,7 @@ class JsonSerializationSpec extends SerializationSpecification with JsonCodecs {
         CryptoConstants.dlogGroup.ctx.decodePoint(point).asInstanceOf[CryptoConstants.EcPointType]
       )
     }.get
-    val regs = Map(
+    val regs = scala.collection.Map(
       R7 -> LongArrayConstant(Array(1L, 2L, 1234123L)),
       R4 -> ByteConstant(1),
       R6 -> IntConstant(10),

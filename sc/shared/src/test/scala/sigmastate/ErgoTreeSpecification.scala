@@ -256,7 +256,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
     { import SSigmaProp._
       (SSigmaProp.typeId,  Seq(
         MInfo(1, PropBytesMethod),
-        MInfo(2, IsProvenMethod)  // TODO v5.x (3h): this method must be removed
+        MInfo(2, IsProvenMethod)  // TODO v5.x (3h): this method must be removed (see https://github.com/ScorexFoundation/sigmastate-interpreter/pull/800)
       ), true)
     },
     { import SBox._

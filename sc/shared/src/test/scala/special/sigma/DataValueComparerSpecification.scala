@@ -1,6 +1,5 @@
 package special.sigma
 
-import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.scalatest.BeforeAndAfterAll
 import scalan.RType
 import scalan.util.BenchmarkUtil
@@ -23,7 +22,8 @@ class DataValueComparerSpecification extends SigmaDslTesting
     isMeasureOperationTime = true,
     isMeasureScriptTime = true,
     isLogEnabled = false, // don't commit the `true` value (CI log is too high)
-    costTracingEnabled = true  // should always be enabled in tests (and false by default)
+    costTracingEnabled = true,  // should always be enabled in tests (and false by default)
+    scriptCostLimitInEvaluator = scriptCostLimitInTests
   )
   override val nBenchmarkIters = 10
 
@@ -36,7 +36,7 @@ class DataValueComparerSpecification extends SigmaDslTesting
   def createEvaluator(settings: EvalSettings, profiler: Profiler): ErgoTreeEvaluator = {
     val accumulator = new CostAccumulator(
       initialCost = JitCost(0),
-      costLimit = Some(JitCost.fromBlockCost(ScriptCostLimit.value)))
+      costLimit = Some(JitCost.fromBlockCost(settings.scriptCostLimitInEvaluator)))
     val evaluator = new ErgoTreeEvaluator(
       context = null,
       constants = ErgoTree.EmptyConstants,

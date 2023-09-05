@@ -7,7 +7,7 @@ import org.scalacheck.Gen.containerOfN
 import org.scalacheck.util.Buildable
 import org.scalacheck.{Arbitrary, Gen}
 import scalan.RType
-import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
+import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ModifierId
 import sigmastate.Values.{ByteArrayConstant, ConcreteCollection, ConstantPlaceholder, ErgoTree, FalseLeaf, IntConstant, LongConstant, SigmaPropConstant, TrueLeaf}
@@ -43,11 +43,11 @@ trait SigmaTestingData extends TestingCommons with ObjectGenerators {
     len <- Gen.choose(0, 100)
     arr <- containerOfN[Array, Byte](len, Arbitrary.arbByte.arbitrary)
   } yield arr
-  val bytesCollGen = bytesGen.map(Colls.fromArray(_))
-  val intsCollGen = arrayGen[Int].map(Colls.fromArray(_))
-  implicit val arbBytes = Arbitrary(bytesCollGen)
-  implicit val arbInts = Arbitrary(intsCollGen)
-  val keyCollGen = collOfN[Byte](32, arbitrary[Byte])
+  val bytesCollGen: Gen[Coll[Byte]] = bytesGen.map(Colls.fromArray(_))
+  val intsCollGen: Gen[Coll[Int]] = arrayGen[Int].map(Colls.fromArray(_))
+  implicit val arbBytes: Arbitrary[Coll[Byte]] = Arbitrary(bytesCollGen)
+  implicit val arbInts: Arbitrary[Coll[Int]] = Arbitrary(intsCollGen)
+  val keyCollGen: Gen[Coll[Byte]] = collOfN[Byte](32, arbitrary[Byte])
   import org.ergoplatform.dsl.AvlTreeHelpers._
 
   def createAvlTreeAndProver(entries: (Coll[Byte], Coll[Byte])*) = {
@@ -132,7 +132,7 @@ trait SigmaTestingData extends TestingCommons with ObjectGenerators {
 
     def createBigIntMaxValue(): BigInt = BigIntMaxValue_instances.getNext
 
-    // TODO v6.0: this values have bitCount == 255 (see to256BitValueExact)
+    // TODO v6.0: this values have bitCount == 255 (see to256BitValueExact) (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/554)
     val BigIntMinValue = CBigInt(new BigInteger("-7F" + "ff" * 31, 16))
 
     val BigIntMaxValue = createBigIntMaxValue()

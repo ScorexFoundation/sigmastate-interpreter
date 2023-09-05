@@ -5,7 +5,7 @@ import org.ergoplatform._
 import org.ergoplatform.sdk.Extensions.{CollOps, PairCollOps}
 import org.ergoplatform.sdk.JavaHelpers.{TokenColl, UniversalConverter}
 import org.ergoplatform.sdk.utils.ArithUtils
-import org.ergoplatform.sdk.wallet.protocol.context.{ErgoLikeParameters, ErgoLikeStateContext, TransactionContext}
+import org.ergoplatform.sdk.wallet.protocol.context.{BlockchainStateContext, TransactionContext}
 import org.ergoplatform.sdk.wallet.secrets.ExtendedSecretKey
 import org.ergoplatform.validation.ValidationRules
 import scalan.util.Extensions.LongOps
@@ -35,7 +35,7 @@ class AppkitProvingInterpreter(
       val secretKeys: IndexedSeq[ExtendedSecretKey],
       val dLogInputs: IndexedSeq[DLogProverInput],
       val dhtInputs: IndexedSeq[DiffieHellmanTupleProverInput],
-      params: ErgoLikeParameters)
+      params: BlockchainParameters)
   extends ReducingInterpreter(params) with ProverInterpreter {
 
   override type CTX = ErgoLikeContext
@@ -44,7 +44,7 @@ class AppkitProvingInterpreter(
   /** All secrets available to this interpreter including [[ExtendedSecretKey]], dlog and
     * dht secrets.
     */
-  override val secrets: Seq[SigmaProtocolPrivateInput[_, _]] = {
+  override val secrets: Seq[SigmaProtocolPrivateInput[_]] = {
     val dlogs: IndexedSeq[DLogProverInput] = secretKeys.map(_.privateInput)
     dlogs ++ dLogInputs ++ dhtInputs
   }
@@ -79,7 +79,7 @@ class AppkitProvingInterpreter(
    *         The returned cost doesn't include `baseCost`.
    */
   def sign(unreducedTx: UnreducedTransaction,
-           stateContext: ErgoLikeStateContext,
+           stateContext: BlockchainStateContext,
            baseCost: Int): Try[SignedTransaction] = Try {
     val maxCost = params.maxBlockCost
     var currentCost: Long = baseCost
@@ -112,7 +112,7 @@ class AppkitProvingInterpreter(
       unsignedTx: UnsignedErgoLikeTransaction,
       boxesToSpend: IndexedSeq[ExtendedInputBox],
       dataBoxes: IndexedSeq[ErgoBox],
-      stateContext: ErgoLikeStateContext,
+      stateContext: BlockchainStateContext,
       baseCost: Int,
       tokensToBurn: IndexedSeq[ErgoToken]): ReducedErgoLikeTransaction = {
     if (unsignedTx.inputs.length != boxesToSpend.length) throw new Exception("Not enough boxes to spend")

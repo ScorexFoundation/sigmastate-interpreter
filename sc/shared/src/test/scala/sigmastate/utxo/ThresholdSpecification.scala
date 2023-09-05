@@ -4,7 +4,7 @@ import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate.Values.{ConcreteCollection, FalseLeaf, IntConstant, SigmaPropConstant, SigmaPropValue, TrueLeaf}
 import sigmastate._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTransactionTesting, CompilerTestingCommons}
-import sigmastate.exceptions.CosterException
+import sigmastate.exceptions.GraphBuildingException
 
 class ThresholdSpecification extends CompilerTestingCommons
   with CompilerCrossVersionProps {
@@ -407,8 +407,8 @@ class ThresholdSpecification extends CompilerTestingCommons
     val keyName = "pubkeyA"
     val env = Map(keyName -> pubkeyA)
     val pubKeysStrExceeding = Array.fill[String](AtLeast.MaxChildrenCount + 1)(keyName).mkString(",")
-    an[CosterException] should be thrownBy compile(env, s"""atLeast(2, Coll($pubKeysStrExceeding))""")
-    an[CosterException] should be thrownBy
+    an[GraphBuildingException] should be thrownBy compile(env, s"""atLeast(2, Coll($pubKeysStrExceeding))""")
+    an[GraphBuildingException] should be thrownBy
       compile(env, s"""{ val arr = Coll($pubKeysStrExceeding); atLeast(2, arr) }""")
 
     // max children should work fine

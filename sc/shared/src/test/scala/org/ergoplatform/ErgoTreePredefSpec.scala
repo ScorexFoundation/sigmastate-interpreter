@@ -226,7 +226,7 @@ class ErgoTreePredefSpec extends CompilerTestingCommons with CompilerCrossVersio
         boxesToSpend = inputBoxes,
         spendingTransaction,
         self = inputBoxes.head,
-        activatedVersionInTests).withCostLimit(SigmaConstants.ScriptCostLimit.value * 10)
+        activatedVersionInTests).withCostLimit(scriptCostLimitInTests * 10)
 
       val pr = prover.prove(emptyEnv + (ScriptNameProp -> "tokenThresholdScript_prove"), prop, ctx, fakeMessage).getOrThrow
       verifier.verify(emptyEnv + (ScriptNameProp -> "tokenThresholdScript_verify"), prop, ctx, pr, fakeMessage).getOrThrow._1 shouldBe true

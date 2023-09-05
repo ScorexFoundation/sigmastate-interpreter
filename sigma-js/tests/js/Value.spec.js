@@ -1,4 +1,4 @@
-const { TypeObj, ValueObj } = require("sigmastate-js/main");
+const { TypeObj, ValueObj, SigmaPropObj, SigmaProp} = require("sigmastate-js/main");
 
 function testRange(factory, min, max) {
   expect(factory(max).data).toEqual(max);
@@ -103,6 +103,14 @@ describe("Smoke tests for Values", () => {
 
     expect(collV.tpe.name).toEqual("Coll[Coll[Byte]]");
     expect(collV.toHex()).toEqual(collHex)
+  });
+
+  it("Value of type Coll[SigmaProp]", () => {
+    let sp1 = SigmaPropObj.fromPointHex(groupElementHex.substring(2))
+    let sp2 = SigmaPropObj.fromPointHex(sigmaPropHex.substring(4))
+    let collV = ValueObj.collOf([sp1, sp2], TypeObj.SigmaProp)
+
+    expect(collV.tpe.name).toEqual("Coll[SigmaProp]");
   });
 
   it("Pair Value.toHex", () => {
