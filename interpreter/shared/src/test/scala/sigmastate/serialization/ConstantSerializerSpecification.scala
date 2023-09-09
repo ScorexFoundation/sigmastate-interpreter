@@ -15,7 +15,7 @@ import sigma.{AvlTree, Colls, Evaluation}
 import sigma.ast.SType.AnyOps
 import scorex.util.encode.Base16
 import sigma.ast._
-import sigmastate.exceptions.SerializerException
+import sigma.serialization.SerializerException
 import sigmastate.lang.DeserializationSigmaBuilder
 
 import scala.annotation.nowarn

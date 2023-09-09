@@ -1,11 +1,12 @@
 package sigmastate.serialization.transformers
 
 import sigma.ast.{SNumericType, SType}
+import sigma.serialization.CoreByteWriter.{ArgInfo, DataInfo}
 import sigmastate.Values.{SValue, Value}
 import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utils.SigmaByteWriter.DataInfo
+import sigmastate.utils.SigmaByteWriter._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.Transformer
 

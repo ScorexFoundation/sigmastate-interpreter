@@ -1,12 +1,13 @@
 package sigmastate.serialization
 
 import sigma.ast.SGroupElement
+import sigma.serialization.CoreByteWriter.DataInfo
 import sigmastate.crypto.DLogProtocol.ProveDlog
 import sigmastate.CreateProveDlog
-import sigmastate.Values.{Value, SValue, SigmaPropValue}
+import sigmastate.Values.{SValue, SigmaPropValue, Value}
 import sigmastate.crypto.CryptoConstants.EcPointType
 import sigmastate.lang.Terms._
-import sigmastate.utils.SigmaByteWriter.DataInfo
+import sigmastate.utils.SigmaByteWriter._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 case class ProveDlogSerializer(cons: EcPointType => ProveDlog)

@@ -1,12 +1,13 @@
 package sigmastate.serialization.transformers
 
-import sigmastate.Values.{Value, SValue}
+import sigmastate.Values.{SValue, Value}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utils.SigmaByteWriter.DataInfo
+import sigmastate.utils.SigmaByteWriter._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.MapCollection
-import sigma.ast.{SCollection, SType, SFunc}
+import sigma.ast.{SCollection, SFunc, SType}
+import sigma.serialization.CoreByteWriter.DataInfo
 
 case class MapCollectionSerializer(cons: (Value[SCollection[SType]], Value[SFunc]) => Value[SType])
   extends ValueSerializer[MapCollection[SType, SType]] {

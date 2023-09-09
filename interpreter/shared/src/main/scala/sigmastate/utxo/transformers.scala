@@ -8,6 +8,7 @@ import org.ergoplatform.ErgoBox.RegisterId
 import sigma.ast.SCollection.SByteArray
 import sigma.ast._
 import sigma.data.RType
+import sigma.serialization.CoreByteWriter.ArgInfo
 import sigmastate.Operations._
 import sigmastate.eval.SigmaDsl
 import sigmastate.exceptions.InterpreterException

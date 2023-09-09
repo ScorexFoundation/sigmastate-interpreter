@@ -14,7 +14,7 @@ import sigma.{AvlTree, Colls, Evaluation}
 import sigma.ast.SType.AnyOps
 import sigma.ast._
 import org.scalacheck.Gen
-import sigmastate.exceptions.SerializerException
+import sigma.serialization.SerializerException
 import sigmastate.interpreter.{CostAccumulator, ErgoTreeEvaluator}
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultProfiler
 import sigmastate.utils.Helpers

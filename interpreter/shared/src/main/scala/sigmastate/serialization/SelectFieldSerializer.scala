@@ -7,7 +7,8 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.SelectField
 import SelectFieldInfo._
 import sigma.ast.{STuple, SType}
-import sigmastate.utils.SigmaByteWriter.DataInfo
+import sigma.serialization.CoreByteWriter.DataInfo
+import sigmastate.utils.SigmaByteWriter._
 
 case class SelectFieldSerializer(cons: (Value[STuple], Byte) => Value[SType]) extends ValueSerializer[SelectField] {
   override def opDesc = SelectField

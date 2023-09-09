@@ -1,12 +1,13 @@
 package sigmastate.serialization.transformers
 
-import sigmastate.{SigmaTransformerCompanion, SigmaTransformer}
-import sigmastate.Values.{SigmaPropValue, SValue}
+import sigmastate.{SigmaTransformer, SigmaTransformerCompanion}
+import sigmastate.Values.{SValue, SigmaPropValue}
 import sigmastate.serialization.ValueSerializer
 import sigma.util.safeNewArray
-import sigmastate.utils.SigmaByteWriter.{DataInfo, valuesItemInfo}
+import sigmastate.utils.SigmaByteWriter._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import debox.cfor
+import sigma.serialization.CoreByteWriter.DataInfo
 
 case class SigmaTransformerSerializer[I <: SigmaPropValue, O <: SigmaPropValue]
 (opDesc: SigmaTransformerCompanion, cons: Seq[SigmaPropValue] => SigmaPropValue)

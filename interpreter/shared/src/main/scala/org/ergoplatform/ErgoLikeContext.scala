@@ -1,6 +1,5 @@
 package org.ergoplatform
 
-import org.ergoplatform.validation.SigmaValidationSettings
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval.Extensions._
@@ -13,8 +12,9 @@ import sigma.Coll
 import sigma.{AnyValue, Header, PreHeader}
 import debox.cfor
 import sigma.ast.{SBox, SCollection, SContext, SFunc, SGlobal, SInt, SType, SUnit}
-import sigma.ast.SType.{TypeCode, AnyOps}
+import sigma.ast.SType.{AnyOps, TypeCode}
 import sigma.data.SigmaConstants
+import sigma.validation.SigmaValidationSettings
 import sigmastate.serialization.ValueCodes.OpCode
 
 /** Represents a script evaluation context to be passed to a prover and a verifier to execute and

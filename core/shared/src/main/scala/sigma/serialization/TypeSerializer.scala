@@ -1,30 +1,24 @@
 package sigmastate.serialization
 
-import java.nio.charset.StandardCharsets
-import org.ergoplatform.validation.ValidationRules.{CheckPrimitiveTypeCode, CheckTypeCode}
-import sigmastate._
-import sigma.util.safeNewArray
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import debox.cfor
 import sigma.ast.SCollectionType.{CollectionTypeCode, NestedCollectionTypeCode}
 import sigma.ast._
-import sigmastate.exceptions.InvalidTypePrefix
+import sigma.serialization.{CoreByteReader, CoreByteWriter, InvalidTypePrefix}
+import sigma.util.safeNewArray
+import sigma.validation.ValidationRules.{CheckPrimitiveTypeCode, CheckTypeCode}
+
+import java.nio.charset.StandardCharsets
 
 /** Serialization of types according to specification in TypeSerialization.md. */
-object TypeSerializer {
-
-
-  /** The list of embeddable types, i.e. types that can be combined with type constructor for optimized encoding.
-    * For each embeddable type `T`, and type constructor `C`, the type `C[T]` can be represented by single byte. */
-  val embeddableIdToType = Array[SType](null, SBoolean, SByte, SShort, SInt, SLong, SBigInt, SGroupElement, SSigmaProp)
-
+class TypeSerializer {
+  import TypeSerializer._
 
   def getEmbeddableType(code: Int): SType = {
     CheckPrimitiveTypeCode(code.toByte)
     embeddableIdToType(code)
   }
 
-  def serialize(tpe: SType, w: SigmaByteWriter): Unit = tpe match {
+  def serialize(tpe: SType, w: CoreByteWriter): Unit = tpe match {
     case p: SEmbeddable => w.put(p.typeCode)
     case SString => w.put(SString.typeCode)
     case SAny => w.put(SAny.typeCode)
@@ -115,9 +109,9 @@ object TypeSerializer {
     }
   }
 
-  def deserialize(r: SigmaByteReader): SType = deserialize(r, 0)
+  def deserialize(r: CoreByteReader): SType = deserialize(r, 0)
 
-  private def deserialize(r: SigmaByteReader, depth: Int): SType = {
+  private def deserialize(r: CoreByteReader, depth: Int): SType = {
     val c = r.getUByte()
     if (c <= 0)
       throw new InvalidTypePrefix(s"Cannot deserialize type prefix $c. Unexpected buffer $r with bytes ${r.getBytes(r.remaining)}")
@@ -203,13 +197,13 @@ object TypeSerializer {
     tpe
   }
 
-  private def getArgType(r: SigmaByteReader, primId: Int, depth: Int) =
+  private def getArgType(r: CoreByteReader, primId: Int, depth: Int) =
     if (primId == 0)
       deserialize(r, depth + 1)
     else
       getEmbeddableType(primId)
 
-  private def serializeTuple(t: STuple, w: SigmaByteWriter) = {
+  private def serializeTuple(t: STuple, w: CoreByteWriter) = {
     assert(t.items.length <= 255)
     w.put(STuple.TupleTypeCode)
     w.putUByte(t.items.length)
@@ -218,3 +212,9 @@ object TypeSerializer {
   }
 }
 
+object TypeSerializer extends TypeSerializer {
+  /** The list of embeddable types, i.e. types that can be combined with type constructor for optimized encoding.
+    * For each embeddable type `T`, and type constructor `C`, the type `C[T]` can be represented by single byte. */
+  val embeddableIdToType = Array[SType](null, SBoolean, SByte, SShort, SInt, SLong, SBigInt, SGroupElement, SSigmaProp)
+
+}

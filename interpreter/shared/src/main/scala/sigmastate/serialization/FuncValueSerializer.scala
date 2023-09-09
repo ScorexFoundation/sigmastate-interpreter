@@ -5,9 +5,10 @@ import sigmastate._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import ValueSerializer._
 import sigma.util.safeNewArray
-import sigmastate.utils.SigmaByteWriter.{DataInfo, U, Vlq}
+import sigmastate.utils.SigmaByteWriter._
 import debox.cfor
 import sigma.ast.SType
+import sigma.serialization.CoreByteWriter.{ArgInfo, DataInfo, U, Vlq}
 
 case class FuncValueSerializer(cons: (IndexedSeq[(Int, SType)], Value[SType]) => Value[SType])
   extends ValueSerializer[FuncValue] {

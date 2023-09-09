@@ -18,6 +18,7 @@ import sigmastate.exceptions.SerializerException
 import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
 import sigma.ast._
+import sigma.serialization.SerializerException
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.serialization.DataSerializer
 import sigmastate.serialization.ErgoTreeSerializer

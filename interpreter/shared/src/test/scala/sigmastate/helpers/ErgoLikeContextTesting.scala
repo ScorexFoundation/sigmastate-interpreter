@@ -2,7 +2,8 @@ package sigmastate.helpers
 
 import org.ergoplatform.ErgoLikeContext.Height
 import org.ergoplatform._
-import org.ergoplatform.validation.{SigmaValidationSettings, ValidationRules}
+import org.ergoplatform.validation.ValidationRules
+import sigma.validation.SigmaValidationSettings
 import sigmastate.AvlTreeData
 import sigmastate.crypto.CryptoConstants
 import sigmastate.eval._

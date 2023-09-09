@@ -1,11 +1,12 @@
 package sigmastate.serialization
 
 import sigma.ast.SType
-import sigmastate.Values.{BigIntValue, Value, SValue}
+import sigma.serialization.CoreByteWriter.DataInfo
+import sigmastate.Values.{BigIntValue, SValue, Value}
 import sigmastate.lang.Terms._
-import sigmastate.utils.SigmaByteWriter.DataInfo
+import sigmastate.utils.SigmaByteWriter._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.{ModQArithOpCompanion, ModQArithOp}
+import sigmastate.{ModQArithOp, ModQArithOpCompanion}
 
 // TODO v6.0: make sure it is covered with tests (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/327)
 case class ModQArithOpSerializer(override val opDesc: ModQArithOpCompanion, cons: (BigIntValue, BigIntValue) => BigIntValue)

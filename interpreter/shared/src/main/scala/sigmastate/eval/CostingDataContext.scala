@@ -1,30 +1,29 @@
 package sigmastate.eval
 
 import debox.cfor
-import org.ergoplatform.validation.{SigmaValidationSettings, ValidationRules}
 import org.ergoplatform.ErgoBox
-import sigma.data.OverloadHack.Overloaded1
-import sigma.data.{CBigInt, CollOverArrayBuilder, RType, SigmaConstants, WrapperOf}
-import sigma.util.Extensions.BigIntegerOps
+import org.ergoplatform.validation.ValidationRules
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue, SerializedAdProof}
 import scorex.crypto.hash.{Blake2b256, Digest32, Sha256}
 import scorex.utils.{Ints, Longs}
-import sigma.VersionContext
+import sigma.{VersionContext, _}
+import sigma.ast.SCollection.SByteArray
+import sigma.ast.{SInt, STuple, SType}
+import sigma.data.OverloadHack.Overloaded1
+import sigma.data.{CBigInt, RType, SigmaConstants, WrapperOf}
+import sigma.util.Extensions.BigIntegerOps
+import sigma.validation.SigmaValidationSettings
 import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.Values.{ConstantNode, ErgoTree, EvaluatedValue, SValue, SigmaBoolean}
 import sigmastate._
 import sigmastate.crypto.CryptoConstants.EcPointType
 import sigmastate.crypto.DLogProtocol.ProveDlog
-import sigmastate.crypto.{CryptoConstants, ProveDHTuple}
-import sigmastate.crypto.{CryptoFacade, Ecp}
+import sigmastate.crypto.{CryptoConstants, CryptoFacade, Ecp, ProveDHTuple}
 import sigmastate.eval.Extensions._
 import sigmastate.interpreter.Interpreter
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.{GroupElementSerializer, SigmaSerializer}
-import sigma._
-import sigma.ast.SCollection.SByteArray
-import sigma.ast.{SInt, STuple, SType}
 
 import java.math.BigInteger
 import java.util.Arrays

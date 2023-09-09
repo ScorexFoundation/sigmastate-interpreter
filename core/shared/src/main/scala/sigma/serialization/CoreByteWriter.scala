@@ -3,8 +3,8 @@ package sigma.serialization
 import scorex.util.serialization.{VLQByteBufferWriter, Writer}
 import scorex.util.serialization.Writer.Aux
 import sigma.ast.SType
-import sigma.serialization.SigmaByteWriter.{Bits, DataInfo, U, Vlq, ZigZag}
-import sigmastate.serialization.CoreTypeSerializer
+import sigma.serialization.CoreByteWriter.{Bits, DataInfo, U, Vlq, ZigZag}
+import sigmastate.serialization.TypeSerializer
 
 class CoreByteWriter(val w: Writer) extends Writer {
   type CH = w.CH
@@ -102,14 +102,14 @@ class CoreByteWriter(val w: Writer) extends Writer {
     case wr: VLQByteBufferWriter => wr.toBytes
   }
 
-  @inline def putType[T <: SType](x: T): this.type = { CoreTypeSerializer.serialize(x, this); this }
+  @inline def putType[T <: SType](x: T): this.type = { TypeSerializer.serialize(x, this); this }
   @inline def putType[T <: SType](x: T, info: DataInfo[SType]): this.type = {
-    CoreTypeSerializer.serialize(x, this); this
+    TypeSerializer.serialize(x, this); this
   }
 
 }
 
-object SigmaByteWriter {
+object CoreByteWriter {
   import scala.language.implicitConversions
 
   /** Format descriptor type family. */
@@ -226,15 +226,17 @@ object SigmaByteWriter {
 
   case class DataInfo[T](info: ArgInfo, format: FormatDescriptor[T])
 
+  object DataInfo {
+    implicit def argnfoToDataInfo[T](arg: ArgInfo)(implicit fmt: FormatDescriptor[T]): DataInfo[T] = DataInfo(arg, fmt)
+
+    // TODO refactor: remove this conversion and make it explicit
+    /** Helper conversion */
+    implicit def nameToDataInfo[T](name: String)
+        (implicit fmt: FormatDescriptor[T]): DataInfo[T] = ArgInfo(name, "")
+  }
+
   def bitsInfo(name: String, desc: String = ""): DataInfo[Bits] = DataInfo(ArgInfo(name, desc), BitsFmt)
   def maxBitsInfo(name: String, maxBits: Int, desc: String = ""): DataInfo[Bits] = DataInfo(ArgInfo(name, desc), MaxBitsFmt(maxBits))
 
   val valuesLengthInfo: DataInfo[Vlq[U[Int]]] = ArgInfo("\\#items", "number of items in the collection")
-
-
-  implicit def argInfoToDataInfo[T](arg: ArgInfo)(implicit fmt: FormatDescriptor[T]): DataInfo[T] = DataInfo(arg, fmt)
-
-  // TODO refactor: remove this conversion and make it explicit
-  /**Helper conversion */
-  implicit def nameToDataInfo[T](name: String)(implicit fmt: FormatDescriptor[T]): DataInfo[T] = ArgInfo(name, "")
 }

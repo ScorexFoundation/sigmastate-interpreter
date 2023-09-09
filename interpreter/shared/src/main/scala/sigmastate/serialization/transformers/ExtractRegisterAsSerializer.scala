@@ -2,13 +2,13 @@ package sigmastate.serialization.transformers
 
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
-import sigmastate.Values.{Value, SValue}
+import sigmastate.Values.{SValue, Value}
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utils.SigmaByteWriter.DataInfo
+import sigmastate.utils.SigmaByteWriter._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.ExtractRegisterAs
 import sigma.ast.{SBox, SOption, SType}
-import sigmastate.ArgInfo
+import sigma.serialization.CoreByteWriter.{ArgInfo, DataInfo}
 
 case class ExtractRegisterAsSerializer(cons: (Value[SBox.type], RegisterId, SOption[SType]) => Value[SType])
   extends ValueSerializer[ExtractRegisterAs[SType]] {

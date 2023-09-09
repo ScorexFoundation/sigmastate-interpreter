@@ -1,7 +1,6 @@
 package sigmastate
 
 import debox.{cfor, Map => DMap}
-import org.ergoplatform.validation.SigmaValidationSettings
 import sigma.data.ExactIntegral._
 import sigma.data.ExactOrdering._
 import sigma.data.OverloadHack.Overloaded1
@@ -14,6 +13,8 @@ import sigma.{Coll, Colls, GroupElement, SigmaProp, VersionContext}
 import sigmastate.ArithOp.OperationImpl
 import sigmastate.Operations._
 import sigma.ast._
+import sigma.serialization.CoreByteWriter.ArgInfo
+import sigma.validation.SigmaValidationSettings
 import sigmastate.Values._
 import sigmastate.eval.Extensions.EvalCollOps
 import sigmastate.eval.NumericOps.{BigIntIsExactIntegral, BigIntIsExactOrdering}

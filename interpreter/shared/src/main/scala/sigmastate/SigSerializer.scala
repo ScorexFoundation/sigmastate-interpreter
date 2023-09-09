@@ -12,8 +12,8 @@ import sigmastate.serialization.SigmaSerializer
 import sigma.util.safeNewArray
 import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
 import debox.cfor
+import sigma.serialization.SerializerException
 import sigmastate.eval.Extensions.ArrayOps
-import sigmastate.exceptions.SerializerException
 
 /** Contains implementation of signature (aka proof) serialization.
  *

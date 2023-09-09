@@ -1,10 +1,11 @@
 package sigmastate.serialization.trees
 
 import sigma.ast.SType
+import sigma.serialization.CoreByteWriter.DataInfo
 import sigmastate.Values._
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utils.SigmaByteWriter.DataInfo
+import sigmastate.utils.SigmaByteWriter._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.{Quadruple, _}
 

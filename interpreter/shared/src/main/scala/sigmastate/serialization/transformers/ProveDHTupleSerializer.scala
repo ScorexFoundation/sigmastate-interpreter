@@ -7,6 +7,7 @@ import sigmastate.crypto.ProveDHTuple
 import sigmastate.crypto.CryptoConstants.EcPointType
 import sigmastate.lang.Terms._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import sigmastate.utils.SigmaByteWriter._
 import sigmastate.serialization._
 
 case class ProveDHTupleSerializer(

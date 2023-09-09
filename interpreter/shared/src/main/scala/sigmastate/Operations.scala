@@ -1,5 +1,6 @@
 package sigmastate
 
+import sigma.serialization.CoreByteWriter.ArgInfo
 import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
 import sigmastate.lang.StdSigmaBuilder
 

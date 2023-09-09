@@ -6,7 +6,7 @@ import sigma.util.safeNewArray
 import debox.cfor
 import sigma.ast.SType
 import sigma.validation.ValidationRules.CheckPositionLimit
-import sigmastate.serialization.CoreTypeSerializer
+import sigmastate.serialization.TypeSerializer
 
 /** Reader used in the concrete implementations of [[SigmaSerializer]].
   * It decorates the given reader, delegates most of the methods to it, but also adds new
@@ -20,8 +20,7 @@ import sigmastate.serialization.CoreTypeSerializer
   * @param maxTreeDepth                   limit on the tree depth (recursive invocations)
   *                                       of the deserializer
   */
-class CoreByteReader(val r: Reader,
-                      val maxTreeDepth: Int = CoreSerializer.MaxTreeDepth)
+class CoreByteReader(val r: Reader, val maxTreeDepth: Int = CoreSerializer.MaxTreeDepth)
   extends Reader {
 
   /** Checks that the current reader position is <= positionLimit.
@@ -30,7 +29,7 @@ class CoreByteReader(val r: Reader,
     * other than that both v4.x and v5.x will work and fail at the same time, so the
     * change is consensus-safe.
     */
-  @inline private def checkPositionLimit(): Unit = {
+  @inline protected def checkPositionLimit(): Unit = {
     CheckPositionLimit(position, positionLimit)
   }
 
@@ -105,15 +104,6 @@ class CoreByteReader(val r: Reader,
     r.getBytes(bytesToRead)
   }
 
-  /** Returns all bytes of the underlying ByteBuffer. */
-  private[sigma] def getAllBufferBytes: Array[Byte] = {
-    val savedPos = position
-    position = 0
-    val res = getBytesUnsafe(remaining)
-    position = savedPos
-    res
-  }
-
   @inline override def getBits(size: Int): Array[Boolean] = {
     checkPositionLimit()
     r.getBits(size)
@@ -137,7 +127,7 @@ class CoreByteReader(val r: Reader,
     this
   }
 
-  @inline def getType(): SType = CoreTypeSerializer.deserialize(this)
+  @inline def getType(): SType = TypeSerializer.deserialize(this)
 
   private var lvl: Int = 0
   @inline def level: Int = lvl

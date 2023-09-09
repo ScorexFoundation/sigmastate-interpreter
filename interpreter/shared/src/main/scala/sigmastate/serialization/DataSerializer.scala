@@ -3,7 +3,6 @@ package sigmastate.serialization
 import java.math.BigInteger
 import java.nio.charset.StandardCharsets
 import org.ergoplatform.ErgoBox
-import org.ergoplatform.validation.ValidationRules.CheckSerializableTypeCode
 import sigma.data.RType
 import sigmastate.Values.SigmaBoolean
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
@@ -12,7 +11,8 @@ import sigmastate.eval._
 import sigma.{Evaluation, _}
 import debox.cfor
 import sigma.ast._
-import sigmastate.exceptions.SerializerException
+import sigma.serialization.SerializerException
+import sigma.validation.ValidationRules.CheckSerializableTypeCode
 
 import scala.collection.mutable
 

@@ -7,10 +7,9 @@ import scorex.util.encode.Base58
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.crypto.DLogProtocol.{ProveDlog, ProveDlogProp}
-import sigmastate.exceptions.SigmaException
 import sigmastate.serialization._
 import sigmastate.utxo.{DeserializeContext, Slice}
-import sigma.Coll
+import sigma.{Coll, SigmaException}
 import sigma.ast.{SInt, SSigmaProp}
 
 import scala.util.Try

@@ -3,7 +3,7 @@ package sigmastate.interpreter
 import java.util
 import sigma.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
 import org.ergoplatform.ErgoLikeContext
-import org.ergoplatform.validation.SigmaValidationSettings
+import sigma.validation.SigmaValidationSettings
 import org.ergoplatform.validation.ValidationRules._
 import sigmastate.crypto.DLogProtocol.ProveDlog
 import sigmastate.Values._
@@ -24,6 +24,7 @@ import sigma.ast.SCollection.SByteArray
 import sigma.ast.{SBoolean, SSigmaProp, SType}
 import sigma.{Evaluation, VersionContext}
 import sigma.kiama.rewriting.Strategy
+import sigma.validation.ValidationRules.trySoftForkable
 import sigmastate.exceptions.{CostLimitException, InterpreterException}
 
 import scala.util.{Success, Try}

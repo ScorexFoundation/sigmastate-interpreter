@@ -25,6 +25,8 @@ import sigmastate.utxo._
 import sigma.Coll
 import sigma._
 import sigma.ast._
+import sigma.validation.{ChangedRule, DisabledRule, EnabledRule, ReplacedRule, RuleStatus}
+import sigma.validation.ValidationRules.FirstRuleId
 
 import java.math.BigInteger
 import scala.collection.compat.immutable.ArraySeq

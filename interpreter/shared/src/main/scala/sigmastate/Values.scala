@@ -4,7 +4,6 @@ import java.math.BigInteger
 import java.util.{Arrays, Objects}
 import sigma.kiama.rewriting.Rewriter.{count, everywherebu, strategy}
 import org.ergoplatform.settings.ErgoAlgos
-import org.ergoplatform.validation.ValidationException
 import sigma.data.{Nullable, RType}
 import sigma.util.CollectionUtil._
 import sigmastate.crypto.CryptoConstants.EcPointType
@@ -35,6 +34,7 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigma.{AvlTree, Coll, Colls, Header, PreHeader, _}
 import sigmastate.lang.SourceContext
 import sigma.util.safeNewArray
+import sigma.validation.ValidationException
 import sigmastate.serialization.ValueCodes.{ConstantCode, OpCode}
 
 import scala.collection.compat.immutable.ArraySeq

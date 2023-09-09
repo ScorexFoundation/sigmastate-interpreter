@@ -3,11 +3,12 @@ package sigmastate.serialization
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.SInt
 import sigma.ast.SOption.SIntOption
+import sigma.serialization.CoreByteWriter.DataInfo
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.Terms.ValueOps
-import sigmastate.utils.SigmaByteWriter.DataInfo
+import sigmastate.utils.SigmaByteWriter._
 
 case class CreateAvlTreeSerializer(
     cons: (ByteValue, Value[SByteArray], IntValue, Value[SIntOption]) => AvlTreeValue

@@ -4,17 +4,20 @@ import sigma.SigmaException
 import sigma.ast.{SGlobal, SOption, TypeCodes}
 import sigma.serialization.{ReaderPositionLimitExceeded, SerializerException}
 import sigma.util.Extensions.toUByte
-import sigmastate.serialization.CoreTypeSerializer.embeddableIdToType
+import sigmastate.serialization.TypeSerializer.embeddableIdToType
 
 /** Base class for different validation rules registered in ValidationRules.currentSettings.
   * Each rule is identified by `id` and have a description.
   * Validation logic is implemented by `apply` methods of derived classes.
   */
-case class ValidationRule(
+abstract case class ValidationRule(
     id: Short,
     description: String
 ) extends SoftForkChecker {
-
+  /** Validation settings defining the status of this rule.
+    * @see checkRule()
+    */
+  protected def settings: SigmaValidationSettings
   /** Whether the status of this rule was checked on first invocation. */
   private var _checked: Boolean = false
 
@@ -25,7 +28,7 @@ case class ValidationRule(
     */
   @inline protected final def checkRule(): Unit = {
     if (!_checked) {
-      if (ValidationRules.currentSettings.getStatus(this.id).isEmpty) {
+      if (settings.getStatus(this.id).isEmpty) {
         throw new SigmaException(s"ValidationRule $this not found in validation settings")
       }
       _checked = true  // prevent this check on every call (only first call is checked)
@@ -77,6 +80,8 @@ object ValidationRules {
   object CheckPrimitiveTypeCode extends ValidationRule(1007,
     "Check the primitive type code is supported or is added via soft-fork")
       with SoftForkWhenCodeAdded {
+    override protected lazy val settings: SigmaValidationSettings = coreSettings
+
     final def apply[T](code: Byte): Unit = {
       checkRule()
       val ucode = toUByte(code)
@@ -91,6 +96,8 @@ object ValidationRules {
   object CheckTypeCode extends ValidationRule(1008,
     "Check the non-primitive type code is supported or is added via soft-fork")
       with SoftForkWhenCodeAdded {
+    override protected lazy val settings: SigmaValidationSettings = coreSettings
+
     final def apply[T](typeCode: Byte): Unit = {
       checkRule()
       val ucode = toUByte(typeCode)
@@ -105,6 +112,7 @@ object ValidationRules {
   object CheckSerializableTypeCode extends ValidationRule(1009,
     "Check the data values of the type (given by type code) can be serialized")
       with SoftForkWhenReplaced {
+    override protected lazy val settings: SigmaValidationSettings = coreSettings
 
     /** Creates an exception which is used as a cause when throwing a ValidationException. */
     def throwValidationException(typeCode: Byte): Nothing = {
@@ -133,6 +141,8 @@ object ValidationRules {
   object CheckTypeWithMethods extends ValidationRule(1010,
     "Check the type (given by type code) supports methods")
       with SoftForkWhenCodeAdded {
+    override protected lazy val settings: SigmaValidationSettings = coreSettings
+
     final def apply[T](typeCode: Byte, cond: Boolean): Unit = {
       checkRule()
       val ucode = toUByte(typeCode)
@@ -150,6 +160,7 @@ object ValidationRules {
     */
   object CheckPositionLimit extends ValidationRule(1014,
     "Check that the Reader has not exceeded the position limit.") with SoftForkWhenReplaced {
+    override protected lazy val settings: SigmaValidationSettings = coreSettings
 
     /** Wraps the given cause into [[ValidationException]] and throws it. */
     def throwValidationException(cause: ReaderPositionLimitExceeded): Nothing = {
@@ -172,7 +183,7 @@ object ValidationRules {
     }
   }
 
-  val ruleSpecs: Seq[ValidationRule] = Seq(
+  private val ruleSpecs: Seq[ValidationRule] = Seq(
     CheckPrimitiveTypeCode,
     CheckTypeCode,
     CheckSerializableTypeCode,
@@ -186,7 +197,7 @@ object ValidationRules {
     * This is immutable data structure, it can be augmented with RuleStates from block extension
     * sections of the blockchain, but that augmentation is only available in stateful context.
     */
-  val currentSettings: SigmaValidationSettings = new MapSigmaValidationSettings({
+  val coreSettings: SigmaValidationSettings = new MapSigmaValidationSettings({
     val map = ruleSpecs.map(r => r.id -> (r, EnabledRule)).toMap
     assert(map.size == ruleSpecs.size, s"Duplicate ruleIds ${ruleSpecs.groupBy(_.id).filter(g => g._2.length > 1)}")
     map

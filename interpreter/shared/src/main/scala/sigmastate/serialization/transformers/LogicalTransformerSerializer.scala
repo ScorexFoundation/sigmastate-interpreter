@@ -1,10 +1,11 @@
 package sigmastate.serialization.transformers
 
 import sigma.ast.{SBoolean, SCollection}
-import sigmastate.Values.{Value, SValue}
+import sigma.serialization.CoreByteWriter.DataInfo
+import sigmastate.Values.{SValue, Value}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utils.SigmaByteWriter.DataInfo
+import sigmastate.utils.SigmaByteWriter._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.Transformer
 import sigmastate.LogicalTransformerCompanion

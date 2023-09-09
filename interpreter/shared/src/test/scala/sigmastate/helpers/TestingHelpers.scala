@@ -1,7 +1,6 @@
 package sigmastate.helpers
 
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, Token, allZerosModifierId}
-import org.ergoplatform.validation.SigmaValidationSettings
 import org.ergoplatform._
 import scorex.util.ModifierId
 import sigma.data.{CollOverArray, PairOfCols}
@@ -10,6 +9,7 @@ import sigmastate.Values.ErgoTree
 import sigmastate.eval._
 import sigmastate.interpreter.ContextExtension
 import sigma.Coll
+import sigma.validation.SigmaValidationSettings
 import sigma.{Header, PreHeader}
 
 import scala.collection.compat.immutable.ArraySeq

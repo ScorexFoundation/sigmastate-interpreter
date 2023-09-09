@@ -7,6 +7,7 @@ import sigmastate.lang.Terms._
 import sigmastate._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import sigmastate.utils.SigmaByteWriter._
 
 case class AtLeastSerializer(cons: (Value[SInt.type], Value[SCollection[SSigmaProp.type]]) => SigmaPropValue)
   extends ValueSerializer[AtLeast] {

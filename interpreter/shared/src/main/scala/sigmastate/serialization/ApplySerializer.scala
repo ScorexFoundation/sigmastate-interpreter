@@ -2,10 +2,10 @@ package sigmastate.serialization
 
 import sigma.ast.SType
 import sigmastate.Values._
-import sigmastate._
 import sigmastate.lang.Terms.Apply
-import sigmastate.utils.SigmaByteWriter._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import sigma.serialization.CoreByteWriter._
+import sigmastate.utils.SigmaByteWriter._
 
 case class ApplySerializer(cons: (Value[SType], IndexedSeq[Value[SType]]) => Value[SType])
   extends ValueSerializer[Apply] {

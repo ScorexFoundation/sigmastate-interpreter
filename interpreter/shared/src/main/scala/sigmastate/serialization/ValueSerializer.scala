@@ -4,6 +4,7 @@ import org.ergoplatform.validation.ValidationRules.CheckValidOpCode
 import org.ergoplatform._
 import sigma.ast.SCollection.SByteArray
 import sigma.ast._
+import sigma.serialization.CoreByteWriter.DataInfo
 import sigma.util.Extensions.toUByte
 import sigmastate.Values._
 import sigmastate._
@@ -11,7 +12,7 @@ import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.serialization.ValueCodes.{LastConstantCode, OpCode}
 import sigmastate.serialization.transformers._
 import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer}
-import sigmastate.utils.SigmaByteWriter.DataInfo
+import sigmastate.utils.SigmaByteWriter._
 import sigmastate.utils._
 import sigmastate.utxo.ComplexityTable._
 import sigmastate.utxo._
