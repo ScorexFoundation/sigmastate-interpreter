@@ -21,7 +21,7 @@ import sigmastate.fleetSdkCommon.distEsmTypesTransactionsMod.{SignedTransaction,
 import sigmastate.fleetSdkCommon.{distEsmTypesBoxesMod => boxesMod, distEsmTypesCommonMod => commonMod, distEsmTypesContextExtensionMod => contextExtensionMod, distEsmTypesInputsMod => inputsMod, distEsmTypesProverResultMod => proverResultMod, distEsmTypesRegistersMod => registersMod, distEsmTypesTokenMod => tokenMod}
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
-import sigma.{Coll, Colls, Evaluation, GroupElement}
+import sigma.{Coll, Colls, Evaluation}
 import sigma.Extensions.CollBytesOps
 import sigma.ast.SType
 
