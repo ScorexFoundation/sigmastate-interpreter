@@ -31,7 +31,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
   import Context._
   import Liftables._
 
-  override lazy val compiler = new SigmaCompiler(CompilerSettings(
+  override lazy val compiler = SigmaCompiler(CompilerSettings(
     TestnetNetworkPrefix,
     IR.builder,
     lowerMethodCalls = true

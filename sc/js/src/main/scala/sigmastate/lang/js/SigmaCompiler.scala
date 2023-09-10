@@ -58,7 +58,7 @@ object SigmaCompiler extends js.Object {
     * @return SigmaCompiler instance
     */
   private def create(networkPrefix: Byte): SigmaCompiler = {
-    val compiler = new sigmastate.lang.SigmaCompiler(networkPrefix)
+    val compiler = sigmastate.lang.SigmaCompiler(networkPrefix)
     new SigmaCompiler(compiler)
   }
 }

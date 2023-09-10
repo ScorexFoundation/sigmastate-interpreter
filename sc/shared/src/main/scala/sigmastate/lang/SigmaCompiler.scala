@@ -5,6 +5,7 @@ import fastparse.Parsed.Success
 import sigma.kiama.rewriting.Rewriter.{everywherebu, rewrite, rule}
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform.Global
+import scalan.GraphIRReflection
 import sigmastate.Values.{SValue, Value}
 import sigmastate.eval.IRContext
 import sigmastate.interpreter.Interpreter.ScriptEnv
@@ -14,7 +15,7 @@ import sigmastate.lang.syntax.ParserException
 import sigmastate.utxo._
 import sigma.ast._
 import sigmastate.SCollectionMethods.{ExistsMethod, ForallMethod, MapMethod}
-import sigmastate.{Exponentiate, MultiplyGroup, SCollectionMethods, SGlobalMethods, SGroupElementMethods, Xor}
+import sigmastate.{Exponentiate, InterpreterReflection, MultiplyGroup, SCollectionMethods, SGlobalMethods, SGroupElementMethods, Xor}
 
 /**
   * @param networkPrefix    network prefix to decode an ergo address from string (PK op)
@@ -51,9 +52,9 @@ case class CompilerResult[Ctx <: IRContext](
 /** Compiler which compiles ErgoScript source code into ErgoTree.
   * @param settings compilation parameters \
   */
-class SigmaCompiler(settings: CompilerSettings) {
+class SigmaCompiler private(settings: CompilerSettings) {
   /** Constructs an instance for the given network type and with default settings. */
-  def this(networkPrefix: Byte) = this(
+  private def this(networkPrefix: Byte) = this(
     CompilerSettings(networkPrefix, TransformingSigmaBuilder, lowerMethodCalls = true)
   )
 
@@ -141,6 +142,14 @@ class SigmaCompiler(settings: CompilerSettings) {
 }
 
 object SigmaCompiler {
+  /** Force initialization of reflection before any instance of SigmaCompiler is used. */
+  val _ = (InterpreterReflection, GraphIRReflection)
+  
+  /** Constructs an instance for the given settings. */
   def apply(settings: CompilerSettings): SigmaCompiler =
     new SigmaCompiler(settings)
+
+  /** Constructs an instance for the given network type. */
+  def apply(networkPrefix: Byte): SigmaCompiler =
+    new SigmaCompiler(networkPrefix)
 }
