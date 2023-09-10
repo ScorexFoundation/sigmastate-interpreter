@@ -4,6 +4,7 @@ import java.math.BigInteger
 import org.ergoplatform.settings.ErgoAlgos
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.Assertion
+import sigma.data.AvlTreeData
 import sigmastate.Values.SigmaBoolean
 import sigmastate._
 import sigmastate.crypto.DLogProtocol.{ProveDlog, SecondDLogProverMessage}

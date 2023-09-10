@@ -1,8 +1,8 @@
 package sigma
 
-import sigma.data.RType
+import sigma.data.{AvlTreeData, RType}
 import sigmastate.Values.ErgoTree
-import sigmastate.{AvlTreeData, Values}
+import sigmastate.Values
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import sigmastate.helpers.TestingHelpers._

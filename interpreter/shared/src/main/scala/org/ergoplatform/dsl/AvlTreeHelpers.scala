@@ -4,10 +4,10 @@ import sigma.Coll
 import sigmastate.eval.{CAvlTree, CostingSigmaDslBuilder}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Digest32, Blake2b256}
-import sigmastate.{AvlTreeData, AvlTreeFlags}
 import sigma.AvlTree
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert}
 import CostingSigmaDslBuilder.Colls
+import sigma.data.{AvlTreeData, AvlTreeFlags}
 
 object AvlTreeHelpers {
 

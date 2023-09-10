@@ -1,9 +1,7 @@
-package sigmastate
+package sigma.data
 
-import sigmastate.crypto.CryptoConstants
-import sigmastate.serialization.SigmaSerializer
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigma.{Coll, Colls}
+import sigma.serialization.{CoreByteReader, CoreByteWriter, CoreSerializer}
+import sigma.{Coll, Colls, crypto}
 
 
 case class AvlTreeFlags(insertAllowed: Boolean, updateAllowed: Boolean, removeAllowed: Boolean) {
@@ -56,7 +54,7 @@ case class AvlTreeData(digest: Coll[Byte],
                        valueLengthOpt: Option[Int] = None)
 
 object AvlTreeData {
-  val DigestSize: Int = CryptoConstants.hashLength + 1 //please read class comments above for details
+  val DigestSize: Int = crypto.hashLength + 1 //please read class comments above for details
   val TreeDataSize = DigestSize + 3 + 4 + 4
 
   val dummy = new AvlTreeData(
@@ -67,12 +65,12 @@ object AvlTreeData {
   /** Create [[AvlTreeData]] with the given digest and all operations enabled. */
   def avlTreeFromDigest(digest: Coll[Byte]): AvlTreeData = {
     val flags = AvlTreeFlags(insertAllowed = true, updateAllowed = true, removeAllowed = true)
-    AvlTreeData(digest, flags, CryptoConstants.hashLength)
+    AvlTreeData(digest, flags, crypto.hashLength)
   }
 
-  object serializer extends SigmaSerializer[AvlTreeData, AvlTreeData] {
+  object serializer extends CoreSerializer[AvlTreeData, AvlTreeData] {
 
-    override def serialize(data: AvlTreeData, w: SigmaByteWriter): Unit = {
+    override def serialize(data: AvlTreeData, w: CoreByteWriter): Unit = {
       val tf = AvlTreeFlags.serializeFlags(data.treeFlags)
       w.putBytes(data.digest.toArray)
         .putUByte(tf)
@@ -80,7 +78,7 @@ object AvlTreeData {
         .putOption(data.valueLengthOpt)(_.putUInt(_))
     }
 
-    override def parse(r: SigmaByteReader): AvlTreeData = {
+    override def parse(r: CoreByteReader): AvlTreeData = {
       val digest = r.getBytes(DigestSize)
       val tf = AvlTreeFlags(r.getByte())
       val keyLength = r.getUInt().toInt

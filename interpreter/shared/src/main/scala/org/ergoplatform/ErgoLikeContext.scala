@@ -13,7 +13,7 @@ import sigma.{AnyValue, Header, PreHeader}
 import debox.cfor
 import sigma.ast.{SBox, SCollection, SContext, SFunc, SGlobal, SInt, SType, SUnit}
 import sigma.ast.SType.{AnyOps, TypeCode}
-import sigma.data.SigmaConstants
+import sigma.data.{AvlTreeData, SigmaConstants}
 import sigma.validation.SigmaValidationSettings
 import sigmastate.serialization.ValueCodes.OpCode
 

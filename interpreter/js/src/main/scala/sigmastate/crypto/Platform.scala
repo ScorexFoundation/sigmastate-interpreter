@@ -185,28 +185,28 @@ object Platform {
     private val ctx = new CryptoContextJs
 
     /** The underlying elliptic curve descriptor. */
-    override def curve: crypto.Curve = ???
+    override def curve: Curve = ???
 
     override def fieldCharacteristic: BigInteger = Convert.bigIntToBigInteger(ctx.getModulus())
 
     override def order: BigInteger = Convert.bigIntToBigInteger(ctx.getOrder())
 
-    override def validatePoint(x: BigInteger, y: BigInteger): crypto.Ecp = {
+    override def validatePoint(x: BigInteger, y: BigInteger): Ecp = {
       val point = ctx.validatePoint(Convert.bigIntegerToBigInt(x), Convert.bigIntegerToBigInt(y))
       new Ecp(point)
     }
 
-    override def infinity(): crypto.Ecp =
+    override def infinity(): Ecp =
       new Ecp(ctx.getInfinity())
 
-    override def decodePoint(encoded: Array[Byte]): crypto.Ecp = {
+    override def decodePoint(encoded: Array[Byte]): Ecp = {
       if (encoded(0) == 0) {
         return infinity()
       }
       new Ecp(ctx.decodePoint(Base16.encode(encoded)))
     }
 
-    override def generator: crypto.Ecp =
+    override def generator: Ecp =
       new Ecp(ctx.getGenerator())
   }
 

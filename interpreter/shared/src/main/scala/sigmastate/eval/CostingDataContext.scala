@@ -11,7 +11,7 @@ import sigma.{VersionContext, _}
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.{SInt, STuple, SType}
 import sigma.data.OverloadHack.Overloaded1
-import sigma.data.{CBigInt, RType, SigmaConstants, WrapperOf}
+import sigma.data.{AvlTreeData, AvlTreeFlags, CBigInt, RType, SigmaConstants, WrapperOf}
 import sigma.util.Extensions.BigIntegerOps
 import sigma.validation.SigmaValidationSettings
 import sigmastate.Values.ErgoTree.EmptyConstants

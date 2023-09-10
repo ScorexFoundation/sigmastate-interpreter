@@ -8,7 +8,7 @@ import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen.{choose, frequency}
 import org.scalacheck.util.Buildable
 import org.scalacheck.{Arbitrary, Gen}
-import sigma.data.RType
+import sigma.data.{AvlTreeData, AvlTreeFlags, RType}
 import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.util.encode.{Base58, Base64}
 import scorex.util.{ModifierId, bytesToId}
@@ -332,11 +332,11 @@ trait ObjectGenerators extends TypeGenerators
   } yield mkTuple(values).asInstanceOf[Tuple]
 
   lazy val modifierIdGen: Gen[ModifierId] =
-    arrayOfN(CryptoConstants.hashLength, arbByte.arbitrary)
+    arrayOfN(sigma.crypto.hashLength, arbByte.arbitrary)
     .map(bytesToId)
 
   lazy val modifierIdBytesGen: Gen[Coll[Byte]] =
-    collOfN(CryptoConstants.hashLength, arbByte.arbitrary)
+    collOfN(sigma.crypto.hashLength, arbByte.arbitrary)
 
   val MaxTokens = 10
 

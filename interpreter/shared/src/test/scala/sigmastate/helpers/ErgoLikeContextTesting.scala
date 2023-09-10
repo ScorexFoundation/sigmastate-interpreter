@@ -3,14 +3,14 @@ package sigmastate.helpers
 import org.ergoplatform.ErgoLikeContext.Height
 import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules
+import sigma.data.AvlTreeData
 import sigma.validation.SigmaValidationSettings
-import sigmastate.AvlTreeData
+import sigma.{Box, Coll, Colls, Header, PreHeader}
 import sigmastate.crypto.CryptoConstants
 import sigmastate.eval._
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultEvalSettings
 import sigmastate.serialization.{GroupElementSerializer, SigmaSerializer}
-import sigma.{Box, Coll, Colls, Header, PreHeader}
 
 object ErgoLikeContextTesting {
   /* NO HF PROOF:
