@@ -177,22 +177,26 @@ trait CompilerTestingCommons extends TestingCommons
     funcJitFromExpr(funcScript, compiledTree, bindings:_*)
   }
 
-  protected def roundTripTest[T](v: T)(implicit serializer: SigmaSerializer[T, T]): Assertion = {
+  protected def roundTripTest[T](v: T)(implicit serializer: SigmaSerializer[T, T]): T = {
     // using default sigma reader/writer
     val bytes = serializer.toBytes(v)
     bytes.nonEmpty shouldBe true
     val r = SigmaSerializer.startReader(bytes)
     val positionLimitBefore = r.positionLimit
-    serializer.parse(r) shouldBe v
+    val parsed = serializer.parse(r)
+    parsed shouldBe v
     r.positionLimit shouldBe positionLimitBefore
+    parsed
   }
 
-  protected def roundTripTestWithPos[T](v: T)(implicit serializer: SigmaSerializer[T, T]): Assertion = {
+  protected def roundTripTestWithPos[T](v: T)(implicit serializer: SigmaSerializer[T, T]): T = {
     val randomBytesCount = Gen.chooseNum(1, 20).sample.get
     val randomBytes = Gen.listOfN(randomBytesCount, arbByte.arbitrary).sample.get.toArray
     val bytes = serializer.toBytes(v)
-    serializer.parse(SigmaSerializer.startReader(bytes)) shouldBe v
+    val parsed = serializer.parse(SigmaSerializer.startReader(bytes))
+    parsed shouldBe v
     serializer.parse(SigmaSerializer.startReader(randomBytes ++ bytes, randomBytesCount)) shouldBe v
+    parsed
   }
 
   def testReduce(I: Interpreter)(ctx: I.CTX, prop: SigmaPropValue): SigmaBoolean = {
