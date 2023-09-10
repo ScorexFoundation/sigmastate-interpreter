@@ -12,7 +12,7 @@ object ErgoScriptPredef {
 
   /** Compiles the given ErgoScript `code` into ErgoTree expression. */
   def compileWithCosting(env: ScriptEnv, code: String, networkPrefix: NetworkPrefix)(implicit IR: IRContext): Value[SType] = {
-    val compiler = new SigmaCompiler(networkPrefix)
+    val compiler = SigmaCompiler(networkPrefix)
     val res = compiler.compile(env, code)
     res.buildTree
   }
