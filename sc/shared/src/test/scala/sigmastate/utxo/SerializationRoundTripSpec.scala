@@ -55,8 +55,14 @@ class SerializationRoundTripSpec extends AnyPropSpec
   }
 
   property("ErgoBox: Serializer round trip") {
-    forAll { t: ErgoBox => roundTripTest(t)(ErgoBox.sigmaSerializer) }
-    forAll { t: ErgoBox => roundTripTestWithPos(t)(ErgoBox.sigmaSerializer) }
+    forAll { t: ErgoBox =>
+      val parsed = roundTripTest(t)(ErgoBox.sigmaSerializer)
+      parsed.bytes shouldBe t.bytes
+    }
+    forAll { t: ErgoBox =>
+      val parsed = roundTripTestWithPos(t)(ErgoBox.sigmaSerializer)
+      parsed.bytes shouldBe t.bytes
+    }
   }
 
   property("ContextExtension: Serializer round trip") {
