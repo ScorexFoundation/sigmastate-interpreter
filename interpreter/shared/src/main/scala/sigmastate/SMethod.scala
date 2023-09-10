@@ -12,7 +12,7 @@ import sigmastate.SMethod.{InvokeDescBuilder, MethodCostFunc}
 import sigmastate.Values.{SValue, ValueCompanion}
 import sigmastate.interpreter.{CostDetails, ErgoTreeEvaluator, FixedCostItem, GivenCost, MethodDesc, SeqCostItem, TracedCost}
 import sigmastate.lang.{SigmaBuilder, Terms}
-import sigmastate.lang.Terms.{MethodCall, OperationId, STypeSubst}
+import sigmastate.lang.Terms.{MethodCall, OperationId}
 
 import scala.collection.compat.immutable.ArraySeq
 import scala.reflect.ClassTag
@@ -180,7 +180,7 @@ case class SMethod(
     * @consensus
     */
   def specializeFor(objTpe: SType, args: Seq[SType]): SMethod = {
-    Terms.unifyTypeLists(stype.tDom, objTpe +: args) match {
+    unifyTypeLists(stype.tDom, objTpe +: args) match {
       case Some(subst) if subst.nonEmpty =>
         withConcreteTypes(subst)
       case _ => this

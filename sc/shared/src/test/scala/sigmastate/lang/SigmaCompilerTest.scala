@@ -3,7 +3,7 @@ package sigmastate.lang
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform._
 import scorex.util.encode.Base58
-import sigma.ast.{SAvlTree, SBoolean, SBox, SByte, SCollection, SInt, SSigmaProp, SType}
+import sigma.ast.{EmptySubst, SAvlTree, SBoolean, SBox, SByte, SCollection, SInt, SSigmaProp, SType}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.exceptions.{GraphBuildingException, InvalidArguments, TyperException}
@@ -81,8 +81,8 @@ class SigmaCompilerTest extends CompilerTestingCommons with LangTests with Objec
   }
 
   property("global methods") {
-    comp(env, "{ groupGenerator }") shouldBe MethodCall(Global, SGlobalMethods.groupGeneratorMethod, IndexedSeq(), Terms.EmptySubst)
-    comp(env, "{ Global.groupGenerator }") shouldBe MethodCall(Global, SGlobalMethods.groupGeneratorMethod, IndexedSeq(), Terms.EmptySubst)
+    comp(env, "{ groupGenerator }") shouldBe MethodCall(Global, SGlobalMethods.groupGeneratorMethod, IndexedSeq(), EmptySubst)
+    comp(env, "{ Global.groupGenerator }") shouldBe MethodCall(Global, SGlobalMethods.groupGeneratorMethod, IndexedSeq(), EmptySubst)
     comp(env, "{ Global.xor(arr1, arr2) }") shouldBe Xor(ByteArrayConstant(arr1), ByteArrayConstant(arr2))
     comp(env, "{ xor(arr1, arr2) }") shouldBe Xor(ByteArrayConstant(arr1), ByteArrayConstant(arr2))
   }

@@ -248,7 +248,7 @@ object SigmaPPrint extends PPrinter {
     case mc @ MethodCall(obj, method, args, typeSubst) =>
       val objType = apply(method.objType).plainText
       val methodTemplate = method.objType.getMethodByName(method.name)
-      val methodT = Terms.unifyTypeLists(methodTemplate.stype.tDom, obj.tpe +: args.map(_.tpe)) match {
+      val methodT = unifyTypeLists(methodTemplate.stype.tDom, obj.tpe +: args.map(_.tpe)) match {
         case Some(subst) if subst.nonEmpty =>
           val getMethod = s"""$objType.getMethodByName("${method.name}").withConcreteTypes"""
           Tree.Apply(getMethod, treeifySeq(Seq(subst)))

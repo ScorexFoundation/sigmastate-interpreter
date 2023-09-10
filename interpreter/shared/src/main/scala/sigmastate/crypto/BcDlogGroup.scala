@@ -3,7 +3,7 @@ package sigmastate.crypto
 import java.math.BigInteger
 import sigmastate.crypto.BigIntegers
 import debox.cfor
-import sigmastate.crypto.{CryptoContext, CryptoFacade}
+import sigma.crypto.{CryptoContext, CryptoFacade}
 
 import scala.collection.mutable
 

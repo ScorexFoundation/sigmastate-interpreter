@@ -1,6 +1,6 @@
 package org.ergoplatform.sdk.js
 
-import sigmastate.crypto.{CryptoFacade, CryptoFacadeJs, Ecp, Platform}
+import sigma.crypto.{CryptoFacade, CryptoFacadeJs, Ecp, Platform}
 import sigmastate.eval.Extensions.ArrayByteOps
 
 import scala.scalajs.js

@@ -1,4 +1,4 @@
-package sigmastate.crypto
+package sigma.crypto
 
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec

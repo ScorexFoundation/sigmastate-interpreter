@@ -325,7 +325,7 @@ object Values {
     * @see Constant
     */
   case class ConstantNode[S <: SType](value: S#WrappedType, tpe: S) extends Constant[S] {
-    require(sigmastate.crypto.Platform.isCorrectType(value, tpe),
+    require(sigma.crypto.Platform.isCorrectType(value, tpe),
       s"Invalid type of constant value $value, expected type $tpe")
     override def companion: ValueCompanion = Constant
     override def opCode: OpCode = companion.opCode

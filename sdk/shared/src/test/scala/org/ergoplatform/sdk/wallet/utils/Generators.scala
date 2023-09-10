@@ -15,9 +15,9 @@ import scorex.util._
 import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, ErgoTreePredef, UnsignedErgoLikeTransaction, UnsignedInput}
 import sigmastate.eval.Extensions._
 import scorex.util.{ModifierId, bytesToId}
+import sigma.crypto.CryptoFacade
 import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._
-import sigmastate.crypto.CryptoFacade
 
 trait Generators {
 

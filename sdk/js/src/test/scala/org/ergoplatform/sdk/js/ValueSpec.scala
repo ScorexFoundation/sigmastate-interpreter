@@ -8,7 +8,7 @@ import sigma.ast.SType
 import sigmastate.Values.{AvlTreeConstant, BigIntConstant, BooleanConstant, BoxConstant, ByteConstant, Constant, GroupElementConstant, IntConstant, LongConstant, ShortConstant, SigmaPropConstant, UnitConstant}
 import sigmastate.crypto.CryptoConstants.dlogGroup
 import sigmastate.crypto.DLogProtocol.ProveDlog
-import sigmastate.crypto.CryptoFacade
+import sigma.crypto.CryptoFacade
 import sigmastate.eval.CSigmaProp
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.serialization.ConstantSerializer

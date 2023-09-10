@@ -1,4 +1,4 @@
-package sigmastate.crypto
+package sigma.crypto
 
 import debox.cfor
 

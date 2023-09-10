@@ -282,7 +282,7 @@ trait TreeBuilding extends SigmaLibrary { IR: IRContext =>
           case (mth @ SCollectionMethods.ZipMethod, Seq(coll)) =>
             val typeSubst = Map(SCollection.tOV -> coll.asCollection[SType].tpe.elemType)
             typeSubst
-          case (mth, _) => Terms.EmptySubst
+          case (mth, _) => EmptySubst
         }
         val specMethod = method.withConcreteTypes(typeSubst + (SCollection.tIV -> colTpe.elemType))
         builder.mkMethodCall(col, specMethod, args.toIndexedSeq, Map())

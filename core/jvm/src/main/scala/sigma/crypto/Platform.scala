@@ -1,4 +1,4 @@
-package sigmastate.crypto
+package sigma.crypto
 
 import org.bouncycastle.crypto.digests.SHA512Digest
 import org.bouncycastle.crypto.ec.CustomNamedCurves
@@ -207,8 +207,4 @@ object Platform {
     def multiply(n: BigInteger): Ecp = CryptoFacade.exponentiatePoint(p, n)
   }
 
-  /** This JVM specific methods are used in Ergo node which won't be JS cross-compiled. */
-  implicit class BcDlogGroupOps(val group: BcDlogGroup) extends AnyVal {
-    def curve: Curve = group.ctx.asInstanceOf[CryptoContextJvm].curve
-  }
 }

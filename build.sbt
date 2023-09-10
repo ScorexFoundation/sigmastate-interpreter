@@ -196,7 +196,12 @@ lazy val core   = crossProject(JVMPlatform, JSPlatform)
     scorexUtilDependency,
     publish / skip := true
   )
-  .jvmSettings( crossScalaSettings )
+  .jvmSettings(
+    crossScalaSettings,
+    libraryDependencies ++= Seq(
+      bouncycastleBcprov
+    )
+  )
   .jsSettings(
     crossScalaSettingsJS,
     scalacOptions ++= Seq(

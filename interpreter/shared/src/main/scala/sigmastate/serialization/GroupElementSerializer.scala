@@ -1,7 +1,7 @@
 package sigmastate.serialization
 
 import sigmastate.crypto.CryptoConstants
-import sigmastate.crypto.CryptoFacade
+import sigma.crypto.CryptoFacade
 import CryptoConstants.EcPointType
 import sigma.util.safeNewArray
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}

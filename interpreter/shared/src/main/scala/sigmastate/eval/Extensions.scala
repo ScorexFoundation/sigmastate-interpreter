@@ -10,7 +10,7 @@ import sigma.{Coll, _}
 import sigma.data.{Nullable, RType}
 import sigmastate.Platform
 import sigmastate.Values.{Constant, ConstantNode}
-import sigmastate.crypto.{CryptoFacade, Ecp}
+import sigma.crypto.{CryptoFacade, Ecp}
 import sigmastate.lang.{CheckingSigmaBuilder, TransformingSigmaBuilder}
 import sigmastate.utils.Helpers
 

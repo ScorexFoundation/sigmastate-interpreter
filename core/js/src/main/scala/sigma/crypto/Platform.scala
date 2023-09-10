@@ -1,4 +1,4 @@
-package sigmastate.crypto
+package sigma.crypto
 
 import sigma.data.RType
 import scorex.util.encode.Base16
@@ -129,7 +129,7 @@ object Platform {
   class Curve
 
   // TODO JS: Use JS library for secure source of randomness
-  type SecureRandom = sigmastate.crypto.SecureRandomJS
+  type SecureRandom = sigma.crypto.SecureRandomJS
 
   /** Opaque point type. */
   @js.native

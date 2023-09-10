@@ -7,7 +7,7 @@ import org.scalablytyped.runtime.StringDictionary
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
 import org.ergoplatform.sdk.js.{ErgoTree, Value}
-import sigmastate.{STypeOps, Values}
+import sigmastate.Values
 import sigmastate.eval.CompiletimeIRContext
 import sigmastate.lang.Terms.ValueOps
 

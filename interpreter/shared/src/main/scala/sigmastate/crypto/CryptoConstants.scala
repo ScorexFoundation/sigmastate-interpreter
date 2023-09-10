@@ -1,5 +1,7 @@
 package sigmastate.crypto
 
+import sigma.crypto.Ecp
+
 import java.math.BigInteger
 
 /** Constants used in crypto operations implementation. */
@@ -14,7 +16,7 @@ object CryptoConstants {
   val dlogGroup: BcDlogGroup = SecP256K1Group
 
   /** Secure random generator used in the signature scheme. */
-  val secureRandom: sigmastate.crypto.SecureRandom = dlogGroup.secureRandom
+  val secureRandom: sigma.crypto.SecureRandom = dlogGroup.secureRandom
 
   /** Size of the binary representation of any group element (2 ^ groupSizeBits == <number of elements in a group>) */
   val groupSizeBits: Int = 256

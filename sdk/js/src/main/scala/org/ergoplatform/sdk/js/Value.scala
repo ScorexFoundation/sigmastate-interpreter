@@ -6,7 +6,7 @@ import sigma.data.PairType
 import scorex.util.Extensions.{IntOps, LongOps}
 import scorex.util.encode.Base16
 import sigma.ast.SType
-import sigmastate.crypto.Platform
+import sigma.crypto.Platform
 import sigmastate.eval.{CAvlTree, CGroupElement, CSigmaProp, CostingBox, SigmaDsl}
 import sigmastate.fleetSdkCommon.distEsmTypesBoxesMod.Box
 import sigmastate.fleetSdkCommon.distEsmTypesCommonMod

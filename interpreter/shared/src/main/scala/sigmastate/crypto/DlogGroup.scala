@@ -1,5 +1,7 @@
 package sigmastate.crypto
 
+import sigma.crypto.{CryptoFacade, Ecp, SecureRandom}
+
 import java.math.BigInteger
 
 /** This is the general interface for the discrete logarithm prime-order group.

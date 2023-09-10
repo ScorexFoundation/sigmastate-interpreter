@@ -4,6 +4,7 @@ import debox.cfor
 import org.scalameter.api.Bench
 import sigma.BenchmarkGens
 import sigma.ast.SType
+import sigma.crypto.Platform
 import sigmastate.Values.{IntConstant, SValue}
 import sigmastate.serialization.OpCodes.PlusCode
 
@@ -58,7 +59,7 @@ object ErgoTreeBenchmarks extends Bench.LocalTime with BenchmarkGens { suite: Be
     measure method "isCorrectType" in {
       using(sizes) in { size =>
         cfor(0)(_ < size, _ + 1) { i =>
-          sigmastate.crypto.Platform.isCorrectType(i, SType.allPredefTypes(i % 10))
+          Platform.isCorrectType(i, SType.allPredefTypes(i % 10))
         }
       }
     }

@@ -6,6 +6,7 @@ import sigmastate.crypto.CryptoConstants
 import CryptoConstants.EcPointType
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import sigma.crypto.{CryptoFacade, Ecp}
 import sigmastate.TestsBase
 import sigmastate.utils.Helpers
 

@@ -10,6 +10,7 @@ import scorex.utils.{Ints, Longs}
 import sigma.{VersionContext, _}
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.{SInt, STuple, SType}
+import sigma.crypto.{CryptoFacade, Ecp}
 import sigma.data.OverloadHack.Overloaded1
 import sigma.data.{AvlTreeData, AvlTreeFlags, CBigInt, RType, SigmaConstants, WrapperOf}
 import sigma.util.Extensions.BigIntegerOps
@@ -19,7 +20,7 @@ import sigmastate.Values.{ConstantNode, ErgoTree, EvaluatedValue, SValue, SigmaB
 import sigmastate._
 import sigmastate.crypto.CryptoConstants.EcPointType
 import sigmastate.crypto.DLogProtocol.ProveDlog
-import sigmastate.crypto.{CryptoConstants, CryptoFacade, Ecp, ProveDHTuple}
+import sigmastate.crypto.{CryptoConstants, ProveDHTuple}
 import sigmastate.eval.Extensions._
 import sigmastate.interpreter.Interpreter
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
