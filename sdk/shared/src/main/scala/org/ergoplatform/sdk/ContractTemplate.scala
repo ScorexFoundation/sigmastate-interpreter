@@ -8,12 +8,12 @@ import org.ergoplatform.sdk.utils.SerializationUtils.{parseString, serializeStri
 import org.ergoplatform.sdk.utils.Zero
 import sigma.Evaluation
 import sigma.ast.SType
+import sigma.serialization.SerializerException
 import sigma.util.safeNewArray
 import sigmastate.Values.ErgoTree.headerWithVersion
 import sigmastate.Values.{ErgoTree, _}
 import sigmastate._
 import sigmastate.eval._
-import sigmastate.exceptions.SerializerException
 import sigmastate.lang.{DeserializationSigmaBuilder, StdSigmaBuilder}
 import sigmastate.serialization._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}

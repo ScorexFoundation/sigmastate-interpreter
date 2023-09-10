@@ -8,8 +8,9 @@ import org.ergoplatform.sdk.utils.ArithUtils
 import org.ergoplatform.sdk.wallet.protocol.context.{BlockchainStateContext, TransactionContext}
 import org.ergoplatform.sdk.wallet.secrets.ExtendedSecretKey
 import org.ergoplatform.validation.ValidationRules
-import sigma.util.Extensions.LongOps
 import sigma.VersionContext
+import sigma.data.AvlTreeData
+import sigma.util.Extensions.LongOps
 import sigmastate.Values.SigmaBoolean
 import sigmastate.crypto.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate.crypto.{DiffieHellmanTupleProverInput, SigmaProtocolPrivateInput}
@@ -17,7 +18,6 @@ import sigmastate.interpreter.Interpreter.{ReductionResult, estimateCryptoVerify
 import sigmastate.interpreter._
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.AvlTreeData
 
 import java.util
 import java.util.{Objects, List => JList}

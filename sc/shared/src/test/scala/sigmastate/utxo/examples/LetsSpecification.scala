@@ -6,7 +6,8 @@ import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigma.Colls
-import sigmastate.{AvlTreeData, AvlTreeFlags, CompilerCrossVersionProps, TrivialProp}
+import sigma.data.{AvlTreeData, AvlTreeFlags}
+import sigmastate.{CompilerCrossVersionProps, TrivialProp}
 import sigmastate.Values.{AvlTreeConstant, ByteArrayConstant, LongConstant, SigmaPropConstant}
 import sigmastate.eval.Extensions.ArrayOps
 import sigmastate.eval.{Digest32Coll, IRContext, SigmaDsl}

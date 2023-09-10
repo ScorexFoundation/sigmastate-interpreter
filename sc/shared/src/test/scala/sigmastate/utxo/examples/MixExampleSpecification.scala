@@ -4,7 +4,8 @@ import java.math.BigInteger
 
 import org.ergoplatform.ErgoBox.{R4, R5}
 import scorex.crypto.hash.Blake2b256
-import sigmastate.{AvlTreeData, CompilerCrossVersionProps}
+import sigma.data.AvlTreeData
+import sigmastate.CompilerCrossVersionProps
 import sigmastate.Values.GroupElementConstant
 import sigmastate.crypto.DLogProtocol.ProveDlog
 import sigmastate.crypto.{DiffieHellmanTupleProverInput, ProveDHTuple, CryptoConstants}

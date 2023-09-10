@@ -1,7 +1,7 @@
 package sigmastate
 
 import org.ergoplatform.settings.ErgoAlgos
-import org.ergoplatform.validation.{ValidationException, ValidationRules}
+import org.ergoplatform.validation.ValidationRules
 import org.ergoplatform.{ErgoAddressEncoder, ErgoBox, ErgoLikeContext, Self}
 import sigma.data.RType.asType
 import sigma.data.{Nullable, RType}
@@ -21,6 +21,8 @@ import sigmastate.utils.Helpers.TryOps
 import sigmastate.utxo._
 import sigma._
 import sigma.ast._
+import sigma.validation.ValidationException
+import sigma.validation.ValidationRules.CheckTypeCode
 import sigma.{ContractsTestkit, SigmaDslTesting}
 import sigmastate.SCollectionMethods.checkValidFlatmap
 
@@ -69,7 +71,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
     val t = new ErgoTree(
       16.toByte,
       Array(IntConstant(1)),
-      Left(UnparsedErgoTree(t1.bytes, ValidationException("", ValidationRules.CheckTypeCode, Seq())))
+      Left(UnparsedErgoTree(t1.bytes, ValidationException("", CheckTypeCode, Seq())))
     )
     assertExceptionThrown(
       t.toProposition(true),

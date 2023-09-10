@@ -3,13 +3,14 @@ package sigmastate.utxo
 import scorex.utils.Bytes
 import org.ergoplatform.ErgoBox.R4
 import org.ergoplatform._
-import org.ergoplatform.validation.ValidationException
 import org.scalatest.TryValues._
 import scorex.crypto.hash.Blake2b256
 import sigma.ast.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigma.ast._
+import sigma.data.AvlTreeData
+import sigma.validation.ValidationException
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import sigmastate.interpreter.Interpreter._
@@ -20,7 +21,7 @@ import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}
 import sigmastate.lang.Terms._
-import sigmastate.serialization.{ValueSerializer, SerializationSpecification}
+import sigmastate.serialization.{SerializationSpecification, ValueSerializer}
 import sigmastate.utils.Helpers._
 
 class ErgoLikeInterpreterSpecification extends CompilerTestingCommons

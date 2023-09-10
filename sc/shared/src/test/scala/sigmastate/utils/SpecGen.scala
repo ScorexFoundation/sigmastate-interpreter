@@ -4,6 +4,7 @@ import sigma.util.PrintExtensions.IterableExtensions
 import sigmastate._
 import sigma.Evaluation._
 import sigma.ast.{SBigInt, SBoolean, SCollection, SEmbeddable, SGlobal, SGroupElement, SNumericType, SOption, SPrimType, SString, SType, STypeCompanion}
+import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma.util.Extensions.ByteOps
 import sigma.util.CollectionUtil
 import sigma.util.PrintExtensions._

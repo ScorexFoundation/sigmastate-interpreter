@@ -1,8 +1,7 @@
 package sigmastate.helpers
 
 import org.ergoplatform._
-import org.ergoplatform.validation.ValidationRules.CheckSerializableTypeCode
-import org.ergoplatform.validation.{ValidationException, ValidationSpecification}
+import org.ergoplatform.validation.ValidationSpecification
 import org.scalacheck.Arbitrary.arbByte
 import org.scalacheck.Gen
 import org.scalatest.Assertion
@@ -11,6 +10,8 @@ import scalan.TestContexts
 import sigma.ast.{SOption, SType}
 import sigma.{Colls, Evaluation, TestUtils}
 import sigma.data.RType
+import sigma.validation.ValidationException
+import sigma.validation.ValidationRules.CheckSerializableTypeCode
 import sigmastate.Values.{Constant, ErgoTree, SValue, SigmaBoolean, SigmaPropValue}
 import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._

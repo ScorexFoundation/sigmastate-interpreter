@@ -19,6 +19,7 @@ import sigmastate.interpreter.ProverResult
 import sigmastate.lang.Terms._
 import sigma.Coll
 import sigma.ast.SAvlTree
+import sigma.data.{AvlTreeData, AvlTreeFlags}
 import sigma.{AvlTree, Context}
 
 

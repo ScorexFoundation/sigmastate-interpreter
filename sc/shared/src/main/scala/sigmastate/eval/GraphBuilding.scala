@@ -2,6 +2,7 @@ package sigmastate.eval
 
 import org.ergoplatform._
 import scalan.MutableLazy
+import sigma.SigmaException
 import sigma.data.ExactIntegral.{ByteIsExactIntegral, IntIsExactIntegral, LongIsExactIntegral, ShortIsExactIntegral}
 import sigma.data.ExactOrdering.{ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering, ShortIsExactOrdering}
 import sigma.util.Extensions.ByteOps
@@ -15,7 +16,7 @@ import sigmastate.serialization.{OpCodes, ValueCodes}
 import sigmastate.utxo._
 import sigma.ast._
 import sigmastate.crypto.CryptoConstants.EcPointType
-import sigmastate.exceptions.{GraphBuildingException, SigmaException}
+import sigmastate.exceptions.GraphBuildingException
 
 import scala.collection.mutable.ArrayBuffer
 

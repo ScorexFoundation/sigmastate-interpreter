@@ -1,7 +1,7 @@
 package org.ergoplatform.sdk.utils
 
 import org.ergoplatform.ErgoBox
-import sigma.data.{CBigInt, CollType, FuncType, OptionType, PairType, RType, TupleType}
+import sigma.data.{AvlTreeData, AvlTreeFlags, CBigInt, CollType, FuncType, OptionType, PairType, RType, TupleType}
 import sigma.data.RType._
 import scorex.crypto.authds.avltree.batch.BatchAVLProver
 import scorex.crypto.hash.{Blake2b256, Digest32}
@@ -9,7 +9,7 @@ import scorex.util.ModifierId
 import sigmastate.Values.ErgoTree
 import sigmastate.crypto.CryptoConstants
 import sigmastate.eval._
-import sigmastate.{AvlTreeData, AvlTreeFlags, TrivialProp}
+import sigmastate.TrivialProp
 import sigma._
 
 import java.math.BigInteger

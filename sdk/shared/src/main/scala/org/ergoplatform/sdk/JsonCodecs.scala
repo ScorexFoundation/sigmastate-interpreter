@@ -6,17 +6,15 @@ import io.circe._
 import io.circe.syntax._
 import org.ergoplatform.ErgoBox.{BoxId, NonMandatoryRegisterId, Token, TokenId}
 import org.ergoplatform.settings.ErgoAlgos
-import org.ergoplatform.validation.{SigmaValidationSettings, SigmaValidationSettingsSerializer}
+import org.ergoplatform.validation.SigmaValidationSettingsSerializer
 import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.crypto.hash.Digest32
 import scorex.util.ModifierId
 import sigmastate.Values.{ErgoTree, EvaluatedValue}
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
-import sigmastate.exceptions.SigmaException
 import sigmastate.interpreter.{ContextExtension, ProverResult}
-import sigmastate.{AvlTreeData, AvlTreeFlags}
-import sigma.{AnyValue, Coll, Colls, Header, PreHeader}
+import sigma.{AnyValue, Coll, Colls, Header, PreHeader, SigmaException}
 
 import scala.util.Try
 import sigmastate.utils.Helpers._
@@ -32,7 +30,9 @@ import org.ergoplatform.ErgoLikeTransactionTemplate
 import org.ergoplatform.ErgoBoxCandidate
 import org.ergoplatform.ErgoLikeContext
 import sigma.ast.SType
-import sigma.data.{CBigInt, WrapperOf}
+import sigma.data.{AvlTreeData, AvlTreeFlags, CBigInt, WrapperOf}
+import sigma.validation.SigmaValidationSettings
+
 import scala.collection.mutable
 
 trait JsonCodecs {

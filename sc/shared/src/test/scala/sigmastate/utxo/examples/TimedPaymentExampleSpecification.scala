@@ -1,10 +1,11 @@
 package sigmastate.utxo.examples
 
 import org.ergoplatform._
+import sigma.data.AvlTreeData
 import sigmastate.Values.IntConstant
 import sigmastate._
 import sigmastate.exceptions.InterpreterException
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, CompilerTestingCommons, ErgoLikeTestInterpreter}
+import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._

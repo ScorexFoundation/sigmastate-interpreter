@@ -3,8 +3,7 @@ package sigma
 import debox.cfor
 import org.ergoplatform._
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, TestContractSpec}
-import org.ergoplatform.validation.ValidationRules.CheckSerializableTypeCode
-import org.ergoplatform.validation.{SigmaValidationSettings, ValidationException, ValidationRules}
+import org.ergoplatform.validation.ValidationRules
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen.frequency
 import org.scalacheck.{Arbitrary, Gen}
@@ -34,7 +33,10 @@ import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers._
 import sigmastate.utxo.{DeserializeContext, DeserializeRegister, GetVar, OptionGet}
 import sigma.ast.{SOption, SSigmaProp, SType}
+import sigma.validation.ValidationRules.CheckSerializableTypeCode
+import sigma.validation.{SigmaValidationSettings, ValidationException}
 import sigmastate.{SigmaLeaf, eval}
+
 import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}

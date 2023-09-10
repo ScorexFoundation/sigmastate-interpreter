@@ -1,7 +1,9 @@
 package org.ergoplatform.validation
 
-import org.ergoplatform.validation.ValidationRules.{FirstRuleId, currentSettings}
+import org.ergoplatform.validation.ValidationRules.currentSettings
 import org.scalatest.Assertion
+import sigma.validation.{DisabledRule, SigmaValidationSettings}
+import sigma.validation.ValidationRules.FirstRuleId
 import sigmastate.helpers.CompilerTestingCommons
 import sigmastate.serialization.SerializationSpecification
 

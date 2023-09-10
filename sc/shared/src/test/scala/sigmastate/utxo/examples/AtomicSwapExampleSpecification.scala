@@ -4,6 +4,7 @@ import org.ergoplatform.Height
 import scorex.crypto.hash.Blake2b256
 import scorex.utils.Random
 import sigma.ast.{SBoolean, SByte, SCollection}
+import sigma.data.AvlTreeData
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.interpreter.Interpreter._

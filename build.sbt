@@ -212,6 +212,17 @@ lazy val core   = crossProject(JVMPlatform, JSPlatform)
   )
 lazy val coreJS = core.js
     .enablePlugins(ScalaJSBundlerPlugin)
+    .enablePlugins(ScalablyTypedConverterGenSourcePlugin)
+    .settings(
+      stOutputPackage := "sigmastate",
+      scalaJSLinkerConfig ~= { conf =>
+        conf.withSourceMap(false)
+      },
+      Compile / npmDependencies ++= Seq(
+        "sigmajs-crypto-facade" -> sigmajsCryptoFacadeVersion,
+        "@fleet-sdk/common" -> "0.1.3"
+      )
+    )
 
 lazy val interpreter = crossProject(JVMPlatform, JSPlatform)
   .in(file("interpreter"))
@@ -233,17 +244,6 @@ lazy val interpreter = crossProject(JVMPlatform, JSPlatform)
   )
 lazy val interpreterJS = interpreter.js
     .enablePlugins(ScalaJSBundlerPlugin)
-    .enablePlugins(ScalablyTypedConverterGenSourcePlugin)
-    .settings(
-      stOutputPackage := "sigmastate",
-      scalaJSLinkerConfig ~= { conf =>
-        conf.withSourceMap(false)
-      },
-      Compile / npmDependencies ++= Seq(
-        "sigmajs-crypto-facade" -> sigmajsCryptoFacadeVersion,
-        "@fleet-sdk/common" -> "0.1.3"
-      )
-    )
 
 lazy val parsers = crossProject(JVMPlatform, JSPlatform)
     .in(file("parsers"))

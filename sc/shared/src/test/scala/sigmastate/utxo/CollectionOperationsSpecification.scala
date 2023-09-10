@@ -8,6 +8,7 @@ import sigmastate.lang.Terms._
 import org.ergoplatform._
 import sigma.ast.SCollection._
 import sigma.ast._
+import sigma.data.AvlTreeData
 import sigmastate.SCollectionMethods.{FlatMapMethod, IndexOfMethod, IndicesMethod, PatchMethod, UpdateManyMethod, UpdatedMethod}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.serialization.OpCodes._

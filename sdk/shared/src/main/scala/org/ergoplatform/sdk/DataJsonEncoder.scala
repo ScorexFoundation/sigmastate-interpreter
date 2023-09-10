@@ -13,7 +13,6 @@ import sigmastate.lang.SigmaParser
 import sigmastate.eval._
 import sigma._
 import debox.cfor
-import sigmastate.exceptions.SerializerException
 
 import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable

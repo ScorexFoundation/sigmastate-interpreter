@@ -6,7 +6,7 @@ import org.ergoplatform.settings.ErgoAlgos
 import pprint.{PPrinter, Tree}
 import sigma.ast.SCollection.{SBooleanArray, SByteArray, SByteArray2}
 import sigma.ast._
-import sigma.data.{CollType, PrimitiveType}
+import sigma.data.{AvlTreeData, AvlTreeFlags, CollType, PrimitiveType}
 import sigma.{Coll, GroupElement}
 import sigmastate.Values.{ConstantNode, ErgoTree, FuncValue, ValueCompanion}
 import sigmastate._

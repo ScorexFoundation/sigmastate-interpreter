@@ -4,6 +4,7 @@ import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingIn
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.lang.Terms._
 import org.scalatest.TryValues._
+import sigma.data.AvlTreeData
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 
 import scala.util.Success

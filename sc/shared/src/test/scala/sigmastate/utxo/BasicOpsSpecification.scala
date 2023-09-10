@@ -3,7 +3,7 @@ package sigmastate.utxo
 import java.math.BigInteger
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, R6, R8}
 import org.ergoplatform._
-import sigma.data.RType
+import sigma.data.{AvlTreeData, RType}
 import sigma.ast.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._

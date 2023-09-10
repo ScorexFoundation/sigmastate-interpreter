@@ -1,7 +1,7 @@
 package org.ergoplatform
 
 import org.ergoplatform.ErgoAddressEncoder.{MainnetNetworkPrefix, TestnetNetworkPrefix, hash256}
-import org.ergoplatform.validation.{ValidationException, ValidationRules}
+import org.ergoplatform.validation.ValidationRules
 import org.scalatest.{Assertion, TryValues}
 import scorex.crypto.hash.Blake2b256
 import scorex.util.encode.Base58
@@ -23,6 +23,9 @@ import sigmastate.utils.Helpers._
 import sigmastate.{CompilerCrossVersionProps, SigmaAnd}
 import sigma.SigmaDslTesting
 import sigma.ast.SType
+import sigma.validation.ValidationException
+import sigma.validation.ValidationRules.CheckTypeCode
+
 import java.math.BigInteger
 
 class ErgoAddressSpecification extends SigmaDslTesting
@@ -194,7 +197,7 @@ class ErgoAddressSpecification extends SigmaDslTesting
       val unparsedTree = new ErgoTree(
         (ErgoTree.ConstantSegregationHeader | ergoTreeHeaderInTests).toByte,
         Array[Constant[SType]](),
-        Left(UnparsedErgoTree(Array[Byte](), ValidationException("", ValidationRules.CheckTypeCode, Seq())))
+        Left(UnparsedErgoTree(Array[Byte](), ValidationException("", CheckTypeCode, Seq())))
       )
       assertExceptionThrown(
         ergoAddressEncoder.fromProposition(unparsedTree).getOrThrow,

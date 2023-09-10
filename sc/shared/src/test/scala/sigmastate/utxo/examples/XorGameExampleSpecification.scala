@@ -4,10 +4,11 @@ package sigmastate.utxo.examples
 import org.ergoplatform.ErgoBox.{R4, R5, R6}
 import scorex.crypto.hash.Blake2b256
 import scorex.utils.Random
+import sigma.data.AvlTreeData
 import sigmastate.Values.{ByteArrayConstant, ByteConstant, IntConstant, SigmaPropConstant}
 import sigmastate._
 import sigmastate.crypto.DLogProtocol.ProveDlog
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, CompilerTestingCommons}
+import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._

@@ -6,6 +6,7 @@ import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigma.ast.{SAvlTree, SBoolean, SLong}
 import sigma.ast.SCollection.SByteArray
+import sigma.data.{AvlTreeData, AvlTreeFlags}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval.Extensions.ArrayOps

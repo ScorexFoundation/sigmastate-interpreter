@@ -1,6 +1,7 @@
 package sigmastate.utxo
 
 import sigma.ast.SSigmaProp
+import sigma.data.AvlTreeData
 import sigmastate.crypto.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate.Values.{ConcreteCollection, FalseLeaf, IntConstant, SigmaPropConstant, SigmaPropValue, TrueLeaf}
 import sigmastate._

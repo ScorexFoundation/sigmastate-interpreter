@@ -6,8 +6,8 @@ import org.ergoplatform.sdk.utils.ArithUtils
 import org.ergoplatform.sdk.wallet.protocol.context.{BlockchainStateContext, TransactionContext}
 import org.ergoplatform.validation.ValidationRules
 import org.ergoplatform.{ErgoLikeContext, ErgoLikeInterpreter}
+import sigma.data.AvlTreeData
 import sigma.util.Extensions.LongOps
-import sigmastate.AvlTreeData
 import sigmastate.Values.ErgoTree
 import sigmastate.eval.addCostChecked
 import sigmastate.exceptions.CostLimitException
