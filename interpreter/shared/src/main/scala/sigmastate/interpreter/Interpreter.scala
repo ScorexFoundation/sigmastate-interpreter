@@ -52,6 +52,8 @@ trait Interpreter {
 
   type ProofT = UncheckedTree
 
+  private val _ = InterpreterReflection
+
   /** Evaluation settings used by [[ErgoTreeEvaluator]] which is used by this
     * interpreter to perform fullReduction.
     */
