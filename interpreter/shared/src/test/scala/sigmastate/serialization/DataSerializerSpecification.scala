@@ -9,11 +9,11 @@ import sigmastate.Values.{ErgoTree, SigmaBoolean}
 import sigmastate._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
-import sigmastate.crypto.CryptoConstants.EcPointType
 import sigma.{AvlTree, Colls, Evaluation}
 import sigma.ast.SType.AnyOps
 import sigma.ast._
 import org.scalacheck.Gen
+import sigma.crypto.EcPointType
 import sigma.serialization.SerializerException
 import sigmastate.interpreter.{CostAccumulator, ErgoTreeEvaluator}
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultProfiler

@@ -11,7 +11,7 @@ import sigmastate.eval._
 import sigma.{Evaluation, _}
 import debox.cfor
 import sigma.ast._
-import sigma.serialization.SerializerException
+import sigma.serialization.{GroupElementSerializer, SerializerException}
 import sigma.validation.ValidationRules.CheckSerializableTypeCode
 
 import scala.collection.mutable

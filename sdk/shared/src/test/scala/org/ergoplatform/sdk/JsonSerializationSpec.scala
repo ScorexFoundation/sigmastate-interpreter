@@ -20,6 +20,7 @@ import sigma.Coll
 import sigma.{Header, PreHeader}
 import org.ergoplatform.{DataInput, ErgoBox, ErgoLikeContext, ErgoLikeTransaction, ErgoLikeTransactionTemplate, Input, UnsignedErgoLikeTransaction, UnsignedInput}
 import sigma.ast.SType
+import sigma.crypto.EcPointType
 import sigma.data.AvlTreeData
 
 import scala.collection.mutable
@@ -135,7 +136,7 @@ class JsonSerializationSpec extends SerializationSpecification with JsonCodecs {
     val minerPkHex = "0326df75ea615c18acc6bb4b517ac82795872f388d5d180aac90eaa84de750b942"
     val minerPk = Base16.decode(minerPkHex).map { point =>
       ProveDlog(
-        CryptoConstants.dlogGroup.ctx.decodePoint(point).asInstanceOf[CryptoConstants.EcPointType]
+        CryptoConstants.dlogGroup.ctx.decodePoint(point)
       )
     }.get
     val regs = scala.collection.Map(

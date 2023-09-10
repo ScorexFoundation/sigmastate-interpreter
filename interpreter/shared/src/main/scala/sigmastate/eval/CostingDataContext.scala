@@ -10,21 +10,21 @@ import scorex.utils.{Ints, Longs}
 import sigma.{VersionContext, _}
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.{SInt, STuple, SType}
-import sigma.crypto.{CryptoFacade, Ecp}
+import sigma.crypto.{CryptoFacade, EcPointType, Ecp}
 import sigma.data.OverloadHack.Overloaded1
 import sigma.data.{AvlTreeData, AvlTreeFlags, CBigInt, RType, SigmaConstants, WrapperOf}
+import sigma.serialization.GroupElementSerializer
 import sigma.util.Extensions.BigIntegerOps
 import sigma.validation.SigmaValidationSettings
 import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.Values.{ConstantNode, ErgoTree, EvaluatedValue, SValue, SigmaBoolean}
 import sigmastate._
-import sigmastate.crypto.CryptoConstants.EcPointType
 import sigmastate.crypto.DLogProtocol.ProveDlog
 import sigmastate.crypto.{CryptoConstants, ProveDHTuple}
 import sigmastate.eval.Extensions._
 import sigmastate.interpreter.Interpreter
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.serialization.{GroupElementSerializer, SigmaSerializer}
+import sigmastate.serialization.SigmaSerializer
 
 import java.math.BigInteger
 import java.util.Arrays

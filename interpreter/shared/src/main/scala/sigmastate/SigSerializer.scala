@@ -27,7 +27,7 @@ class SigSerializer {
   val hashSize = CryptoConstants.soundnessBits / 8
 
   /** Number of bytes to represent any group element as byte array */
-  val order = CryptoConstants.groupSize
+  val order = sigma.crypto.groupSize
 
   /** Recursively traverses the given node and serializes challenges and prover messages
     * to the given writer.

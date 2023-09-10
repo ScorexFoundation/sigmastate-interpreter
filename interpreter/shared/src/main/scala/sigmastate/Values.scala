@@ -6,7 +6,6 @@ import sigma.kiama.rewriting.Rewriter.{count, everywherebu, strategy}
 import org.ergoplatform.settings.ErgoAlgos
 import sigma.data.{Nullable, RType}
 import sigma.util.CollectionUtil._
-import sigmastate.crypto.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CompanionDesc, ErgoTreeEvaluator, Interpreter, NamedDesc}
 import sigmastate.serialization._
 import sigmastate.serialization.OpCodes._
@@ -24,6 +23,7 @@ import debox.cfor
 import scorex.util.encode.Base16
 import sigma.ast.SCollection.{SByteArray, SIntArray}
 import sigma.ast._
+import sigma.crypto.EcPointType
 import sigmastate.exceptions.InterpreterException
 
 import scala.language.implicitConversions

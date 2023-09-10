@@ -18,11 +18,12 @@ import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.serialization.{GroupElementSerializer, ValueSerializer}
+import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.Helpers._
 import sigmastate.{CompilerCrossVersionProps, SigmaAnd}
 import sigma.SigmaDslTesting
 import sigma.ast.SType
+import sigma.serialization.GroupElementSerializer
 import sigma.validation.ValidationException
 import sigma.validation.ValidationRules.CheckTypeCode
 

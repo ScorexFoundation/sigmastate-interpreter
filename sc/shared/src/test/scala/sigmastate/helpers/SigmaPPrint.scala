@@ -6,16 +6,16 @@ import org.ergoplatform.settings.ErgoAlgos
 import pprint.{PPrinter, Tree}
 import sigma.ast.SCollection.{SBooleanArray, SByteArray, SByteArray2}
 import sigma.ast._
+import sigma.crypto.EcPointType
 import sigma.data.{AvlTreeData, AvlTreeFlags, CollType, PrimitiveType}
+import sigma.serialization.GroupElementSerializer
 import sigma.{Coll, GroupElement}
 import sigmastate.Values.{ConstantNode, ErgoTree, FuncValue, ValueCompanion}
 import sigmastate._
-import sigmastate.crypto.CryptoConstants.EcPointType
 import sigmastate.crypto.GF2_192_Poly
 import sigmastate.interpreter.{CompanionDesc, FixedCostItem, MethodDesc}
 import sigmastate.lang.Terms
 import sigmastate.lang.Terms.MethodCall
-import sigmastate.serialization.GroupElementSerializer
 import sigmastate.utxo.SelectField
 
 import java.math.BigInteger

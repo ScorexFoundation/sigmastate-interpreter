@@ -1,10 +1,7 @@
-package sigmastate.serialization
+package sigma.serialization
 
-import sigmastate.crypto.CryptoConstants
-import sigma.crypto.CryptoFacade
-import CryptoConstants.EcPointType
+import sigma.crypto.{CryptoContext, CryptoFacade, EcPointType}
 import sigma.util.safeNewArray
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 /**
   * A serializer which encodes group elements, so elliptic curve points in our case, to bytes, and decodes points
@@ -15,13 +12,12 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
   * Special case is infinity point, which is encoded by 33 zeroes.
   * Thus elliptic curve point is always encoded with 33 bytes.
   */
-object GroupElementSerializer extends SigmaSerializer[EcPointType, EcPointType] {
+object GroupElementSerializer extends CoreSerializer[EcPointType, EcPointType] {
 
-  private val curve = CryptoConstants.dlogGroup
-  private val encodingSize = 1 + CryptoConstants.groupSize
+  private val encodingSize = 1 + sigma.crypto.groupSize
   private lazy val identityPointEncoding = Array.fill(encodingSize)(0: Byte)
 
-  override def serialize(point: EcPointType, w: SigmaByteWriter): Unit = {
+  override def serialize(point: EcPointType, w: CoreByteWriter): Unit = {
     val bytes = if (CryptoFacade.isInfinityPoint(point)) {
       identityPointEncoding
     } else {
@@ -36,15 +32,15 @@ object GroupElementSerializer extends SigmaSerializer[EcPointType, EcPointType] 
     w.putBytes(bytes)
   }
 
-  override def parse(r: SigmaByteReader): EcPointType = {
+  override def parse(r: CoreByteReader): EcPointType = {
     val encoded = r.getBytes(encodingSize)
     if (encoded(0) != 0) {
-      curve.ctx.decodePoint(encoded)
+      CryptoContext.default.decodePoint(encoded)
     } else {
-      curve.identity
+      CryptoContext.default.infinity // identity point of multiplicative group
     }
   }
 
-  def parse(bytes: Array[Byte]): EcPointType = parse(SigmaSerializer.startReader(bytes))
+  def parse(bytes: Array[Byte]): EcPointType = parse(CoreSerializer.startReader(bytes))
 
 }

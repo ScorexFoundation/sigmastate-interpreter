@@ -7,6 +7,9 @@ package object crypto {
   /** Length of hash in bytes. */
   val hashLength: Int = hashLengthBits / 8
 
+  /** Number of bytes to represent any group element as byte array */
+  val groupSize: Int = 256 / 8 //32 bytes
+
   /** Instance of Elliptic Curve descriptor. */
   type Curve = Platform.Curve
 
@@ -18,4 +21,7 @@ package object crypto {
 
   /** A cryptographically strong random number generator. */
   type SecureRandom = Platform.SecureRandom
+
+  /** Type of group elements used in the signature scheme. */
+  type EcPointType = Ecp
 }

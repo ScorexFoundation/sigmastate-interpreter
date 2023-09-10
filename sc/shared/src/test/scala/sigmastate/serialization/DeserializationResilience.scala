@@ -122,7 +122,7 @@ class DeserializationResilience extends DeserializationResilienceTesting {
 
   property("exceeding ergo box propositionBytes max size check") {
     val oversizedTree = mkTestErgoTree(SigmaAnd(
-      Gen.listOfN(SigmaSerializer.MaxPropositionSize / CryptoConstants.groupSize,
+      Gen.listOfN(SigmaSerializer.MaxPropositionSize / sigma.crypto.groupSize,
         proveDlogGen.map(_.toSigmaProp)).sample.get))
     val b = new ErgoBoxCandidate(1L, oversizedTree, 1)
     val w = SigmaSerializer.startWriter()
@@ -161,7 +161,7 @@ class DeserializationResilience extends DeserializationResilienceTesting {
 
   property("ergo box propositionBytes max size check") {
     val bigTree = mkTestErgoTree(SigmaAnd(
-      Gen.listOfN((SigmaSerializer.MaxPropositionSize / 2) / CryptoConstants.groupSize,
+      Gen.listOfN((SigmaSerializer.MaxPropositionSize / 2) / sigma.crypto.groupSize,
         proveDlogGen.map(_.toSigmaProp)).sample.get))
     val b = new ErgoBoxCandidate(1L, bigTree, 1)
     val w = SigmaSerializer.startWriter()
@@ -272,7 +272,7 @@ class DeserializationResilience extends DeserializationResilienceTesting {
 
   property("exceed ergo box max size check") {
     val bigTree = mkTestErgoTree(SigmaAnd(
-      Gen.listOfN((SigmaSerializer.MaxPropositionSize / 2) / CryptoConstants.groupSize,
+      Gen.listOfN((SigmaSerializer.MaxPropositionSize / 2) / sigma.crypto.groupSize,
         proveDlogGen.map(_.toSigmaProp)).sample.get))
     val tokens = additionalTokensGen(127).sample.get.map(_.sample.get).toColl
     val b = new ErgoBoxCandidate(1L, bigTree, 1, tokens)

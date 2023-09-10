@@ -31,3 +31,8 @@ abstract class CryptoContext {
   def generator: Ecp
 }
 
+object CryptoContext {
+  /** Default context for cryptographic operations. */
+  val default: CryptoContext = Platform.createContext()
+}
+

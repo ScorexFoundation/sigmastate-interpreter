@@ -6,9 +6,9 @@ import sigmastate.Values.SigmaBoolean
 import sigmastate.crypto.DLogProtocol.ProveDlog
 import sigmastate.crypto.ProveDHTuple
 import sigmastate.eval.SigmaDsl
-import sigmastate.crypto.CryptoConstants.EcPointType
 import sigmastate.interpreter.{ErgoTreeEvaluator, NamedDesc, OperationCostInfo}
 import sigma._
+import sigma.crypto.EcPointType
 
 /** Implementation of data equality for two arbitrary ErgoTree data types.
   * @see [[DataValueComparer.equalDataValues]]

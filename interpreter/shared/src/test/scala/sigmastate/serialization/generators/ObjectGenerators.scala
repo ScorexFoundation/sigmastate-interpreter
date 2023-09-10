@@ -17,7 +17,7 @@ import sigmastate.crypto.DLogProtocol.ProveDlog
 import sigmastate.crypto.{CryptoConstants, ProveDHTuple}
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
-import sigmastate.crypto.CryptoConstants.{EcPointType, dlogGroup}
+import sigmastate.crypto.CryptoConstants.dlogGroup
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.lang.TransformingSigmaBuilder._
 import sigmastate._
@@ -25,6 +25,7 @@ import sigmastate.utxo._
 import sigma.Coll
 import sigma._
 import sigma.ast._
+import sigma.crypto.EcPointType
 import sigma.validation.{ChangedRule, DisabledRule, EnabledRule, ReplacedRule, RuleStatus}
 import sigma.validation.ValidationRules.FirstRuleId
 

@@ -1,10 +1,11 @@
 package sigmastate.serialization.transformers
 
 import sigma.ast.SGroupElement
+import sigma.crypto.EcPointType
+import sigma.serialization.GroupElementSerializer
 import sigmastate.CreateProveDHTuple
-import sigmastate.Values.{Value, SigmaPropValue}
+import sigmastate.Values.{SigmaPropValue, Value}
 import sigmastate.crypto.ProveDHTuple
-import sigmastate.crypto.CryptoConstants.EcPointType
 import sigmastate.lang.Terms._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utils.SigmaByteWriter._

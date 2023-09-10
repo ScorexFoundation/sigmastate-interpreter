@@ -6,9 +6,6 @@ import java.math.BigInteger
 
 /** Constants used in crypto operations implementation. */
 object CryptoConstants {
-  /** Type of group elements used in the signature scheme. */
-  type EcPointType = Ecp
-
   /** Length of encoded group element in bytes. */
   val EncodedGroupElementLength: Byte = 33
 
@@ -21,8 +18,6 @@ object CryptoConstants {
   /** Size of the binary representation of any group element (2 ^ groupSizeBits == <number of elements in a group>) */
   val groupSizeBits: Int = 256
 
-  /** Number of bytes to represent any group element as byte array */
-  val groupSize: Int = 256 / 8 //32 bytes
 
   /** Group order, i.e. number of elements in the group */
   val groupOrder: BigInteger = dlogGroup.order

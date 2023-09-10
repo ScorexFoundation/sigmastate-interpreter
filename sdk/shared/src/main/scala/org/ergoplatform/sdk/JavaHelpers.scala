@@ -13,17 +13,17 @@ import sigmastate.utils.Helpers._
 import scorex.util.encode.Base16
 import scorex.util.{ModifierId, bytesToId, idToBytes}
 import sigma.ast.SType
-import sigma.crypto.CryptoFacade
+import sigma.crypto.{CryptoFacade, EcPointType}
 import sigma.data.ExactIntegral.LongIsExactIntegral
 import sigma.data.{InverseIso, Iso, RType, SigmaConstants}
+import sigma.serialization.GroupElementSerializer
 import sigma.util.StringUtil.StringUtilExtensions
 import sigma.{AnyValue, AvlTree, Coll, Colls, Evaluation, GroupElement, Header}
 import sigmastate.Values.{Constant, ErgoTree, EvaluatedValue, SValue, SigmaBoolean, SigmaPropConstant}
-import sigmastate.crypto.CryptoConstants.EcPointType
 import sigmastate.crypto.DLogProtocol.ProveDlog
 import sigmastate.crypto.{DiffieHellmanTupleProverInput, ProveDHTuple}
 import sigmastate.eval.{CostingSigmaDslBuilder, Digest32Coll}
-import sigmastate.serialization.{ErgoTreeSerializer, GroupElementSerializer, SigmaSerializer, ValueSerializer}
+import sigmastate.serialization.{ErgoTreeSerializer, SigmaSerializer, ValueSerializer}
 
 import java.lang.{Boolean => JBoolean, Byte => JByte, Integer => JInt, Long => JLong, Short => JShort, String => JString}
 import java.math.BigInteger

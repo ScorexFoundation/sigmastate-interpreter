@@ -8,11 +8,11 @@ import sigma.data.{RType, TupleColl}
 import sigma.ast._
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.SType.AnyOps
+import sigma.crypto.EcPointType
 import sigma.serialization.SerializerException
 import sigmastate.Values.SigmaBoolean
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
-import sigmastate.crypto.CryptoConstants.EcPointType
 import sigma.{AvlTree, Box, Colls, Evaluation}
 import sigmastate.serialization.SerializationSpecification
 

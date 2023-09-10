@@ -11,7 +11,6 @@ import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ModifierId
 import sigmastate.Values.{ByteArrayConstant, ConcreteCollection, ConstantPlaceholder, ErgoTree, FalseLeaf, IntConstant, LongConstant, SigmaPropConstant, TrueLeaf}
-import sigmastate.crypto.CryptoConstants.EcPointType
 import sigmastate.crypto.DLogProtocol.ProveDlog
 import sigmastate.crypto.ProveDHTuple
 import sigmastate.eval._
@@ -24,6 +23,7 @@ import sigmastate.utils.Helpers
 import sigmastate._
 import sigma.Coll
 import sigma.ast.{SBoolean, SSigmaProp}
+import sigma.crypto.EcPointType
 
 import java.math.BigInteger
 import scala.reflect.ClassTag

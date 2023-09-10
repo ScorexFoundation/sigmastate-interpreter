@@ -6,7 +6,6 @@ import org.scalacheck.Arbitrary._
 import sigma.data.{RType, TupleColl}
 import sigma.ast.SCollection.SByteArray
 import sigmastate.Values.{BigIntConstant, ByteArrayConstant, Constant, FalseLeaf, GroupGenerator, LongConstant, SValue, TrueLeaf}
-import sigmastate.crypto.CryptoConstants.EcPointType
 import sigmastate._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
@@ -15,6 +14,7 @@ import sigma.{AvlTree, Colls, Evaluation}
 import sigma.ast.SType.AnyOps
 import scorex.util.encode.Base16
 import sigma.ast._
+import sigma.crypto.EcPointType
 import sigma.serialization.SerializerException
 import sigmastate.lang.DeserializationSigmaBuilder
 
