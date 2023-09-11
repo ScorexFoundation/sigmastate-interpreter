@@ -188,7 +188,7 @@ object ValidationRules {
     CheckTypeCode,
     CheckSerializableTypeCode,
     CheckTypeWithMethods,
-    CheckPositionLimit,
+    CheckPositionLimit
   )
 
   /** Validation settings that correspond to the current version of the ErgoScript implementation.
