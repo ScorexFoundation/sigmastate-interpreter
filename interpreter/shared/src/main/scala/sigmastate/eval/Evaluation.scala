@@ -118,7 +118,8 @@ object Evaluation {
   }
 
   /** Tries to reconstruct RType of the given value.
-    * If not successfull returns failure. */
+    * If not successfull returns failure.
+    * NOTE, this method is NOT used in consensus. */
   def rtypeOf(value: Any): Try[RType[_]] = Try { value match {
     case arr if arr.getClass.isArray =>
       val itemClass = arr.getClass.getComponentType
@@ -140,7 +141,11 @@ object Evaluation {
     case _: Unit  => UnitType
     case _: sigma.BigInt => BigIntRType
     case _: GroupElement => GroupElementRType
-    case _: ErgoBox => ErgoBoxRType  // TODO remove this RType
+    // TODO remove this case to allow removing of RType instances
+    //  for ErgoBox, AvlTreeData, SigmaBoolean.
+    //  RType describes only the types that can be put into registers, context variables and
+    //  used as ErgoTree evaluation intermediate values.
+    case _: ErgoBox => ErgoBoxRType
     case _: Box => BoxRType
 
     case _: AvlTreeData => AvlTreeDataRType // TODO remove this RType
