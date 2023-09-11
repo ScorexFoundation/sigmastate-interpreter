@@ -1,5 +1,10 @@
 package sigma.util
 
+import sigma.GroupElement
+import sigma.crypto.{CryptoFacade, Ecp}
+import sigma.data.CGroupElement
+import debox.{cfor, Buffer => DBuffer}
+
 import java.math.BigInteger
 import java.nio.ByteBuffer
 
@@ -267,6 +272,39 @@ object Extensions {
     def ensuring(cond: A => Boolean, msg: A => Any): A = {
       assert(cond(self), msg(self))
       self
+    }
+  }
+
+  implicit class EcpOps(val source: Ecp) extends AnyVal {
+    /** Extracts [[sigma.GroupElement]] from the Ecp instance. */
+    def toGroupElement: GroupElement = CGroupElement(source)
+
+    /** Shortened String representation of `source` GroupElement. */
+    def showECPoint: String = {
+      if (source.toGroupElement.isIdentity) {
+        "IDENTITY"
+      }
+      else {
+        CryptoFacade.showPoint(source)
+      }
+    }
+  }
+
+  implicit class GroupElementOps(val source: GroupElement) extends AnyVal {
+    def toECPoint: Ecp = source.asInstanceOf[CGroupElement].wrappedValue
+    /** Shortened String representation of `source` GroupElement. */
+    def showToString: String = toECPoint.showECPoint
+  }
+
+  implicit class DBufferOps[A](val buf: DBuffer[A]) extends AnyVal {
+    /** Sum all values in `buf` using the given Numeric. */
+    def sumAll(implicit n: Numeric[A]): A = {
+      val limit     = buf.length
+      var result: A = n.zero
+      cfor(0)(_ < limit, _ + 1) { i =>
+        result = n.plus(result, buf.elems(i))
+      }
+      result
     }
   }
 }

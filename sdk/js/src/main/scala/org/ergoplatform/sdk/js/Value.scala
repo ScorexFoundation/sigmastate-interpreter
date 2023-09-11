@@ -1,13 +1,13 @@
 package org.ergoplatform.sdk.js
 
 import org.ergoplatform.sdk.js.Value.toRuntimeData
-import sigma.data.{CollType, RType}
+import sigma.data.{CGroupElement, CollType, RType}
 import sigma.data.PairType
 import scorex.util.Extensions.{IntOps, LongOps}
 import scorex.util.encode.Base16
 import sigma.ast.SType
 import sigma.crypto.Platform
-import sigmastate.eval.{CAvlTree, CGroupElement, CSigmaProp, CostingBox, SigmaDsl}
+import sigmastate.eval.{CAvlTree, CSigmaProp, CostingBox, SigmaDsl}
 import sigmastate.fleetSdkCommon.distEsmTypesBoxesMod.Box
 import sigmastate.fleetSdkCommon.distEsmTypesCommonMod
 import sigmastate.fleetSdkCommon.distEsmTypesRegistersMod.NonMandatoryRegisters

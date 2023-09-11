@@ -17,7 +17,7 @@ import sigmastate.lang.Terms._
 import sigmastate.utxo._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
-import sigma.util.Extensions.ByteOps
+import sigma.util.Extensions._
 import sigmastate.interpreter.ErgoTreeEvaluator._
 import debox.cfor
 import scorex.util.encode.Base16
@@ -345,7 +345,7 @@ object Values {
 
     override def toString: String = tpe.asInstanceOf[SType] match {
       case SGroupElement if value.isInstanceOf[GroupElement] =>
-        s"ConstantNode(${showECPoint(value.asInstanceOf[GroupElement])},$tpe)"
+        s"ConstantNode(${value.asInstanceOf[GroupElement].showToString},$tpe)"
       case SGroupElement  =>
         sys.error(s"Invalid value in Constant($value, $tpe)")
       case SInt => s"IntConstant($value)"
@@ -976,9 +976,9 @@ object Values {
     def isProven: Value[SBoolean.type] = SigmaPropIsProven(SigmaPropConstant(sb))
     def showToString: String = sb match {
       case ProveDlog(v) =>
-        s"ProveDlog(${showECPoint(v)})"
+        s"ProveDlog(${v.showECPoint})"
       case ProveDHTuple(gv, hv, uv, vv) =>
-        s"ProveDHTuple(${showECPoint(gv)}, ${showECPoint(hv)}, ${showECPoint(uv)}, ${showECPoint(vv)})"
+        s"ProveDHTuple(${gv.showECPoint}, ${hv.showECPoint}, ${uv.showECPoint}, ${vv.showECPoint})"
       case _ => sb.toString
     }
   }

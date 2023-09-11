@@ -7,7 +7,7 @@ import sigmastate.serialization.ValueSerializer.getSerializer
 import sigma.util.Extensions.ByteOps
 import debox.{Buffer => DBuffer, Map => DMap}
 import debox.sp
-import sigmastate.eval.Extensions.DBufferOps
+import sigma.util.Extensions.DBufferOps
 import sigmastate.interpreter.{CostItem, FixedCostItem, SeqCostItem, TypeBasedCostItem}
 import sigmastate.lang.Terms.{MethodCall, PropertyCall}
 import sigmastate.serialization.ValueCodes.OpCode

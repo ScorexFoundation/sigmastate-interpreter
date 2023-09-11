@@ -10,9 +10,9 @@ import sigmastate.Values._
 import sigmastate._
 import sigma.ast._
 import sigma.data.AvlTreeData
+import sigma.util.Extensions.EcpOps
 import sigma.validation.ValidationException
 import sigmastate.eval._
-import sigmastate.eval.Extensions._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.crypto.DLogProtocol.ProveDlog
 import sigmastate.crypto.ProveDHTuple

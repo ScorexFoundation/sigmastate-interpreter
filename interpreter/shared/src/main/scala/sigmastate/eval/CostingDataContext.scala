@@ -7,15 +7,15 @@ import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue, SerializedAdProof}
 import scorex.crypto.hash.{Blake2b256, Digest32, Sha256}
 import scorex.utils.{Ints, Longs}
-import sigma.{VersionContext, _}
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.{SInt, STuple, SType}
-import sigma.crypto.{CryptoFacade, EcPointType, Ecp}
+import sigma.crypto.{EcPointType, Ecp}
 import sigma.data.OverloadHack.Overloaded1
-import sigma.data.{AvlTreeData, AvlTreeFlags, CBigInt, RType, SigmaConstants, WrapperOf}
+import sigma.data._
 import sigma.serialization.GroupElementSerializer
 import sigma.util.Extensions.BigIntegerOps
 import sigma.validation.SigmaValidationSettings
+import sigma.{VersionContext, _}
 import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.Values.{ConstantNode, ErgoTree, EvaluatedValue, SValue, SigmaBoolean}
 import sigmastate._
@@ -31,33 +31,6 @@ import java.util.Arrays
 import scala.annotation.unused
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success}
-
-
-
-
-
-/** A default implementation of [[GroupElement]] interface.
-  * @see [[GroupElement]] for detailed descriptions
-  */
-case class CGroupElement(override val wrappedValue: Ecp) extends GroupElement with WrapperOf[Ecp] {
-  val dsl = CostingSigmaDslBuilder
-  
-  override def toString: String = s"GroupElement(${sigmastate.eval.Extensions.showECPoint(wrappedValue)})"
-
-  override def getEncoded: Coll[Byte] =
-    dsl.Colls.fromArray(GroupElementSerializer.toBytes(wrappedValue))
-
-  override def isIdentity: Boolean = CryptoFacade.isInfinityPoint(wrappedValue)
-
-  override def exp(k: BigInt): GroupElement =
-    dsl.GroupElement(CryptoFacade.exponentiatePoint(wrappedValue, k.asInstanceOf[CBigInt].wrappedValue))
-
-  override def multiply(that: GroupElement): GroupElement =
-    dsl.GroupElement(CryptoFacade.multiplyPoints(wrappedValue, that.asInstanceOf[CGroupElement].wrappedValue))
-
-  override def negate: GroupElement =
-    dsl.GroupElement(CryptoFacade.negatePoint(wrappedValue))
-}
 
 /** A default implementation of [[SigmaProp]] interface.
   * @see [[SigmaProp]] for detailed descriptions

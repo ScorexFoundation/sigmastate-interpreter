@@ -1,16 +1,14 @@
 package sigmastate.eval
 
-import debox.{cfor, Buffer => DBuffer}
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.TokenId
 import scorex.util.encode.Base16
 import sigma.ast.SType.AnyOps
 import sigma.ast.{SCollection, SCollectionType, SType}
-import sigma.{Coll, _}
 import sigma.data.{Nullable, RType}
+import sigma.{Coll, _}
 import sigmastate.Platform
 import sigmastate.Values.{Constant, ConstantNode}
-import sigma.crypto.{CryptoFacade, Ecp}
 import sigmastate.lang.{CheckingSigmaBuilder, TransformingSigmaBuilder}
 import sigmastate.utils.Helpers
 
@@ -104,35 +102,4 @@ object Extensions {
     }
   }
 
-  /** Shortened String representation of `source` GroupElement. */
-  def showECPoint(p: Ecp): String = {
-    if (p.isIdentity) {
-      "IDENTITY"
-    }
-    else {
-      CryptoFacade.showPoint(p)
-    }
-  }
-
-  implicit class EcpOps(val source: Ecp) extends AnyVal {
-    /** Extracts [[GroupElement]] from the Ecp instance. */
-    def toGroupElement: GroupElement = SigmaDsl.GroupElement(source)
-  }
-
-  implicit class GroupElementOps(val source: GroupElement) extends AnyVal {
-    /** Shortened String representation of `source` GroupElement. */
-    def showToString: String = showECPoint(source.asInstanceOf[CGroupElement].wrappedValue)
-  }
-
-  implicit class DBufferOps[A](val buf: DBuffer[A]) extends AnyVal {
-    /** Sum all values in `buf` using the given Numeric. */
-    def sumAll(implicit n: Numeric[A]): A = {
-      val limit = buf.length
-      var result: A = n.zero
-      cfor(0)(_ < limit, _ + 1) { i =>
-        result = n.plus(result, buf.elems(i))
-      }
-      result
-    }
-  }
 }

@@ -6,13 +6,13 @@ import org.ergoplatform.sdk.{ExtendedInputBox, Iso}
 import org.ergoplatform.sdk.wallet.protocol.context
 import org.ergoplatform._
 import org.ergoplatform.sdk.Iso.inverseIso
-import sigma.data.{AvlTreeData, AvlTreeFlags, CBigInt, Iso, RType}
+import sigma.data.{AvlTreeData, AvlTreeFlags, CBigInt, CGroupElement, Iso, RType}
 import scorex.crypto.authds.ADKey
 import scorex.util.ModifierId
 import scorex.util.encode.Base16
 import sigmastate.Values.{Constant, GroupElementConstant}
 import sigmastate.eval.Extensions.ArrayOps
-import sigmastate.eval.{CAvlTree, CGroupElement, CHeader, CPreHeader, Digest32Coll}
+import sigmastate.eval.{CAvlTree, CHeader, CPreHeader, Digest32Coll}
 import sigmastate.fleetSdkCommon.distEsmTypesBoxesMod.Box
 import sigmastate.fleetSdkCommon.distEsmTypesCommonMod.HexString
 import sigmastate.fleetSdkCommon.distEsmTypesRegistersMod.NonMandatoryRegisters
