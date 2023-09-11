@@ -5,10 +5,9 @@ import java.math.BigInteger
 import org.ergoplatform.ErgoBox.{R4, R5}
 import sigma.data.AvlTreeData
 import sigma.util.Extensions.EcpOps
-import sigmastate.CompilerCrossVersionProps
+import sigmastate.{CompilerCrossVersionProps, ProveDHTuple, ProveDlog}
 import sigmastate.Values.GroupElementConstant
-import sigmastate.crypto.DLogProtocol.ProveDlog
-import sigmastate.crypto.{CryptoConstants, DiffieHellmanTupleProverInput, ProveDHTuple}
+import sigmastate.crypto.{CryptoConstants, DiffieHellmanTupleProverInput}
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
@@ -31,7 +30,7 @@ class DHTupleExampleSpecification extends CompilerTestingCommons
     val g = dlogGroup.generator
 
     val alice = new ContextEnrichingTestProvingInterpreter
-    val alicePubKey:ProveDlog = alice.dlogSecrets.head.publicImage
+    val alicePubKey: ProveDlog = alice.dlogSecrets.head.publicImage
 
     val x:BigInteger = alice.dlogSecrets.head.w // x is Alice's private key
 

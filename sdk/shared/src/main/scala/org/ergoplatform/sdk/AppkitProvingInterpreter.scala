@@ -11,8 +11,8 @@ import org.ergoplatform.validation.ValidationRules
 import sigma.VersionContext
 import sigma.data.AvlTreeData
 import sigma.util.Extensions.LongOps
-import sigmastate.SigmaBoolean
-import sigmastate.crypto.DLogProtocol.{DLogProverInput, ProveDlog}
+import sigmastate.{ProveDlog, SigmaBoolean}
+import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.crypto.{DiffieHellmanTupleProverInput, SigmaProtocolPrivateInput}
 import sigmastate.interpreter.Interpreter.{ReductionResult, estimateCryptoVerifyCost}
 import sigmastate.interpreter._

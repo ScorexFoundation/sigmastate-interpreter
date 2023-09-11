@@ -19,7 +19,7 @@ import sigma.util.Extensions._
 import sigma.util.StringUtil.StringUtilExtensions
 import sigma.ast.SType.AnyOps
 import sigmastate.Values.{ByteArrayConstant, Constant, ConstantNode, ErgoTree, IntConstant, SValue}
-import sigmastate.crypto.DLogProtocol.{DLogProverInput, ProveDlog}
+import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.crypto.SigmaProtocolPrivateInput
 import sigmastate.eval.Extensions._
 import sigmastate.eval.{CompiletimeIRContext, CostingBox, CostingDataContext, IRContext, SigmaDsl}
@@ -35,7 +35,7 @@ import sigmastate.utxo.{DeserializeContext, DeserializeRegister, GetVar, OptionG
 import sigma.ast.{SOption, SSigmaProp, SType}
 import sigma.validation.ValidationRules.CheckSerializableTypeCode
 import sigma.validation.{SigmaValidationSettings, ValidationException}
-import sigmastate.{SigmaLeaf, eval}
+import sigmastate.{ProveDlog, SigmaLeaf, eval}
 
 import scala.collection.mutable
 import scala.reflect.ClassTag

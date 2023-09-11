@@ -9,13 +9,13 @@ import org.scalacheck.Arbitrary.arbByte
 import org.scalacheck.{Arbitrary, Gen}
 import scorex.crypto.authds.ADKey
 import sigmastate.Values.{ByteArrayConstant, CollectionConstant, ErgoTree, EvaluatedValue, FalseLeaf, TrueLeaf}
-import sigmastate.crypto.DLogProtocol.ProveDlog
 import sigma.ast.{SByte, SType}
 import scorex.util._
 import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, ErgoTreePredef, UnsignedErgoLikeTransaction, UnsignedInput}
 import sigmastate.eval.Extensions._
 import scorex.util.{ModifierId, bytesToId}
 import sigma.crypto.CryptoFacade
+import sigmastate.ProveDlog
 import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._
 

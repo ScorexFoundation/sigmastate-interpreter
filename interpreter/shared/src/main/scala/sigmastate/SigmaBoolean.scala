@@ -1,10 +1,10 @@
 package sigmastate
 
 import debox.cfor
+import sigma.crypto.EcPointType
+import sigma.serialization.GroupElementSerializer
 import sigma.util.safeNewArray
 import sigmastate.TrivialProp.{FalseProp, TrueProp}
-import sigmastate.crypto.DLogProtocol.ProveDlog
-import sigmastate.crypto.ProveDHTuple
 import sigmastate.serialization.SigmaPropCodes.{AndCode, AtLeastCode, OrCode, ProveDiffieHellmanTupleCode, ProveDlogCode, SPCode}
 import sigmastate.serialization.{ProveDlogSerializer, SigmaPropCodes, SigmaSerializer}
 import sigmastate.serialization.transformers.ProveDHTupleSerializer
@@ -15,7 +15,7 @@ import scala.collection.mutable.ArrayBuffer
 /** Algebraic data type of sigma proposition expressions.
   * Values of this type are used as values of SigmaProp type of SigmaScript and SigmaDsl
   */
-trait SigmaBoolean {
+sealed trait SigmaBoolean {
   /** Unique id of the node class used in serialization of SigmaBoolean. */
   val opCode: SPCode
 
@@ -126,6 +126,26 @@ trait SigmaConjecture extends SigmaBoolean {
   */
 trait SigmaLeaf extends SigmaBoolean
 
+/** Construct a new SigmaBoolean value representing public key of discrete logarithm signature protocol. */
+case class ProveDlog(value: EcPointType) extends SigmaLeaf {
+  override def size: Int = 1
+  override val opCode : SPCode = SigmaPropCodes.ProveDlogCode
+
+  /** Serialized bytes of the elliptic curve point (using GroupElementSerializer). */
+  lazy val pkBytes: Array[Byte] = GroupElementSerializer.toBytes(value)
+}
+
+/** Construct a new SigmaProp value representing public key of Diffie Hellman signature protocol.
+  * Common input: (g,h,u,v) */
+case class ProveDHTuple(gv: EcPointType, hv: EcPointType, uv: EcPointType, vv: EcPointType)
+    extends SigmaLeaf {
+  override val opCode: SPCode = SigmaPropCodes.ProveDiffieHellmanTupleCode
+  override def size: Int = 4  // one node for each EcPoint
+  lazy val g = gv
+  lazy val h = hv
+  lazy val u = uv
+  lazy val v = vv
+}
 
 /**
   * AND conjunction for sigma propositions

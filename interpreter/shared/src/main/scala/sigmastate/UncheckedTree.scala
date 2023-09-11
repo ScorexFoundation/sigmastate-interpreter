@@ -1,9 +1,8 @@
 package sigmastate
 
-import sigmastate.crypto.DLogProtocol.{FirstDLogProverMessage, ProveDlog, SecondDLogProverMessage}
+import sigmastate.crypto.DLogProtocol.{FirstDLogProverMessage, SecondDLogProverMessage}
 import sigmastate.crypto.VerifierMessage.Challenge
-import sigmastate.crypto.{FirstDHTupleProverMessage, ProveDHTuple, SecondDHTupleProverMessage}
-import sigmastate.crypto.GF2_192_Poly
+import sigmastate.crypto.{FirstDHTupleProverMessage, GF2_192_Poly, SecondDHTupleProverMessage}
 
 sealed trait UncheckedTree extends ProofTree
 

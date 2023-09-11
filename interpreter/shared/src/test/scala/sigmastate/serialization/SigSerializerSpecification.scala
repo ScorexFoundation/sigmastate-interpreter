@@ -7,9 +7,9 @@ import org.scalatest.Assertion
 import sigma.data.AvlTreeData
 import sigmastate.SigmaBoolean
 import sigmastate._
-import sigmastate.crypto.DLogProtocol.{ProveDlog, SecondDLogProverMessage}
+import sigmastate.crypto.DLogProtocol.SecondDLogProverMessage
 import sigmastate.crypto.VerifierMessage.Challenge
-import sigmastate.crypto.{ProveDHTuple, SecondDHTupleProverMessage}
+import sigmastate.crypto.SecondDHTupleProverMessage
 import sigmastate.crypto.GF2_192_Poly
 import sigmastate.eval.Extensions.{ArrayOps, SigmaBooleanOps}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTransactionTesting, TestingCommons}

@@ -1,18 +1,17 @@
 package sigmastate
 
-import sigmastate.crypto.{BigIntegers, GF2_192_Poly}
+import debox.cfor
 import scorex.util.encode.Base16
-import sigmastate.crypto.DLogProtocol.{ProveDlog, SecondDLogProverMessage}
+import sigma.serialization.SerializerException
+import sigma.util.safeNewArray
+import sigmastate.crypto.DLogProtocol.SecondDLogProverMessage
 import sigmastate.crypto.VerifierMessage.Challenge
-import sigmastate.crypto.{CryptoConstants, ProveDHTuple, SecondDHTupleProverMessage}
+import sigmastate.crypto.{BigIntegers, CryptoConstants, GF2_192_Poly, SecondDHTupleProverMessage}
+import sigmastate.eval.Extensions.ArrayOps
 import sigmastate.interpreter.ErgoTreeEvaluator.{fixedCostOp, perItemCostOp}
 import sigmastate.interpreter.{ErgoTreeEvaluator, NamedDesc, OperationCostInfo}
 import sigmastate.serialization.SigmaSerializer
-import sigma.util.safeNewArray
 import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
-import debox.cfor
-import sigma.serialization.SerializerException
-import sigmastate.eval.Extensions.ArrayOps
 
 /** Contains implementation of signature (aka proof) serialization.
  *

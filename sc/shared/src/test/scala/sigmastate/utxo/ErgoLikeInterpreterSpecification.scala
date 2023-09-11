@@ -14,8 +14,6 @@ import sigma.util.Extensions.EcpOps
 import sigma.validation.ValidationException
 import sigmastate.eval._
 import sigmastate.interpreter.Interpreter._
-import sigmastate.crypto.DLogProtocol.ProveDlog
-import sigmastate.crypto.ProveDHTuple
 import sigmastate.eval.Extensions.SigmaBooleanOps
 import sigmastate.helpers._
 import sigmastate.helpers.TestingHelpers._

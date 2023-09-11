@@ -19,10 +19,9 @@ import sigma.data.{InverseIso, Iso, RType, SigmaConstants}
 import sigma.serialization.GroupElementSerializer
 import sigma.util.StringUtil.StringUtilExtensions
 import sigma.{AnyValue, AvlTree, Coll, Colls, Evaluation, GroupElement, Header}
-import sigmastate.SigmaBoolean
+import sigmastate.{ProveDHTuple, ProveDlog, SigmaBoolean}
 import sigmastate.Values.{Constant, ErgoTree, EvaluatedValue, SValue, SigmaPropConstant}
-import sigmastate.crypto.DLogProtocol.ProveDlog
-import sigmastate.crypto.{DiffieHellmanTupleProverInput, ProveDHTuple}
+import sigmastate.crypto.DiffieHellmanTupleProverInput
 import sigmastate.eval.{CostingSigmaDslBuilder, Digest32Coll}
 import sigmastate.serialization.{ErgoTreeSerializer, SigmaSerializer, ValueSerializer}
 

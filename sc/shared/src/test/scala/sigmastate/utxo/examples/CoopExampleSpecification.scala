@@ -1,16 +1,16 @@
 package sigmastate.utxo.examples
 
-import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox}
+import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
 import org.scalatest.Assertion
 import org.scalatest.TryValues._
-import sigmastate.crypto.DLogProtocol.{ProveDlog, DLogProverInput}
+import sigmastate.crypto.DLogProtocol.DLogProverInput
 import scorex.crypto.hash.Blake2b256
 import sigma.data.AvlTreeData
-import sigmastate.Values.{ByteArrayConstant, ErgoTree, BooleanConstant}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, CompilerTestingCommons, ErgoLikeTestInterpreter}
+import sigmastate.Values.{BooleanConstant, ByteArrayConstant, ErgoTree}
+import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.lang.Terms._
-import sigmastate.CompilerCrossVersionProps
+import sigmastate.{CompilerCrossVersionProps, ProveDlog}
 
 class CoopExampleSpecification extends CompilerTestingCommons
   with CompilerCrossVersionProps {

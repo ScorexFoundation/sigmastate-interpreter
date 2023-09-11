@@ -13,8 +13,7 @@ import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.util.encode.{Base58, Base64}
 import scorex.util.{ModifierId, bytesToId}
 import sigmastate.Values._
-import sigmastate.crypto.DLogProtocol.ProveDlog
-import sigmastate.crypto.{CryptoConstants, ProveDHTuple}
+import sigmastate.crypto.CryptoConstants
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigmastate.crypto.CryptoConstants.dlogGroup

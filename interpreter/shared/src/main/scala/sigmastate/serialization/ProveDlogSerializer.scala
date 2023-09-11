@@ -1,14 +1,8 @@
 package sigmastate.serialization
 
-import sigma.ast.SGroupElement
 import sigma.crypto.EcPointType
-import sigma.serialization.CoreByteWriter.DataInfo
 import sigma.serialization.GroupElementSerializer
-import sigmastate.crypto.DLogProtocol.ProveDlog
-import sigmastate.CreateProveDlog
-import sigmastate.Values.{SValue, SigmaPropValue, Value}
-import sigmastate.lang.Terms._
-import sigmastate.utils.SigmaByteWriter._
+import sigmastate.ProveDlog
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 case class ProveDlogSerializer(cons: EcPointType => ProveDlog)
@@ -23,20 +17,6 @@ case class ProveDlogSerializer(cons: EcPointType => ProveDlog)
   }
 }
 
-case class CreateProveDlogSerializer(cons: Value[SGroupElement.type] => SigmaPropValue)
-    extends ValueSerializer[CreateProveDlog] {
-  import sigmastate.Operations.CreateProveDlogInfo._
-  override def opDesc = CreateProveDlog
-  val valueInfo: DataInfo[SValue] = valueArg
 
-  override def serialize(obj: CreateProveDlog, w: SigmaByteWriter): Unit = {
-    w.putValue(obj.value, valueInfo)
-  }
-
-  override def parse(r: SigmaByteReader) = {
-    val v = r.getValue().asValue[SGroupElement.type]
-    cons(v)
-  }
-}
 
 

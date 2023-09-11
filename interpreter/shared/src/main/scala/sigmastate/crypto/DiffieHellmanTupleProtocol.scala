@@ -67,22 +67,6 @@ case class SecondDHTupleProverMessage(z: BigInteger) extends SecondProverMessage
   override type SP = DiffieHellmanTupleProtocol
 }
 
-/** Construct a new SigmaProp value representing public key of Diffie Hellman signature protocol.
-  * Common input: (g,h,u,v) */
-case class ProveDHTuple(gv: EcPointType, hv: EcPointType, uv: EcPointType, vv: EcPointType)
-  extends SigmaLeaf {
-  override val opCode: SPCode = SigmaPropCodes.ProveDiffieHellmanTupleCode
-  override def size: Int = 4  // one node for each EcPoint
-  lazy val g = gv
-  lazy val h = hv
-  lazy val u = uv
-  lazy val v = vv
-}
-
-object ProveDHTuple {
-  val Code: PropositionCode = 103: Byte
-}
-
 /** Helper extractor to match SigmaProp values and extract ProveDHTuple out of it. */
 object ProveDHTupleProp {
   def unapply(p: SigmaProp): Option[ProveDHTuple] = SigmaDsl.toSigmaBoolean(p) match {

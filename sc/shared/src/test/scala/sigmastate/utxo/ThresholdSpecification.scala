@@ -2,7 +2,7 @@ package sigmastate.utxo
 
 import sigma.ast.SSigmaProp
 import sigma.data.AvlTreeData
-import sigmastate.crypto.DLogProtocol.{DLogProverInput, ProveDlog}
+import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.Values.{ConcreteCollection, FalseLeaf, IntConstant, SigmaPropConstant, SigmaPropValue, TrueLeaf}
 import sigmastate._
 import sigmastate.eval.Extensions.SigmaBooleanOps

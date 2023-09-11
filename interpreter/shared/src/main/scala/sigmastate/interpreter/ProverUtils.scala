@@ -2,8 +2,8 @@ package sigmastate.interpreter
 
 import sigmastate._
 import sigmastate.Values.ErgoTree
-import sigmastate.crypto.DLogProtocol.{DLogInteractiveProver, ProveDlog}
-import sigmastate.crypto.{DiffieHellmanTupleInteractiveProver, ProveDHTuple}
+import sigmastate.crypto.DLogProtocol.DLogInteractiveProver
+import sigmastate.crypto.DiffieHellmanTupleInteractiveProver
 
 
 trait ProverUtils extends Interpreter {

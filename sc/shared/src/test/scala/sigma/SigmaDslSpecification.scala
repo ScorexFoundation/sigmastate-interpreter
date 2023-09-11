@@ -34,7 +34,6 @@ import org.scalacheck.Gen.frequency
 import org.scalatest.{BeforeAndAfterAll, Tag}
 import sigma.data.RType._
 import scorex.util.ModifierId
-import sigmastate.crypto.ProveDHTuple
 import sigmastate.interpreter._
 import org.scalactic.source.Position
 import sigma.VersionContext

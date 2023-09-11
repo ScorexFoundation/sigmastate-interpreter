@@ -6,9 +6,8 @@ import sigmastate.Values.{ConcreteCollection, LongConstant, SValue, Value}
 import sigmastate._
 
 import java.math.BigInteger
-import sigmastate.crypto.DLogProtocol.ProveDlog
 import sigma.ast.SCollection.SByteArray
-import sigmastate.crypto.{CryptoConstants, ProveDHTuple}
+import sigmastate.crypto.CryptoConstants
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigma._
 import sigmastate.eval._

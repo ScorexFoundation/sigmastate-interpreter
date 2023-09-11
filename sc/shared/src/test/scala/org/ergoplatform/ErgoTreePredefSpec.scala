@@ -13,7 +13,7 @@ import sigma.data.AvlTreeData
 import sigma.util.BenchmarkUtil.measure
 import sigmastate.Values.{ByteArrayConstant, CollectionConstant, ErgoTree, IntConstant, SigmaPropConstant}
 import sigmastate._
-import sigmastate.crypto.DLogProtocol.{DLogProverInput, ProveDlog}
+import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}

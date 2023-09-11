@@ -20,14 +20,6 @@ object DLogProtocol {
     override type Z = SecondDLogProverMessage
   }
 
-  /** Construct a new SigmaBoolean value representing public key of discrete logarithm signature protocol. */
-  case class ProveDlog(value: EcPointType) extends SigmaLeaf {
-    override def size: Int = 1
-    override val opCode: SPCode = SigmaPropCodes.ProveDlogCode
-    /** Serialized bytes of the elliptic curve point (using GroupElementSerializer). */
-    lazy val pkBytes: Array[Byte] = GroupElementSerializer.toBytes(value)
-  }
-
   /** Helper extractor to match SigmaProp values and extract ProveDlog out of it. */
   object ProveDlogProp {
     def unapply(p: SigmaProp): Option[ProveDlog] = SigmaDsl.toSigmaBoolean(p) match {

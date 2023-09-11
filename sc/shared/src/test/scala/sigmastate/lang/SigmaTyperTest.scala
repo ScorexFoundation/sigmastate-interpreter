@@ -11,7 +11,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigma.ast._
 import sigmastate.crypto.CryptoConstants
-import sigmastate.crypto.DLogProtocol.{DLogProverInput, ProveDlog}
+import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.exceptions.TyperException
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef._

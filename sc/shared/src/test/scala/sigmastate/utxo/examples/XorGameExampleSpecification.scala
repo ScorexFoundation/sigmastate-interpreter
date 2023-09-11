@@ -7,7 +7,6 @@ import scorex.utils.Random
 import sigma.data.AvlTreeData
 import sigmastate.Values.{ByteArrayConstant, ByteConstant, IntConstant, SigmaPropConstant}
 import sigmastate._
-import sigmastate.crypto.DLogProtocol.ProveDlog
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._

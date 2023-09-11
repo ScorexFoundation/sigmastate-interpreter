@@ -7,13 +7,13 @@ import scorex.util.encode.Base16
 import sigma.ast.SType
 import sigmastate.Values.{AvlTreeConstant, BigIntConstant, BooleanConstant, BoxConstant, ByteConstant, Constant, GroupElementConstant, IntConstant, LongConstant, ShortConstant, SigmaPropConstant, UnitConstant}
 import sigmastate.crypto.CryptoConstants.dlogGroup
-import sigmastate.crypto.DLogProtocol.ProveDlog
 import sigma.crypto.CryptoFacade
 import sigmastate.eval.CSigmaProp
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.serialization.ConstantSerializer
 import sigmastate.utils.Helpers
 import sigma.SigmaTestingData
+import sigmastate.ProveDlog
 
 import java.math.BigInteger
 

@@ -4,8 +4,6 @@ import debox.{cfor, sp}
 import sigma._
 import sigma.crypto.EcPointType
 import sigma.data._
-import sigmastate.crypto.DLogProtocol.ProveDlog
-import sigmastate.crypto.ProveDHTuple
 import sigmastate.eval.SigmaDsl
 import sigmastate.interpreter.{ErgoTreeEvaluator, NamedDesc, OperationCostInfo}
 

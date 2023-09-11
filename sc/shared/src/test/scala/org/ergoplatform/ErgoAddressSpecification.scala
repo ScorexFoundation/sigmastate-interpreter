@@ -1,13 +1,11 @@
 package org.ergoplatform
 
 import org.ergoplatform.ErgoAddressEncoder.{MainnetNetworkPrefix, TestnetNetworkPrefix, hash256}
-import org.ergoplatform.validation.ValidationRules
 import org.scalatest.{Assertion, TryValues}
 import scorex.crypto.hash.Blake2b256
 import scorex.util.encode.Base58
 import sigmastate.Values.{ByteArrayConstant, Constant, ErgoTree, IntConstant, UnparsedErgoTree}
-import sigmastate.crypto.DLogProtocol
-import sigmastate.crypto.DLogProtocol.{DLogProverInput, ProveDlog}
+import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.eval.InvalidType
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers._
@@ -20,7 +18,7 @@ import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.Helpers._
-import sigmastate.{CompilerCrossVersionProps, SigmaAnd}
+import sigmastate.{CompilerCrossVersionProps, ProveDlog, SigmaAnd}
 import sigma.SigmaDslTesting
 import sigma.ast.SType
 import sigma.serialization.GroupElementSerializer
@@ -80,8 +78,8 @@ class ErgoAddressSpecification extends SigmaDslTesting
 
   def testFromProposition(scriptVersion: Byte,
                           expectedP2S: String, expectedP2SH: String, expectedP2PK: String) = {
-    val pk: DLogProtocol.ProveDlog = DLogProverInput(BigInteger.ONE).publicImage
-    val pk10: DLogProtocol.ProveDlog = DLogProverInput(BigInteger.TEN).publicImage
+    val pk: ProveDlog = DLogProverInput(BigInteger.ONE).publicImage
+    val pk10: ProveDlog = DLogProverInput(BigInteger.TEN).publicImage
 
     val p2s: Pay2SAddress = Pay2SAddress(
       ErgoTree.fromProposition(
@@ -179,7 +177,7 @@ class ErgoAddressSpecification extends SigmaDslTesting
     }
 
     {
-      val pk: DLogProtocol.ProveDlog = DLogProverInput(BigInteger.ONE).publicImage
+      val pk: ProveDlog = DLogProverInput(BigInteger.ONE).publicImage
       val p2pk = P2PKAddress(pk)(ergoAddressEncoder)
 
       val invalidAddrType = 4.toByte

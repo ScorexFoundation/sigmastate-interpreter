@@ -19,8 +19,7 @@ import sigma.{VersionContext, _}
 import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.Values.{ConstantNode, ErgoTree, EvaluatedValue, SValue}
 import sigmastate._
-import sigmastate.crypto.DLogProtocol.ProveDlog
-import sigmastate.crypto.{CryptoConstants, ProveDHTuple}
+import sigmastate.crypto.CryptoConstants
 import sigmastate.eval.Extensions._
 import sigmastate.interpreter.Interpreter
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer

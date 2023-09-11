@@ -1,6 +1,6 @@
 package sigmastate.serialization
 
-import sigmastate.crypto.DLogProtocol.ProveDlog
+import sigmastate.ProveDlog
 import sigmastate.eval.Extensions.SigmaBooleanOps
 
 class ProveDlogSerializerSpec extends SerializationSpecification {

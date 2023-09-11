@@ -5,9 +5,8 @@ import sigma.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
 import org.ergoplatform.ErgoLikeContext
 import sigma.validation.SigmaValidationSettings
 import org.ergoplatform.validation.ValidationRules._
-import sigmastate.crypto.DLogProtocol.ProveDlog
 import sigmastate.Values._
-import sigmastate.crypto.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage, ProveDlog}
+import sigmastate.crypto.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
 import sigmastate.crypto._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.serialization.{SigmaSerializer, ValueSerializer}

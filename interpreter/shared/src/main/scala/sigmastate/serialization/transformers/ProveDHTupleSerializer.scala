@@ -1,15 +1,10 @@
 package sigmastate.serialization.transformers
 
-import sigma.ast.SGroupElement
 import sigma.crypto.EcPointType
 import sigma.serialization.GroupElementSerializer
-import sigmastate.CreateProveDHTuple
-import sigmastate.Values.{SigmaPropValue, Value}
-import sigmastate.crypto.ProveDHTuple
-import sigmastate.lang.Terms._
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.utils.SigmaByteWriter._
+import sigmastate.ProveDHTuple
 import sigmastate.serialization._
+import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 case class ProveDHTupleSerializer(
      cons: (EcPointType, EcPointType, EcPointType, EcPointType) => ProveDHTuple
@@ -31,26 +26,3 @@ case class ProveDHTupleSerializer(
   }
 }
 
-case class CreateProveDHTupleSerializer(cons: (Value[SGroupElement.type],
-    Value[SGroupElement.type],
-    Value[SGroupElement.type],
-    Value[SGroupElement.type]) => SigmaPropValue)
-    extends ValueSerializer[CreateProveDHTuple] {
-  import sigmastate.Operations.CreateProveDHTupleInfo._
-  override def opDesc = CreateProveDHTuple
-
-  override def serialize(obj: CreateProveDHTuple, w: SigmaByteWriter): Unit = {
-    w.putValue(obj.gv, gArg)
-    w.putValue(obj.hv, hArg)
-    w.putValue(obj.uv, uArg)
-    w.putValue(obj.vv, vArg)
-  }
-
-  override def parse(r: SigmaByteReader) = {
-    val gv = r.getValue().asValue[SGroupElement.type]
-    val hv = r.getValue().asValue[SGroupElement.type]
-    val uv = r.getValue().asValue[SGroupElement.type]
-    val vv = r.getValue().asValue[SGroupElement.type]
-    cons(gv, hv, uv, vv)
-  }
-}

@@ -1,17 +1,17 @@
 package sigmastate
 
-import java.math.BigInteger
+import debox.cfor
 import sigmastate.Values.{ErgoTree, SigmaPropConstant}
-import sigmastate.crypto.DLogProtocol.{FirstDLogProverMessage, ProveDlog}
+import sigmastate.crypto.DLogProtocol.FirstDLogProverMessage
 import sigmastate.crypto.VerifierMessage.Challenge
-import sigmastate.crypto.{FirstDHTupleProverMessage, FirstProverMessage, ProveDHTuple}
-import sigmastate.interpreter.{ErgoTreeEvaluator, NamedDesc, OperationCostInfo}
+import sigmastate.crypto.{FirstDHTupleProverMessage, FirstProverMessage, GF2_192_Poly}
 import sigmastate.interpreter.ErgoTreeEvaluator.fixedCostOp
+import sigmastate.interpreter.{ErgoTreeEvaluator, NamedDesc, OperationCostInfo}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.SigmaByteWriter
-import debox.cfor
-import sigmastate.crypto.GF2_192_Poly
+
+import java.math.BigInteger
 import scala.language.existentials
 
 object ConjectureType extends Enumeration {

@@ -8,13 +8,11 @@ import sigma.ast.{SBoolean, SCollection, SCollectionType, SType}
 import sigma.data.{Nullable, RType}
 import sigma.util.Extensions.EcpOps
 import sigma.{Coll, _}
-import sigmastate.{Platform, SigmaBoolean}
 import sigmastate.Values.{Constant, ConstantNode, SigmaPropConstant, SigmaPropValue, Value}
-import sigmastate.crypto.DLogProtocol.ProveDlog
-import sigmastate.crypto.ProveDHTuple
 import sigmastate.lang.{CheckingSigmaBuilder, TransformingSigmaBuilder}
 import sigmastate.utils.Helpers
 import sigmastate.utxo.SigmaPropIsProven
+import sigmastate.{Platform, ProveDHTuple, ProveDlog, SigmaBoolean}
 
 import java.math.BigInteger
 
