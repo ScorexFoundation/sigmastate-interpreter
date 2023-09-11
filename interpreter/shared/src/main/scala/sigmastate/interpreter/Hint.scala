@@ -2,7 +2,7 @@ package sigmastate.interpreter
 
 import java.math.BigInteger
 import sigmastate.{NodePosition, SigmaLeaf, UncheckedTree}
-import sigmastate.Values.SigmaBoolean
+import sigmastate.SigmaBoolean
 import sigmastate.crypto.FirstProverMessage
 import sigmastate.crypto.VerifierMessage.Challenge
 

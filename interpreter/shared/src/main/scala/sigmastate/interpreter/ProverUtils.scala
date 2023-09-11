@@ -1,7 +1,7 @@
 package sigmastate.interpreter
 
 import sigmastate._
-import sigmastate.Values.{ErgoTree, SigmaBoolean}
+import sigmastate.Values.ErgoTree
 import sigmastate.crypto.DLogProtocol.{DLogInteractiveProver, ProveDlog}
 import sigmastate.crypto.{DiffieHellmanTupleInteractiveProver, ProveDHTuple}
 

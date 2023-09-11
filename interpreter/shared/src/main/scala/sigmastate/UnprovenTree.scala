@@ -1,7 +1,7 @@
 package sigmastate
 
 import java.math.BigInteger
-import sigmastate.Values.{ErgoTree, SigmaBoolean, SigmaPropConstant}
+import sigmastate.Values.{ErgoTree, SigmaPropConstant}
 import sigmastate.crypto.DLogProtocol.{FirstDLogProverMessage, ProveDlog}
 import sigmastate.crypto.VerifierMessage.Challenge
 import sigmastate.crypto.{FirstDHTupleProverMessage, FirstProverMessage, ProveDHTuple}

@@ -17,6 +17,7 @@ import scala.util.{Random, Try}
 import scorex.util._
 import sigma.Colls
 import sigma.data.{AvlTreeData, AvlTreeFlags}
+import sigmastate.eval.Extensions.SigmaBooleanOps
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.utxo.blockchain.BlockchainSimulationTestingCommons.{FullBlock, ValidationState}

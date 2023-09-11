@@ -10,7 +10,7 @@ import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigma._
 import sigma.ast.SType
 import sigma.ast.SType.AnyOps
-import sigmastate.Values.SigmaBoolean
+import sigmastate.SigmaBoolean
 
 import scala.reflect.ClassTag
 import scala.util.Try

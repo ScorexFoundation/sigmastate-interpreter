@@ -4,13 +4,17 @@ import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.TokenId
 import scorex.util.encode.Base16
 import sigma.ast.SType.AnyOps
-import sigma.ast.{SCollection, SCollectionType, SType}
+import sigma.ast.{SBoolean, SCollection, SCollectionType, SType}
 import sigma.data.{Nullable, RType}
+import sigma.util.Extensions.EcpOps
 import sigma.{Coll, _}
-import sigmastate.Platform
-import sigmastate.Values.{Constant, ConstantNode}
+import sigmastate.{Platform, SigmaBoolean}
+import sigmastate.Values.{Constant, ConstantNode, SigmaPropConstant, SigmaPropValue, Value}
+import sigmastate.crypto.DLogProtocol.ProveDlog
+import sigmastate.crypto.ProveDHTuple
 import sigmastate.lang.{CheckingSigmaBuilder, TransformingSigmaBuilder}
 import sigmastate.utils.Helpers
+import sigmastate.utxo.SigmaPropIsProven
 
 import java.math.BigInteger
 
@@ -102,4 +106,17 @@ object Extensions {
     }
   }
 
+  implicit class SigmaBooleanOps(val sb: SigmaBoolean) extends AnyVal {
+    def toSigmaProp: SigmaPropValue = SigmaPropConstant(sb)
+
+    def isProven: Value[SBoolean.type] = SigmaPropIsProven(SigmaPropConstant(sb))
+
+    def showToString: String = sb match {
+      case ProveDlog(v) =>
+        s"ProveDlog(${v.showECPoint})"
+      case ProveDHTuple(gv, hv, uv, vv) =>
+        s"ProveDHTuple(${gv.showECPoint}, ${hv.showECPoint}, ${uv.showECPoint}, ${vv.showECPoint})"
+      case _ => sb.toString
+    }
+  }
 }

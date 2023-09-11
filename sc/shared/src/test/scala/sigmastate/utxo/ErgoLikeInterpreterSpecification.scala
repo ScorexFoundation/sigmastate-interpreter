@@ -16,6 +16,7 @@ import sigmastate.eval._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.crypto.DLogProtocol.ProveDlog
 import sigmastate.crypto.ProveDHTuple
+import sigmastate.eval.Extensions.SigmaBooleanOps
 import sigmastate.helpers._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension.VarBinding

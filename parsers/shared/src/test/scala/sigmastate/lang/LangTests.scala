@@ -2,7 +2,7 @@ package sigmastate.lang
 
 import org.scalatest.matchers.should.Matchers
 import sigmastate.lang.Terms.{Ident, MethodCallLike}
-import sigmastate.Values.{ConcreteCollection, LongConstant, SValue, SigmaBoolean, Value}
+import sigmastate.Values.{ConcreteCollection, LongConstant, SValue, Value}
 import sigmastate._
 
 import java.math.BigInteger

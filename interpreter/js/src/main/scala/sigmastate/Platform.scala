@@ -3,7 +3,7 @@ package sigmastate
 import org.ergoplatform.ErgoBox
 import sigma.data.{AvlTreeData, Nullable}
 import sigma.{Evaluation, VersionContext}
-import sigmastate.Values.{Constant, FalseLeaf, SigmaBoolean, TrueLeaf}
+import sigmastate.Values.{Constant, FalseLeaf, TrueLeaf}
 import sigmastate.eval.SigmaDsl
 import sigmastate.lang.SigmaBuilder
 import sigma.Coll

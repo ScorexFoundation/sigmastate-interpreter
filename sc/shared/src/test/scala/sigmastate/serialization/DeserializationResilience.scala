@@ -2,7 +2,6 @@ package sigmastate.serialization
 
 import org.ergoplatform.{ErgoBoxCandidate, Outputs}
 import org.scalacheck.Gen
-import sigma.util.BenchmarkUtil
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
@@ -10,18 +9,17 @@ import scorex.util.serialization.{Reader, VLQByteBufferReader}
 import sigma.ast.{SBoolean, SInt}
 import sigma.data.{AvlTreeData, AvlTreeFlags}
 import sigma.serialization.{DeserializeCallDepthExceeded, InvalidTypePrefix, ReaderPositionLimitExceeded, SerializerException}
+import sigma.util.{BenchmarkUtil, safeNewArray}
+import sigma.validation.ValidationException
+import sigma.validation.ValidationRules.CheckPositionLimit
 import sigma.{Colls, Environment}
-import sigmastate.Values.{BlockValue, GetVarInt, IntConstant, SValue, SigmaBoolean, SigmaPropValue, Tuple, ValDef, ValUse}
+import sigmastate.Values.{BlockValue, GetVarInt, IntConstant, SValue, SigmaPropValue, Tuple, ValDef, ValUse}
 import sigmastate._
-import sigmastate.crypto.CryptoConstants
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}
 import sigmastate.serialization.OpCodes._
-import sigma.util.safeNewArray
-import sigma.validation.ValidationException
-import sigma.validation.ValidationRules.CheckPositionLimit
 import sigmastate.utils.Helpers._
 import sigmastate.utils.SigmaByteReader
 import sigmastate.utxo.SizeOf

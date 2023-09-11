@@ -10,7 +10,7 @@ import sigma.ast.SCollection.SByteArray
 import sigma.ast.SType.AnyOps
 import sigma.crypto.EcPointType
 import sigma.serialization.SerializerException
-import sigmastate.Values.SigmaBoolean
+import sigmastate.SigmaBoolean
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigma.{AvlTree, Box, Colls, Evaluation}

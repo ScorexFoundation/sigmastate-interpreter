@@ -1,46 +1,39 @@
 package sigmastate
 
-import java.math.BigInteger
-import java.util.{Arrays, Objects}
-import sigma.kiama.rewriting.Rewriter.{count, everywherebu, strategy}
-import org.ergoplatform.settings.ErgoAlgos
-import sigma.data.{Nullable, RType}
-import sigma.util.CollectionUtil._
-import sigmastate.interpreter.{CompanionDesc, ErgoTreeEvaluator, Interpreter, NamedDesc}
-import sigmastate.serialization._
-import sigmastate.serialization.OpCodes._
-import sigmastate.TrivialProp.{FalseProp, TrueProp}
-import sigmastate.Values.ErgoTree.substConstants
-import sigmastate.crypto.DLogProtocol.ProveDlog
-import sigmastate.crypto.{CryptoConstants, ProveDHTuple}
-import sigmastate.lang.Terms._
-import sigmastate.utxo._
-import sigmastate.eval._
-import sigmastate.eval.Extensions._
-import sigma.util.Extensions._
-import sigmastate.interpreter.ErgoTreeEvaluator._
 import debox.cfor
+import org.ergoplatform.settings.ErgoAlgos
 import scorex.util.encode.Base16
 import sigma.ast.SCollection.{SByteArray, SIntArray}
 import sigma.ast.TypeCodes.ConstantCode
 import sigma.ast._
 import sigma.crypto.EcPointType
-import sigmastate.exceptions.InterpreterException
-
-import scala.language.implicitConversions
-import sigmastate.lang.CheckingSigmaBuilder._
-import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.serialization.transformers.ProveDHTupleSerializer
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigma.{AvlTree, Coll, Colls, Header, PreHeader, _}
-import sigmastate.lang.SourceContext
-import sigma.util.safeNewArray
+import sigma.data.{Nullable, RType}
+import sigma.kiama.rewriting.Rewriter.{count, everywherebu, strategy}
+import sigma.util.CollectionUtil._
+import sigma.util.Extensions._
 import sigma.validation.ValidationException
-import sigmastate.serialization.SigmaPropCodes.{ProveDlogCode, SPCode}
+import sigma.{AvlTree, Coll, Colls, Header, PreHeader, _}
+import sigmastate.Values.ErgoTree.substConstants
+import sigmastate.crypto.CryptoConstants
+import sigmastate.eval.Extensions._
+import sigmastate.eval._
+import sigmastate.exceptions.InterpreterException
+import sigmastate.interpreter.ErgoTreeEvaluator._
+import sigmastate.interpreter.{CompanionDesc, ErgoTreeEvaluator, Interpreter, NamedDesc}
+import sigmastate.lang.CheckingSigmaBuilder._
+import sigmastate.lang.SourceContext
+import sigmastate.lang.Terms._
+import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.ValueCodes.OpCode
+import sigmastate.serialization._
+import sigmastate.utxo._
 
+import java.math.BigInteger
+import java.util.{Arrays, Objects}
 import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
+import scala.language.implicitConversions
 
 object Values {
   /** Force initialization of reflection. */
@@ -731,103 +724,6 @@ object Values {
     override def tpe = SBoolean
   }
 
-  /** Algebraic data type of sigma proposition expressions.
-    * Values of this type are used as values of SigmaProp type of SigmaScript and SigmaDsl
-    */
-  trait SigmaBoolean {
-    /** Unique id of the node class used in serialization of SigmaBoolean. */
-    val opCode: SPCode
-    /** Size of the proposition tree (number of nodes). */
-    def size: Int
-  }
-
-  object SigmaBoolean {
-    /** Compute total size of the trees in the collection of children. */
-    def totalSize(children: Seq[SigmaBoolean]): Int = {
-      var res = 0
-      val len = children.length
-      cfor(0)(_ < len, _ + 1) { i =>
-        res += children(i).size
-      }
-      res
-    }
-
-    /** HOTSPOT: don't beautify this code */
-    object serializer extends SigmaSerializer[SigmaBoolean, SigmaBoolean] {
-      val dhtSerializer = ProveDHTupleSerializer(ProveDHTuple.apply)
-      val dlogSerializer = ProveDlogSerializer(ProveDlog.apply)
-
-      override def serialize(data: SigmaBoolean, w: SigmaByteWriter): Unit = {
-        w.put(data.opCode)
-        data match {
-          case dlog: ProveDlog   => dlogSerializer.serialize(dlog, w)
-          case dht: ProveDHTuple => dhtSerializer.serialize(dht, w)
-          case _: TrivialProp => // besides opCode no additional bytes
-          case and: CAND =>
-            val nChildren = and.children.length
-            w.putUShort(nChildren)
-            cfor(0)(_ < nChildren, _ + 1) { i =>
-              val c = and.children(i)
-              serializer.serialize(c, w)
-            }
-
-          case or: COR =>
-            val nChildren = or.children.length
-            w.putUShort(nChildren)
-            cfor(0)(_ < nChildren, _ + 1) { i =>
-              val c = or.children(i)
-              serializer.serialize(c, w)
-            }
-
-          case th: CTHRESHOLD =>
-            w.putUShort(th.k)
-            val nChildren = th.children.length
-            w.putUShort(nChildren)
-            cfor(0)(_ < nChildren, _ + 1) { i =>
-              val c = th.children(i)
-              serializer.serialize(c, w)
-            }
-        }
-      }
-
-      override def parse(r: SigmaByteReader): SigmaBoolean = {
-        val depth = r.level
-        r.level = depth + 1
-        val opCode = r.getByte()
-        val res = opCode match {
-          case FalseProp.opCode => FalseProp
-          case TrueProp.opCode  => TrueProp
-          case ProveDlogCode => dlogSerializer.parse(r)
-          case ProveDiffieHellmanTupleCode => dhtSerializer.parse(r)
-          case AndCode =>
-            val n = r.getUShort()
-            val children = safeNewArray[SigmaBoolean](n)
-            cfor(0)(_ < n, _ + 1) { i =>
-              children(i) = serializer.parse(r)
-            }
-            CAND(children)
-          case OrCode =>
-            val n = r.getUShort()
-            val children = safeNewArray[SigmaBoolean](n)
-            cfor(0)(_ < n, _ + 1) { i =>
-              children(i) = serializer.parse(r)
-            }
-            COR(children)
-          case AtLeastCode =>
-            val k = r.getUShort()
-            val n = r.getUShort()
-            val children = safeNewArray[SigmaBoolean](n)
-            cfor(0)(_ < n, _ + 1) { i =>
-              children(i) = serializer.parse(r)
-            }
-            CTHRESHOLD(k, children)
-        }
-        r.level = r.level - 1
-        res
-      }
-    }
-  }
-
   trait NotReadyValueBox extends NotReadyValue[SBox.type] {
     def tpe = SBox
   }
@@ -971,18 +867,6 @@ object Values {
     def treeWithSegregation: ErgoTree = ErgoTree.withSegregation(p)
     def treeWithSegregation(headerFlags: Byte): ErgoTree =
       ErgoTree.withSegregation(headerFlags, p)
-  }
-
-  implicit class SigmaBooleanOps(val sb: SigmaBoolean) extends AnyVal {
-    def toSigmaProp: SigmaPropValue = SigmaPropConstant(sb)
-    def isProven: Value[SBoolean.type] = SigmaPropIsProven(SigmaPropConstant(sb))
-    def showToString: String = sb match {
-      case ProveDlog(v) =>
-        s"ProveDlog(${v.showECPoint})"
-      case ProveDHTuple(gv, hv, uv, vv) =>
-        s"ProveDHTuple(${gv.showECPoint}, ${hv.showECPoint}, ${uv.showECPoint}, ${vv.showECPoint})"
-      case _ => sb.toString
-    }
   }
 
   sealed trait BlockItem extends NotReadyValue[SType] {

@@ -5,7 +5,7 @@ import org.ergoplatform.ErgoBox
 import org.scalacheck.Arbitrary._
 import sigma.data.{RType, TupleColl}
 import sigma.ast.SCollection.SByteArray
-import sigmastate.Values.{ErgoTree, SigmaBoolean}
+import sigmastate.Values.ErgoTree
 import sigmastate._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._

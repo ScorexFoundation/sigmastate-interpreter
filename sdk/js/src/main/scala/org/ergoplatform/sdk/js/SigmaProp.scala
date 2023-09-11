@@ -1,6 +1,6 @@
 package org.ergoplatform.sdk.js
 
-import sigmastate.Values.SigmaBoolean
+import sigmastate.SigmaBoolean
 import sigmastate.crypto.DLogProtocol.ProveDlog
 
 import scala.scalajs.js

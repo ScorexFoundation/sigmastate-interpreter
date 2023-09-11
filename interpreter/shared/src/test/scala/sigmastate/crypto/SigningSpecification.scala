@@ -3,7 +3,7 @@ package sigmastate.crypto
 import org.scalacheck.Gen
 import scorex.util.encode.Base16
 import sigmastate.{AtLeast, COR, CAND}
-import sigmastate.Values.SigmaBoolean
+import sigmastate.SigmaBoolean
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.helpers.{ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter, TestingCommons}
 import sigmastate.interpreter.{HintsBag, ContextExtension, ProverResult}

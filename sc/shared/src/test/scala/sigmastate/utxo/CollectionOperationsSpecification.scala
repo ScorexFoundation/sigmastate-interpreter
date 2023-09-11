@@ -10,6 +10,7 @@ import sigma.ast.SCollection._
 import sigma.ast._
 import sigma.data.AvlTreeData
 import sigmastate.SCollectionMethods.{FlatMapMethod, IndexOfMethod, IndicesMethod, PatchMethod, UpdateManyMethod, UpdatedMethod}
+import sigmastate.eval.Extensions.SigmaBooleanOps
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.Helpers._

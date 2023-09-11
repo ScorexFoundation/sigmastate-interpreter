@@ -17,7 +17,7 @@ import sigma.util.Extensions.BigIntegerOps
 import sigma.validation.SigmaValidationSettings
 import sigma.{VersionContext, _}
 import sigmastate.Values.ErgoTree.EmptyConstants
-import sigmastate.Values.{ConstantNode, ErgoTree, EvaluatedValue, SValue, SigmaBoolean}
+import sigmastate.Values.{ConstantNode, ErgoTree, EvaluatedValue, SValue}
 import sigmastate._
 import sigmastate.crypto.DLogProtocol.ProveDlog
 import sigmastate.crypto.{CryptoConstants, ProveDHTuple}

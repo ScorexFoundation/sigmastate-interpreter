@@ -5,6 +5,7 @@ import sigma.data.AvlTreeData
 import sigmastate.crypto.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate.Values.{ConcreteCollection, FalseLeaf, IntConstant, SigmaPropConstant, SigmaPropValue, TrueLeaf}
 import sigmastate._
+import sigmastate.eval.Extensions.SigmaBooleanOps
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTransactionTesting}
 import sigmastate.exceptions.GraphBuildingException
 

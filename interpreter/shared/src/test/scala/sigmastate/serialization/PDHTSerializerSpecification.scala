@@ -1,6 +1,7 @@
 package sigmastate.serialization
 
 import sigmastate.crypto.ProveDHTuple
+import sigmastate.eval.Extensions.SigmaBooleanOps
 
 class PDHTSerializerSpecification extends SerializationSpecification {
 

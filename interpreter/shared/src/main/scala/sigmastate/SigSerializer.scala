@@ -2,7 +2,6 @@ package sigmastate
 
 import sigmastate.crypto.{BigIntegers, GF2_192_Poly}
 import scorex.util.encode.Base16
-import sigmastate.Values.SigmaBoolean
 import sigmastate.crypto.DLogProtocol.{ProveDlog, SecondDLogProverMessage}
 import sigmastate.crypto.VerifierMessage.Challenge
 import sigmastate.crypto.{CryptoConstants, ProveDHTuple, SecondDHTupleProverMessage}

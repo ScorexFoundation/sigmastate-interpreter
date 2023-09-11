@@ -4,9 +4,8 @@ import java.math.BigInteger
 import java.nio.charset.StandardCharsets
 import org.ergoplatform.ErgoBox
 import sigma.data.{AvlTreeData, RType}
-import sigmastate.Values.SigmaBoolean
+import sigmastate.SigmaBoolean
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate._
 import sigmastate.eval._
 import sigma.{Evaluation, _}
 import debox.cfor
