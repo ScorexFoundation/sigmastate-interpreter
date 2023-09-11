@@ -2,7 +2,7 @@ package sigma.util
 
 import sigma.GroupElement
 import sigma.crypto.{CryptoFacade, Ecp}
-import sigma.data.{CBigInt, CGroupElement}
+import sigma.data.{CBigInt, CGroupElement, ProveDHTuple, ProveDlog, SigmaBoolean}
 import debox.{cfor, Buffer => DBuffer}
 
 import java.math.BigInteger
@@ -313,6 +313,16 @@ object Extensions {
         result = n.plus(result, buf.elems(i))
       }
       result
+    }
+  }
+
+  implicit class SigmaBooleanOps(val sb: SigmaBoolean) extends AnyVal {
+    def showToString: String = sb match {
+      case ProveDlog(v) =>
+        s"ProveDlog(${v.showECPoint})"
+      case ProveDHTuple(gv, hv, uv, vv) =>
+        s"ProveDHTuple(${gv.showECPoint}, ${hv.showECPoint}, ${uv.showECPoint}, ${vv.showECPoint})"
+      case _ => sb.toString
     }
   }
 }

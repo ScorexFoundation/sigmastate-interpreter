@@ -1,14 +1,14 @@
 package sigmastate.utxo
 
 import sigmastate.CompilerCrossVersionProps
-import sigmastate.eval.{IRContext, CSigmaProp}
+import sigmastate.eval.IRContext
 import sigmastate.eval.Extensions._
 import sigma.Context
 import sigmastate.helpers.CompilerTestingCommons
-import org.ergoplatform.dsl.{SigmaContractSyntax, ContractSpec, TestContractSpec}
+import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, TestContractSpec}
 import org.ergoplatform.ErgoBox
 import scorex.crypto.hash.Blake2b256
-import sigma.data.TrivialProp
+import sigma.data.{CSigmaProp, TrivialProp}
 
 class UsingContextPropertiesSpecification extends CompilerTestingCommons
   with CompilerCrossVersionProps { suite =>

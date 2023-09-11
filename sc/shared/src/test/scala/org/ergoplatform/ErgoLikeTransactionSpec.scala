@@ -3,9 +3,9 @@ package org.ergoplatform
 import org.ergoplatform.ErgoBox.TokenId
 import org.ergoplatform.settings.ErgoAlgos
 import scorex.util.encode.Base16
-import scorex.util.{Random, ModifierId}
+import scorex.util.{ModifierId, Random}
 import sigma.ast.SCollection.SByteArray
-import sigma.ast.{SSigmaProp, SType, SPair, SInt}
+import sigma.ast.{SInt, SPair, SSigmaProp, SType}
 import sigmastate.Values._
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.SigmaSerializer
@@ -17,7 +17,7 @@ import sigmastate.helpers.TestingHelpers.copyTransaction
 import sigmastate.utils.Helpers
 import sigma.SigmaDslTesting
 import sigma.Extensions._
-import sigma.data.TrivialProp
+import sigma.data.{CSigmaProp, TrivialProp}
 
 class ErgoLikeTransactionSpec extends SigmaDslTesting {
 

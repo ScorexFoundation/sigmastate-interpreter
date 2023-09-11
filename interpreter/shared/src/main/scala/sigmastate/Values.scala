@@ -15,7 +15,7 @@ import sigma.validation.ValidationException
 import sigma.{AvlTree, Coll, Colls, Header, PreHeader, _}
 import sigmastate.Values.ErgoTree.substConstants
 import sigmastate.crypto.CryptoConstants
-import sigmastate.eval.Extensions._
+import sigmastate.eval.Extensions.{ArrayOps, SigmaBooleanOps}
 import sigmastate.eval._
 import sigmastate.exceptions.InterpreterException
 import sigmastate.interpreter.ErgoTreeEvaluator._

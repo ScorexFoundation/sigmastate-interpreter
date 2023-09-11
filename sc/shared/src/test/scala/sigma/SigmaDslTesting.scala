@@ -21,7 +21,7 @@ import sigma.ast.SType.AnyOps
 import sigmastate.Values.{ByteArrayConstant, Constant, ConstantNode, ErgoTree, IntConstant, SValue}
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.crypto.SigmaProtocolPrivateInput
-import sigmastate.eval.Extensions._
+import sigmastate.eval.Extensions.{ArrayOps, SigmaBooleanOps}
 import sigmastate.eval.{CompiletimeIRContext, CostingBox, CostingDataContext, IRContext, SigmaDsl}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaPPrint}

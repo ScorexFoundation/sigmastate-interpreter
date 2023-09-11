@@ -1,7 +1,7 @@
 package org.ergoplatform.sdk.utils
 
 import org.ergoplatform.ErgoBox
-import sigma.data.{AvlTreeData, AvlTreeFlags, CBigInt, CGroupElement, CollType, FuncType, OptionType, PairType, RType, TrivialProp, TupleType}
+import sigma.data.{AvlTreeData, AvlTreeFlags, CBigInt, CGroupElement, CSigmaProp, CollType, FuncType, OptionType, PairType, RType, TrivialProp, TupleType}
 import sigma.data.RType._
 import scorex.crypto.authds.avltree.batch.BatchAVLProver
 import scorex.crypto.hash.{Blake2b256, Digest32}

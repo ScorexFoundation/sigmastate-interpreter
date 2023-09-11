@@ -108,13 +108,5 @@ object Extensions {
     def toSigmaProp: SigmaPropValue = SigmaPropConstant(sb)
 
     def isProven: Value[SBoolean.type] = SigmaPropIsProven(SigmaPropConstant(sb))
-
-    def showToString: String = sb match {
-      case ProveDlog(v) =>
-        s"ProveDlog(${v.showECPoint})"
-      case ProveDHTuple(gv, hv, uv, vv) =>
-        s"ProveDHTuple(${gv.showECPoint}, ${hv.showECPoint}, ${uv.showECPoint}, ${vv.showECPoint})"
-      case _ => sb.toString
-    }
   }
 }

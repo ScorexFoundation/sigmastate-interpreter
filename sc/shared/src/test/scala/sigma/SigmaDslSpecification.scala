@@ -4,7 +4,7 @@ import java.math.BigInteger
 import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
 import org.scalacheck.{Arbitrary, Gen}
-import sigma.data.{AvlTreeData, AvlTreeFlags, CAND, CBigInt, CGroupElement, COR, CTHRESHOLD, ExactIntegral, ExactNumeric, ExactOrdering, ProveDHTuple, ProveDlog, RType, TrivialProp}
+import sigma.data.{AvlTreeData, AvlTreeFlags, CAND, CBigInt, CGroupElement, COR, CSigmaProp, CTHRESHOLD, ExactIntegral, ExactNumeric, ExactOrdering, ProveDHTuple, ProveDlog, RType, TrivialProp}
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}

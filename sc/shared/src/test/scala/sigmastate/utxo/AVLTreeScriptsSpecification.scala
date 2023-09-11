@@ -9,7 +9,7 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigma.ast.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.eval.{CSigmaProp, IRContext}
+import sigmastate.eval.IRContext
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
@@ -19,7 +19,7 @@ import sigmastate.interpreter.ProverResult
 import sigmastate.lang.Terms._
 import sigma.Coll
 import sigma.ast.SAvlTree
-import sigma.data.{AvlTreeData, AvlTreeFlags, TrivialProp}
+import sigma.data.{AvlTreeData, AvlTreeFlags, CSigmaProp, TrivialProp}
 import sigma.{AvlTree, Context}
 
 

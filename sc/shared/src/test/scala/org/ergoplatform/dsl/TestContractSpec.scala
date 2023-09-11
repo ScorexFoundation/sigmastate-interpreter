@@ -7,14 +7,14 @@ import sigmastate.interpreter.{CostedProverResult, ProverResult}
 
 import scala.collection.mutable.ArrayBuffer
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
-import sigma.data.{AvlTreeData, Nullable}
+import sigma.data.{AvlTreeData, CSigmaProp, Nullable}
 
 import scala.util.Try
 import org.ergoplatform.{ErgoBox, ErgoLikeContext}
 import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition, Token}
 import sigma.ast.SType
 import sigmastate.Values.{ErgoTree, EvaluatedValue}
-import sigmastate.eval.{CAnyValue, CSigmaProp, IRContext}
+import sigmastate.eval.{CAnyValue, IRContext}
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.lang.Terms.ValueOps
