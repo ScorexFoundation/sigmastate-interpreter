@@ -47,31 +47,6 @@ trait BigInt {
     */
   def compareTo(that: BigInt): Int
 
-  /** Returns this `mod` Q, i.e. remainder of division by Q, where Q is an order of the cryprographic group.
-    * @since 2.0
-    */
-  def modQ: BigInt
-
-  /** Adds this number with `other` by module Q.
-    * @since 2.0
-    */
-  def plusModQ(other: BigInt): BigInt
-
-  /** Subtracts this number with `other` by module Q.
-    * @since 2.0
-    */
-  def minusModQ(other: BigInt): BigInt
-
-  /** Multiply this number with `other` by module Q.
-    * @since 2.0
-    */
-  def multModQ(other: BigInt): BigInt
-
-  /** Multiply this number with `other` by module Q.
-    * @since Mainnet
-    */
-  def inverseModQ: BigInt // ??? @kushti do we need it
-
   /** Returns the signum function of this BigInt.
     *
     * @return -1, 0 or 1 as the value of this BigInt is negative, zero or

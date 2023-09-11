@@ -26,16 +26,6 @@ case class CBigInt(override val wrappedValue: BigInteger) extends BigInt with Wr
   override def compareTo(that: BigInt): Int =
     wrappedValue.compareTo(that.asInstanceOf[CBigInt].wrappedValue)
 
-  override def modQ: BigInt = ???
-
-  override def plusModQ(other: BigInt): BigInt = ???
-
-  override def minusModQ(other: BigInt): BigInt = ???
-
-  override def multModQ(other: BigInt): BigInt = ???
-
-  override def inverseModQ: BigInt = ???
-
   override def signum: Int = wrappedValue.signum()
 
   override def add(that: BigInt): BigInt = CBigInt(wrappedValue.add(that.asInstanceOf[CBigInt].wrappedValue).to256BitValueExact)
