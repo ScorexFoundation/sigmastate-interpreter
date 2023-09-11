@@ -37,12 +37,6 @@ trait BigInt {
     */
   def toBytes: Coll[Byte]
 
-  /** Returns a big-endian representation of this BigInt in a collection of Booleans.
-    * Each boolean corresponds to one bit of the representation.
-    * @since 2.0
-    */
-  def toBits: Coll[Boolean]
-
   /** Absolute value of this numeric value.
     * @since 2.0
     */

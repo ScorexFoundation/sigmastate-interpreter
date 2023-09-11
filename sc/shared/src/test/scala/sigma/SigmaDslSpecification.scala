@@ -1067,7 +1067,6 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Byte methods equivalence (new features)") {
     lazy val toBytes = newFeature((x: Byte) => x.toBytes, "{ (x: Byte) => x.toBytes }")
-    lazy val toBits = newFeature((x: Byte) => x.toBits, "{ (x: Byte) => x.toBits }")
     lazy val toAbs = newFeature((x: Byte) => x.toAbs, "{ (x: Byte) => x.toAbs }")
     lazy val compareTo = newFeature(
       (x: (Byte, Byte)) => x._1.compareTo(x._2),
@@ -1082,7 +1081,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     "{ (x: (Byte, Byte)) => (x._1 & x._2).toByteExact }")
 
     forAll { x: Byte =>
-      Seq(toBytes, toBits, toAbs).foreach(f => f.checkEquality(x))
+      Seq(toBytes, toAbs).foreach(f => f.checkEquality(x))
     }
 
     forAll { x: (Byte, Byte) =>
@@ -1372,7 +1371,6 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Short methods equivalence (new features)") {
     lazy val toBytes = newFeature((x: Short) => x.toBytes, "{ (x: Short) => x.toBytes }")
-    lazy val toBits = newFeature((x: Short) => x.toBits, "{ (x: Short) => x.toBits }")
     lazy val toAbs = newFeature((x: Short) => x.toAbs, "{ (x: Short) => x.toAbs }")
 
     lazy val compareTo = newFeature((x: (Short, Short)) => x._1.compareTo(x._2),
@@ -1387,7 +1385,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     "{ (x: (Short, Short)) => x._1 & x._2 }")
 
     forAll { x: Short =>
-      Seq(toBytes, toBits, toAbs).foreach(_.checkEquality(x))
+      Seq(toBytes, toAbs).foreach(_.checkEquality(x))
     }
     forAll { x: (Short, Short) =>
       Seq(compareTo, bitOr, bitAnd).foreach(_.checkEquality(x))
@@ -1676,7 +1674,6 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Int methods equivalence (new features)") {
     lazy val toBytes = newFeature((x: Int) => x.toBytes, "{ (x: Int) => x.toBytes }")
-    lazy val toBits = newFeature((x: Int) => x.toBits, "{ (x: Int) => x.toBits }")
     lazy val toAbs = newFeature((x: Int) => x.toAbs, "{ (x: Int) => x.toAbs }")
     lazy val compareTo = newFeature((x: (Int, Int)) => x._1.compareTo(x._2),
       "{ (x: (Int, Int)) => x._1.compareTo(x._2) }")
@@ -1690,7 +1687,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     "{ (x: (Int, Int)) => x._1 & x._2 }")
 
     forAll { x: Int =>
-      Seq(toBytes, toBits, toAbs).foreach(_.checkEquality(x))
+      Seq(toBytes, toAbs).foreach(_.checkEquality(x))
     }
     forAll { x: (Int, Int) =>
       Seq(compareTo, bitOr, bitAnd).foreach(_.checkEquality(x))
@@ -1996,9 +1993,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Long methods equivalence (new features)") {
     lazy val toBytes = newFeature((x: Long) => x.toBytes, "{ (x: Long) => x.toBytes }")
-    lazy val toBits = newFeature((x: Long) => x.toBits, "{ (x: Long) => x.toBits }")
     lazy val toAbs = newFeature((x: Long) => x.toAbs, "{ (x: Long) => x.toAbs }")
-
     lazy val compareTo = newFeature((x: (Long, Long)) => x._1.compareTo(x._2),
       "{ (x: (Long, Long)) => x._1.compareTo(x._2) }")
 
@@ -2011,7 +2006,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     "{ (x: (Long, Long)) => x._1 & x._2 }")
 
     forAll { x: Long =>
-      Seq(toBytes, toBits, toAbs).foreach(_.checkEquality(x))
+      Seq(toBytes, toAbs).foreach(_.checkEquality(x))
     }
     forAll { x: (Long, Long) =>
       Seq(compareTo, bitOr, bitAnd).foreach(_.checkEquality(x))
@@ -2310,7 +2305,6 @@ class SigmaDslSpecification extends SigmaDslTesting
       FuncValue(Vector((1, SBigInt)), Downcast(ValUse(1, SBigInt), SLong)))
 
     lazy val toBytes = newFeature((x: BigInt) => x.toBytes, "{ (x: BigInt) => x.toBytes }")
-    lazy val toBits = newFeature((x: BigInt) => x.toBits, "{ (x: BigInt) => x.toBits }")
     lazy val toAbs = newFeature((x: BigInt) => x.toAbs, "{ (x: BigInt) => x.toAbs }")
 
     lazy val compareTo = newFeature((x: (BigInt, BigInt)) => x._1.compareTo(x._2),
@@ -2323,7 +2317,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     "{ (x: (BigInt, BigInt)) => x._1 & x._2 }")
 
     forAll { x: BigInt =>
-      Seq(toByte, toShort, toInt, toLong, toBytes, toBits, toAbs).foreach(_.checkEquality(x))
+      Seq(toByte, toShort, toInt, toLong, toBytes, toAbs).foreach(_.checkEquality(x))
     }
     forAll { x: (BigInt, BigInt) =>
       Seq(compareTo, bitOr, bitAnd).foreach(_.checkEquality(x))
