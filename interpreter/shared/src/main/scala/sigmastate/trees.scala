@@ -22,6 +22,7 @@ import sigmastate.eval.SigmaDsl
 import sigmastate.interpreter.ErgoTreeEvaluator
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.serialization.OpCodes._
+import sigmastate.serialization.SigmaPropCodes.SPCode
 import sigmastate.serialization.ValueCodes.OpCode
 import sigmastate.serialization._
 import sigmastate.utxo.{SimpleTransformerCompanion, Transformer}
@@ -51,7 +52,7 @@ trait SigmaLeaf extends SigmaBoolean
   */
 case class CAND(override val children: Seq[SigmaBoolean]) extends SigmaConjecture {
   /** The same code is used for AND operation, but they belong to different type hierarchies. */
-  override val opCode: OpCode = OpCodes.AndCode
+  override val opCode: SPCode = SigmaPropCodes.AndCode
   override val size: Int = SigmaBoolean.totalSize(children) + 1
 }
 
@@ -87,7 +88,7 @@ object CAND {
   */
 case class COR(children: Seq[SigmaBoolean]) extends SigmaConjecture {
   /** The same code is also used for OR operation, but they belong to different type hierarchies. */
-  override val opCode: OpCode = OpCodes.OrCode
+  override val opCode: SPCode = SigmaPropCodes.OrCode
   override val size: Int = SigmaBoolean.totalSize(children) + 1
 }
 
@@ -125,7 +126,7 @@ case class CTHRESHOLD(k: Int, children: Seq[SigmaBoolean]) extends SigmaConjectu
   // Our polynomial arithmetic can take only byte inputs
   require(k >= 0 && k <= children.length && children.length <= 255)
 
-  override val opCode: OpCode = OpCodes.AtLeastCode
+  override val opCode: SPCode = SigmaPropCodes.AtLeastCode
   override val size: Int = SigmaBoolean.totalSize(children) + 1
 }
 
@@ -146,12 +147,12 @@ object TrivialProp {
   def apply(b: Boolean): TrivialProp = if (b) TrueProp else FalseProp
 
   val FalseProp = new TrivialProp(false) {
-    override val opCode: OpCode = OpCodes.TrivialPropFalseCode
+    override val opCode: SPCode = SigmaPropCodes.TrivialPropFalseCode
     override def size: Int = 1
     override def toString = "FalseProp"
   }
   val TrueProp = new TrivialProp(true) {
-    override val opCode: OpCode = OpCodes.TrivialPropTrueCode
+    override val opCode: SPCode = SigmaPropCodes.TrivialPropTrueCode
     override def size: Int = 1
     override def toString = "TrueProp"
   }

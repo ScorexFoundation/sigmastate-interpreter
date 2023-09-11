@@ -3,6 +3,7 @@ package sigmastate.eval
 import org.ergoplatform._
 import scalan.MutableLazy
 import sigma.SigmaException
+import sigma.ast.TypeCodes.LastConstantCode
 import sigma.data.ExactIntegral.{ByteIsExactIntegral, IntIsExactIntegral, LongIsExactIntegral, ShortIsExactIntegral}
 import sigma.data.ExactOrdering.{ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering, ShortIsExactOrdering}
 import sigma.util.Extensions.ByteOps
@@ -391,7 +392,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
     case OpCodes.LtCode  => OrderingLT[A](elemToExactOrdering(eA))
     case OpCodes.GeCode  => OrderingGTEQ[A](elemToExactOrdering(eA))
     case OpCodes.LeCode  => OrderingLTEQ[A](elemToExactOrdering(eA))
-    case _ => error(s"Cannot find BinOp for opcode newOpCode(${opCode.toUByte - ValueCodes.LastConstantCode}) and type $eA")
+    case _ => error(s"Cannot find BinOp for opcode newOpCode(${opCode.toUByte - LastConstantCode}) and type $eA")
   }
 
   import sigmastate._

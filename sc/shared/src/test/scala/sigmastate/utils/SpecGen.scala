@@ -3,6 +3,7 @@ package sigmastate.utils
 import sigma.util.PrintExtensions.IterableExtensions
 import sigmastate._
 import sigma.Evaluation._
+import sigma.ast.TypeCodes.LastConstantCode
 import sigma.ast.{SBigInt, SBoolean, SCollection, SEmbeddable, SGlobal, SGroupElement, SNumericType, SOption, SPrimType, SString, SType, STypeCompanion}
 import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma.util.Extensions.ByteOps
@@ -32,7 +33,7 @@ trait SpecGen {
       args: Seq[ArgInfo], op: Either[PredefinedFunc, SMethod])
 
   def collectSerializers(): Seq[ValueSerializer[_ <: Values.Value[SType]]] = {
-    ((ValueCodes.LastConstantCode + 1) to 255).collect {
+    ((LastConstantCode + 1) to 255).collect {
       case i if ValueSerializer.serializers(i.toByte) != null =>
         val ser = ValueSerializer.serializers(i.toByte)
         assert(i == ser.opDesc.opCode.toUByte)
@@ -41,7 +42,7 @@ trait SpecGen {
   }
 
   def collectFreeCodes(): Seq[Int] = {
-    ((ValueCodes.LastConstantCode + 1) to 255).collect {
+    ((LastConstantCode + 1) to 255).collect {
       case i if ValueSerializer.serializers(i.toByte) == null => i
     }
   }

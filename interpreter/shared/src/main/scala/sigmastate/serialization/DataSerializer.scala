@@ -12,6 +12,7 @@ import sigma.{Evaluation, _}
 import debox.cfor
 import sigma.ast._
 import sigma.serialization.{GroupElementSerializer, SerializerException}
+import sigma.util.Extensions.{BigIntOps, GroupElementOps}
 import sigma.validation.ValidationRules.CheckSerializableTypeCode
 
 import scala.collection.mutable
@@ -35,11 +36,11 @@ object DataSerializer {
       w.putUInt(bytes.length)
       w.putBytes(bytes)
     case SBigInt =>
-      val data = SigmaDsl.toBigInteger(v.asInstanceOf[BigInt]).toByteArray
+      val data = v.asInstanceOf[BigInt].toBigInteger.toByteArray
       w.putUShort(data.length)
       w.putBytes(data)
     case SGroupElement =>
-      GroupElementSerializer.serialize(groupElementToECPoint(v.asInstanceOf[GroupElement]), w)
+      GroupElementSerializer.serialize(v.asInstanceOf[GroupElement].toECPoint, w)
     case SSigmaProp =>
       val p = v.asInstanceOf[SigmaProp]
       SigmaBoolean.serializer.serialize(sigmaPropToSigmaBoolean(p), w)

@@ -1,15 +1,16 @@
 package sigmastate.crypto
 
-import java.math.BigInteger
+import sigma.SigmaProp
+import sigma.crypto.EcPointType
+import sigma.serialization.GroupElementSerializer
 import sigmastate.Values.Value.PropositionCode
 import sigmastate._
 import sigmastate.crypto.VerifierMessage.Challenge
 import sigmastate.eval.SigmaDsl
-import sigmastate.serialization.OpCodes
-import sigma.SigmaProp
-import sigma.crypto.EcPointType
-import sigma.serialization.GroupElementSerializer
-import sigmastate.serialization.ValueCodes.OpCode
+import sigmastate.serialization.SigmaPropCodes
+import sigmastate.serialization.SigmaPropCodes.SPCode
+
+import java.math.BigInteger
 
 
 trait DiffieHellmanTupleProtocol extends SigmaProtocol[DiffieHellmanTupleProtocol] {
@@ -70,7 +71,7 @@ case class SecondDHTupleProverMessage(z: BigInteger) extends SecondProverMessage
   * Common input: (g,h,u,v) */
 case class ProveDHTuple(gv: EcPointType, hv: EcPointType, uv: EcPointType, vv: EcPointType)
   extends SigmaLeaf {
-  override val opCode: OpCode = OpCodes.ProveDiffieHellmanTupleCode
+  override val opCode: SPCode = SigmaPropCodes.ProveDiffieHellmanTupleCode
   override def size: Int = 4  // one node for each EcPoint
   lazy val g = gv
   lazy val h = hv

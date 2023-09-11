@@ -1,6 +1,7 @@
 package org.ergoplatform.validation
 
 import sigma.SigmaException
+import sigma.ast.TypeCodes.LastConstantCode
 import sigma.serialization.{InvalidOpCode, SerializerException}
 import sigma.util.Extensions.toUByte
 import sigma.validation.ValidationRules._
@@ -59,7 +60,7 @@ object ValidationRules {
       checkRule()
       if (ser == null || ser.opCode != opCode) {
         throwValidationException(
-          new InvalidOpCode(s"Cannot find serializer for Value with opCode = LastConstantCode + ${toUByte(opCode) - ValueCodes.LastConstantCode}"),
+          new InvalidOpCode(s"Cannot find serializer for Value with opCode = LastConstantCode + ${toUByte(opCode) - LastConstantCode}"),
           Array(opCode))
       }
     }

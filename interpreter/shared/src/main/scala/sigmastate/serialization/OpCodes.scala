@@ -1,28 +1,30 @@
 package sigmastate.serialization
 
-import sigma.ast.TypeCodes
-import sigmastate.serialization.ValueCodes.OpCode
+import sigma.ast.TypeCodes.LastConstantCode
 import supertagged.TaggedType
+
+/** Encoding of sigma proposition nodes.
+  * @see SigmaBoolean.opCode
+  */
+object SigmaPropCodes {
+  object SPCode extends TaggedType[Byte]
+  type SPCode = SPCode.Type
+  private def newOpCode(shift: Short): SPCode = SPCode @@ (LastConstantCode + shift).toByte
+
+  val AndCode                    : SPCode = newOpCode(38)
+  val OrCode                     : SPCode = newOpCode(39)
+  val AtLeastCode                : SPCode = newOpCode(40)
+  val ProveDlogCode              : SPCode = newOpCode(93)
+  val ProveDiffieHellmanTupleCode: SPCode = newOpCode(94)
+  val TrivialPropFalseCode       : SPCode = newOpCode(98)
+  val TrivialPropTrueCode        : SPCode = newOpCode(99)
+}
 
 /** Encoding of values for serialization. */
 object ValueCodes {
   object OpCode extends TaggedType[Byte]
   type OpCode = OpCode.Type
 
-  /** We use optimized encoding of constant values to save space in serialization.
-    * Since Box registers are stored as Constant nodes we save 1 byte for each register.
-    * This is due to convention that Value.opCode falling in [1..LastDataType] region is a constant.
-    * Thus, we can just decode an instance of SType and then decode data using DataSerializer.
-    *
-    * Decoding of constants depends on the first byte and in general is a recursive procedure
-    * consuming some number of bytes from Reader.
-    * */
-  val ConstantCode: OpCode = OpCode @@ 0.toByte
-
-  /** The last constant code is equal to FirstFuncType which represent generic function type.
-    * We use this single code to represent all functional constants, since we don't have enough space in single byte.
-    * Subsequent bytes have to be read from Reader in order to decode the type of the function and the corresponding data. */
-  val LastConstantCode: OpCode = OpCode @@ (TypeCodes.LastDataType + 1).toByte
 }
 
 /** The set of all possible IR graph nodes can be split in two subsets:

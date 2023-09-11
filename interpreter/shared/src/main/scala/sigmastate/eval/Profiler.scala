@@ -7,6 +7,7 @@ import sigmastate.serialization.ValueSerializer.getSerializer
 import sigma.util.Extensions.ByteOps
 import debox.{Buffer => DBuffer, Map => DMap}
 import debox.sp
+import sigma.ast.TypeCodes.LastConstantCode
 import sigma.util.Extensions.DBufferOps
 import sigmastate.interpreter.{CostItem, FixedCostItem, SeqCostItem, TypeBasedCostItem}
 import sigmastate.lang.Terms.{MethodCall, PropertyCall}
@@ -256,7 +257,7 @@ class Profiler {
       val suggestedCost = suggestCost(time)
       val warn = if (suggestedCost > cost) "!!!" else ""
       val comment = s"count: $count, suggestedCost: $suggestedCost, actualCost: $cost$warn"
-      (opName, (opCode.toUByte - ValueCodes.LastConstantCode).toString, time, comment)
+      (opName, (opCode.toUByte - LastConstantCode).toString, time, comment)
     }.filter(line => line != null && line._1.nonEmpty)
       .sortBy(_._3)(Ordering[Long].reverse)
 

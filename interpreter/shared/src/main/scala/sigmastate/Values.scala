@@ -22,6 +22,7 @@ import sigmastate.interpreter.ErgoTreeEvaluator._
 import debox.cfor
 import scorex.util.encode.Base16
 import sigma.ast.SCollection.{SByteArray, SIntArray}
+import sigma.ast.TypeCodes.ConstantCode
 import sigma.ast._
 import sigma.crypto.EcPointType
 import sigmastate.exceptions.InterpreterException
@@ -35,7 +36,8 @@ import sigma.{AvlTree, Coll, Colls, Header, PreHeader, _}
 import sigmastate.lang.SourceContext
 import sigma.util.safeNewArray
 import sigma.validation.ValidationException
-import sigmastate.serialization.ValueCodes.{ConstantCode, OpCode}
+import sigmastate.serialization.SigmaPropCodes.{ProveDlogCode, SPCode}
+import sigmastate.serialization.ValueCodes.OpCode
 
 import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
@@ -357,7 +359,7 @@ object Values {
   }
 
   object Constant extends FixedCostValueCompanion {
-    override def opCode: OpCode = ConstantCode
+    override def opCode: OpCode = OpCode @@ ConstantCode
     /** Cost of: returning value from Constant node. */
     override val costKind = FixedCost(JitCost(5))
 
@@ -734,7 +736,7 @@ object Values {
     */
   trait SigmaBoolean {
     /** Unique id of the node class used in serialization of SigmaBoolean. */
-    val opCode: OpCode
+    val opCode: SPCode
     /** Size of the proposition tree (number of nodes). */
     def size: Int
   }

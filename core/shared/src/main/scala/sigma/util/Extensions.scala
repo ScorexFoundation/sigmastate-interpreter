@@ -2,7 +2,7 @@ package sigma.util
 
 import sigma.GroupElement
 import sigma.crypto.{CryptoFacade, Ecp}
-import sigma.data.CGroupElement
+import sigma.data.{CBigInt, CGroupElement}
 import debox.{cfor, Buffer => DBuffer}
 
 import java.math.BigInteger
@@ -216,6 +216,14 @@ object Extensions {
       else
         throw new ArithmeticException("BigInteger out of 256 bit range");
     }
+
+    /** Converts `x` to [[sigma.BigInt]] */
+    def toBigInt: sigma.BigInt = CBigInt(x)
+  }
+
+  implicit class BigIntOps(val x: sigma.BigInt) extends AnyVal {
+    /** Converts `x` to [[java.math.BigInteger]] */
+    def toBigInteger: BigInteger = x.asInstanceOf[CBigInt].wrappedValue
   }
 
   implicit class OptionOps[T](val opt: Option[T]) extends AnyVal {
