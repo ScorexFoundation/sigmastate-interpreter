@@ -2,9 +2,10 @@ package sigma
 
 import org.scalatest.BeforeAndAfterAll
 import scalan.{BaseCtxTests, BaseLiftableTests}
+import sigma.data.TrivialProp
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
-import sigmastate.{TrivialProp, eval}
+import sigmastate.eval
 
 import scala.language.reflectiveCalls
 

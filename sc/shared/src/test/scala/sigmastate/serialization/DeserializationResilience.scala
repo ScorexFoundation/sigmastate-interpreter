@@ -7,7 +7,7 @@ import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.serialization.{Reader, VLQByteBufferReader}
 import sigma.ast.{SBoolean, SInt}
-import sigma.data.{AvlTreeData, AvlTreeFlags}
+import sigma.data.{AvlTreeData, AvlTreeFlags, CAND, SigmaBoolean}
 import sigma.serialization.{DeserializeCallDepthExceeded, InvalidTypePrefix, ReaderPositionLimitExceeded, SerializerException}
 import sigma.util.{BenchmarkUtil, safeNewArray}
 import sigma.validation.ValidationException

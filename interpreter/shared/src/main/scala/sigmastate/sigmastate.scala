@@ -1,6 +1,6 @@
 import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, ErgoLikeContext}
 import sigma.ast._
-import sigma.data.{AvlTreeData, GeneralType, RType}
+import sigma.data.{AvlTreeData, GeneralType, RType, SigmaBoolean}
 import sigmastate.Values._
 import sigmastate.lang.{CheckingSigmaBuilder, Terms}
 

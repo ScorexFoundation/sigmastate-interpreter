@@ -2,7 +2,7 @@ package sigmastate.utxo
 
 import org.ergoplatform.Height
 import org.scalacheck.Gen
-import sigma.data.AvlTreeData
+import sigma.data.{AvlTreeData, CAND, COR, CTHRESHOLD}
 import sigmastate.Values.IntConstant
 import sigmastate._
 import sigmastate.helpers._

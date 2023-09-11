@@ -10,6 +10,7 @@ import sigma.ast.SCollection._
 import sigmastate.Values._
 import sigmastate._
 import sigma.ast._
+import sigma.data.ProveDlog
 import sigmastate.crypto.CryptoConstants
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.exceptions.TyperException

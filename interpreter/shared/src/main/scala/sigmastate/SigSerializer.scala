@@ -2,6 +2,7 @@ package sigmastate
 
 import debox.cfor
 import scorex.util.encode.Base16
+import sigma.data.{CAND, COR, CTHRESHOLD, ProveDHTuple, ProveDlog, SigmaBoolean}
 import sigma.serialization.SerializerException
 import sigma.util.safeNewArray
 import sigmastate.crypto.DLogProtocol.SecondDLogProverMessage

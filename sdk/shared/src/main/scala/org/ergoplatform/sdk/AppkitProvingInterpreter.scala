@@ -9,9 +9,8 @@ import org.ergoplatform.sdk.wallet.protocol.context.{BlockchainStateContext, Tra
 import org.ergoplatform.sdk.wallet.secrets.ExtendedSecretKey
 import org.ergoplatform.validation.ValidationRules
 import sigma.VersionContext
-import sigma.data.AvlTreeData
+import sigma.data.{AvlTreeData, ProveDlog, SigmaBoolean}
 import sigma.util.Extensions.LongOps
-import sigmastate.{ProveDlog, SigmaBoolean}
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.crypto.{DiffieHellmanTupleProverInput, SigmaProtocolPrivateInput}
 import sigmastate.interpreter.Interpreter.{ReductionResult, estimateCryptoVerifyCost}

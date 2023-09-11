@@ -9,7 +9,7 @@ import sigma.ast.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigma.ast._
-import sigma.data.AvlTreeData
+import sigma.data.{AvlTreeData, ProveDHTuple, ProveDlog, TrivialProp}
 import sigma.util.Extensions.EcpOps
 import sigma.validation.ValidationException
 import sigmastate.eval._

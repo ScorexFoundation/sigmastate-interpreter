@@ -11,6 +11,7 @@ import sigmastate.serialization._
 import sigmastate.utxo.{DeserializeContext, Slice}
 import sigma.{Coll, SigmaException}
 import sigma.ast.{SInt, SSigmaProp}
+import sigma.data.ProveDlog
 import sigma.serialization.GroupElementSerializer
 
 import scala.util.Try

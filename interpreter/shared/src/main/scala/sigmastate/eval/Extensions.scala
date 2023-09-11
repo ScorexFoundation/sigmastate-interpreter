@@ -5,14 +5,14 @@ import org.ergoplatform.ErgoBox.TokenId
 import scorex.util.encode.Base16
 import sigma.ast.SType.AnyOps
 import sigma.ast.{SBoolean, SCollection, SCollectionType, SType}
-import sigma.data.{Nullable, RType}
+import sigma.data.{Nullable, ProveDHTuple, ProveDlog, RType, SigmaBoolean}
 import sigma.util.Extensions.EcpOps
 import sigma.{Coll, _}
 import sigmastate.Values.{Constant, ConstantNode, SigmaPropConstant, SigmaPropValue, Value}
 import sigmastate.lang.{CheckingSigmaBuilder, TransformingSigmaBuilder}
 import sigmastate.utils.Helpers
 import sigmastate.utxo.SigmaPropIsProven
-import sigmastate.{Platform, ProveDHTuple, ProveDlog, SigmaBoolean}
+import sigmastate.Platform
 
 import java.math.BigInteger
 

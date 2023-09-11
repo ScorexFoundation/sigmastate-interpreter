@@ -6,7 +6,7 @@ import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen.containerOfN
 import org.scalacheck.util.Buildable
 import org.scalacheck.{Arbitrary, Gen}
-import sigma.data.{AvlTreeData, AvlTreeFlags, CBigInt, RType}
+import sigma.data.{AvlTreeData, AvlTreeFlags, CAND, CBigInt, COR, ProveDHTuple, ProveDlog, RType}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ModifierId

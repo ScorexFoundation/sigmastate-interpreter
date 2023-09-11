@@ -21,6 +21,7 @@ import sigmastate.lang.Terms.ValueOps
 import debox.cfor
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.{SBoolean, SSigmaProp, SType}
+import sigma.data.{CAND, COR, CTHRESHOLD, ProveDHTuple, ProveDlog, SigmaBoolean, TrivialProp}
 import sigma.{Evaluation, VersionContext}
 import sigma.kiama.rewriting.Strategy
 import sigma.validation.ValidationRules.trySoftForkable

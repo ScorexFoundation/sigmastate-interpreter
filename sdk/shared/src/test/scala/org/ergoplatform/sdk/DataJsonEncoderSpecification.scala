@@ -4,13 +4,12 @@ package org.ergoplatform.sdk
 import java.math.BigInteger
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen
-import sigma.data.{RType, TupleColl}
+import sigma.data.{RType, SigmaBoolean, TupleColl}
 import sigma.ast._
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.SType.AnyOps
 import sigma.crypto.EcPointType
 import sigma.serialization.SerializerException
-import sigmastate.SigmaBoolean
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigma.{AvlTree, Box, Colls, Evaluation}

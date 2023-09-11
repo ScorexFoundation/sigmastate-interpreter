@@ -11,12 +11,13 @@ import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
-import sigmastate.{TrivialProp, _}
+import sigmastate._
 import sigma.ast.SType._
 import sigmastate.helpers.TestingHelpers.copyTransaction
 import sigmastate.utils.Helpers
 import sigma.SigmaDslTesting
 import sigma.Extensions._
+import sigma.data.TrivialProp
 
 class ErgoLikeTransactionSpec extends SigmaDslTesting {
 

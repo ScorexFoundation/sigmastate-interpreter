@@ -1,5 +1,6 @@
 package sigmastate.interpreter
 
+import sigma.data.{ProveDHTuple, ProveDlog, SigmaBoolean, SigmaConjecture, SigmaLeaf}
 import sigmastate._
 import sigmastate.Values.ErgoTree
 import sigmastate.crypto.DLogProtocol.DLogInteractiveProver

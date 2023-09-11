@@ -7,7 +7,7 @@ import pprint.{PPrinter, Tree}
 import sigma.ast.SCollection.{SBooleanArray, SByteArray, SByteArray2}
 import sigma.ast._
 import sigma.crypto.EcPointType
-import sigma.data.{AvlTreeData, AvlTreeFlags, CollType, PrimitiveType}
+import sigma.data.{AvlTreeData, AvlTreeFlags, CollType, PrimitiveType, TrivialProp}
 import sigma.serialization.GroupElementSerializer
 import sigma.{Coll, GroupElement}
 import sigmastate.Values.{ConstantNode, ErgoTree, FuncValue, ValueCompanion}

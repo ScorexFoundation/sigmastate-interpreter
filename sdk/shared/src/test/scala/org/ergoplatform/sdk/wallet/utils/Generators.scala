@@ -15,7 +15,7 @@ import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, ErgoTreePredef, UnsignedErgo
 import sigmastate.eval.Extensions._
 import scorex.util.{ModifierId, bytesToId}
 import sigma.crypto.CryptoFacade
-import sigmastate.ProveDlog
+import sigma.data.ProveDlog
 import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._
 

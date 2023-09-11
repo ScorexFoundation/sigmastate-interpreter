@@ -4,7 +4,7 @@ import sigma.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
 import sigma.util.CollectionUtil._
 import sigma.VersionContext
 import sigma.kiama.rewriting.Strategy
-import sigmastate.TrivialProp.{FalseProp, TrueProp}
+import sigma.data.TrivialProp.{FalseProp, TrueProp}
 import sigmastate.Values._
 import sigma.VersionContext.MaxSupportedScriptVersion
 import sigmastate._
@@ -16,6 +16,7 @@ import sigmastate.eval.Extensions.ArrayOps
 import sigmastate.exceptions.InterpreterException
 import sigmastate.utils.Helpers
 import sigma.Coll
+import sigma.data.{CAND, COR, CTHRESHOLD, ProveDHTuple, ProveDlog, SigmaBoolean}
 
 import java.math.BigInteger
 import scala.util.Try

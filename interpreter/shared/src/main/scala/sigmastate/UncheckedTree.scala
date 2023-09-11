@@ -1,5 +1,6 @@
 package sigmastate
 
+import sigma.data.{ProveDHTuple, ProveDlog}
 import sigmastate.crypto.DLogProtocol.{FirstDLogProverMessage, SecondDLogProverMessage}
 import sigmastate.crypto.VerifierMessage.Challenge
 import sigmastate.crypto.{FirstDHTupleProverMessage, GF2_192_Poly, SecondDHTupleProverMessage}

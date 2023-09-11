@@ -13,8 +13,7 @@ import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.serialization.ConstantSerializer
 import sigmastate.utils.Helpers
 import sigma.SigmaTestingData
-import sigmastate.ProveDlog
-
+import sigma.data.ProveDlog
 import java.math.BigInteger
 
 class ValueSpec extends AnyPropSpec with Matchers with SigmaTestingData with ScalaCheckPropertyChecks {

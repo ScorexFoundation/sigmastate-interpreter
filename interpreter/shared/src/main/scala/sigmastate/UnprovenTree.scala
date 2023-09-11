@@ -1,6 +1,7 @@
 package sigmastate
 
 import debox.cfor
+import sigma.data.{CAND, COR, CTHRESHOLD, ProveDHTuple, ProveDlog, SigmaBoolean, SigmaLeaf}
 import sigmastate.Values.{ErgoTree, SigmaPropConstant}
 import sigmastate.crypto.DLogProtocol.FirstDLogProverMessage
 import sigmastate.crypto.VerifierMessage.Challenge

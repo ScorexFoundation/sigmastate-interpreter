@@ -7,7 +7,7 @@ import sigma.ast.SCollection.{SByteArray, SIntArray}
 import sigma.ast.TypeCodes.ConstantCode
 import sigma.ast._
 import sigma.crypto.EcPointType
-import sigma.data.{Nullable, RType}
+import sigma.data.{Nullable, RType, SigmaBoolean, TrivialProp}
 import sigma.kiama.rewriting.Rewriter.{count, everywherebu, strategy}
 import sigma.util.CollectionUtil._
 import sigma.util.Extensions._

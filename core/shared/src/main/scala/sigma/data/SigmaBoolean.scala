@@ -1,14 +1,11 @@
-package sigmastate
+package sigma.data
 
 import debox.cfor
 import sigma.crypto.EcPointType
-import sigma.serialization.GroupElementSerializer
+import sigma.data.SigmaPropCodes.{AndCode, AtLeastCode, OrCode, ProveDiffieHellmanTupleCode, ProveDlogCode, SPCode}
+import sigma.data.TrivialProp.{FalseProp, TrueProp}
+import sigma.serialization.{CoreByteReader, CoreByteWriter, CoreSerializer, GroupElementSerializer, ProveDHTupleSerializer, ProveDlogSerializer}
 import sigma.util.safeNewArray
-import sigmastate.TrivialProp.{FalseProp, TrueProp}
-import sigmastate.serialization.SigmaPropCodes.{AndCode, AtLeastCode, OrCode, ProveDiffieHellmanTupleCode, ProveDlogCode, SPCode}
-import sigmastate.serialization.{ProveDlogSerializer, SigmaPropCodes, SigmaSerializer}
-import sigmastate.serialization.transformers.ProveDHTupleSerializer
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -35,12 +32,12 @@ object SigmaBoolean {
   }
 
   /** HOTSPOT: don't beautify this code */
-  object serializer extends SigmaSerializer[SigmaBoolean, SigmaBoolean] {
+  object serializer extends CoreSerializer[SigmaBoolean, SigmaBoolean] {
     val dhtSerializer  = ProveDHTupleSerializer(ProveDHTuple.apply)
 
     val dlogSerializer = ProveDlogSerializer(ProveDlog.apply)
 
-    override def serialize(data: SigmaBoolean, w: SigmaByteWriter): Unit = {
+    override def serialize(data: SigmaBoolean, w: CoreByteWriter): Unit = {
       w.put(data.opCode)
       data match {
         case dlog: ProveDlog => dlogSerializer.serialize(dlog, w)
@@ -71,7 +68,7 @@ object SigmaBoolean {
       }
     }
 
-    override def parse(r: SigmaByteReader): SigmaBoolean = {
+    override def parse(r: CoreByteReader): SigmaBoolean = {
       val depth = r.level
       r.level = depth + 1
       val opCode = r.getByte()
@@ -107,7 +104,6 @@ object SigmaBoolean {
       res
     }
   }
-
 }
 
 /**

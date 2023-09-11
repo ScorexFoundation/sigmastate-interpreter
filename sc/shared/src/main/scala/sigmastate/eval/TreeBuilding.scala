@@ -8,6 +8,7 @@ import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.ConstantStore
 import sigma.ast._
+import sigma.data.{ProveDHTuple, ProveDlog}
 
 import scala.collection.mutable.ArrayBuffer
 import sigmastate.serialization.ValueCodes.OpCode

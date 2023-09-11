@@ -1,6 +1,6 @@
 package sigmastate.utxo
 
-import sigmastate.{TrivialProp, CompilerCrossVersionProps}
+import sigmastate.CompilerCrossVersionProps
 import sigmastate.eval.{IRContext, CSigmaProp}
 import sigmastate.eval.Extensions._
 import sigma.Context
@@ -8,6 +8,7 @@ import sigmastate.helpers.CompilerTestingCommons
 import org.ergoplatform.dsl.{SigmaContractSyntax, ContractSpec, TestContractSpec}
 import org.ergoplatform.ErgoBox
 import scorex.crypto.hash.Blake2b256
+import sigma.data.TrivialProp
 
 class UsingContextPropertiesSpecification extends CompilerTestingCommons
   with CompilerCrossVersionProps { suite =>

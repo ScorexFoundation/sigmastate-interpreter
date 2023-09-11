@@ -3,8 +3,7 @@ package sigmastate.serialization
 import java.math.BigInteger
 import java.nio.charset.StandardCharsets
 import org.ergoplatform.ErgoBox
-import sigma.data.{AvlTreeData, RType}
-import sigmastate.SigmaBoolean
+import sigma.data.{AvlTreeData, RType, SigmaBoolean}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.eval._
 import sigma.{Evaluation, _}

@@ -3,6 +3,7 @@ package org.ergoplatform
 import org.ergoplatform.settings.MonetarySettings
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.{SBox, SInt, SLong, SSigmaProp}
+import sigma.data.ProveDlog
 import sigmastate.crypto.CryptoConstants
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.Values.{ErgoTree, FalseSigmaProp, IntArrayConstant, IntConstant, LongConstant, SigmaPropConstant, SigmaPropValue, TrueSigmaProp, Value}

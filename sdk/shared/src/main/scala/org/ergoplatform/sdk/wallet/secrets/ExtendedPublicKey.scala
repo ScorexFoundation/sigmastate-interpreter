@@ -1,7 +1,7 @@
 package org.ergoplatform.sdk.wallet.secrets
 
 import sigma.crypto.CryptoFacade
-import sigmastate.ProveDlog
+import sigma.data.ProveDlog
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.crypto.CryptoConstants
 import sigmastate.crypto.BigIntegers

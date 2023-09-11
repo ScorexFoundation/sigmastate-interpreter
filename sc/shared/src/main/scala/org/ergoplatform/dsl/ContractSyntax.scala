@@ -2,7 +2,7 @@ package org.ergoplatform.dsl
 
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.TokenId
-import sigma.data.{AvlTreeData, RType}
+import sigma.data.{AvlTreeData, RType, SigmaBoolean}
 import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition}
 import org.ergoplatform.sdk.JavaHelpers.collRType
 import sigmastate.eval.CostingSigmaDslBuilder
@@ -10,8 +10,6 @@ import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigma._
 import sigma.ast.SType
 import sigma.ast.SType.AnyOps
-import sigmastate.SigmaBoolean
-
 import scala.reflect.ClassTag
 import scala.util.Try
 

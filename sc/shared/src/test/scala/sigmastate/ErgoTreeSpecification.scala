@@ -4,7 +4,7 @@ import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.validation.ValidationRules
 import org.ergoplatform.{ErgoAddressEncoder, ErgoBox, ErgoLikeContext, Self}
 import sigma.data.RType.asType
-import sigma.data.{Nullable, RType}
+import sigma.data.{Nullable, RType, TrivialProp}
 import sigma.{Evaluation, VersionContext}
 import sigma.ast.SCollection.SByteArray
 import sigmastate.Values._

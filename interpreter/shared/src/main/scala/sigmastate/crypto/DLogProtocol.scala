@@ -3,13 +3,12 @@ package sigmastate.crypto
 import scorex.util.encode.Base16
 import sigma.SigmaProp
 import sigma.crypto.EcPointType
+import sigma.data.ProveDlog
 import sigma.serialization.GroupElementSerializer
 import sigmastate._
 import sigmastate.crypto.CryptoConstants.dlogGroup
 import sigmastate.crypto.VerifierMessage.Challenge
 import sigmastate.eval._
-import sigmastate.serialization.SigmaPropCodes
-import sigmastate.serialization.SigmaPropCodes.SPCode
 
 import java.math.BigInteger
 

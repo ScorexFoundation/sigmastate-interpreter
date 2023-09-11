@@ -4,7 +4,7 @@ import debox.{cfor, Map => DMap}
 import sigma.data.ExactIntegral._
 import sigma.data.ExactOrdering._
 import sigma.data.OverloadHack.Overloaded1
-import sigma.data.{ExactIntegral, ExactOrdering, SigmaConstants}
+import sigma.data.{CAND, COR, CTHRESHOLD, ExactIntegral, ExactOrdering, SigmaBoolean, SigmaConstants}
 import scorex.crypto.hash.{Blake2b256, CryptographicHash32, Sha256}
 import sigma.ast.SCollection
 import sigma.ast.SCollection.{SByteArray, SIntArray}
@@ -22,7 +22,6 @@ import sigmastate.eval.SigmaDsl
 import sigmastate.interpreter.ErgoTreeEvaluator
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.serialization.OpCodes._
-import sigmastate.serialization.SigmaPropCodes.SPCode
 import sigmastate.serialization.ValueCodes.OpCode
 import sigmastate.serialization._
 import sigmastate.utxo.{SimpleTransformerCompanion, Transformer}
@@ -343,7 +342,7 @@ object AtLeast extends ValueCompanion {
 
   /** HOTSPOT: don't beautify this code */
   def reduce(bound: Int, children: Seq[SigmaBoolean]): SigmaBoolean = {
-    import sigmastate.TrivialProp._
+    import sigma.data.TrivialProp._
     if (bound <= 0) return TrueProp
     val nChildren = children.length
     if (bound > nChildren) return FalseProp

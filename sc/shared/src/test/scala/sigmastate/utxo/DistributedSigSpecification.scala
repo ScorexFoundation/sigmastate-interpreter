@@ -1,7 +1,8 @@
 package sigmastate.utxo
 
+import sigma.data.CAND
 import sigmastate._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter, CompilerTestingCommons}
+import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter}
 import sigmastate.interpreter._
 import sigmastate.lang.Terms._
 

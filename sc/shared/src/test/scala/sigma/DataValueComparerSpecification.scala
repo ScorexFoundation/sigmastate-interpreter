@@ -1,9 +1,9 @@
 package sigma
 
 import org.scalatest.BeforeAndAfterAll
-import sigma.data.RType
+import sigma.data.{RType, TrivialProp}
 import sigma.util.BenchmarkUtil
-import sigmastate.{DataValueComparer, JitCost, TrivialProp}
+import sigmastate.{DataValueComparer, JitCost}
 import sigmastate.Values.ErgoTree
 import sigmastate.eval.{CSigmaProp, Profiler, SigmaDsl}
 import sigmastate.helpers.SigmaPPrint

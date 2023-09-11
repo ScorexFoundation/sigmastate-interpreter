@@ -3,7 +3,7 @@ package sigmastate
 import org.ergoplatform.ErgoBox
 import sigma.{Coll, _}
 import sigma.crypto.EcPointType
-import sigma.data.{AvlTreeData, RType}
+import sigma.data.{AvlTreeData, RType, SigmaBoolean}
 import sigmastate.exceptions.CostLimitException
 import supertagged.TaggedType
 

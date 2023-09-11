@@ -12,7 +12,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import scalan.Platform.threadSleepOrNoOp
-import sigma.data.{CollType, OptionType, PairType, RType}
+import sigma.data.{CollType, OptionType, PairType, ProveDlog, RType, SigmaLeaf}
 import sigma.util.BenchmarkUtil
 import sigma.util.CollectionUtil._
 import sigma.util.Extensions._
@@ -35,7 +35,7 @@ import sigmastate.utxo.{DeserializeContext, DeserializeRegister, GetVar, OptionG
 import sigma.ast.{SOption, SSigmaProp, SType}
 import sigma.validation.ValidationRules.CheckSerializableTypeCode
 import sigma.validation.{SigmaValidationSettings, ValidationException}
-import sigmastate.{ProveDlog, SigmaLeaf, eval}
+import sigmastate.eval
 
 import scala.collection.mutable
 import scala.reflect.ClassTag

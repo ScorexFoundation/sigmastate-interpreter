@@ -2,13 +2,12 @@ package sigmastate.crypto
 
 import sigma.SigmaProp
 import sigma.crypto.EcPointType
+import sigma.data.ProveDHTuple
 import sigma.serialization.GroupElementSerializer
 import sigmastate.Values.Value.PropositionCode
 import sigmastate._
 import sigmastate.crypto.VerifierMessage.Challenge
 import sigmastate.eval.SigmaDsl
-import sigmastate.serialization.SigmaPropCodes
-import sigmastate.serialization.SigmaPropCodes.SPCode
 
 import java.math.BigInteger
 

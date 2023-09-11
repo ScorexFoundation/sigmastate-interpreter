@@ -15,11 +15,10 @@ import scorex.util.{ModifierId, bytesToId, idToBytes}
 import sigma.ast.SType
 import sigma.crypto.{CryptoFacade, EcPointType}
 import sigma.data.ExactIntegral.LongIsExactIntegral
-import sigma.data.{InverseIso, Iso, RType, SigmaConstants}
+import sigma.data.{InverseIso, Iso, ProveDHTuple, ProveDlog, RType, SigmaBoolean, SigmaConstants}
 import sigma.serialization.GroupElementSerializer
 import sigma.util.StringUtil.StringUtilExtensions
 import sigma.{AnyValue, AvlTree, Coll, Colls, Evaluation, GroupElement, Header}
-import sigmastate.{ProveDHTuple, ProveDlog, SigmaBoolean}
 import sigmastate.Values.{Constant, ErgoTree, EvaluatedValue, SValue, SigmaPropConstant}
 import sigmastate.crypto.DiffieHellmanTupleProverInput
 import sigmastate.eval.{CostingSigmaDslBuilder, Digest32Coll}

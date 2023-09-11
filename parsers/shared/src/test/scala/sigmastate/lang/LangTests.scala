@@ -14,6 +14,7 @@ import sigmastate.eval._
 import sigmastate.helpers.NegativeTesting
 import sigma.Coll
 import sigma.ast._
+import sigma.data.{ProveDHTuple, ProveDlog, SigmaBoolean}
 
 trait LangTests extends Matchers with NegativeTesting {
 
