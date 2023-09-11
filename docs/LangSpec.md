@@ -480,6 +480,21 @@ trait SigmaProp {
     * 2. new ErgoTree created with with ErgoTree.DefaultHeader, EmptyConstant and SigmaPropConstant as the root
     * 
     * Thus obtained ErgoTree is serialized using DefaultSerializer and compared with `box.propositionBytes`.
+    * Here, propBytes uses very specific ErgoTree with header == 0, and hence ErgoTree.version == 0.
+    * However, `box.propositionBytes`, contain bytes of ErgoTree from `box`, and version of that
+    * tree depends on how the `box` was created.
+    * A better way to compare `box.propositionBytes` and `prop.propBytes` is to use the following code:
+    * ```
+    * val propBytes = prop.propBytes
+    * val treeBytes = box.propositionBytes
+    * if (treeBytes(0) == 0) {
+    *   treeBytes == propBytes
+    * } else {
+    *   // offset = 1 + <number of VLQ encoded bytes to store propositionBytes.size>
+    *   val offset = if (propositionBytes.size > 127) 3 else 2
+    *   propBytes.slice(1, propBytes.size) == propositionBytes.slice(offset, propositionBytes.size) 
+    * }
+    * ```
     */
   def propBytes: Coll[Byte]
 
