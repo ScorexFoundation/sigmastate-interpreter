@@ -11,9 +11,8 @@ import sigmastate.interpreter.{ContextExtension, ErgoTreeEvaluator, Interpreter,
 import sigmastate.exceptions.InterpreterException
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
-import special.collection.Coll
-import special.sigma
-import special.sigma.{AnyValue, Header, PreHeader}
+import sigma.Coll
+import sigma.{AnyValue, Header, PreHeader}
 import debox.cfor
 
 /** Represents a script evaluation context to be passed to a prover and a verifier to execute and
@@ -112,7 +111,7 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
 
   /** Current version of the ErgoTree executed by the interpreter.
     * This property is used to implement version dependent operations and passed to
-    * interpreter via [[special.sigma.Context]].
+    * interpreter via [[sigma.Context]].
     * The value cannot be assigned on [[ErgoLikeContext]] construction and must be
     * attached using [[withErgoTreeVersion()]] method.
     * When the value is None, the [[InterpreterException]] is thrown by the interpreter.
@@ -327,7 +326,7 @@ case object Self extends NotReadyValueBox with FixedCostValueCompanion {
   }
 }
 
-/** When interpreted evaluates to the singleton instance of [[special.sigma.Context]].
+/** When interpreted evaluates to the singleton instance of [[sigma.Context]].
   * Corresponds to `CONTEXT` variable in ErgoScript which can be used like `CONTEXT.headers`.
   */
 case object Context extends NotReadyValue[SContext.type] with ValueCompanion {
@@ -345,7 +344,7 @@ case object Context extends NotReadyValue[SContext.type] with ValueCompanion {
   }
 }
 
-/** When interpreted evaluates to the singleton instance of [[special.sigma.SigmaDslBuilder]].
+/** When interpreted evaluates to the singleton instance of [[sigma.SigmaDslBuilder]].
   * Corresponds to `Global` variable in ErgoScript which can be used like `Global.groupGenerator`.
   */
 case object Global extends NotReadyValue[SGlobal.type] with FixedCostValueCompanion {

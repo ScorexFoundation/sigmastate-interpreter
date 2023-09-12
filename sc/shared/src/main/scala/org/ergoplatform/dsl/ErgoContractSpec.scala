@@ -1,6 +1,6 @@
 package org.ergoplatform.dsl
 
-import special.collection.Coll
+import sigma.Coll
 import sigmastate.interpreter.CostedProverResult
 import sigmastate.eval.IRContext
 import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition, Token}

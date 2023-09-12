@@ -11,14 +11,14 @@ import scorex.util.ModifierId
 import scorex.util.encode.Base16
 import sigmastate.{AvlTreeData, SType}
 import sigmastate.Values.{ByteArrayConstant, ByteConstant, ErgoTree, EvaluatedValue, IntConstant, LongArrayConstant, SigmaPropConstant}
-import sigmastate.basics.CryptoConstants
-import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.crypto.CryptoConstants
+import sigmastate.crypto.DLogProtocol.ProveDlog
 import sigmastate.eval.Digest32Coll
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.SerializationSpecification
 import sigmastate.utils.Helpers.DecoderResultOps  // required for Scala 2.11 (extension method toTry)
-import special.collection.Coll
-import special.sigma.{Header, PreHeader}
+import sigma.Coll
+import sigma.{Header, PreHeader}
 import org.ergoplatform.{DataInput, ErgoBox, ErgoBoxCandidate, ErgoLikeContext, ErgoLikeTransaction, ErgoLikeTransactionTemplate, Input, UnsignedErgoLikeTransaction, UnsignedInput}
 
 import scala.collection.mutable
@@ -35,7 +35,7 @@ class JsonSerializationSpec extends SerializationSpecification with JsonCodecs {
   }
 
   property("sigma.BigInt should be encoded into JSON and decoded back correctly") {
-    forAll { v: special.sigma.BigInt => jsonRoundTrip(v) }
+    forAll { v: sigma.BigInt => jsonRoundTrip(v) }
   }
 
   property("byte array should be encoded into JSON and decoded back correctly") {

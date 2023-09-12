@@ -6,7 +6,7 @@ import sigmastate.eval.Extensions.ArrayByteOps
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
 
-/** Equivalent of [[special.sigma.GroupElement]] available from JS. */
+/** Equivalent of [[sigma.GroupElement]] available from JS. */
 @JSExportTopLevel("GroupElement")
 class GroupElement(val point: Ecp) extends js.Object {
   /** Returns the point encoded as hex string (ASN.1 encoding).

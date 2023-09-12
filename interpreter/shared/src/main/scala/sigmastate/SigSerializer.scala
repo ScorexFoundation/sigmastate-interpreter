@@ -3,13 +3,13 @@ package sigmastate
 import sigmastate.crypto.{BigIntegers, GF2_192_Poly}
 import scorex.util.encode.Base16
 import sigmastate.Values.SigmaBoolean
-import sigmastate.basics.DLogProtocol.{ProveDlog, SecondDLogProverMessage}
-import sigmastate.basics.VerifierMessage.Challenge
-import sigmastate.basics.{CryptoConstants, ProveDHTuple, SecondDHTupleProverMessage}
+import sigmastate.crypto.DLogProtocol.{ProveDlog, SecondDLogProverMessage}
+import sigmastate.crypto.VerifierMessage.Challenge
+import sigmastate.crypto.{CryptoConstants, ProveDHTuple, SecondDHTupleProverMessage}
 import sigmastate.interpreter.ErgoTreeEvaluator.{fixedCostOp, perItemCostOp}
 import sigmastate.interpreter.{ErgoTreeEvaluator, NamedDesc, OperationCostInfo}
 import sigmastate.serialization.SigmaSerializer
-import sigmastate.util.safeNewArray
+import sigma.util.safeNewArray
 import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
 import debox.cfor
 import sigmastate.eval.Extensions.ArrayOps

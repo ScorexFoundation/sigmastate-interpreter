@@ -1,8 +1,8 @@
 package sigmastate.helpers
 
 import sigmastate.UnprovenConjecture
-import sigmastate.basics.DLogProtocol.DLogProverInput
-import sigmastate.basics.{DiffieHellmanTupleProverInput, SigmaProtocolPrivateInput}
+import sigmastate.crypto.DLogProtocol.DLogProverInput
+import sigmastate.crypto.{DiffieHellmanTupleProverInput, SigmaProtocolPrivateInput}
 import sigmastate.interpreter.ProverInterpreter
 
 class ErgoLikeTestProvingInterpreter

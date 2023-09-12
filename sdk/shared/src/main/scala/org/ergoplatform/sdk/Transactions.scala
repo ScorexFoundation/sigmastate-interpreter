@@ -36,7 +36,7 @@ case class UnreducedTransaction(
   private def checkSameIds(
       xsName: String, xs: Seq[Array[Byte]],
       ysName: String, ys: Seq[Array[Byte]], msg: => String) = {
-    require(xs.zip(ys).forall { case (id1, id2) => util.Arrays.equals(id1, id2) }, {
+    require(xs.zip(ys).forall { case (id1, id2) => java.util.Arrays.equals(id1, id2) }, {
       val xsOnly = xs.diff(ys)
       val ysOnly = ys.diff(xs)
       s"""$msg:

@@ -1,16 +1,15 @@
 package sigmastate.interpreter
 
 import java.util
-import sigmastate.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
-import sigmastate.kiama.rewriting.Strategy
+import sigma.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
 import org.ergoplatform.ErgoLikeContext
 import org.ergoplatform.validation.SigmaValidationSettings
 import org.ergoplatform.validation.ValidationRules._
-import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.crypto.DLogProtocol.ProveDlog
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
-import sigmastate.basics.DLogProtocol.{ProveDlog, DLogInteractiveProver, FirstDLogProverMessage}
-import sigmastate.basics._
+import sigmastate.crypto.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage, ProveDlog}
+import sigmastate.crypto._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.serialization.{SigmaSerializer, ValueSerializer}
 import sigmastate.utxo.DeserializeContext
@@ -23,7 +22,10 @@ import sigmastate.interpreter.ErgoTreeEvaluator.fixedCostOp
 import sigmastate.utils.Helpers._
 import sigmastate.lang.Terms.ValueOps
 import debox.cfor
+import sigma.VersionContext
+import sigma.kiama.rewriting.Strategy
 import sigmastate.exceptions.{CostLimitException, InterpreterException}
+
 import scala.util.{Success, Try}
 
 /** Base (verifying) interpreter of ErgoTrees.
@@ -169,7 +171,7 @@ trait Interpreter {
       val (resProp, cost) = {
         val ctx = context.asInstanceOf[ErgoLikeContext]
         ErgoTreeEvaluator.eval(ctx, ErgoTree.EmptyConstants, exp, evalSettings) match {
-          case (p: special.sigma.SigmaProp, c) => (p, c)
+          case (p: sigma.SigmaProp, c) => (p, c)
           case (res, _) =>
             sys.error(s"Invalid result type of $res: expected SigmaProp when evaluating $exp")
         }
@@ -383,7 +385,7 @@ trait Interpreter {
       * (and, if applicable,  the associated data). Reject otherwise.
       */
     val expectedChallenge = CryptoFunctions.hashFn(bytes)
-    util.Arrays.equals(newRoot.challenge.toArray, expectedChallenge)
+    java.util.Arrays.equals(newRoot.challenge.toArray, expectedChallenge)
   }
 
   /**

@@ -45,11 +45,11 @@ case class  ReplacedRule(newRuleId: Short) extends RuleStatus {
 case class ChangedRule(newValue: Array[Byte]) extends RuleStatus {
   val statusCode: Byte = RuleStatus.ChangedRuleCode
 
-  override def hashCode(): Int = util.Arrays.hashCode(newValue)
+  override def hashCode(): Int = java.util.Arrays.hashCode(newValue)
 
   override def canEqual(that: Any): Boolean = that.isInstanceOf[ChangedRule]
 
   override def equals(obj: Any): Boolean = (this eq obj.asInstanceOf[AnyRef]) || (obj match {
-    case that: ChangedRule => util.Arrays.equals(newValue, that.newValue)
+    case that: ChangedRule => java.util.Arrays.equals(newValue, that.newValue)
   })
 }

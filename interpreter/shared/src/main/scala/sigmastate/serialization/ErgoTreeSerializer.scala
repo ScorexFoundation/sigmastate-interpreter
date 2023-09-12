@@ -2,15 +2,16 @@ package sigmastate.serialization
 
 import org.ergoplatform.validation.ValidationRules.{CheckDeserializedScriptIsSigmaProp, CheckHeaderSizeBit, CheckPositionLimit}
 import org.ergoplatform.validation.{SigmaValidationSettings, ValidationException}
-import sigmastate.{SType, VersionContext}
+import sigmastate.{SType}
 import sigmastate.Values.{Constant, ErgoTree, UnparsedErgoTree}
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.Values.ErgoTree.EmptyConstants
-import sigmastate.util.safeNewArray
+import sigma.util.safeNewArray
 import sigmastate.utxo.ComplexityTable
 import debox.cfor
+import sigma.VersionContext
 import sigmastate.exceptions.{SerializerException, ReaderPositionLimitExceeded}
 import java.util
 
@@ -274,7 +275,7 @@ class ErgoTreeSerializer {
     // allocate array of back references: forall i: positionsBackref(i) is index in `positions`
     val positionsBackref = safeNewArray[Int](positionsRange)
     // mark all positions are not assigned
-    util.Arrays.fill(positionsBackref, -1)
+    java.util.Arrays.fill(positionsBackref, -1)
 
     cfor(0)(_ < positions.length, _ + 1) { iPos =>
       val pos = positions(iPos)

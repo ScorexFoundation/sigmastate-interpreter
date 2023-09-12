@@ -1,17 +1,17 @@
 package sigmastate.interpreter
 
 import org.ergoplatform.ErgoLikeContext
-import sigmastate.{PerItemCost, VersionContext, TypeBasedCost, FixedCost, SType, JitCost}
+import sigmastate.{FixedCost, JitCost, PerItemCost, SType, TypeBasedCost}
 import sigmastate.Values._
 import sigmastate.eval.Profiler
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.interpreter.Interpreter.ReductionResult
-import special.sigma.{Context, SigmaProp}
-import scalan.util.Extensions._
+import sigma.{Context, SigmaProp}
+import sigma.util.Extensions._
 import sigmastate.interpreter.EvalSettings._
 import supertagged.TaggedType
 import debox.{Buffer => DBuffer}
-
+import sigma.VersionContext
 import scala.collection.compat.immutable.ArraySeq
 import scala.util.DynamicVariable
 
@@ -103,8 +103,8 @@ case class JitEvalResult[A](value: A, cost: JitCost)
   * transaction. No additional transformation is performed.
   * ErgoTree is interpreted directly and all the intermediate data is stored in the
   * runtime types.
-  * The runtime types are such types as [[special.collection.Coll]],
-  * [[special.sigma.SigmaProp]], [[special.sigma.AvlTree]], [[BigInt]], etc.
+  * The runtime types are such types as [[sigma.Coll]],
+  * [[sigma.SigmaProp]], [[sigma.AvlTree]], [[BigInt]], etc.
   * It also use immutable Map to keep current [[DataEnv]] of computed [[ValDef]]s, as
   * result only addition is used from the map, and deletion is essentially a garbage
   * collection.
@@ -500,7 +500,7 @@ object ErgoTreeEvaluator {
   /** Evaluate the given expression in the given Ergo context using the given settings.
     * The given Value is evaluated as-is and is not changed during evaluation.
     *
-    * @param sigmaContext    [[special.sigma.Context]] instance used for script execution
+    * @param sigmaContext    [[sigma.Context]] instance used for script execution
     * @param costAccumulator [[CostAccumulator]] instance used for accumulating costs
     * @param constants       collection of segregated constants which can be refered by
     *                        [[ConstantPlaceholder]]s in `exp`

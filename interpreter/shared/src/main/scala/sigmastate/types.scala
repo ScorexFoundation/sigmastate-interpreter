@@ -3,39 +3,35 @@ package sigmastate
 import java.math.BigInteger
 import org.ergoplatform._
 import org.ergoplatform.validation._
-import scalan.{RType, Nullable}
-import scalan.RType.GeneralType
-import sigmastate.SType.{TypeCode, AnyOps}
+import sigma.data.{Nullable, RType}
+import sigma.data.GeneralType
+import sigmastate.SType.TypeCode
 import sigmastate.interpreter._
 import sigmastate.utils.Overloading.Overload1
-import sigmastate.utils.SparseArrayContainer
-import scalan.util.Extensions._
-import scorex.crypto.authds.{ADValue, ADKey}
-import scorex.crypto.authds.avltree.batch.{Lookup, Remove, Insert, Update}
-import scorex.crypto.hash.Blake2b256
+import scorex.crypto.authds.{ADKey, ADValue}
+import scorex.crypto.authds.avltree.batch.{Insert, Lookup, Remove, Update}
 import sigmastate.Values._
 import sigmastate.lang.Terms._
 import sigmastate.lang.{SigmaBuilder, Terms}
 import sigmastate.SCollection._
-import sigmastate.basics.CryptoConstants.{hashLength, EcPointType}
+import sigmastate.crypto.CryptoConstants.EcPointType
 import sigmastate.serialization.OpCodes
-import special.collection.Coll
-import special.sigma._
+import sigma.Coll
+import sigma._
 
 import scala.language.implicitConversions
-import scala.reflect.{classTag, ClassTag}
+import scala.reflect.{ClassTag, classTag}
 import scala.collection.compat.immutable.ArraySeq
-import sigmastate.SMethod.{InvokeDescBuilder, MethodCostFunc, givenCost, javaMethodOf, MethodCallIrBuilder}
+import sigmastate.SMethod.{InvokeDescBuilder, MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
 import sigmastate.utxo._
 import sigmastate.lang.Terms.STypeSubst
 import sigmastate.eval.Evaluation.stypeToRType
 import sigmastate.eval._
-import sigmastate.exceptions.MethodNotFound
 import debox.cfor
-import scalan.reflection.{CommonReflection, RClass, RMethod}
+import sigma.reflection.{RClass, RMethod}
+import sigma.util.Extensions.{IntOps, LongOps, ShortOps}
 
-import scala.collection.mutable
-import scala.util.{Success, Failure}
+import scala.util.{Failure, Success}
 
 /** Base type for all AST nodes of sigma lang. */
 trait SigmaNode extends Product
@@ -104,26 +100,19 @@ object SType {
 
   val DummyValue = 0.asWrappedType
 
-  implicit val typeByte = SByte
-  implicit val typeShort = SShort
-  implicit val typeInt = SInt
-  implicit val typeLong = SLong
-  implicit val typeBigInt = SBigInt
-  implicit val typeBoolean = SBoolean
-  implicit val typeAvlTree = SAvlTree
-  implicit val typeGroupElement = SGroupElement
-  implicit val typeSigmaProp = SSigmaProp
-  implicit val typeBox = SBox
+  implicit val typeByte        : SByte.type         = SByte
+  implicit val typeShort       : SShort.type        = SShort
+  implicit val typeInt         : SInt.type          = SInt
+  implicit val typeLong        : SLong.type         = SLong
+  implicit val typeBigInt      : SBigInt.type       = SBigInt
+  implicit val typeBoolean     : SBoolean.type      = SBoolean
+  implicit val typeAvlTree     : SAvlTree.type      = SAvlTree
+  implicit val typeGroupElement: SGroupElement.type = SGroupElement
+  implicit val typeSigmaProp   : SSigmaProp.type    = SSigmaProp
+  implicit val typeBox         : SBox.type          = SBox
 
   /** Costructs a collection type with the given type of elements. */
   implicit def typeCollection[V <: SType](implicit tV: V): SCollection[V] = SCollection[V](tV)
-
-  /** RType descriptors for predefined types used in AOTC-based interpreter. */
-  implicit val SigmaBooleanRType: RType[SigmaBoolean] = RType.fromClassTag(classTag[SigmaBoolean])
-  implicit val ErgoBoxRType: RType[ErgoBox] = RType.fromClassTag(classTag[ErgoBox])
-  implicit val ErgoBoxCandidateRType: RType[ErgoBoxCandidate] = RType.fromClassTag(classTag[ErgoBoxCandidate])
-  implicit val AvlTreeDataRType: RType[AvlTreeData] = GeneralType(classTag[AvlTreeData])
-  implicit val ErgoLikeContextRType: RType[ErgoLikeContext] = RType.fromClassTag(classTag[ErgoLikeContext])
 
   /** Named type variables and parameters used in generic types and method signatures.
     * Generic type terms like `(Coll[IV],(IV) => Boolean) => Boolean` are used to represent
@@ -273,7 +262,7 @@ object SType {
       case SShort => reflect.classTag[Short]
       case SInt => reflect.classTag[Int]
       case SLong => reflect.classTag[Long]
-      case SBigInt => reflect.classTag[BigInteger]
+      case SBigInt => reflect.classTag[BigInt]
       case SAvlTree => reflect.classTag[AvlTree]
       case SGroupElement => reflect.classTag[EcPointType]
       case SSigmaProp => reflect.classTag[SigmaBoolean]
@@ -2186,7 +2175,7 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
   def createVerifier(tree: AvlTree, proof: Coll[Byte])(implicit E: ErgoTreeEvaluator) = {
     // the cost of tree reconstruction from proof is O(proof.length)
     E.addSeqCost(CreateAvlVerifier_Info, proof.length) { () =>
-      tree.createVerifier(proof)
+      AvlTreeVerifier(tree, proof)
     }
   }
 
@@ -2563,7 +2552,7 @@ case object SPreHeader extends SProduct with SPredefType with SMonoType {
 /** This type is introduced to unify handling of global and non-global (i.e. methods) operations.
   * It unifies implementation of global operation with implementation of methods and avoids code
   * duplication (following DRY principle https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
-  * The WrappedType is `special.sigma.SigmaDslBuilder`, which is an interface implemented by
+  * The WrappedType is `sigma.SigmaDslBuilder`, which is an interface implemented by
   * the singleton sigmastate.eval.CostingSigmaDslBuilder
   *
   * The Constant(...) tree node of this type are not allowed, as well as using it in register and

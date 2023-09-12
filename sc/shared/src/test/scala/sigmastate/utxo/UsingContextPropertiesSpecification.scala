@@ -3,7 +3,7 @@ package sigmastate.utxo
 import sigmastate.{TrivialProp, CompilerCrossVersionProps}
 import sigmastate.eval.{IRContext, CSigmaProp}
 import sigmastate.eval.Extensions._
-import special.sigma.Context
+import sigma.Context
 import sigmastate.helpers.CompilerTestingCommons
 import org.ergoplatform.dsl.{SigmaContractSyntax, ContractSpec, TestContractSpec}
 import org.ergoplatform.ErgoBox

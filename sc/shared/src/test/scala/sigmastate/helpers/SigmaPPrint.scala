@@ -1,25 +1,23 @@
 package sigmastate.helpers
 
-import java.math.BigInteger
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
 import org.ergoplatform.settings.ErgoAlgos
 import pprint.{PPrinter, Tree}
-import scalan.RType
-import scalan.RType.PrimitiveType
+import sigma.data.{CollType, PrimitiveType}
+import sigma.{Coll, GroupElement}
 import sigmastate.SCollection._
 import sigmastate.Values.{ConstantNode, ErgoTree, FuncValue, ValueCompanion}
 import sigmastate._
+import sigmastate.crypto.CryptoConstants.EcPointType
 import sigmastate.crypto.GF2_192_Poly
-import sigmastate.basics.CryptoConstants.EcPointType
+import sigmastate.interpreter.{CompanionDesc, FixedCostItem, MethodDesc}
 import sigmastate.lang.Terms
 import sigmastate.lang.Terms.MethodCall
 import sigmastate.serialization.GroupElementSerializer
 import sigmastate.utxo.SelectField
-import sigmastate.interpreter.{CompanionDesc, ErgoTreeEvaluator, FixedCostItem, MethodDesc}
-import special.collection.{Coll, CollType}
-import special.sigma.GroupElement
 
+import java.math.BigInteger
 import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -147,7 +145,7 @@ object SigmaPPrint extends PPrinter {
     case Some(v) =>
       Tree.Apply("Some", treeifyMany(v))
 
-    case coll: Coll[Byte @unchecked] if coll.tItem == RType.ByteType =>
+    case coll: Coll[Byte @unchecked] if coll.tItem == sigma.ByteType =>
       val hexString = ErgoAlgos.encode(coll)
       Tree.Apply("Helpers.decodeBytes", treeifyMany(hexString))
 

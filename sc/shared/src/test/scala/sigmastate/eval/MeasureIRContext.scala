@@ -1,7 +1,7 @@
 package sigmastate.eval
 
 import scalan.{BaseCtxTests, Benchmark}
-import scalan.util.BenchmarkUtil.measure
+import sigma.util.BenchmarkUtil.measure
 
 object MeasureIRContext extends App {
   var ctx: RuntimeIRContext = null

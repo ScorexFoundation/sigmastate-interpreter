@@ -1,20 +1,21 @@
 package sigmastate.interpreter
 
-import sigmastate.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
-import sigmastate.kiama.rewriting.Strategy
-import scalan.util.CollectionUtil._
+import sigma.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
+import sigma.util.CollectionUtil._
+import sigma.VersionContext
+import sigma.kiama.rewriting.Strategy
 import sigmastate.TrivialProp.{FalseProp, TrueProp}
 import sigmastate.Values._
-import sigmastate.VersionContext.MaxSupportedScriptVersion
+import sigma.VersionContext.MaxSupportedScriptVersion
 import sigmastate._
-import sigmastate.basics.DLogProtocol._
-import sigmastate.basics.VerifierMessage.Challenge
-import sigmastate.basics._
+import sigmastate.crypto.DLogProtocol._
+import sigmastate.crypto.VerifierMessage.Challenge
+import sigmastate.crypto._
 import sigmastate.crypto.{GF2_192, GF2_192_Poly}
 import sigmastate.eval.Extensions.ArrayOps
 import sigmastate.exceptions.InterpreterException
 import sigmastate.utils.Helpers
-import special.collection.Coll
+import sigma.Coll
 
 import java.math.BigInteger
 import scala.util.Try

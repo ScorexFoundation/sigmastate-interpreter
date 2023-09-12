@@ -1,35 +1,33 @@
 package sigmastate.eval
 
 import debox.cfor
-import org.ergoplatform.validation.{SigmaValidationSettings, ValidationRules}
-import org.ergoplatform.{ErgoBox, SigmaConstants}
-import scalan.OverloadHack.Overloaded1
-import scalan.RType
-import scalan.util.Extensions.BigIntegerOps
+import org.ergoplatform.validation.{ValidationRules, SigmaValidationSettings}
+import org.ergoplatform.{SigmaConstants, ErgoBox}
+import sigma.data.OverloadHack.Overloaded1
+import sigma.data.RType
+import sigma.util.Extensions.BigIntegerOps
 import scorex.crypto.authds.avltree.batch._
-import scorex.crypto.authds.{ADDigest, ADKey, ADValue, SerializedAdProof}
+import scorex.crypto.authds.{SerializedAdProof, ADDigest, ADValue, ADKey}
 import scorex.crypto.hash.{Blake2b256, Digest32, Sha256}
-import scorex.utils.{Ints, Longs}
+import scorex.utils.{Longs, Ints}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.ErgoTree.EmptyConstants
-import sigmastate.Values.{ConstantNode, ErgoTree, EvaluatedValue, SValue, SigmaBoolean}
+import sigmastate.Values.{EvaluatedValue, SValue, ConstantNode, ErgoTree, SigmaBoolean}
 import sigmastate._
-import sigmastate.basics.CryptoConstants.EcPointType
-import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.{CryptoConstants, ProveDHTuple}
-import sigmastate.crypto.{CryptoFacade, Ecp}
+import sigmastate.crypto.CryptoConstants.EcPointType
+import sigmastate.crypto.DLogProtocol.ProveDlog
+import sigmastate.crypto.{ProveDHTuple, CryptoConstants, Ecp, CryptoFacade}
 import sigmastate.eval.Extensions._
 import sigmastate.interpreter.Interpreter
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.{GroupElementSerializer, SigmaSerializer}
-import special.collection._
-import special.sigma._
+import sigma.{VersionContext, _}
 
 import java.math.BigInteger
 import java.util.Arrays
 import scala.annotation.unused
 import scala.reflect.ClassTag
-import scala.util.{Failure, Success}
+import scala.util.{Success, Failure}
 
 /** Interface implmented by wrappers to provide access to the underlying wrapped value. */
 trait WrapperOf[T] {
@@ -149,31 +147,42 @@ case class CSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[
   override def toString: String = s"SigmaProp(${wrappedValue.showToString})"
 }
 
-/** Implementation of the [[special.sigma.AvlTreeVerifier]] trait based on
+/** Implements operations of AVL tree verifier based on
   * [[scorex.crypto.authds.avltree.batch.BatchAVLVerifier]].
   *
-  * @see BatchAVLVerifier, AvlTreeVerifier
+  * @see BatchAVLVerifier
   */
-class CAvlTreeVerifier(startingDigest: ADDigest,
+class AvlTreeVerifier private (startingDigest: ADDigest,
                        proof: SerializedAdProof,
                        override val keyLength: Int,
                        override val valueLengthOpt: Option[Int])
     extends BatchAVLVerifier[Digest32, Blake2b256.type](
-      startingDigest, proof, keyLength, valueLengthOpt)
-        with AvlTreeVerifier {
-  override def treeHeight: Int = rootNodeHeight
+      startingDigest, proof, keyLength, valueLengthOpt) {
+  def treeHeight: Int = rootNodeHeight
 
   /** Override default logging which outputs stack trace to the console. */
   override protected def logError(t: Throwable): Unit = {}
+}
+object AvlTreeVerifier {
+  /** Create an instance of [[AvlTreeVerifier]] for the given tree and proof.
+    * Both tree and proof are immutable.
+    * @param tree  represents a tree state to verify
+    * @param proof proof of tree operations leading to the state digest in the tree
+    * @return a new verifier instance
+    */
+  def apply(tree: AvlTree, proof: Coll[Byte]): AvlTreeVerifier = {
+    val treeData = tree.asInstanceOf[CAvlTree].treeData
+    val adProof = SerializedAdProof @@ proof.toArray
+    val bv      = new AvlTreeVerifier(
+      ADDigest @@ treeData.digest.toArray, adProof, treeData.keyLength, treeData.valueLengthOpt)
+    bv
+  }
 }
 
 /** A default implementation of [[AvlTree]] interface.
   * @see [[AvlTree]] for detailed descriptions
   */
 case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTreeData] {
-  val builder = CostingSigmaDslBuilder
-  val Colls = builder.Colls
-
   override def wrappedValue: AvlTreeData = treeData
 
   override def keyLength: Int = treeData.keyLength
@@ -200,16 +209,9 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
     this.copy(treeData = td)
   }
 
-  override def createVerifier(proof: Coll[Byte]): AvlTreeVerifier = {
-    val adProof = SerializedAdProof @@ proof.toArray
-    val bv = new CAvlTreeVerifier(
-      ADDigest @@ treeData.digest.toArray, adProof, treeData.keyLength, treeData.valueLengthOpt)
-    bv
-  }
-
   override def contains(key: Coll[Byte], proof: Coll[Byte]): Boolean = {
     val keyBytes = key.toArray
-    val bv = createVerifier(proof)
+    val bv = AvlTreeVerifier(this, proof)
     bv.performOneOperation(Lookup(ADKey @@ keyBytes)) match {
       case Success(r) => r match {
         case Some(_) => true
@@ -221,7 +223,7 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
 
   override def get(key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]] = {
     val keyBytes = key.toArray
-    val bv = createVerifier(proof)
+    val bv = AvlTreeVerifier(this, proof)
     bv.performOneOperation(Lookup(ADKey @@ keyBytes)) match {
       case Success(r) => r match {
         case Some(v) => Some(Colls.fromArray(v))
@@ -232,7 +234,7 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
   }
 
   override def getMany(keys: Coll[Coll[Byte]], proof: Coll[Byte]): Coll[Option[Coll[Byte]]] = {
-    val bv = createVerifier(proof)
+    val bv = AvlTreeVerifier(this, proof)
     keys.map { key =>
       bv.performOneOperation(Lookup(ADKey @@ key.toArray)) match {
         case Success(r) => r match {
@@ -248,7 +250,7 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
     if (!isInsertAllowed) {
       None
     } else {
-      val bv = createVerifier(proof)
+      val bv = AvlTreeVerifier(this, proof)
       entries.forall { case (key, value) =>
         val insertRes = bv.performOneOperation(Insert(ADKey @@ key.toArray, ADValue @@ value.toArray))
         if (insertRes.isFailure) {
@@ -267,7 +269,7 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
     if (!isUpdateAllowed) {
       None
     } else {
-      val bv = createVerifier(proof)
+      val bv = AvlTreeVerifier(this, proof)
       operations.forall { case (key, value) =>
         bv.performOneOperation(Update(ADKey @@ key.toArray, ADValue @@ value.toArray)).isSuccess
       }
@@ -282,7 +284,7 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
     if (!isRemoveAllowed) {
       None
     } else {
-      val bv = createVerifier(proof)
+      val bv = AvlTreeVerifier(this, proof)
       cfor(0)(_ < operations.length, _ + 1) { i =>
         val key = operations(i).toArray
         bv.performOneOperation(Remove(ADKey @@ key))
@@ -493,8 +495,7 @@ object CHeader {
 class CostingSigmaDslBuilder extends SigmaDslBuilder { dsl =>
   implicit val validationSettings: SigmaValidationSettings = ValidationRules.currentSettings
 
-  // manual fix
-  override val Colls: CollBuilder = new CollOverArrayBuilder
+  override val Colls: CollBuilder = sigma.Colls
 
   override def BigInt(n: BigInteger): BigInt = CBigInt(n)
 
@@ -533,7 +534,7 @@ class CostingSigmaDslBuilder extends SigmaDslBuilder { dsl =>
 
   /** Wraps the given [[ErgoBox]] into SigmaDsl value of type [[Box]].
     * @param ebox  the value to be wrapped
-    * @see [[sigmastate.SBox]], [[special.sigma.Box]]
+    * @see [[sigmastate.SBox]], [[sigma.Box]]
     */
   def Box(ebox: ErgoBox): Box = CostingBox(ebox)
 

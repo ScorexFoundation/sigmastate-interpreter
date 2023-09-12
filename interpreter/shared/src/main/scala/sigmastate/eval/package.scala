@@ -3,12 +3,12 @@ package sigmastate
 import java.math.BigInteger
 
 import org.ergoplatform.ErgoBox
-import scalan.RType
+import sigma.data.RType
 import scorex.crypto.hash.Digest32
 import sigmastate.Values.SigmaBoolean
-import sigmastate.basics.CryptoConstants.EcPointType
-import special.collection.{Coll, CollBuilder}
-import special.sigma._
+import sigmastate.crypto.CryptoConstants.EcPointType
+import sigma.{Coll, CollBuilder}
+import sigma._
 import supertagged.TaggedType
 
 import scala.language.implicitConversions
@@ -22,16 +22,11 @@ package object eval {
     */
   val SigmaDsl = CostingSigmaDslBuilder
 
-  /** The primary reference to global Coll operations. Can be used to create collections from Array etc.
-    * @see CollBuilder
-    */
-  val Colls: CollBuilder = SigmaDsl.Colls
-
   /** Constructor of tuple value with more than 2 items.
     * Such long tuples are represented as Coll[Any].
     * This representaion of tuples is different from representation of pairs (x, y),
     * where Tuple2 type is used instead of Coll. */
-  def TupleColl(items: Any*): Coll[Any] = Colls.fromItems(items:_*)(RType.AnyType)
+  def TupleColl(items: Any*): Coll[Any] = Colls.fromItems(items:_*)(sigma.AnyType)
 
   trait BaseDigestColl extends TaggedType[Coll[Byte]]
 
@@ -39,11 +34,10 @@ package object eval {
 
   type Digest32Coll = Digest32Coll.Type
   implicit val Digest32CollRType: RType[Digest32Coll] = RType[Coll[Byte]].asInstanceOf[RType[Digest32Coll] ]
-  implicit val Digest32RType: RType[Digest32] = RType[Array[Byte]].asInstanceOf[RType[Digest32] ]
 
   /** Implicit conversions between Dsl type and the type wrapped by the corresponding type Dsl type.
     * Here BigInt is Dsl type and BigInteger is wrapped type.
-    * @see `special.sigma.CBigInt`
+    * @see `sigma.CBigInt`
     */
   implicit def bigIntegerToBigInt(bi: BigInteger): BigInt = SigmaDsl.BigInt(bi)
   implicit def bigIntToBigInteger(bi: BigInt): BigInteger = SigmaDsl.toBigInteger(bi)

@@ -18,7 +18,7 @@ case class DataInput(boxId: BoxId) {
   override def toString: String = s"DataInput(${ErgoAlgos.encode(boxId)})"
 
   override def equals(obj: Any): Boolean = obj match {
-    case x: DataInput => util.Arrays.equals(boxId, x.boxId)
+    case x: DataInput => java.util.Arrays.equals(boxId, x.boxId)
     case _ => false
   }
 
@@ -39,7 +39,7 @@ class UnsignedInput(val boxId: BoxId, val extension: ContextExtension) {
 
   // todo check whether it is correct to compare inputs (Input use the same equals) by boxId only?
   override def equals(obj: Any): Boolean = obj match {
-    case x: UnsignedInput => util.Arrays.equals(boxId, x.boxId)
+    case x: UnsignedInput => java.util.Arrays.equals(boxId, x.boxId)
     case _ => false
   }
 

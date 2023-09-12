@@ -1,14 +1,13 @@
 package org.ergoplatform.dsl
 
 import org.ergoplatform.ErgoBox.TokenId
-import scalan.RType
+import sigma.data.RType
 import sigmastate.SType
 import sigmastate.SType.AnyOps
 import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition}
 import sigmastate.eval.{CostingSigmaDslBuilder, Evaluation}
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import special.sigma.{SigmaProp, SigmaContract, Context, SigmaDslBuilder}
-import scala.language.implicitConversions
+import sigma.{SigmaProp, SigmaContract, Context, SigmaDslBuilder}
 
 /** Defines methods to be used in contract implementations based on [[SigmaContract]]. */
 trait ContractSyntax { contract: SigmaContract =>

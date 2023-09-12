@@ -1,6 +1,6 @@
 package sigmastate.serialization
 
-import sigmastate.basics.CryptoConstants
+import sigmastate.crypto.CryptoConstants
 import sigmastate.crypto.CryptoFacade
 import sigmastate.eval._
 

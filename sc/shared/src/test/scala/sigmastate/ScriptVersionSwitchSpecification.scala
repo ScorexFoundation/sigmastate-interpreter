@@ -5,7 +5,7 @@ import org.ergoplatform._
 import scorex.util.ModifierId
 import sigmastate.Values.ErgoTree.{DefaultHeader, updateVersionBits}
 import sigmastate.Values._
-import sigmastate.VersionContext.MaxSupportedScriptVersion
+import sigma.VersionContext.MaxSupportedScriptVersion
 import sigmastate.eval._
 import sigmastate.exceptions.InterpreterException
 import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter}
@@ -15,7 +15,7 @@ import sigmastate.interpreter.EvalSettings.EvaluationMode
 import sigmastate.interpreter.{CostedProverResult, ErgoTreeEvaluator, EvalSettings, Interpreter, ProverResult}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.utils.Helpers._
-import special.sigma.{Box, SigmaDslTesting}
+import sigma.{Box, SigmaDslTesting}
 
 /** Specification to verify that the interpreter behaves according to docs/aot-jit-switch.md.
   *

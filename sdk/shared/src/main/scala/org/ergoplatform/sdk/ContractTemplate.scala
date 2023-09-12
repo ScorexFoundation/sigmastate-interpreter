@@ -1,19 +1,19 @@
 package org.ergoplatform.sdk
 
-import cats.syntax.either._
+import cats.syntax.either._ // required for Scala 2.11
 import debox.cfor
 import io.circe._
-import io.circe.syntax.{EncoderOps, _}
+import io.circe.syntax.EncoderOps
 import org.ergoplatform.sdk.utils.SerializationUtils.{parseString, serializeString}
 import org.ergoplatform.sdk.utils.Zero
+import sigma.util.safeNewArray
 import sigmastate.Values.ErgoTree.headerWithVersion
 import sigmastate.Values.{ErgoTree, _}
 import sigmastate._
-import sigmastate.eval.{Colls, _}
+import sigmastate.eval._
 import sigmastate.exceptions.SerializerException
 import sigmastate.lang.{DeserializationSigmaBuilder, StdSigmaBuilder}
 import sigmastate.serialization._
-import sigmastate.util.safeNewArray
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 import java.util.Objects

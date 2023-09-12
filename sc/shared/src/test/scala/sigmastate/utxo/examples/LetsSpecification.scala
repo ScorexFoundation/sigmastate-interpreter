@@ -5,10 +5,11 @@ import org.ergoplatform.ErgoBox.{R4, R5}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.hash.{Blake2b256, Digest32}
+import sigma.Colls
 import sigmastate.{AvlTreeData, AvlTreeFlags, CompilerCrossVersionProps, TrivialProp}
 import sigmastate.Values.{AvlTreeConstant, ByteArrayConstant, LongConstant, SigmaPropConstant}
 import sigmastate.eval.Extensions.ArrayOps
-import sigmastate.eval.{Colls, Digest32Coll, IRContext, SigmaDsl}
+import sigmastate.eval.{Digest32Coll, IRContext, SigmaDsl}
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp

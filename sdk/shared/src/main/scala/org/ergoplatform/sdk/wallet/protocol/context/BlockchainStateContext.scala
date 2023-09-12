@@ -1,6 +1,6 @@
 package org.ergoplatform.sdk.wallet.protocol.context
 
-import special.collection.Coll
+import sigma.Coll
 
 /** Blockchain context used in tx signing.
   *
@@ -9,7 +9,7 @@ import special.collection.Coll
   * @param sigmaPreHeader      returns pre-header (header without certain fields) of the current block
   */
 case class BlockchainStateContext(
-  sigmaLastHeaders: Coll[special.sigma.Header],
+  sigmaLastHeaders: Coll[sigma.Header],
   previousStateDigest: Coll[Byte],
-  sigmaPreHeader: special.sigma.PreHeader
+  sigmaPreHeader: sigma.PreHeader
 )

@@ -1,16 +1,14 @@
 package sigmastate
 
-import scalan.{AVHashMap, Nullable, RType}
+import sigma.data.{AVHashMap, CollOverArray, Nullable, PairOfCols, RType}
 import debox.{cfor, sp}
-import scalan.RType._
 import sigmastate.Values.SigmaBoolean
-import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.ProveDHTuple
+import sigmastate.crypto.DLogProtocol.ProveDlog
+import sigmastate.crypto.ProveDHTuple
 import sigmastate.eval.SigmaDsl
-import sigmastate.basics.CryptoConstants.EcPointType
+import sigmastate.crypto.CryptoConstants.EcPointType
 import sigmastate.interpreter.{ErgoTreeEvaluator, NamedDesc, OperationCostInfo}
-import special.sigma.{AvlTree, AvlTreeRType, BigInt, BigIntRType, Box, BoxRType, GroupElement, GroupElementRType, Header, HeaderRType, PreHeader, PreHeaderRType, SigmaProp}
-import special.collection.{Coll, CollOverArray, PairOfCols}
+import sigma._
 
 /** Implementation of data equality for two arbitrary ErgoTree data types.
   * @see [[DataValueComparer.equalDataValues]]

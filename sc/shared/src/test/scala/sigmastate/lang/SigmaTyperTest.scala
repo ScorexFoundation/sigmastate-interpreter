@@ -5,12 +5,12 @@ import org.ergoplatform._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import sigma.Colls
 import sigmastate.SCollection._
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.basics.CryptoConstants
-import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
-import sigmastate.eval.Colls
+import sigmastate.crypto.CryptoConstants
+import sigmastate.crypto.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate.exceptions.TyperException
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef._
@@ -59,7 +59,7 @@ class SigmaTyperTest extends AnyPropSpec
         sourceContext.line shouldBe expectedLine
         sourceContext.column shouldBe expectedCol
         true
-      case pe: ParserException => true
+      case _: ParserException => true
       case t => throw t
     })
   }

@@ -10,12 +10,9 @@ import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import sigmastate.SType
 import sigmastate.Values.Constant
-import sigmastate.eval.Colls
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.generators.ObjectGenerators
-import special.collection.Coll
-import special.sigma
-import special.sigma.GroupElement
+import sigma.{Coll, Colls, GroupElement}
 
 import scala.scalajs.js
 

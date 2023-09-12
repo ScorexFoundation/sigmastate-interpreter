@@ -1,20 +1,13 @@
 package sigmastate.eval
 
-import java.math.BigInteger
-
-import scalan.{ExactOrderingImpl, ExactIntegral}
+import sigma.data.{ExactOrderingImpl, ExactIntegral}
 
 import scala.math.{Integral, Ordering}
-import special.sigma._
+import sigma._
 import sigmastate.eval.Extensions._
 
 object OrderingOps {
   def apply[T](implicit ord: Ordering[T]) = ord
-
-  trait BigIntegerOrdering extends Ordering[BigInteger] {
-    def compare(x: BigInteger, y: BigInteger) = x.compareTo(y)
-  }
-  implicit object BigIntegerOrdering extends BigIntegerOrdering
 
   trait BigIntOrdering extends Ordering[BigInt] {
     def compare(x: BigInt, y: BigInt) = x.compareTo(y)
@@ -60,7 +53,7 @@ object NumericOps {
 
   /** The instance of Integral for BigInt.
     *
-    * Note: ExactIntegral was not defined for [[special.sigma.BigInt]] in v4.x.
+    * Note: ExactIntegral was not defined for [[sigma.BigInt]] in v4.x.
     * This is because arithmetic BigInt operations were handled in a special way
     * (see `case op: ArithOp[t] if op.tpe == SBigInt =>` in RuntimeCosting.scala).
     * As result [[scalan.primitives.UnBinOps.ApplyBinOp]] nodes were not created for

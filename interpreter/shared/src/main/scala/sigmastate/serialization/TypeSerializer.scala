@@ -3,7 +3,7 @@ package sigmastate.serialization
 import java.nio.charset.StandardCharsets
 import org.ergoplatform.validation.ValidationRules.{CheckPrimitiveTypeCode, CheckTypeCode}
 import sigmastate._
-import sigmastate.util.safeNewArray
+import sigma.util.safeNewArray
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import debox.cfor
 import sigmastate.exceptions.InvalidTypePrefix

@@ -2,25 +2,25 @@ package sigmastate
 
 import java.math.BigInteger
 import java.util.{Arrays, Objects}
-import sigmastate.kiama.rewriting.Rewriter.{count, everywherebu, strategy}
+import sigma.kiama.rewriting.Rewriter.{count, everywherebu, strategy}
 import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.validation.ValidationException
-import scalan.{Nullable, RType}
-import scalan.util.CollectionUtil._
+import sigma.data.{Nullable, RType}
+import sigma.util.CollectionUtil._
 import sigmastate.SCollection.{SByteArray, SIntArray}
-import sigmastate.basics.CryptoConstants.EcPointType
+import sigmastate.crypto.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CompanionDesc, ErgoTreeEvaluator, Interpreter, NamedDesc}
 import sigmastate.serialization._
 import sigmastate.serialization.OpCodes._
 import sigmastate.TrivialProp.{FalseProp, TrueProp}
 import sigmastate.Values.ErgoTree.substConstants
-import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.{CryptoConstants, ProveDHTuple}
+import sigmastate.crypto.DLogProtocol.ProveDlog
+import sigmastate.crypto.{CryptoConstants, ProveDHTuple}
 import sigmastate.lang.Terms._
 import sigmastate.utxo._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
-import scalan.util.Extensions.ByteOps
+import sigma.util.Extensions.ByteOps
 import sigmastate.interpreter.ErgoTreeEvaluator._
 import debox.cfor
 import scorex.util.encode.Base16
@@ -32,10 +32,9 @@ import sigmastate.lang.CheckingSigmaBuilder._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.transformers.ProveDHTupleSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import special.sigma.{AvlTree, Header, PreHeader, _}
+import sigma.{AvlTree, Coll, Colls, Header, PreHeader, _}
 import sigmastate.lang.SourceContext
-import sigmastate.util.safeNewArray
-import special.collection.Coll
+import sigma.util.safeNewArray
 
 import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
@@ -847,7 +846,7 @@ object Values {
 
     override lazy val value = {
       val xs = items.cast[EvaluatedValue[SAny.type]].map(_.value)
-      Colls.fromArray(xs.toArray(SAny.classTag.asInstanceOf[ClassTag[SAny.WrappedType]]))(RType.AnyType)
+      Colls.fromArray(xs.toArray(SAny.classTag.asInstanceOf[ClassTag[SAny.WrappedType]]))(sigma.AnyType)
     }
 
     protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {

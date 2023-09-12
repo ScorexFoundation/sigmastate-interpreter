@@ -6,13 +6,13 @@ import org.scalatest.{Assertion, TryValues}
 import scorex.crypto.hash.Blake2b256
 import scorex.util.encode.Base58
 import sigmastate.Values.{ByteArrayConstant, Constant, ErgoTree, IntConstant, UnparsedErgoTree}
-import sigmastate.basics.DLogProtocol
-import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
+import sigmastate.crypto.DLogProtocol
+import sigmastate.crypto.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate.eval.InvalidType
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers._
 import sigmastate.interpreter.ContextExtension.VarBinding
-import sigmastate.basics.CryptoConstants.dlogGroup
+import sigmastate.crypto.CryptoConstants.dlogGroup
 import sigmastate.exceptions.CostLimitException
 import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}
@@ -21,7 +21,7 @@ import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.{GroupElementSerializer, ValueSerializer}
 import sigmastate.utils.Helpers._
 import sigmastate.{CompilerCrossVersionProps, SType, SigmaAnd}
-import special.sigma.SigmaDslTesting
+import sigma.SigmaDslTesting
 
 import java.math.BigInteger
 

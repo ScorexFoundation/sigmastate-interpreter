@@ -3,6 +3,7 @@ package sigmastate.serialization
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert}
 import scorex.crypto.hash.{Blake2b256, Digest32}
+import sigma.Colls
 import sigmastate.Values.AvlTreeConstant
 import sigmastate.AvlTreeFlags
 import sigmastate._

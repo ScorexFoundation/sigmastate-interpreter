@@ -3,15 +3,15 @@ package sigmastate.serialization
 import java.math.BigInteger
 import org.ergoplatform.ErgoBox
 import org.scalacheck.Arbitrary._
-import scalan.RType
+import sigma.data.RType
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.{ErgoTree, SigmaBoolean}
 import sigmastate._
 import sigmastate.eval.Evaluation
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
-import sigmastate.basics.CryptoConstants.EcPointType
-import special.sigma.AvlTree
+import sigmastate.crypto.CryptoConstants.EcPointType
+import sigma.{AvlTree, Colls}
 import SType.AnyOps
 import sigmastate.exceptions.SerializerException
 import sigmastate.interpreter.{CostAccumulator, ErgoTreeEvaluator}
@@ -51,7 +51,7 @@ class DataSerializerSpecification extends SerializationSpecification {
     implicit val wWrapped = wrappedTypeGen(tpe)
     implicit val tT = Evaluation.stypeToRType(tpe)
     implicit val tagT = tT.classTag
-    implicit val tAny = RType.AnyType
+    implicit val tAny = sigma.AnyType
     forAll { xs: Array[T#WrappedType] =>
       roundtrip[SCollection[T]](xs.toColl, SCollection(tpe))
       roundtrip[SType](xs.toColl.map(x => (x, x)).asWrappedType, SCollection(STuple(tpe, tpe)))
@@ -78,7 +78,7 @@ class DataSerializerSpecification extends SerializationSpecification {
   def testTuples[T <: SType](tpe: T) = {
     implicit val wWrapped = wrappedTypeGen(tpe)
     @nowarn implicit val tag = tpe.classTag[T#WrappedType]
-    implicit val tAny: RType[Any] = RType.AnyType
+    implicit val tAny: RType[Any] = sigma.AnyType
     forAll { in: (T#WrappedType, T#WrappedType) =>
       val (x,y) = (in._1, in._2)
       roundtrip[SType]((x, y).asWrappedType, STuple(tpe, tpe))
@@ -107,7 +107,7 @@ class DataSerializerSpecification extends SerializationSpecification {
 
   property("Should check limits and fail") {
     val len = 0xFFFF + 1
-    val tup = SigmaDsl.Colls.replicate(len, 1.asInstanceOf[Any])(RType.AnyType)
+    val tup = SigmaDsl.Colls.replicate(len, 1.asInstanceOf[Any])(sigma.AnyType)
     assertExceptionThrown({
         val w = SigmaSerializer.startWriter()
         DataSerializer.serialize(tup.asWrappedType, STuple(Array.fill(len)(SInt)), w)

@@ -5,13 +5,15 @@ import org.ergoplatform._
 import scorex.util.encode.Base58
 import sigmastate.Values._
 import sigmastate._
+import sigmastate.exceptions.{GraphBuildingException, InvalidArguments, TyperException}
 import sigmastate.helpers.CompilerTestingCommons
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.Terms.{Apply, Ident, Lambda, MethodCall, ZKProofBlock}
-import sigmastate.exceptions.{GraphBuildingException, InvalidArguments, TyperException}
+import sigmastate.lang.Terms.{Apply, MethodCall, ZKProofBlock}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ObjectGenerators
-import sigmastate.utxo.{ByIndex, ExtractAmount, GetVar, SelectField}
+import sigmastate.utxo.{ByIndex, ExtractAmount, GetVar}
+
+import scala.annotation.unused
 
 class SigmaCompilerTest extends CompilerTestingCommons with LangTests with ObjectGenerators {
   import CheckingSigmaBuilder._
@@ -22,11 +24,11 @@ class SigmaCompilerTest extends CompilerTestingCommons with LangTests with Objec
   private def comp(env: ScriptEnv, x: String): Value[SType] = compile(env, x)
   private def comp(x: String): Value[SType] = compile(env, x)
 
-  private def testMissingCosting(script: String, expected: SValue): Unit = {
+  private def testMissingCosting(script: String, @unused expected: SValue): Unit = {
     an [GraphBuildingException] should be thrownBy comp(env, script)
   }
 
-  private def testMissingCostingWOSerialization(script: String, expected: SValue): Unit = {
+  private def testMissingCostingWOSerialization(script: String, @unused expected: SValue): Unit = {
     an [GraphBuildingException] should be thrownBy comp(env, script)
   }
 

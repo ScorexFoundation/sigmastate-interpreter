@@ -6,8 +6,8 @@ import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, Te
 import scorex.crypto.hash.Blake2b256
 import sigmastate.eval.Digest32Coll
 import sigmastate.helpers.CompilerTestingCommons
-import special.collection.Coll
-import special.sigma.Context
+import sigma.Coll
+import sigma.Context
 
 class OracleTokenExamplesSpecification extends CompilerTestingCommons { suite =>
   implicit lazy val IR: TestingIRContext = new TestingIRContext

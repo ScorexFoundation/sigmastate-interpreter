@@ -1,16 +1,15 @@
 package sigmastate.crypto
 
-import scalan.RType
+import sigma.data.RType
 import scorex.util.encode.Base16
 import sigmastate._
-import special.collection.Coll
-import special.sigma._
+import sigma.Coll
+import sigma._
 
 import java.math.BigInteger
 import scala.scalajs.js
 import scala.scalajs.js.UnicodeNormalizationForm
 import scala.scalajs.js.typedarray.Uint8Array
-import scala.util.Random
 
 /** JVM specific implementation of crypto methods (NOT yet implemented). */
 object Platform {
@@ -245,7 +244,7 @@ object Platform {
     */
   def isCorrectType[T <: SType](value: Any, tpe: T): Boolean = value match {
     case c: Coll[_] => tpe match {
-      case STuple(items) => c.tItem == RType.AnyType && c.length == items.length
+      case STuple(items) => c.tItem == sigma.AnyType && c.length == items.length
       case tpeColl: SCollection[_] => true
       case _ => sys.error(s"Collection value $c has unexpected type $tpe")
     }

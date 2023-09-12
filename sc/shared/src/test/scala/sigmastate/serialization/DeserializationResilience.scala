@@ -4,21 +4,22 @@ import org.ergoplatform.validation.ValidationException
 import org.ergoplatform.validation.ValidationRules.CheckPositionLimit
 import org.ergoplatform.{ErgoBoxCandidate, Outputs}
 import org.scalacheck.Gen
-import scalan.util.BenchmarkUtil
+import sigma.util.BenchmarkUtil
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.serialization.{Reader, VLQByteBufferReader}
+import sigma.{Colls, Environment}
 import sigmastate.Values.{BlockValue, GetVarInt, IntConstant, SValue, SigmaBoolean, SigmaPropValue, Tuple, ValDef, ValUse}
 import sigmastate._
-import sigmastate.basics.CryptoConstants
+import sigmastate.crypto.CryptoConstants
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigmastate.exceptions.{DeserializeCallDepthExceeded, InvalidTypePrefix, ReaderPositionLimitExceeded, SerializerException}
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}
 import sigmastate.serialization.OpCodes._
-import sigmastate.util.safeNewArray
+import sigma.util.safeNewArray
 import sigmastate.utils.Helpers._
 import sigmastate.utils.SigmaByteReader
 import sigmastate.utxo.SizeOf
@@ -412,7 +413,7 @@ class DeserializationResilience extends DeserializationResilienceTesting {
     val v = k
     avlProver.performOneOperation(Insert(ADKey @@@ k, ADValue @@@ v))
     val proof = avlProver.generateProof()
-    val verifier = tree.createVerifier(Colls.fromArray(proof))
+    val verifier = AvlTreeVerifier(tree, Colls.fromArray(proof))
     verifier.performOneOperation(Insert(ADKey @@@ k, ADValue @@@ v)).isFailure shouldBe true
     // NOTE, even though performOneOperation fails, some AvlTree$ methods used in Interpreter
     // (remove_eval, update_eval, contains_eval) won't throw, while others will.

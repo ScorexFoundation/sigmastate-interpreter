@@ -1,15 +1,14 @@
 package sigmastate.eval
 
 import org.ergoplatform._
-import scalan.RType
-import scalan.RType._
+import sigma.data._
+import sigma.data.RType._
 import sigmastate.SType._
 import sigmastate.Values.SigmaBoolean
 import sigmastate._
-import special.Types._
 import debox.cfor
 import sigmastate.exceptions.CostLimitException
-import java.math.BigInteger
+
 import scala.reflect.ClassTag
 import scala.util.Try
 
@@ -17,8 +16,8 @@ import scala.util.Try
 
 /** Helper methods used as part of ErgoTree evaluation. */
 object Evaluation {
-  import special.collection._
-  import special.sigma._
+  import sigma._
+  import sigma._
 
   def msgCostLimitError(cost: Long, limit: Long) = s"Estimated execution cost $cost exceeds the limit $limit"
 
@@ -99,12 +98,8 @@ object Evaluation {
     case StringType => SString
     case AnyType => SAny
     case UnitType => SUnit
-
-    case BigIntegerRType => SBigInt
     case BigIntRType => SBigInt
-
     case GroupElementRType => SGroupElement
-
     case AvlTreeRType => SAvlTree
     case ot: OptionType[_] => sigmastate.SOption(rtypeToSType(ot.tA))
     case BoxRType => SBox
@@ -123,7 +118,8 @@ object Evaluation {
   }
 
   /** Tries to reconstruct RType of the given value.
-    * If not successfull returns failure. */
+    * If not successfull returns failure.
+    * NOTE, this method is NOT used in consensus. */
   def rtypeOf(value: Any): Try[RType[_]] = Try { value match {
     case arr if arr.getClass.isArray =>
       val itemClass = arr.getClass.getComponentType
@@ -143,19 +139,19 @@ object Evaluation {
     case _: Long  => LongType
     case _: String  => StringType
     case _: Unit  => UnitType
-
-    case _: BigInteger => BigIntegerRType
-    case _: special.sigma.BigInt => BigIntRType
-
+    case _: sigma.BigInt => BigIntRType
     case _: GroupElement => GroupElementRType
-
+    // TODO remove this case to allow removing of RType instances
+    //  for ErgoBox, AvlTreeData, SigmaBoolean.
+    //  RType describes only the types that can be put into registers, context variables and
+    //  used as ErgoTree evaluation intermediate values.
     case _: ErgoBox => ErgoBoxRType
     case _: Box => BoxRType
 
-    case _: AvlTreeData => AvlTreeDataRType
+    case _: AvlTreeData => AvlTreeDataRType // TODO remove this RType
     case _: AvlTree => AvlTreeRType
 
-    case _: SigmaBoolean => SigmaBooleanRType
+    case _: SigmaBoolean => SigmaBooleanRType // TODO remove this RType
     case _: SigmaProp => SigmaPropRType
     case _: Context => ContextRType
     case _ =>
@@ -165,7 +161,7 @@ object Evaluation {
   /** Convert SigmaDsl representation of tuple to ErgoTree serializable representation. */
   def fromDslTuple(value: Any, tupleTpe: STuple): Coll[Any] = value match {
     case t: Tuple2[_,_] => TupleColl(t._1, t._2)
-    case a: Coll[Any]@unchecked if a.tItem == RType.AnyType => a
+    case a: Coll[Any]@unchecked if a.tItem == sigma.AnyType => a
     case _ =>
       sys.error(s"Cannot execute fromDslTuple($value, $tupleTpe)")
   }

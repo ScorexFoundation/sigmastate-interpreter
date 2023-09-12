@@ -1,12 +1,13 @@
 package sigmastate
 
 import org.ergoplatform.ErgoBox
-import scalan.Nullable
+import sigma.data.Nullable
+import sigma.VersionContext
 import sigmastate.Values.{Constant, FalseLeaf, SigmaBoolean, TrueLeaf}
 import sigmastate.eval.{Evaluation, SigmaDsl}
 import sigmastate.lang.SigmaBuilder
-import special.collection.Coll
-import special.sigma.{AvlTree, GroupElement, SigmaProp}
+import sigma.Coll
+import sigma.{AvlTree, GroupElement, SigmaProp}
 
 import java.math.BigInteger
 
@@ -31,7 +32,7 @@ object Platform {
       case v: Int => Nullable(mkConstant[SInt.type](v, SInt))
       case v: Long => Nullable(mkConstant[SLong.type](v, SLong))
       case v: BigInteger => Nullable(mkConstant[SBigInt.type](SigmaDsl.BigInt(v), SBigInt))
-      case n: special.sigma.BigInt => Nullable(mkConstant[SBigInt.type](n, SBigInt))
+      case n: sigma.BigInt => Nullable(mkConstant[SBigInt.type](n, SBigInt))
       case ge: GroupElement => Nullable(mkConstant[SGroupElement.type](ge, SGroupElement))
       case b: Boolean => Nullable(if (b) TrueLeaf else FalseLeaf)
       case v: String => Nullable(mkConstant[SString.type](v, SString))
@@ -46,7 +47,7 @@ object Platform {
 
       // this case is added in v5.0 and it can be useful when the box value comes from a
       // register or a context variable is passed to SubstConstants.
-      case b: special.sigma.Box =>
+      case b: sigma.Box =>
         if (VersionContext.current.isJitActivated)
           Nullable(mkConstant[SBox.type](b, SBox))
         else

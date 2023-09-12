@@ -6,8 +6,10 @@ import org.ergoplatform.validation.{ValidationException, ValidationSpecification
 import org.scalacheck.Arbitrary.arbByte
 import org.scalacheck.Gen
 import org.scalatest.Assertion
-import scalan.util.BenchmarkUtil
-import scalan.{RType, TestContexts, TestUtils}
+import sigma.util.BenchmarkUtil
+import scalan.TestContexts
+import sigma.{Colls, TestUtils}
+import sigma.data.RType
 import sigmastate.Values.{Constant, ErgoTree, SValue, SigmaBoolean, SigmaPropValue}
 import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._
@@ -55,13 +57,13 @@ trait CompilerTestingCommons extends TestingCommons
         // (ctx.HEIGHT method call compiled to Height IR node)
         // -------
         // We add ctx as it's own variable with id = 1
-        val ctxVar = Extensions.toAnyValue[special.sigma.Context](ctx)(special.sigma.ContextRType)
+        val ctxVar = Extensions.toAnyValue[sigma.Context](ctx)(sigma.ContextRType)
         val newVars = if (ctx.vars.length < 2) {
           val vars = ctx.vars.toArray
-          val buf = new Array[special.sigma.AnyValue](2)
+          val buf = new Array[sigma.AnyValue](2)
           Array.copy(vars, 0, buf, 0, vars.length)
           buf(1) = ctxVar
-          CostingSigmaDslBuilder.Colls.fromArray(buf)
+          Colls.fromArray(buf)
         } else {
           ctx.vars.updated(1, ctxVar)
         }

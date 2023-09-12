@@ -2,9 +2,9 @@ package sigmastate
 
 import java.math.BigInteger
 import sigmastate.Values.{ErgoTree, SigmaBoolean, SigmaPropConstant}
-import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, ProveDlog}
-import sigmastate.basics.VerifierMessage.Challenge
-import sigmastate.basics.{FirstDHTupleProverMessage, FirstProverMessage, ProveDHTuple}
+import sigmastate.crypto.DLogProtocol.{FirstDLogProverMessage, ProveDlog}
+import sigmastate.crypto.VerifierMessage.Challenge
+import sigmastate.crypto.{FirstDHTupleProverMessage, FirstProverMessage, ProveDHTuple}
 import sigmastate.interpreter.{ErgoTreeEvaluator, NamedDesc, OperationCostInfo}
 import sigmastate.interpreter.ErgoTreeEvaluator.fixedCostOp
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer

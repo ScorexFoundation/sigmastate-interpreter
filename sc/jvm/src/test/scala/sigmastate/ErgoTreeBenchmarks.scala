@@ -2,9 +2,9 @@ package sigmastate
 
 import debox.cfor
 import org.scalameter.api.Bench
+import sigma.BenchmarkGens
 import sigmastate.Values.{IntConstant, SValue}
 import sigmastate.serialization.OpCodes.PlusCode
-import special.collections.BenchmarkGens
 
 object ErgoTreeBenchmarks extends Bench.LocalTime with BenchmarkGens { suite: Bench[Double] =>
 
