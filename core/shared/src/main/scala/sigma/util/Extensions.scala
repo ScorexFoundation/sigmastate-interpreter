@@ -1,9 +1,9 @@
 package sigma.util
 
-import sigma.GroupElement
-import sigma.crypto.{CryptoFacade, Ecp}
-import sigma.data.{CBigInt, CGroupElement, ProveDHTuple, ProveDlog, SigmaBoolean}
 import debox.{cfor, Buffer => DBuffer}
+import sigma.crypto.{CryptoFacade, Ecp}
+import sigma.data._
+import sigma.{GroupElement, SigmaProp}
 
 import java.math.BigInteger
 import java.nio.ByteBuffer
@@ -325,4 +325,13 @@ object Extensions {
       case _ => sb.toString
     }
   }
+
+  implicit class SigmaPropOps(val sb: SigmaProp) extends AnyVal {
+    /** Extracts [[sigma.SigmaBoolean]] from the SigmaProp instance. */
+    def toSigmaBoolean: SigmaBoolean = sb.asInstanceOf[CSigmaProp].wrappedValue
+  }
+
+//  implicit class AvlTreeOps(val tree: AvlTree) extends AnyVal {
+//    def toAvlTreeData: AvlTreeData = tree.asInstanceOf[CAvlTree].wrappedValue
+//  }
 }

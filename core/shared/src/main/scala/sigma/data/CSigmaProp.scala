@@ -1,5 +1,7 @@
 package sigma.data
 
+import sigma.ast.SSigmaProp
+import sigma.serialization.CoreSerializer
 import sigma.util.Extensions.SigmaBooleanOps
 import sigma.{Coll, Colls, SigmaProp}
 
@@ -20,11 +22,11 @@ case class CSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[
     // in order to have comparisons like  `box.propositionBytes == pk.propBytes` we need to make sure
     // the same serialization method is used in both cases
     // TODO v6.0: add `pk.propBytes(version)` (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/903)
-//    val root = sigmaTree.toSigmaProp
-//    val ergoTree = new ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, Right(root), 0, null, None)
-//    val bytes = DefaultSerializer.serializeErgoTree(ergoTree)
-//    Colls.fromArray(bytes)
-    Colls.emptyColl
+    val w = CoreSerializer.startWriter()
+    w.put(0)  // ErgoTree.header
+    w.putType(SSigmaProp)
+    SigmaBoolean.serializer.serialize(wrappedValue, w)
+    Colls.fromArray(w.toBytes)
   }
 
   override def &&(other: SigmaProp): SigmaProp = other match {
@@ -39,4 +41,5 @@ case class CSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[
 
   override def toString: String = s"SigmaProp(${wrappedValue.showToString})"
 }
+
 

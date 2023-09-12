@@ -2,7 +2,7 @@ package sigma.serialization
 
 import sigma.SigmaException
 
-import scala.collection.immutable.ArraySeq
+import scala.collection.compat.immutable.ArraySeq
 
 /** Exception thrown during serialization.
   *

@@ -8,12 +8,12 @@ import sigma.ast.SType
 import sigmastate.Values.{AvlTreeConstant, BigIntConstant, BooleanConstant, BoxConstant, ByteConstant, Constant, GroupElementConstant, IntConstant, LongConstant, ShortConstant, SigmaPropConstant, UnitConstant}
 import sigmastate.crypto.CryptoConstants.dlogGroup
 import sigma.crypto.CryptoFacade
-import sigmastate.eval.CSigmaProp
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.serialization.ConstantSerializer
 import sigmastate.utils.Helpers
 import sigma.SigmaTestingData
-import sigma.data.ProveDlog
+import sigma.data.{CSigmaProp, ProveDlog}
+
 import java.math.BigInteger
 
 class ValueSpec extends AnyPropSpec with Matchers with SigmaTestingData with ScalaCheckPropertyChecks {

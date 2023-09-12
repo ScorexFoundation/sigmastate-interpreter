@@ -3,12 +3,16 @@ package sigmastate.serialization
 import java.math.BigInteger
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.validation.ValidationRules.CheckDeserializedScriptIsSigmaProp
+import sigma.SigmaProp
 import sigma.ast.SInt
 import sigma.data.CBigInt
 import sigma.serialization.{ReaderPositionLimitExceeded, SerializerException}
+import sigma.util.Extensions.SigmaPropOps
 import sigma.validation.ValidationException
+import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.Values.{BigIntConstant, ByteConstant, ConstantPlaceholder, ErgoTree, IntConstant, ShortConstant, SigmaPropValue, UnparsedErgoTree}
 import sigmastate._
+import sigmastate.eval.Extensions.SigmaBooleanOps
 import sigmastate.eval.IRContext
 import sigmastate.helpers.CompilerTestingCommons
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
@@ -208,5 +212,14 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification
 
     test(positions = Array(1, 2), expected = Array(-1, 0, 1, -1, -1))
     test(positions = Array(1, 2, 4), expected = Array(-1, 0, 1, -1, 2))
+  }
+
+  property("SigmaProp.propBytes vs ErgoTree.serializer equivalence") {
+    forAll(MinSuccessful(100)) { sp: SigmaProp =>
+      val propBytes = sp.propBytes
+      val ergoTree = new ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, Right(sp.toSigmaBoolean.toSigmaProp), 0, null, None)
+      val treeBytes = DefaultSerializer.serializeErgoTree(ergoTree)
+      treeBytes shouldBe propBytes.toArray
+    }
   }
 }

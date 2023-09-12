@@ -1,6 +1,6 @@
 package sigma
 
-import scala.collection.immutable.ArraySeq
+import scala.collection.compat.immutable.ArraySeq
 
 /** Base class for Sigma-related exceptions.
   *

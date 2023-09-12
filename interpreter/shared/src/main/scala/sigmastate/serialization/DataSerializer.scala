@@ -10,7 +10,7 @@ import sigma.{Evaluation, _}
 import debox.cfor
 import sigma.ast._
 import sigma.serialization.{GroupElementSerializer, SerializerException}
-import sigma.util.Extensions.{BigIntOps, GroupElementOps}
+import sigma.util.Extensions.{BigIntOps, GroupElementOps, SigmaPropOps}
 import sigma.validation.ValidationRules.CheckSerializableTypeCode
 
 import scala.collection.mutable
@@ -41,7 +41,7 @@ object DataSerializer {
       GroupElementSerializer.serialize(v.asInstanceOf[GroupElement].toECPoint, w)
     case SSigmaProp =>
       val p = v.asInstanceOf[SigmaProp]
-      SigmaBoolean.serializer.serialize(sigmaPropToSigmaBoolean(p), w)
+      SigmaBoolean.serializer.serialize(p.toSigmaBoolean, w)
     case SBox =>
       val b = v.asInstanceOf[Box]
       ErgoBox.sigmaSerializer.serialize(boxToErgoBox(b), w)
