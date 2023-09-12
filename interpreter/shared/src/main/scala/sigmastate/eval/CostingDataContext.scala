@@ -7,17 +7,16 @@ import sigma.data.OverloadHack.Overloaded1
 import sigma.data.{CBigInt, CollOverArrayBuilder, RType, SigmaConstants, WrapperOf}
 import sigma.util.Extensions.BigIntegerOps
 import scorex.crypto.authds.avltree.batch._
-import scorex.crypto.authds.{ADDigest, ADKey, ADValue, SerializedAdProof}
+import scorex.crypto.authds.{SerializedAdProof, ADDigest, ADValue, ADKey}
 import scorex.crypto.hash.{Blake2b256, Digest32, Sha256}
 import scorex.utils.{Ints, Longs}
 import sigma.VersionContext
 import sigmastate.Values.ErgoTree.EmptyConstants
-import sigmastate.Values.{ConstantNode, ErgoTree, EvaluatedValue, SValue, SigmaBoolean}
+import sigmastate.Values.{EvaluatedValue, SValue, ConstantNode, ErgoTree, SigmaBoolean}
 import sigmastate._
 import sigmastate.crypto.CryptoConstants.EcPointType
 import sigmastate.crypto.DLogProtocol.ProveDlog
-import sigmastate.crypto.{CryptoConstants, ProveDHTuple}
-import sigmastate.crypto.{CryptoFacade, Ecp}
+import sigmastate.crypto.{ProveDHTuple, CryptoConstants, Ecp, CryptoFacade}
 import sigmastate.eval.Extensions._
 import sigmastate.interpreter.Interpreter
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
@@ -30,7 +29,7 @@ import java.math.BigInteger
 import java.util.Arrays
 import scala.annotation.unused
 import scala.reflect.ClassTag
-import scala.util.{Failure, Success}
+import scala.util.{Success, Failure}
 
 
 
@@ -99,7 +98,7 @@ case class CSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[
   *
   * @see BatchAVLVerifier
   */
-class AvlTreeVerifier(startingDigest: ADDigest,
+class AvlTreeVerifier private (startingDigest: ADDigest,
                        proof: SerializedAdProof,
                        override val keyLength: Int,
                        override val valueLengthOpt: Option[Int])
@@ -111,6 +110,12 @@ class AvlTreeVerifier(startingDigest: ADDigest,
   override protected def logError(t: Throwable): Unit = {}
 }
 object AvlTreeVerifier {
+  /** Create an instance of [[AvlTreeVerifier]] for the given tree and proof.
+    * Both tree and proof are immutable.
+    * @param tree  represents a tree state to verify
+    * @param proof proof of tree operations leading to the state digest in the tree
+    * @return a new verifier instance
+    */
   def apply(tree: AvlTree, proof: Coll[Byte]): AvlTreeVerifier = {
     val treeData = tree.asInstanceOf[CAvlTree].treeData
     val adProof = SerializedAdProof @@ proof.toArray
@@ -436,7 +441,6 @@ object CHeader {
 class CostingSigmaDslBuilder extends SigmaDslBuilder { dsl =>
   implicit val validationSettings: SigmaValidationSettings = ValidationRules.currentSettings
 
-  // manual fix
   override val Colls: CollBuilder = sigma.Colls
 
   override def BigInt(n: BigInteger): BigInt = CBigInt(n)

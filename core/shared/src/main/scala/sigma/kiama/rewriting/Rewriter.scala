@@ -12,7 +12,6 @@ package sigma.kiama
 package rewriting
 
 import sigma.reflection.{Platform, RClass, RConstructor}
-//import sigma.kiama.==>
 
 /**
   * Strategy-based term rewriting in the style of Stratego (http://strategoxt.org/).
