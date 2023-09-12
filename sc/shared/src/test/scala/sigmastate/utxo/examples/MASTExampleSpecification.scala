@@ -9,7 +9,7 @@ import sigma.ast.SCollection.SByteArray
 import sigma.data.{AvlTreeData, AvlTreeFlags}
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.eval.Extensions.ArrayOps
+import sigma.Extensions.ArrayOps
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.lang.Terms._

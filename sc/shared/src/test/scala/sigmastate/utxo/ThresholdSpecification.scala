@@ -91,7 +91,7 @@ class ThresholdSpecification extends CompilerTestingCommons
     proverD.prove(compiledTree3, ctx, fakeMessage).isFailure shouldBe true
 
     {
-      val prop3Or = COR(Seq(pubkeyA, pubkeyB, pubkeyC)).toSigmaProp
+      val prop3Or = COR(Seq(pubkeyA, pubkeyB, pubkeyC)).toSigmaPropValue
       val res1 = testReduce(proverA)(ctx, compiledProp3)
       val res2 = testReduce(proverA)(ctx, prop3Or)
       res1 shouldBe res2

@@ -47,7 +47,7 @@ trait BlockchainSimulationTestingCommons extends CompilerTestingCommons {
                               propOpt: Option[ErgoTree] = None,
                               extension: ContextExtension = ContextExtension.empty): FullBlock = {
     val prop: ErgoTree = propOpt.getOrElse(
-      mkTestErgoTree(prover.dlogSecrets.head.publicImage.toSigmaProp))
+      mkTestErgoTree(prover.dlogSecrets.head.publicImage.toSigmaPropValue))
     val minerPubkey = prover.dlogSecrets.head.publicImage.pkBytes
 
     val boxesToSpend = state.boxesReader.randomBoxes(30 + height)

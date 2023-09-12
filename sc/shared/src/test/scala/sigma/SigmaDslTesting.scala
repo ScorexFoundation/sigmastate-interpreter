@@ -12,6 +12,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import scalan.Platform.threadSleepOrNoOp
+import sigma.Extensions.ArrayOps
 import sigma.data.{CollType, OptionType, PairType, ProveDlog, RType, SigmaLeaf}
 import sigma.util.BenchmarkUtil
 import sigma.util.CollectionUtil._
@@ -21,7 +22,7 @@ import sigma.ast.SType.AnyOps
 import sigmastate.Values.{ByteArrayConstant, Constant, ConstantNode, ErgoTree, IntConstant, SValue}
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.crypto.SigmaProtocolPrivateInput
-import sigmastate.eval.Extensions.{ArrayOps, SigmaBooleanOps}
+import sigmastate.eval.Extensions.SigmaBooleanOps
 import sigmastate.eval.{CompiletimeIRContext, CostingBox, CostingDataContext, IRContext, SigmaDsl}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaPPrint}
@@ -315,7 +316,7 @@ class SigmaDslTesting extends AnyPropSpec
           """.stripMargin
 
         val IR = new CompiletimeIRContext
-        val pkAlice = prover.pubKeys.head.toSigmaProp
+        val pkAlice = prover.pubKeys.head.toSigmaPropValue
         val env = Map("pkAlice" -> pkAlice)
         // Compile script the same way it is performed by applications (i.e. via Ergo Appkit)
         val prop = compile(env, code)(IR).asSigmaProp
@@ -332,8 +333,8 @@ class SigmaDslTesting extends AnyPropSpec
       }
 
       def ergoCtx(prover: FeatureProvingInterpreter, compiledTree: ErgoTree, expectedValue: B) = {
-        val pkBobBytes = ValueSerializer.serialize(prover.pubKeys(1).toSigmaProp)
-        val pkCarolBytes = ValueSerializer.serialize(prover.pubKeys(2).toSigmaProp)
+        val pkBobBytes = ValueSerializer.serialize(prover.pubKeys(1).toSigmaPropValue)
+        val pkCarolBytes = ValueSerializer.serialize(prover.pubKeys(2).toSigmaPropValue)
         val newRegisters = Map(
           ErgoBox.R4 -> Constant[SType](expectedValue.asInstanceOf[SType#WrappedType], tpeB),
           ErgoBox.R5 -> ByteArrayConstant(pkBobBytes)

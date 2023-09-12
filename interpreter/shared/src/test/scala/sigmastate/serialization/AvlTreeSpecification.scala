@@ -6,8 +6,8 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigma.Colls
 import sigma.data.{AvlTreeData, AvlTreeFlags}
 import sigmastate.Values.AvlTreeConstant
-import sigmastate.eval.Extensions._
 import sigmastate.eval._
+import sigma.Extensions.ArrayOps
 
 class AvlTreeSpecification extends SerializationSpecification {
 

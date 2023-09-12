@@ -7,7 +7,7 @@ import org.ergoplatform.sdk.BoxSelection.InputBoxesValidator
 import org.ergoplatform.sdk.Extensions.HeaderOps
 import org.ergoplatform.sdk.wallet.{AssetUtils, TokensMap}
 import scorex.util.{ModifierId, bytesToId}
-import sigmastate.eval.Extensions.ArrayOps
+import sigma.Extensions.ArrayOps
 import sigmastate.utils.Extensions.ModifierIdOps
 import sigma.Coll
 import sigma.Extensions.CollBytesOps

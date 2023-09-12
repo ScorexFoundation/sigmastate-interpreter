@@ -32,11 +32,6 @@ object Extensions {
     @inline def toBigInt: BigInt = CostingSigmaDslBuilder.BigInt(BigInteger.valueOf(x))
   }
 
-  implicit class ArrayOps[T: RType](arr: Array[T]) {
-    /** Wraps array into Coll instance. The source array in not cloned. */
-    @inline def toColl: Coll[T] = Colls.fromArray(arr)
-  }
-
   /** Extension methods for `Coll[Byte]` not available for generic `Array[T]`. */
   implicit class ArrayByteOps(val arr: Array[Byte]) extends AnyVal {
     /** Wraps array into TokenId instance. The source array in not cloned. */
@@ -105,7 +100,7 @@ object Extensions {
   }
 
   implicit class SigmaBooleanOps(val sb: SigmaBoolean) extends AnyVal {
-    def toSigmaProp: SigmaPropValue = SigmaPropConstant(sb)
+    def toSigmaPropValue: SigmaPropValue = SigmaPropConstant(sb)
 
     def isProven: Value[SBoolean.type] = SigmaPropIsProven(SigmaPropConstant(sb))
   }

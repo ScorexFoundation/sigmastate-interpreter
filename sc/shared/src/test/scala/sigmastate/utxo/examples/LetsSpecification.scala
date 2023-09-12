@@ -9,7 +9,7 @@ import sigma.Colls
 import sigma.data.{AvlTreeData, AvlTreeFlags, TrivialProp}
 import sigmastate.CompilerCrossVersionProps
 import sigmastate.Values.{AvlTreeConstant, ByteArrayConstant, LongConstant, SigmaPropConstant}
-import sigmastate.eval.Extensions.ArrayOps
+import sigma.Extensions.ArrayOps
 import sigmastate.eval.{Digest32Coll, IRContext, SigmaDsl}
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter}
 import sigmastate.helpers.TestingHelpers._

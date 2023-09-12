@@ -59,7 +59,7 @@ object ErgoTreeBenchmarks extends Bench.LocalTime with BenchmarkGens { suite: Be
     measure method "isCorrectType" in {
       using(sizes) in { size =>
         cfor(0)(_ < size, _ + 1) { i =>
-          Platform.isCorrectType(i, SType.allPredefTypes(i % 10))
+          sigma.crypto.Platform.isCorrectType(i, SType.allPredefTypes(i % 10))
         }
       }
     }

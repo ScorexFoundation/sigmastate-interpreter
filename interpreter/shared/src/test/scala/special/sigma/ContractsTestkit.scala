@@ -1,5 +1,6 @@
 package sigma
 
+import sigma.Extensions.ArrayOps
 import sigma.data.{AvlTreeData, RType}
 import sigmastate.Values.ErgoTree
 import sigmastate.Values

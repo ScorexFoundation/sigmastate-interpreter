@@ -10,7 +10,8 @@ import sigma.ast.SCollection.SByteArray
 import sigma.ast.SType.AnyOps
 import sigma.crypto.EcPointType
 import sigma.serialization.SerializerException
-import sigmastate.eval.Extensions._
+import sigma.util.Extensions.{BigIntegerOps, EcpOps, SigmaBooleanOps}
+import sigma.Extensions.ArrayOps
 import sigmastate.eval._
 import sigma.{AvlTree, Box, Colls, Evaluation}
 import sigmastate.serialization.SerializationSpecification
@@ -91,9 +92,9 @@ class DataJsonEncoderSpecification extends SerializationSpecification {
     forAll { x: Boolean => roundtrip[SBoolean.type](x, SBoolean) }
     forAll { x: Long => roundtrip[SLong.type](x, SLong) }
     forAll { x: String => roundtrip[SString.type](x, SString) }
-    forAll { x: BigInteger => roundtrip[SBigInt.type](x, SBigInt) }
-    forAll { x: EcPointType => roundtrip[SGroupElement.type](x, SGroupElement) }
-    forAll { x: SigmaBoolean => roundtrip[SSigmaProp.type](x, SSigmaProp) }
+    forAll { x: BigInteger => roundtrip[SBigInt.type](x.toBigInt, SBigInt) }
+    forAll { x: EcPointType => roundtrip[SGroupElement.type](x.toGroupElement, SGroupElement) }
+    forAll { x: SigmaBoolean => roundtrip[SSigmaProp.type](x.toSigmaProp, SSigmaProp) }
     forAll { x: AvlTree => roundtrip[SAvlTree.type](x, SAvlTree) }
     forAll { x: Array[Byte] => roundtrip[SByteArray](x.toColl, SByteArray) }
     forAll { x: Box => roundtrip[SBox.type](x, SBox) }

@@ -6,13 +6,12 @@ import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.Blake2b256
 import scorex.util._
 import scorex.utils.{Ints, Shorts}
+import sigma.Extensions.ArrayOps
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.{SCollection, SLong, STuple, SType}
 import sigma.ast.SType.AnyOps
 import sigma.data.SigmaConstants
 import sigmastate.Values._
-import sigmastate._
-import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}

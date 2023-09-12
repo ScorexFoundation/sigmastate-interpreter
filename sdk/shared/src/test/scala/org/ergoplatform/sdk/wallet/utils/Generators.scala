@@ -12,10 +12,11 @@ import sigmastate.Values.{ByteArrayConstant, CollectionConstant, ErgoTree, Evalu
 import sigma.ast.{SByte, SType}
 import scorex.util._
 import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, ErgoTreePredef, UnsignedErgoLikeTransaction, UnsignedInput}
-import sigmastate.eval.Extensions._
+import sigma.Extensions.ArrayOps
 import scorex.util.{ModifierId, bytesToId}
 import sigma.crypto.CryptoFacade
 import sigma.data.ProveDlog
+import sigmastate.eval.Extensions.{EvalIterableOps, SigmaBooleanOps}
 import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._
 
@@ -147,7 +148,7 @@ trait Generators {
 
 
   def unsignedTxGen(secret: SecretKey): Gen[(IndexedSeq[ErgoBox], UnsignedErgoLikeTransaction)] = {
-    val dlog: Gen[ErgoTree] = Gen.const(secret.privateInput.publicImage.asInstanceOf[ProveDlog].toSigmaProp)
+    val dlog: Gen[ErgoTree] = Gen.const(secret.privateInput.publicImage.asInstanceOf[ProveDlog].toSigmaPropValue)
 
     for {
       ins <- Gen.listOfN(2, ergoBoxGen(dlog))

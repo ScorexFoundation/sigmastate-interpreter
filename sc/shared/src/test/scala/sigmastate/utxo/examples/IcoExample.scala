@@ -14,7 +14,7 @@ import sigma.data.{AvlTreeData, AvlTreeFlags}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.crypto.CryptoConstants
-import sigmastate.eval.Extensions.ArrayOps
+import sigma.Extensions.ArrayOps
 import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter}

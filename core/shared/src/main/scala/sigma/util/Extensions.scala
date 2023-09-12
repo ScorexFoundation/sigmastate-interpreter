@@ -317,6 +317,10 @@ object Extensions {
   }
 
   implicit class SigmaBooleanOps(val sb: SigmaBoolean) extends AnyVal {
+    /** Wraps SigmaBoolean into SigmaProp. */
+    def toSigmaProp: SigmaProp = CSigmaProp(sb)
+
+    /** Human readable string representation of the proposition. */
     def showToString: String = sb match {
       case ProveDlog(v) =>
         s"ProveDlog(${v.showECPoint})"

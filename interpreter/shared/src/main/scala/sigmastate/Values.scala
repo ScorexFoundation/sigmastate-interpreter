@@ -3,6 +3,7 @@ package sigmastate
 import debox.cfor
 import org.ergoplatform.settings.ErgoAlgos
 import scorex.util.encode.Base16
+import sigma.Extensions.ArrayOps
 import sigma.ast.SCollection.{SByteArray, SIntArray}
 import sigma.ast.TypeCodes.ConstantCode
 import sigma.ast._
@@ -15,7 +16,7 @@ import sigma.validation.ValidationException
 import sigma.{AvlTree, Coll, Colls, Header, PreHeader, _}
 import sigmastate.Values.ErgoTree.substConstants
 import sigmastate.crypto.CryptoConstants
-import sigmastate.eval.Extensions.{ArrayOps, SigmaBooleanOps}
+import sigmastate.eval.Extensions.SigmaBooleanOps
 import sigmastate.eval._
 import sigmastate.exceptions.InterpreterException
 import sigmastate.interpreter.ErgoTreeEvaluator._
@@ -1321,14 +1322,14 @@ object Values {
       * without performing constant segregation.
       */
     implicit def fromSigmaBoolean(pk: SigmaBoolean): ErgoTree = {
-      withoutSegregation(pk.toSigmaProp)
+      withoutSegregation(pk.toSigmaPropValue)
     }
 
     /** Create new ErgoTree for the given sigma proposition using the given header flags
       * and without performing constant segregation.
       */
     def fromSigmaBoolean(headerFlags: Byte, pk: SigmaBoolean): ErgoTree = {
-      withoutSegregation(headerFlags, pk.toSigmaProp)
+      withoutSegregation(headerFlags, pk.toSigmaPropValue)
     }
 
     /** Build ErgoTree via serialization of the value with ConstantSegregationHeader, constants segregated

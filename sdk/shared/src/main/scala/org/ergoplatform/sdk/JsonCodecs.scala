@@ -29,6 +29,7 @@ import org.ergoplatform.UnsignedErgoLikeTransaction
 import org.ergoplatform.ErgoLikeTransactionTemplate
 import org.ergoplatform.ErgoBoxCandidate
 import org.ergoplatform.ErgoLikeContext
+import sigma.Extensions.ArrayOps
 import sigma.ast.SType
 import sigma.data.{AvlTreeData, AvlTreeFlags, CBigInt, WrapperOf}
 import sigma.validation.SigmaValidationSettings

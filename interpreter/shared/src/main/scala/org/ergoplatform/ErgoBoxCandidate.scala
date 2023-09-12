@@ -4,14 +4,12 @@ import debox.cfor
 import org.ergoplatform.ErgoBox._
 import org.ergoplatform.settings.ErgoAlgos
 import scorex.util.{ModifierId, bytesToId}
-import sigma.Extensions.CollOps
+import sigma.Extensions.{ArrayOps, CollOps}
 import sigma.ast.SType
 import sigma.ast.SType.AnyOps
 import sigma.util.safeNewArray
 import sigma.{Coll, Colls}
 import sigmastate.Values._
-import sigmastate._
-import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.SigmaSerializer

@@ -2,18 +2,18 @@ package sigmastate.helpers
 
 import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.{ErgoBox, Outputs}
-import sigma.data.{AvlTreeData, AvlTreeFlags, CollType, RType}
 import scorex.util.ModifierId
+import sigma.Extensions.ArrayOps
+import sigma.SigmaDslTesting
+import sigma.ast._
+import sigma.data.{AvlTreeData, AvlTreeFlags, CollType}
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.eval.Extensions.ArrayOps
 import sigmastate.eval._
 import sigmastate.lang.Terms.MethodCall
 import sigmastate.serialization.OpCodes
 import sigmastate.utils.Helpers
 import sigmastate.utxo.SelectField
-import sigma.SigmaDslTesting
-import sigma.ast._
 
 import java.math.BigInteger
 import scala.collection.mutable.ArrayBuffer

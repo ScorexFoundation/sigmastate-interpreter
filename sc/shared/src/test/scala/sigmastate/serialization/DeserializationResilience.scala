@@ -15,7 +15,8 @@ import sigma.validation.ValidationRules.CheckPositionLimit
 import sigma.{Colls, Environment}
 import sigmastate.Values.{BlockValue, GetVarInt, IntConstant, SValue, SigmaPropValue, Tuple, ValDef, ValUse}
 import sigmastate._
-import sigmastate.eval.Extensions._
+import sigma.Extensions.ArrayOps
+import sigmastate.eval.Extensions.{EvalIterableOps, SigmaBooleanOps}
 import sigmastate.eval._
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}
@@ -121,7 +122,7 @@ class DeserializationResilience extends DeserializationResilienceTesting {
   property("exceeding ergo box propositionBytes max size check") {
     val oversizedTree = mkTestErgoTree(SigmaAnd(
       Gen.listOfN(SigmaSerializer.MaxPropositionSize / sigma.crypto.groupSize,
-        proveDlogGen.map(_.toSigmaProp)).sample.get))
+        proveDlogGen.map(_.toSigmaPropValue)).sample.get))
     val b = new ErgoBoxCandidate(1L, oversizedTree, 1)
     val w = SigmaSerializer.startWriter()
     ErgoBoxCandidate.serializer.serialize(b, w)
@@ -160,7 +161,7 @@ class DeserializationResilience extends DeserializationResilienceTesting {
   property("ergo box propositionBytes max size check") {
     val bigTree = mkTestErgoTree(SigmaAnd(
       Gen.listOfN((SigmaSerializer.MaxPropositionSize / 2) / sigma.crypto.groupSize,
-        proveDlogGen.map(_.toSigmaProp)).sample.get))
+        proveDlogGen.map(_.toSigmaPropValue)).sample.get))
     val b = new ErgoBoxCandidate(1L, bigTree, 1)
     val w = SigmaSerializer.startWriter()
     ErgoBoxCandidate.serializer.serialize(b, w)
@@ -271,7 +272,7 @@ class DeserializationResilience extends DeserializationResilienceTesting {
   property("exceed ergo box max size check") {
     val bigTree = mkTestErgoTree(SigmaAnd(
       Gen.listOfN((SigmaSerializer.MaxPropositionSize / 2) / sigma.crypto.groupSize,
-        proveDlogGen.map(_.toSigmaProp)).sample.get))
+        proveDlogGen.map(_.toSigmaPropValue)).sample.get))
     val tokens = additionalTokensGen(127).sample.get.map(_.sample.get).toColl
     val b = new ErgoBoxCandidate(1L, bigTree, 1, tokens)
     val w = SigmaSerializer.startWriter()

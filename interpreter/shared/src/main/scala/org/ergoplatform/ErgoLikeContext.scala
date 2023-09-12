@@ -11,6 +11,7 @@ import sigmastate.serialization.OpCodes
 import sigma.Coll
 import sigma.{AnyValue, Header, PreHeader}
 import debox.cfor
+import sigma.Extensions.ArrayOps
 import sigma.ast.{SBox, SCollection, SContext, SFunc, SGlobal, SInt, SType, SUnit}
 import sigma.ast.SType.{AnyOps, TypeCode}
 import sigma.data.{AvlTreeData, SigmaConstants}

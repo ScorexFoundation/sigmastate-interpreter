@@ -412,7 +412,7 @@ class ErgoLikeInterpreterSpecification extends CompilerTestingCommons
 
     val prover0 = new ContextEnrichingTestProvingInterpreter()
 
-    val customScript = prover0.dlogSecrets.head.publicImage.toSigmaProp
+    val customScript = prover0.dlogSecrets.head.publicImage.toSigmaPropValue
     val scriptBytes = ValueSerializer.serialize(customScript)
     val scriptHash = Blake2b256(scriptBytes).take(bytesCount)
 

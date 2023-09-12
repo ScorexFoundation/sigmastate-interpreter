@@ -3,8 +3,14 @@ package sigma
 import debox.cfor
 import scorex.util.encode.Base16
 import scorex.util.{ModifierId, bytesToId}
+import sigma.data.RType
 
 object Extensions {
+  implicit class ArrayOps[T: RType](arr: Array[T]) {
+    /** Wraps array into Coll instance. The source array in not cloned. */
+    @inline def toColl: Coll[T] = Colls.fromArray(arr)
+  }
+
   /** Extension methods for `Coll[T]`. */
   implicit class CollOps[T](val source: Coll[T]) extends AnyVal {
     /** Applies a function `f` to each element of the `source` collection. */

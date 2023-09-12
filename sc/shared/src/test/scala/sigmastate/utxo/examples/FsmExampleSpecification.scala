@@ -51,10 +51,10 @@ class FsmExampleSpecification extends CompilerTestingCommons
 
     val prover = new ContextEnrichingTestProvingInterpreter
 
-    val script1 = prover.dlogSecrets.head.publicImage.toSigmaProp
-    val script2 = prover.dhSecrets.head.publicImage.toSigmaProp
+    val script1 = prover.dlogSecrets.head.publicImage.toSigmaPropValue
+    val script2 = prover.dhSecrets.head.publicImage.toSigmaPropValue
     val script3 = SigmaAnd(script1, script2)
-    val script4 = prover.dlogSecrets.tail.head.publicImage.toSigmaProp //a script to leave FSM
+    val script4 = prover.dlogSecrets.tail.head.publicImage.toSigmaPropValue //a script to leave FSM
 
     val script1Hash = hash.Blake2b256(ValueSerializer.serialize(script1))
     val script2Hash = hash.Blake2b256(ValueSerializer.serialize(script2))

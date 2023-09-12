@@ -2,7 +2,7 @@ package sigmastate.utxo
 
 import sigmastate.CompilerCrossVersionProps
 import sigmastate.eval.IRContext
-import sigmastate.eval.Extensions._
+import sigma.Extensions.ArrayOps
 import sigma.Context
 import sigmastate.helpers.CompilerTestingCommons
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, TestContractSpec}

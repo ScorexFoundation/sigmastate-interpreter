@@ -5,6 +5,7 @@ import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules
 import sigma.data.AvlTreeData
 import sigma.serialization.GroupElementSerializer
+import sigma.util.Extensions.EcpOps
 import sigma.validation.SigmaValidationSettings
 import sigma.{Box, Coll, Colls, Header, PreHeader}
 import sigmastate.crypto.CryptoConstants
@@ -31,7 +32,7 @@ object ErgoLikeContextTesting {
     timestamp = 3,
     nBits = 0,
     height = currentHeight,
-    minerPk = GroupElementSerializer.parse(SigmaSerializer.startReader(minerPk)),
+    minerPk = GroupElementSerializer.parse(SigmaSerializer.startReader(minerPk)).toGroupElement,
     votes = Colls.emptyColl[Byte]
   )
 

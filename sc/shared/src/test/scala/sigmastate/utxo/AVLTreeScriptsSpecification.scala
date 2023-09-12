@@ -11,7 +11,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval.IRContext
 import sigmastate.eval._
-import sigmastate.eval.Extensions._
+import sigma.Extensions.ArrayOps
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
