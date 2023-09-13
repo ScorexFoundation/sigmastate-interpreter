@@ -4,7 +4,7 @@ import debox.cfor
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.validation.ValidationRules
 import scorex.crypto.authds.avltree.batch._
-import scorex.crypto.authds.{SerializedAdProof, ADDigest, ADValue, ADKey}
+import scorex.crypto.authds.{ADDigest, SerializedAdProof}
 import scorex.crypto.hash.{Blake2b256, Digest32, Sha256}
 import scorex.utils.{Ints, Longs}
 import sigma.Extensions.ArrayOps
@@ -17,20 +17,16 @@ import sigma.serialization.GroupElementSerializer
 import sigma.util.Extensions.BigIntegerOps
 import sigma.validation.SigmaValidationSettings
 import sigma.{VersionContext, _}
-import sigmastate.Values.ErgoTree.EmptyConstants
-import sigmastate.Values.{ConstantNode, ErgoTree, EvaluatedValue, SValue}
+import sigmastate.Values.{ConstantNode, EvaluatedValue, SValue}
 import sigmastate._
 import sigmastate.crypto.CryptoConstants
 import sigmastate.eval.Extensions._
-import sigmastate.interpreter.Interpreter
-import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.SigmaSerializer
 
 import java.math.BigInteger
 import java.util.Arrays
 import scala.annotation.unused
 import scala.reflect.ClassTag
-import scala.util.{Success, Failure}
 
 /** Implements operations of AVL tree verifier based on
   * [[scorex.crypto.authds.avltree.batch.BatchAVLVerifier]].
