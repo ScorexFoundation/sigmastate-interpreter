@@ -233,7 +233,9 @@ class DeserializationResilience extends DeserializationResilienceTesting {
   property("reader.level is updated in DataSerializer.deserialize") {
     val expr = IntConstant(1)
     val (callDepths, levels) = traceReaderCallDepth(expr)
-    callDepths shouldEqual levels
+    if (Environment.current.isJVM) {
+      callDepths shouldEqual levels  // on JS stacktrace differs from JVM
+    }
     callDepths shouldEqual IndexedSeq(1, 2, 2, 1)
   }
 
@@ -246,7 +248,9 @@ class DeserializationResilience extends DeserializationResilienceTesting {
   property("reader.level is updated in SigmaBoolean.serializer.parse") {
     val expr = CAND(Seq(proveDlogGen.sample.get, proveDHTGen.sample.get))
     val (callDepths, levels) = traceReaderCallDepth(expr)
-    callDepths shouldEqual levels
+    if (Environment.current.isJVM) {
+      callDepths shouldEqual levels
+    }
     callDepths shouldEqual IndexedSeq(1, 2, 3, 4, 4, 4, 4, 3, 2, 1)
   }
 
@@ -259,7 +263,9 @@ class DeserializationResilience extends DeserializationResilienceTesting {
   property("reader.level is updated in TypeSerializer") {
     val expr = Tuple(Tuple(IntConstant(1), IntConstant(1)), IntConstant(1))
     val (callDepths, levels) = traceReaderCallDepth(expr)
-    callDepths shouldEqual levels
+    if (Environment.current.isJVM) {
+       callDepths shouldEqual levels
+    }
     callDepths shouldEqual IndexedSeq(1, 2, 3, 4, 4, 3, 3, 4, 4, 3, 2, 2, 3, 3, 2, 1)
   }
 

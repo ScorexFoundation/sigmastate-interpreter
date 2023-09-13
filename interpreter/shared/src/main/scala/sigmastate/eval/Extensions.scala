@@ -26,6 +26,10 @@ object Extensions {
     @inline def toBigInt: BigInt = CostingSigmaDslBuilder.BigInt(BigInteger.valueOf(b.toLong))
   }
 
+  implicit class ShortExt(val b: Short) extends AnyVal {
+    @inline def toBigInt: BigInt = CostingSigmaDslBuilder.BigInt(BigInteger.valueOf(b.toLong))
+  }
+
   implicit class IntExt(val x: Int) extends AnyVal {
     /** Convert this value to BigInt. */
     @inline def toBigInt: BigInt = CostingSigmaDslBuilder.BigInt(BigInteger.valueOf(x.toLong))

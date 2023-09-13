@@ -3,7 +3,7 @@ package sigma.util
 import debox.{cfor, Buffer => DBuffer}
 import sigma.crypto.{CryptoFacade, Ecp}
 import sigma.data._
-import sigma.{GroupElement, SigmaProp}
+import sigma.{AvlTree, GroupElement, SigmaProp}
 
 import java.math.BigInteger
 import java.nio.ByteBuffer
@@ -335,7 +335,13 @@ object Extensions {
     def toSigmaBoolean: SigmaBoolean = sb.asInstanceOf[CSigmaProp].wrappedValue
   }
 
-//  implicit class AvlTreeOps(val tree: AvlTree) extends AnyVal {
-//    def toAvlTreeData: AvlTreeData = tree.asInstanceOf[CAvlTree].wrappedValue
-//  }
+  implicit class AvlTreeDataOps(val treeData: AvlTreeData) extends AnyVal {
+    /** Wrap [[sigma.AvlTreeData]] to [[sigma.AvlTree]]. */
+    def toAvlTree: AvlTree= CAvlTree(treeData)
+  }
+
+  implicit class CoreAvlTreeOps(val tree: AvlTree) extends AnyVal {
+    /** Extracts [[sigma.AvlTreeData]] from the AvlTree instance. */
+    def toAvlTreeData: AvlTreeData = tree.asInstanceOf[CAvlTree].wrappedValue
+  }
 }

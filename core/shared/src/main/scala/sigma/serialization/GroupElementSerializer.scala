@@ -41,6 +41,4 @@ object GroupElementSerializer extends CoreSerializer[EcPointType, EcPointType] {
     }
   }
 
-  def parse(bytes: Array[Byte]): EcPointType = parse(CoreSerializer.startReader(bytes))
-
 }

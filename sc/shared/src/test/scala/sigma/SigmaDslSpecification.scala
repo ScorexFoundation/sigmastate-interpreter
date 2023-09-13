@@ -1,47 +1,39 @@
 package special.sigma
 
-import java.math.BigInteger
+import org.ergoplatform.ErgoBox.AdditionalRegisters
 import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
+import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
-import sigma.data.{AvlTreeData, AvlTreeFlags, CAND, CAvlTree, CBigInt, CGroupElement, COR, CSigmaProp, CTHRESHOLD, ExactIntegral, ExactNumeric, ExactOrdering, ProveDHTuple, ProveDlog, RType, TrivialProp}
+import org.scalatest.BeforeAndAfterAll
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigma.util.Extensions._
-import sigmastate.utils.Extensions._
+import scorex.util.ModifierId
+import sigma.Extensions.{ArrayOps, CollOps}
 import sigma.ast.SCollection._
-import sigmastate.Values.IntConstant
-import sigmastate._
-import sigmastate.crypto.DLogProtocol._
-import sigmastate.Values._
-import sigmastate.lang.Terms.Apply
-import sigmastate.eval.Extensions._
-import sigmastate.eval._
-import sigmastate.lang.Terms.{MethodCall, PropertyCall}
-import sigmastate.utxo._
+import sigma.ast._
+import sigma.data.RType._
+import sigma.data._
+import sigma.util.Extensions.{BooleanOps, IntOps, LongOps}
 import sigma.{VersionContext, data, _}
-import sigma.Extensions._
+import sigmastate.Values.{IntConstant, _}
+import sigmastate._
+import sigmastate.eval.Extensions.{AvlTreeOps, ByteExt, IntExt, LongExt, ShortExt}
+import sigmastate.eval.OrderingOps._
+import sigmastate.eval._
+import sigmastate.helpers.TestingHelpers._
+import sigmastate.interpreter._
+import sigmastate.lang.Terms.{Apply, MethodCall, PropertyCall}
+import sigmastate.serialization.ValueCodes.OpCode
+import sigmastate.utils.Extensions._
 import sigmastate.utils.Helpers
 import sigmastate.utils.Helpers._
-import sigmastate.helpers.TestingHelpers._
+import sigmastate.utxo._
 
-import scala.util.{Failure, Success, Try}
-import OrderingOps._
-import org.ergoplatform.ErgoBox.AdditionalRegisters
-import org.scalacheck.Arbitrary._
-import org.scalacheck.Gen.frequency
-import org.scalatest.{BeforeAndAfterAll, Tag}
-import sigma.data.RType._
-import scorex.util.ModifierId
-import sigmastate.interpreter._
-import org.scalactic.source.Position
-import sigma.ast._
-import sigmastate.helpers.SigmaPPrint
-import sigmastate.exceptions.GraphBuildingException
-import sigmastate.serialization.ValueCodes.OpCode
-
+import java.math.BigInteger
 import scala.collection.compat.immutable.ArraySeq
+import scala.util.{Failure, Success}
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to
   * the evaluation of the corresponding ErgoScript operation.

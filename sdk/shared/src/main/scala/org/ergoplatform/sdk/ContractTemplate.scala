@@ -13,9 +13,8 @@ import sigma.util.safeNewArray
 import sigmastate.Values.ErgoTree.headerWithVersion
 import sigmastate.Values.{ErgoTree, _}
 import sigmastate._
-import sigmastate.eval._
 import sigmastate.lang.{DeserializationSigmaBuilder, StdSigmaBuilder}
-import sigmastate.serialization._
+import sigmastate.serialization.{DataSerializer, _}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 import java.util.Objects

@@ -18,8 +18,7 @@ import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
 import sigma.ast._
 import sigma.serialization.SerializerException
-import sigmastate.serialization.SigmaSerializer
-import sigmastate.serialization.DataSerializer
+import sigmastate.serialization.{DataSerializer, SigmaSerializer}
 import sigmastate.serialization.ErgoTreeSerializer
 
 object DataJsonEncoder {

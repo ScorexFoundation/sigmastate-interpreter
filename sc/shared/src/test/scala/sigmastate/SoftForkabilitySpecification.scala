@@ -20,7 +20,7 @@ import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.interpreter.{ContextExtension, ErgoTreeEvaluator, ProverResult}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.SigmaSerializer.startReader
-import sigmastate.serialization._
+import sigmastate.serialization.{DataSerializer, _}
 import sigmastate.utils.Helpers._
 import sigmastate.utxo.DeserializeContext
 import sigma.{Colls, SigmaTestingData}
