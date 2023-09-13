@@ -24,6 +24,7 @@ import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
 import sigma.{Coll, Colls, Evaluation}
 import sigma.Extensions.CollBytesOps
 import sigma.ast.SType
+import sigma.js.Type
 
 import java.math.BigInteger
 import scala.collection.immutable.ListMap

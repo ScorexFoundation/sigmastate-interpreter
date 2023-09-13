@@ -249,7 +249,7 @@ class DeserializationResilience extends DeserializationResilienceTesting {
     val expr = CAND(Seq(proveDlogGen.sample.get, proveDHTGen.sample.get))
     val (callDepths, levels) = traceReaderCallDepth(expr)
     if (Environment.current.isJVM) {
-      callDepths shouldEqual levels
+      callDepths shouldEqual levels  // on JS stacktrace differs from JVM
     }
     callDepths shouldEqual IndexedSeq(1, 2, 3, 4, 4, 4, 4, 3, 2, 1)
   }
@@ -264,7 +264,7 @@ class DeserializationResilience extends DeserializationResilienceTesting {
     val expr = Tuple(Tuple(IntConstant(1), IntConstant(1)), IntConstant(1))
     val (callDepths, levels) = traceReaderCallDepth(expr)
     if (Environment.current.isJVM) {
-       callDepths shouldEqual levels
+       callDepths shouldEqual levels  // on JS stacktrace differs from JVM
     }
     callDepths shouldEqual IndexedSeq(1, 2, 3, 4, 4, 3, 3, 4, 4, 3, 2, 2, 3, 3, 2, 1)
   }

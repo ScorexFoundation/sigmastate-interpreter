@@ -1,6 +1,6 @@
 import scala.language.postfixOps
-import scala.sys.process._
-import org.scalajs.linker.interface.CheckedBehavior
+import scala.sys.process.*
+import org.scalajs.linker.interface.{CheckedBehavior, ModuleSplitStyle}
 
 organization := "org.scorexfoundation"
 
@@ -222,6 +222,7 @@ lazy val coreJS = core.js
       stOutputPackage := "sigmastate",
       scalaJSLinkerConfig ~= { conf =>
         conf.withSourceMap(false)
+            .withModuleKind(ModuleKind.CommonJSModule)
       },
       Compile / npmDependencies ++= Seq(
         "sigmajs-crypto-facade" -> sigmajsCryptoFacadeVersion,
@@ -242,9 +243,6 @@ lazy val interpreter = crossProject(JVMPlatform, JSPlatform)
   .jvmSettings( crossScalaSettings )
   .jsSettings(
     crossScalaSettingsJS,
-    libraryDependencies ++= Seq (
-      "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0"
-    ),
     useYarn := true
   )
 lazy val interpreterJS = interpreter.js
@@ -265,9 +263,6 @@ lazy val parsers = crossProject(JVMPlatform, JSPlatform)
     )
     .jsSettings(
       crossScalaSettingsJS,
-      libraryDependencies ++= Seq(
-        "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0"
-      ),
       useYarn := true
     )
 lazy val parsersJS = parsers.js
@@ -276,9 +271,6 @@ lazy val parsersJS = parsers.js
       scalaJSLinkerConfig ~= { conf =>
         conf.withSourceMap(false)
       },
-      Compile / npmDependencies ++= Seq(
-        "sigmajs-crypto-facade" -> sigmajsCryptoFacadeVersion
-      )
     )
 
 lazy val sdk = crossProject(JVMPlatform, JSPlatform)
@@ -295,9 +287,6 @@ lazy val sdk = crossProject(JVMPlatform, JSPlatform)
     )
     .jsSettings(
       crossScalaSettingsJS,
-      libraryDependencies ++= Seq(
-        "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0"
-      ),
       useYarn := true
     )
 lazy val sdkJS = sdk.js
@@ -307,9 +296,6 @@ lazy val sdkJS = sdk.js
         conf.withSourceMap(false)
             .withModuleKind(ModuleKind.CommonJSModule)
       },
-      Compile / npmDependencies ++= Seq(
-        "sigmajs-crypto-facade" -> sigmajsCryptoFacadeVersion
-      )
     )
 
 lazy val sc = crossProject(JVMPlatform, JSPlatform)
@@ -353,9 +339,6 @@ lazy val scJS = sc.js
                   .withArrayIndexOutOfBounds(CheckedBehavior.Compliant)
             )
       },
-      Compile / npmDependencies ++= Seq(
-        "sigmajs-crypto-facade" -> sigmajsCryptoFacadeVersion
-      )
     )
 
 

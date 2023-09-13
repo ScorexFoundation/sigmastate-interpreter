@@ -1,4 +1,4 @@
-package org.ergoplatform.sdk.js
+package sigma.js
 
 import sigma.data.RType
 
@@ -10,7 +10,7 @@ import scala.scalajs.js.annotation.JSExportTopLevel
   * wrapper around {@link RType} type descriptor.
   */
 @JSExportTopLevel("Type")
-class Type(private[js] final val rtype: RType[_]) extends js.Object {
+class Type(final val rtype: RType[_]) extends js.Object {
   /** Syntactically correct type name (type expression as String) */
   def name: String = rtype.name
 
