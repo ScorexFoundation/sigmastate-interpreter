@@ -87,7 +87,7 @@ class UnsignedTransactionBuilder(val ctx: BlockchainContext) {
     val changeAddress = getDefined(_changeAddress, "Change address is not defined")
     val inputBoxesSeq = boxesToSpend.map(eb => eb.box)
     val requestedToBurn = _tokensToBurn.fold(IndexedSeq.empty[ErgoToken])(_.toIndexedSeq)
-    val burnTokens = Iso.isoErgoTokenSeqToLinkedMap.to(requestedToBurn).toMap
+    val burnTokens = SdkIsos.isoErgoTokenSeqToLinkedMap.to(requestedToBurn).toMap
     val rewardDelay = ctx.networkType match {
       case NetworkType.Mainnet => BlockchainParameters.MinerRewardDelay_Mainnet
       case NetworkType.Testnet => BlockchainParameters.MinerRewardDelay_Testnet

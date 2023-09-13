@@ -1,6 +1,7 @@
-package org.ergoplatform.sdk.js
+package sigma.js
 
 import sigma.data.{ProveDlog, SigmaBoolean}
+
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
 

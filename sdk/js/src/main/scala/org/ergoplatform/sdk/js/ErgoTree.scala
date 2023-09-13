@@ -1,5 +1,6 @@
 package org.ergoplatform.sdk.js
 
+import sigma.js.Value
 import sigmastate.Values
 
 import scala.scalajs.js

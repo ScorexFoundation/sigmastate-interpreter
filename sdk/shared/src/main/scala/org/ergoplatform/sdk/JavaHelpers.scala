@@ -33,15 +33,7 @@ import scala.collection.{JavaConverters, mutable}
 trait LowPriorityIsos {
 }
 
-object Iso extends LowPriorityIsos {
-  implicit def identityIso[A]: Iso[A, A] = new Iso[A, A] {
-    override def to(a: A): A = a
-
-    override def from(b: A): A = b
-  }
-
-  implicit def inverseIso[A,B](implicit iso: Iso[A,B]): Iso[B,A] = InverseIso[A,B](iso)
-
+object SdkIsos extends LowPriorityIsos {
   implicit val jbyteToByte: Iso[JByte, Byte] = new Iso[JByte, Byte] {
     override def to(b: JByte): Byte = b
     override def from(a: Byte): JByte = a

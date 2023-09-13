@@ -21,7 +21,7 @@ import scala.collection.mutable
 /** Interpreter that can reduce transactions with given chain parameters. */
 class ReducingInterpreter(params: BlockchainParameters) extends ErgoLikeInterpreter {
   override type CTX = ErgoLikeContext
-  import org.ergoplatform.sdk.Iso._
+  import org.ergoplatform.sdk.SdkIsos._
 
   /** Reduces the given ErgoTree in the given context to the sigma proposition.
     *

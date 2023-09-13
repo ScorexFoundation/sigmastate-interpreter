@@ -39,7 +39,7 @@ class AppkitProvingInterpreter(
   extends ReducingInterpreter(params) with ProverInterpreter {
 
   override type CTX = ErgoLikeContext
-  import org.ergoplatform.sdk.Iso._
+  import org.ergoplatform.sdk.SdkIsos._
 
   /** All secrets available to this interpreter including [[ExtendedSecretKey]], dlog and
     * dht secrets.

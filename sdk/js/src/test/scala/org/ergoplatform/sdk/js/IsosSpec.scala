@@ -2,18 +2,19 @@ package org.ergoplatform.sdk.js
 
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, BoxId, TokenId}
 import org.ergoplatform._
+import org.ergoplatform.sdk.ExtendedInputBox
 import org.ergoplatform.sdk.wallet.protocol.context.BlockchainStateContext
-import org.ergoplatform.sdk.{ExtendedInputBox, Iso}
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import sigma.ast.SType
 import sigma.data.Iso
+import sigma.js.AvlTree
+import sigma.{Coll, Colls, GroupElement}
 import sigmastate.Values.Constant
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.generators.ObjectGenerators
-import sigma.{Coll, Colls, GroupElement}
 
 import scala.scalajs.js
 
@@ -42,13 +43,13 @@ class IsosSpec  extends AnyPropSpec with Matchers with ObjectGenerators with Sca
 
   property("Iso.isoStringToArray") {
     forAll() { (bytes: Array[Byte]) =>
-      roundtrip(Isos.isoStringToArray)(bytes)
+      roundtrip(Iso.isoStringToArray)(bytes)
     }
   }
 
   property("Iso.isoStringToColl") {
     forAll() { (bytes: Coll[Byte]) =>
-      roundtrip(Isos.isoStringToColl)(bytes)
+      roundtrip(Iso.isoStringToColl)(bytes)
     }
   }
 
@@ -72,7 +73,7 @@ class IsosSpec  extends AnyPropSpec with Matchers with ObjectGenerators with Sca
 
   property("Iso.avlTree") {
     forAll { (c: sigma.AvlTree) =>
-      roundtrip(Isos.isoAvlTree)(c)
+      roundtrip(AvlTree.isoAvlTree)(c)
     }
   }
 
@@ -157,7 +158,7 @@ class IsosSpec  extends AnyPropSpec with Matchers with ObjectGenerators with Sca
 
   property("Iso.isoUndefOr") {
     forAll { opt: Option[Long] =>
-      roundtrip(Isos.isoUndefOr(Iso.identityIso[Long]))(opt)
+      roundtrip(sigma.js.Isos.isoUndefOr(Iso.identityIso[Long]))(opt)
     }
   }
 

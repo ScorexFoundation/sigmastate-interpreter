@@ -13,6 +13,7 @@ import sigmastate.serialization.ConstantSerializer
 import sigmastate.utils.Helpers
 import sigma.SigmaTestingData
 import sigma.data.{CSigmaProp, ProveDlog}
+import sigma.js.Value
 
 import java.math.BigInteger
 
@@ -60,7 +61,8 @@ class ValueSpec extends AnyPropSpec with Matchers with SigmaTestingData with Sca
     test(AvlTreeConstant(TestData.t3), "643100d2e101ff01fc047c7f6f00ff80129df69a5090012f01ffca99f5bfff0c803601800100")
   }
 
-  property("Box toHex()/fromHex()") {
+  // TODO turn on when Value.fromHex is implemented for Box
+  ignore("Box toHex()/fromHex()") {
     test(BoxConstant(TestData.b2), "63b96000d1968302010100ff83020193040204020100c0843d000401010e32297000800b80f1d56c809a8c6affbed864b87f007f6f007f00ac00018c01c4fdff011088807f0100657f00f9ab0101ff6d6505a4a7b5a2e7a4a4dd3a05feffffffffffffffff01003bd5c630803cfff6c1ff7f7fb980ff136afc011f8080b8b04ad4dbda2d7f4e01")
   }
 

@@ -40,7 +40,7 @@ object Extensions {
     @inline def toBigInt: BigInt = CostingSigmaDslBuilder.BigInt(BigInteger.valueOf(x))
   }
 
-  /** Extension methods for `Coll[Byte]` not available for generic `Array[T]`. */
+  /** Extension methods for `Array[Byte]` not available for generic `Array[T]`. */
   implicit class ArrayByteOps(val arr: Array[Byte]) extends AnyVal {
     /** Wraps array into TokenId instance. The source array in not cloned. */
     @inline def toTokenId: TokenId = Digest32Coll @@ Colls.fromArray(arr)

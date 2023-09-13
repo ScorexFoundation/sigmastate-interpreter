@@ -1,18 +1,14 @@
-package org.ergoplatform.sdk.js
+package sigma
+package js
 
-import org.ergoplatform.sdk.js.Value.toRuntimeData
-import sigma.data.{CAvlTree, CGroupElement, CSigmaProp, CollType, PairType, RType}
 import scorex.util.Extensions.{IntOps, LongOps}
 import scorex.util.encode.Base16
 import sigma.ast.SType
 import sigma.crypto.Platform
-import sigma.js.Type
-import sigmastate.eval.{CostingBox, SigmaDsl}
-import sigmastate.fleetSdkCommon.distEsmTypesBoxesMod.Box
-import sigmastate.fleetSdkCommon.distEsmTypesCommonMod
-import sigmastate.fleetSdkCommon.distEsmTypesRegistersMod.NonMandatoryRegisters
-import sigmastate.lang.DeserializationSigmaBuilder
-import sigmastate.serialization.{ConstantSerializer, DataSerializer, SigmaSerializer}
+import sigma.data._
+import sigma.js.Value.toRuntimeData
+import sigma.serialization.{CoreDataSerializer, CoreSerializer}
+import sigma.util.Extensions.BigIntOps
 import sigma.{Coll, Colls, Evaluation}
 
 import java.math.BigInteger
@@ -46,7 +42,7 @@ class Value(val data: Any, val tpe: Type) extends js.Object {
   /** Get Sigma runtime value which can be passed to interpreter, saved in register and
     * [[sigmastate.Values.Constant]] nodes.
     */
-  final private[js] def runtimeData: Any = toRuntimeData(data, tpe.rtype)
+  final def runtimeData: Any = toRuntimeData(data, tpe.rtype)
 
   /**
     * Encode this value as Base16 hex string.
@@ -57,15 +53,11 @@ class Value(val data: Any, val tpe: Type) extends js.Object {
     * @return hex string of serialized bytes
     */
   def toHex(): String = {
-    // this can be implemented using ConstantSerializer and isoValueToConstant, but this
-    // will add dependence on Constant and Values, which we want to avoid facilitate
-    // module splitting
-    // TODO simplify if module splitting fails
     val stype = Evaluation.rtypeToSType(tpe.rtype)
     val value = runtimeData.asInstanceOf[SType#WrappedType]
-    val w = SigmaSerializer.startWriter()
+    val w = CoreSerializer.startWriter()
     w.putType(stype)
-    DataSerializer.serialize(value, stype, w)
+    CoreDataSerializer.serialize(value, stype, w)
     Base16.encode(w.toBytes)
   }
 }
@@ -87,19 +79,16 @@ object Value extends js.Object {
     case sigma.LongType => java.lang.Long.parseLong(data.asInstanceOf[js.BigInt].toString(10))
     case sigma.BigIntRType =>
       val v = data.asInstanceOf[js.BigInt]
-      SigmaDsl.BigInt(new BigInteger(v.toString(16), 16))
+      CBigInt(new BigInteger(v.toString(16), 16))
     case sigma.GroupElementRType =>
       val ge = data.asInstanceOf[GroupElement]
-      SigmaDsl.GroupElement(ge.point)
+      CGroupElement(ge.point)
     case sigma.SigmaPropRType =>
       val p = data.asInstanceOf[SigmaProp]
-      SigmaDsl.SigmaProp(p.sigmaBoolean)
+      CSigmaProp(p.sigmaBoolean)
     case sigma.AvlTreeRType =>
       val t = data.asInstanceOf[AvlTree]
-      Isos.isoAvlTree.to(t)
-    case sigma.BoxRType =>
-      val t = data.asInstanceOf[Box[distEsmTypesCommonMod.Amount, NonMandatoryRegisters]]
-      SigmaDsl.Box(Isos.isoBox.to(t))
+      AvlTree.isoAvlTree.to(t)
     case ct: CollType[a] =>
       val xs = data.asInstanceOf[js.Array[Any]]
       implicit val cT = ct.tItem.classTag
@@ -121,12 +110,12 @@ object Value extends js.Object {
     * @param value runtime value of type given by `rtype`
     * @param rtype type descriptor of Sigma runtime value
     */
-  final private[js] def fromRuntimeData(value: Any, rtype: RType[_]): Any = rtype match {
+  final def fromRuntimeData(value: Any, rtype: RType[_]): Any = rtype match {
     case sigma.BooleanType => value
     case sigma.ByteType | sigma.ShortType | sigma.IntType => value
     case sigma.LongType => js.BigInt(value.asInstanceOf[Long].toString)
     case sigma.BigIntRType =>
-      val hex = SigmaDsl.toBigInteger(value.asInstanceOf[sigma.BigInt]).toString(10)
+      val hex = value.asInstanceOf[sigma.BigInt].toBigInteger.toString(10)
       js.BigInt(hex)
     case sigma.GroupElementRType =>
       val point = value.asInstanceOf[CGroupElement].wrappedValue.asInstanceOf[Platform.Ecp]
@@ -134,9 +123,7 @@ object Value extends js.Object {
     case sigma.SigmaPropRType =>
       new SigmaProp(value.asInstanceOf[CSigmaProp].wrappedValue)
     case sigma.AvlTreeRType =>
-      Isos.isoAvlTree.from(value.asInstanceOf[CAvlTree])
-    case sigma.BoxRType =>
-      Isos.isoBox.from(value.asInstanceOf[CostingBox].wrappedValue)
+      AvlTree.isoAvlTree.from(value.asInstanceOf[CAvlTree])
     case ct: CollType[a] =>
       val arr = value.asInstanceOf[Coll[a]].toArray
       js.Array(arr.map(x => fromRuntimeData(x, ct.tItem)):_*)
@@ -263,9 +250,12 @@ object Value extends js.Object {
     *         - and [[Type]] descriptor in its `tpe` field
     */
   def fromHex(hex: String): Value = {
-    val bytes = Base16.decode(hex).fold(t => throw t, identity)
-    val S = ConstantSerializer(DeserializationSigmaBuilder)
-    val c = S.deserialize(SigmaSerializer.startReader(bytes))
-    Isos.isoValueToConstant.from(c)
+    val bytes   = Base16.decode(hex).fold(t => throw t, identity)
+    val r       = CoreSerializer.startReader(bytes)
+    val stype   = r.getType()
+    val value   = CoreDataSerializer.deserialize(stype, r)
+    val rtype   = Evaluation.stypeToRType(stype)
+    val jsvalue = Value.fromRuntimeData(value, rtype)
+    new Value(jsvalue, new Type(rtype))
   }
 }
