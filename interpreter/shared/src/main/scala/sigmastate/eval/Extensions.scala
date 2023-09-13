@@ -1,20 +1,24 @@
 package sigmastate.eval
 
+import debox.cfor
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.TokenId
+import scorex.crypto.authds.avltree.batch.{Insert, Lookup, Remove, Update}
+import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.util.encode.Base16
 import sigma.ast.SType.AnyOps
 import sigma.ast.{SBoolean, SCollection, SCollectionType, SType}
-import sigma.data.{Nullable, ProveDHTuple, ProveDlog, RType, SigmaBoolean}
-import sigma.util.Extensions.EcpOps
+import sigma.data.{Nullable, RType, SigmaBoolean}
 import sigma.{Coll, _}
+import sigmastate.Platform
 import sigmastate.Values.{Constant, ConstantNode, SigmaPropConstant, SigmaPropValue, Value}
+import sigmastate.interpreter.Interpreter
 import sigmastate.lang.{CheckingSigmaBuilder, TransformingSigmaBuilder}
 import sigmastate.utils.Helpers
 import sigmastate.utxo.SigmaPropIsProven
-import sigmastate.Platform
 
 import java.math.BigInteger
+import scala.util.{Failure, Success}
 
 object Extensions {
 
@@ -103,5 +107,101 @@ object Extensions {
     def toSigmaPropValue: SigmaPropValue = SigmaPropConstant(sb)
 
     def isProven: Value[SBoolean.type] = SigmaPropIsProven(SigmaPropConstant(sb))
+  }
+
+  implicit class AvlTreeOps(val tree: AvlTree) extends AnyVal {
+
+    def contains(key: Coll[Byte], proof: Coll[Byte]): Boolean = {
+      val keyBytes = key.toArray
+      val bv       = AvlTreeVerifier(tree, proof)
+      bv.performOneOperation(Lookup(ADKey @@ keyBytes)) match {
+        case Success(r) => r match {
+          case Some(_) => true
+          case _ => false
+        }
+        case Failure(_) => false
+      }
+    }
+
+    def get(key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]] = {
+      val keyBytes = key.toArray
+      val bv       = AvlTreeVerifier(tree, proof)
+      bv.performOneOperation(Lookup(ADKey @@ keyBytes)) match {
+        case Success(r) => r match {
+          case Some(v) => Some(Colls.fromArray(v))
+          case _ => None
+        }
+        case Failure(_) => Interpreter.error(s"Tree proof is incorrect $tree")
+      }
+    }
+
+    def getMany(
+        keys: Coll[Coll[Byte]],
+        proof: Coll[Byte]): Coll[Option[Coll[Byte]]] = {
+      val bv = AvlTreeVerifier(tree, proof)
+      keys.map { key =>
+        bv.performOneOperation(Lookup(ADKey @@ key.toArray)) match {
+          case Success(r) => r match {
+            case Some(v) => Some(Colls.fromArray(v))
+            case _ => None
+          }
+          case Failure(_) => Interpreter.error(s"Tree proof is incorrect $tree")
+        }
+      }
+    }
+
+    def insert(
+        entries: Coll[(Coll[Byte], Coll[Byte])],
+        proof: Coll[Byte]): Option[AvlTree] = {
+      if (!tree.isInsertAllowed) {
+        None
+      } else {
+        val bv = AvlTreeVerifier(tree, proof)
+        entries.forall { case (key, value) =>
+          val insertRes = bv.performOneOperation(Insert(ADKey @@ key.toArray, ADValue @@ value.toArray))
+          if (insertRes.isFailure) {
+            Interpreter.error(s"Incorrect insert for $tree (key: $key, value: $value, digest: ${tree.digest}): ${insertRes.failed.get}}")
+          }
+          insertRes.isSuccess
+        }
+        bv.digest match {
+          case Some(d) => Some(tree.updateDigest(Colls.fromArray(d)))
+          case _ => None
+        }
+      }
+    }
+
+    def update(
+        operations: Coll[(Coll[Byte], Coll[Byte])],
+        proof: Coll[Byte]): Option[AvlTree] = {
+      if (!tree.isUpdateAllowed) {
+        None
+      } else {
+        val bv = AvlTreeVerifier(tree, proof)
+        operations.forall { case (key, value) =>
+          bv.performOneOperation(Update(ADKey @@ key.toArray, ADValue @@ value.toArray)).isSuccess
+        }
+        bv.digest match {
+          case Some(d) => Some(tree.updateDigest(Colls.fromArray(d)))
+          case _ => None
+        }
+      }
+    }
+
+    def remove(operations: Coll[Coll[Byte]], proof: Coll[Byte]): Option[AvlTree] = {
+      if (!tree.isRemoveAllowed) {
+        None
+      } else {
+        val bv = AvlTreeVerifier(tree, proof)
+        cfor(0)(_ < operations.length, _ + 1) { i =>
+          val key = operations(i).toArray
+          bv.performOneOperation(Remove(ADKey @@ key))
+        }
+        bv.digest match {
+          case Some(v) => Some(tree.updateDigest(Colls.fromArray(v)))
+          case _ => None
+        }
+      }
+    }
   }
 }

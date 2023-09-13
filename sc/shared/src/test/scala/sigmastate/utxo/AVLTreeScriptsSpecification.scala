@@ -21,6 +21,7 @@ import sigma.Coll
 import sigma.ast.SAvlTree
 import sigma.data.{AvlTreeData, AvlTreeFlags, CSigmaProp, TrivialProp}
 import sigma.{AvlTree, Context}
+import sigmastate.eval.Extensions.AvlTreeOps
 
 
 class AVLTreeScriptsSpecification extends CompilerTestingCommons

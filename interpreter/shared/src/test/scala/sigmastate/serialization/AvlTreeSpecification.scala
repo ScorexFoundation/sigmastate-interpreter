@@ -8,6 +8,7 @@ import sigma.data.{AvlTreeData, AvlTreeFlags}
 import sigmastate.Values.AvlTreeConstant
 import sigmastate.eval._
 import sigma.Extensions.ArrayOps
+import sigmastate.eval.Extensions.AvlTreeOps
 
 class AvlTreeSpecification extends SerializationSpecification {
 

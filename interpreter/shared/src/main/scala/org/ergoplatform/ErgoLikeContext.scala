@@ -14,7 +14,7 @@ import debox.cfor
 import sigma.Extensions.ArrayOps
 import sigma.ast.{SBox, SCollection, SContext, SFunc, SGlobal, SInt, SType, SUnit}
 import sigma.ast.SType.{AnyOps, TypeCode}
-import sigma.data.{AvlTreeData, SigmaConstants}
+import sigma.data.{AvlTreeData, CAvlTree, SigmaConstants}
 import sigma.validation.SigmaValidationSettings
 import sigmastate.serialization.ValueCodes.OpCode
 
