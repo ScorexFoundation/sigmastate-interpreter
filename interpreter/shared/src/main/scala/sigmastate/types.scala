@@ -272,12 +272,6 @@ object SNumericTypeMethods extends MethodsContainer {
     case _ => None // the method in not numeric type cast
   }
 
-//  def isCastMethod(numTpe: SNumericType, methodName: String): Boolean = {
-//    MethodsContainer.containers.get(numTpe.typeId) match {
-//      case Some(m: SNumericTypeMethods) => m.isCastMethod(methodName)
-//      case _ => false
-//    }
-//  }
 }
 
 /** Methods of ErgoTree type `Boolean`. */

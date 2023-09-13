@@ -437,7 +437,6 @@ object SigmaProp extends EntityObject("SigmaProp") {
         true, false, element[Coll[Byte]]))
     }
 
-    // manual fix &&
     override def &&(other: Ref[SigmaProp]): Ref[SigmaProp] = {
       asRep[SigmaProp](mkMethodCall(self,
         SigmaPropClass.getMethod("$amp$amp", classOf[Sym]),
@@ -445,7 +444,6 @@ object SigmaProp extends EntityObject("SigmaProp") {
         true, false, element[SigmaProp]))
     }
 
-    // manual fix ||
     override def ||(other: Ref[SigmaProp]): Ref[SigmaProp] = {
       asRep[SigmaProp](mkMethodCall(self,
         SigmaPropClass.getMethod("$bar$bar", classOf[Sym]),
@@ -486,7 +484,6 @@ object SigmaProp extends EntityObject("SigmaProp") {
         true, true, element[Coll[Byte]]))
     }
 
-    // manual fix &&
     def &&(other: Ref[SigmaProp]): Ref[SigmaProp] = {
       asRep[SigmaProp](mkMethodCall(source,
         SigmaPropClass.getMethod("$amp$amp", classOf[Sym]),
@@ -494,7 +491,6 @@ object SigmaProp extends EntityObject("SigmaProp") {
         true, true, element[SigmaProp]))
     }
 
-    // manual fix ||
     def ||(other: Ref[SigmaProp]): Ref[SigmaProp] = {
       asRep[SigmaProp](mkMethodCall(source,
         SigmaPropClass.getMethod("$bar$bar", classOf[Sym]),

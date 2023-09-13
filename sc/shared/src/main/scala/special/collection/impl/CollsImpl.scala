@@ -332,8 +332,6 @@ class CollCls extends EntityObject("Coll") {
     def map[A,B](xs: Ref[Coll[A]])(f: Ref[A] => Ref[B]) = { implicit val eA = unlift(xs.elem); xs.map(fun(f))}
   }
 
-  // manual fix: CollIso, collIso
-
   // familyElem
   class CollElem[A, To <: Coll[A]](implicit _eA: Elem[A])
     extends EntityElem1[A, To, Coll](_eA, container[Coll]) {
@@ -353,8 +351,6 @@ class CollCls extends EntityObject("Coll") {
 
   implicit final def collElement[A](implicit eA: Elem[A]): Elem[Coll[A]] =
     cachedElemByClass(eA)(RClass(classOf[CollElem[A, Coll[A]]]))
-
-  // manual fix: ViewColl
 
   object CollMethods {
     object length {

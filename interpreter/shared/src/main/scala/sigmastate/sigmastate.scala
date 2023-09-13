@@ -4,13 +4,18 @@ import sigma.data.{AvlTreeData, GeneralType, RType, SigmaBoolean}
 import sigmastate.Values._
 import sigmastate.lang.{CheckingSigmaBuilder, Terms}
 
+import scala.annotation.nowarn
 import scala.reflect.classTag
 
 package object sigmastate {
   import CheckingSigmaBuilder._
 
+  /** Shadow the implicit from sigma package so it doesn't interfere with the resolution
+    * of ClassTags below.
+    */
+  @nowarn private def rtypeToClassTag = ???
+
   /** RType descriptors for predefined types used in AOTC-based interpreter. */
-  def rtypeToClassTag = ???
 
   implicit val SigmaBooleanRType    : RType[SigmaBoolean]     = RType.fromClassTag(classTag[SigmaBoolean])
 

@@ -4,7 +4,7 @@ import debox.cfor
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.validation.ValidationRules
 import scorex.crypto.authds.avltree.batch._
-import scorex.crypto.authds.{ADDigest, ADKey, ADValue, SerializedAdProof}
+import scorex.crypto.authds.{SerializedAdProof, ADDigest, ADValue, ADKey}
 import scorex.crypto.hash.{Blake2b256, Digest32, Sha256}
 import scorex.utils.{Ints, Longs}
 import sigma.Extensions.ArrayOps
@@ -30,14 +30,14 @@ import java.math.BigInteger
 import java.util.Arrays
 import scala.annotation.unused
 import scala.reflect.ClassTag
-import scala.util.{Failure, Success}
+import scala.util.{Success, Failure}
 
 /** Implements operations of AVL tree verifier based on
   * [[scorex.crypto.authds.avltree.batch.BatchAVLVerifier]].
   *
   * @see BatchAVLVerifier
   */
-class AvlTreeVerifier(startingDigest: ADDigest,
+class AvlTreeVerifier private (startingDigest: ADDigest,
                        proof: SerializedAdProof,
                        override val keyLength: Int,
                        override val valueLengthOpt: Option[Int])
@@ -49,6 +49,12 @@ class AvlTreeVerifier(startingDigest: ADDigest,
   override protected def logError(t: Throwable): Unit = {}
 }
 object AvlTreeVerifier {
+  /** Create an instance of [[AvlTreeVerifier]] for the given tree and proof.
+    * Both tree and proof are immutable.
+    * @param tree  represents a tree state to verify
+    * @param proof proof of tree operations leading to the state digest in the tree
+    * @return a new verifier instance
+    */
   def apply(tree: AvlTree, proof: Coll[Byte]): AvlTreeVerifier = {
     val treeData = tree.asInstanceOf[CAvlTree].treeData
     val adProof = SerializedAdProof @@ proof.toArray
@@ -256,7 +262,6 @@ object CHeader {
 class CostingSigmaDslBuilder extends SigmaDslBuilder { dsl =>
   implicit val validationSettings: SigmaValidationSettings = ValidationRules.currentSettings
 
-  // manual fix
   override val Colls: CollBuilder = sigma.Colls
 
   override def BigInt(n: BigInteger): BigInt = CBigInt(n)
