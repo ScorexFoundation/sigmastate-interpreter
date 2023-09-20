@@ -25,7 +25,7 @@ object ErgoLikeContextTesting {
   val dummyPubkey: Array[Byte] = GroupElementSerializer.toBytes(CryptoConstants.dlogGroup.generator)
 
   val noBoxes: IndexedSeq[ErgoBox] = IndexedSeq.empty[ErgoBox]
-  val noHeaders: Coll[Header] = CostingSigmaDslBuilder.Colls.emptyColl[Header]
+  val noHeaders: Coll[Header] = CSigmaDslBuilder.Colls.emptyColl[Header]
 
   def dummyPreHeader(currentHeight: Height, minerPk: Array[Byte]): PreHeader = CPreHeader(0,
     parentId = Colls.emptyColl[Byte],

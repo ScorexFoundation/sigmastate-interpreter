@@ -13,7 +13,7 @@ import scorex.util.ModifierId
 import sigmastate.Values.{ByteArrayConstant, ConcreteCollection, ConstantPlaceholder, ErgoTree, FalseLeaf, IntConstant, LongConstant, SigmaPropConstant, TrueLeaf}
 import sigmastate.eval._
 import sigma.Extensions.ArrayOps
-import sigmastate.eval.{CHeader, CPreHeader, CBox, CostingSigmaDslBuilder, SigmaDsl}
+import sigmastate.eval.{CHeader, CPreHeader, CBox, CSigmaDslBuilder, SigmaDsl}
 import sigmastate.helpers.TestingCommons
 import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.serialization.generators.ObjectGenerators
@@ -28,7 +28,7 @@ import scala.reflect.ClassTag
 trait SigmaTestingData extends TestingCommons with ObjectGenerators {
   /** Creates a [[sigma.Coll]] with the given `items`. */
   def Coll[T](items: T*)(implicit cT: RType[T]): Coll[T] =
-    CostingSigmaDslBuilder.Colls.fromItems(items: _*)
+    CSigmaDslBuilder.Colls.fromItems(items: _*)
 
   /** Generator of random collection with `n` elements. */
   def collOfN[T: RType : Arbitrary](n: Int)

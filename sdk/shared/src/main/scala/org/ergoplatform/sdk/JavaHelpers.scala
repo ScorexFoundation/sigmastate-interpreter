@@ -21,7 +21,7 @@ import sigma.util.StringUtil.StringUtilExtensions
 import sigma.{AnyValue, AvlTree, Coll, Colls, Evaluation, GroupElement, Header}
 import sigmastate.Values.{Constant, ErgoTree, EvaluatedValue, SValue, SigmaPropConstant}
 import sigmastate.crypto.DiffieHellmanTupleProverInput
-import sigmastate.eval.{CostingSigmaDslBuilder, Digest32Coll}
+import sigmastate.eval.{CSigmaDslBuilder, Digest32Coll}
 import sigmastate.serialization.{ErgoTreeSerializer, SigmaSerializer, ValueSerializer}
 
 import java.lang.{Boolean => JBoolean, Byte => JByte, Integer => JInt, Long => JLong, Short => JShort, String => JString}
@@ -332,7 +332,7 @@ object JavaHelpers {
 
   def BoxRType: RType[sigma.Box] = sigma.BoxRType
 
-  def SigmaDsl: CostingSigmaDslBuilder = sigmastate.eval.SigmaDsl
+  def SigmaDsl: CSigmaDslBuilder = sigmastate.eval.SigmaDsl
 
   def collFrom(arr: Array[Byte]): Coll[Byte] = {
     Colls.fromArray(arr)

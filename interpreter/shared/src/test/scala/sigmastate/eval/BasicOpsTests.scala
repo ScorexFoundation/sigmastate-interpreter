@@ -12,7 +12,7 @@ import sigma.{ContractsTestkit, SigmaDslBuilder, SigmaProp}
 import scala.language.implicitConversions
 
 class BasicOpsTests extends AnyFunSuite with ContractsTestkit with Matchers {
-  override val SigmaDsl: SigmaDslBuilder = CostingSigmaDslBuilder
+  override val SigmaDsl: SigmaDslBuilder = CSigmaDslBuilder
 
   implicit def boolToSigma(b: Boolean): SigmaProp = TrivialProp(b).toSigmaProp
 

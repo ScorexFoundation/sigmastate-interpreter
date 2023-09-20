@@ -23,21 +23,21 @@ import scala.util.{Failure, Success}
 object Extensions {
 
   implicit class ByteExt(val b: Byte) extends AnyVal {
-    @inline def toBigInt: BigInt = CostingSigmaDslBuilder.BigInt(BigInteger.valueOf(b.toLong))
+    @inline def toBigInt: BigInt = CSigmaDslBuilder.BigInt(BigInteger.valueOf(b.toLong))
   }
 
   implicit class ShortExt(val b: Short) extends AnyVal {
-    @inline def toBigInt: BigInt = CostingSigmaDslBuilder.BigInt(BigInteger.valueOf(b.toLong))
+    @inline def toBigInt: BigInt = CSigmaDslBuilder.BigInt(BigInteger.valueOf(b.toLong))
   }
 
   implicit class IntExt(val x: Int) extends AnyVal {
     /** Convert this value to BigInt. */
-    @inline def toBigInt: BigInt = CostingSigmaDslBuilder.BigInt(BigInteger.valueOf(x.toLong))
+    @inline def toBigInt: BigInt = CSigmaDslBuilder.BigInt(BigInteger.valueOf(x.toLong))
   }
 
   implicit class LongExt(val x: Long) extends AnyVal {
     /** Convert this value to BigInt. */
-    @inline def toBigInt: BigInt = CostingSigmaDslBuilder.BigInt(BigInteger.valueOf(x))
+    @inline def toBigInt: BigInt = CSigmaDslBuilder.BigInt(BigInteger.valueOf(x))
   }
 
   /** Extension methods for `Array[Byte]` not available for generic `Array[T]`. */

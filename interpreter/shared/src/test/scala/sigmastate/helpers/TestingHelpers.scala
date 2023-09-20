@@ -26,7 +26,7 @@ object TestingHelpers {
               transactionId: ModifierId = allZerosModifierId,
               boxIndex: Short = 0): ErgoBox =
     new ErgoBox(value, ergoTree,
-      CostingSigmaDslBuilder.Colls.fromArray(additionalTokens.toArray[Token]),
+      CSigmaDslBuilder.Colls.fromArray(additionalTokens.toArray[Token]),
       additionalRegisters,
       transactionId, boxIndex, creationHeight)
 

@@ -23,7 +23,7 @@ trait ContractsTestkit {
   val R8 = 8.toByte;
   val R9 = 9.toByte;
   val Colls = new CollOverArrayBuilder
-  val SigmaDsl: SigmaDslBuilder = CostingSigmaDslBuilder
+  val SigmaDsl: SigmaDslBuilder = CSigmaDslBuilder
   val noRegisters = collection[AnyValue]()
   val noBytes = collection[Byte]()
   val noInputs = Array[Box]()
@@ -31,7 +31,7 @@ trait ContractsTestkit {
   val dummyPubkey: Array[Byte] = Array.fill(32)(0: Byte)
   val dummyADDigest: Coll[Byte] = Colls.fromArray(Array.fill(33)(0: Byte))
   val emptyAvlTree = new CAvlTree(AvlTreeData.dummy)
-  val noHeaders = CostingSigmaDslBuilder.Colls.emptyColl[Header]
+  val noHeaders = CSigmaDslBuilder.Colls.emptyColl[Header]
   val dummyPreHeader: PreHeader = null
 
   /** Create collection from array of items */

@@ -1,12 +1,12 @@
 package org.ergoplatform.dsl
 
 import sigma.Coll
-import sigmastate.eval.CostingSigmaDslBuilder
+import sigmastate.eval.CSigmaDslBuilder
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigma.AvlTree
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert}
-import CostingSigmaDslBuilder.Colls
+import CSigmaDslBuilder.Colls
 import sigma.data.{AvlTreeData, AvlTreeFlags, CAvlTree}
 
 object AvlTreeHelpers {

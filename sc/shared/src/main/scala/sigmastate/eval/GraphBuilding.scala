@@ -397,7 +397,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
 
   import sigmastate._
 
-  protected implicit def groupElementToECPoint(g: sigma.GroupElement): EcPointType = CostingSigmaDslBuilder.toECPoint(g).asInstanceOf[EcPointType]
+  protected implicit def groupElementToECPoint(g: sigma.GroupElement): EcPointType = CSigmaDslBuilder.toECPoint(g).asInstanceOf[EcPointType]
 
   def error(msg: String) = throw new GraphBuildingException(msg, None)
   def error(msg: String, srcCtx: Option[SourceContext]) = throw new GraphBuildingException(msg, srcCtx)

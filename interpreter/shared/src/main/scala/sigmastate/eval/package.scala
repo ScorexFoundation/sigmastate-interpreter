@@ -17,7 +17,7 @@ package object eval {
     * For example methods like `Box`, `toErgoBox` are available here, but not available in Dsl.
     * @see SigmaDslBuilder
     */
-  val SigmaDsl = CostingSigmaDslBuilder
+  val SigmaDsl = CSigmaDslBuilder
 
   trait BaseDigestColl extends TaggedType[Coll[Byte]]
 

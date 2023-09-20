@@ -77,7 +77,7 @@ import sigmastate.eval.CBox._
   * @see [[Box]] for detailed descriptions
   */
 case class CBox(ebox: ErgoBox) extends Box with WrapperOf[ErgoBox] {
-  val builder = CostingSigmaDslBuilder
+  val builder = CSigmaDslBuilder
 
   val value = ebox.value
   lazy val id: Coll[Byte] = Colls.fromArray(ebox.id)
@@ -255,7 +255,7 @@ object CHeader {
 /** A default implementation of [[SigmaDslBuilder]] interface.
   * @see [[SigmaDslBuilder]] for detailed descriptions
   */
-class CostingSigmaDslBuilder extends SigmaDslBuilder { dsl =>
+class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
   implicit val validationSettings: SigmaValidationSettings = ValidationRules.currentSettings
 
   override val Colls: CollBuilder = sigma.Colls
@@ -428,7 +428,7 @@ class CostingSigmaDslBuilder extends SigmaDslBuilder { dsl =>
 }
 
 /** Default singleton instance of Global object, which implements global ErgoTree functions. */
-object CostingSigmaDslBuilder extends CostingSigmaDslBuilder
+object CSigmaDslBuilder extends CSigmaDslBuilder
 
 /** A default implementation of [[Context]] interface.
   * @see [[Context]] for detailed descriptions
@@ -449,7 +449,7 @@ case class CostingDataContext(
                                override val currentErgoTreeVersion: Byte
                                )
   extends Context {
-  @inline override def builder: SigmaDslBuilder = CostingSigmaDslBuilder
+  @inline override def builder: SigmaDslBuilder = CSigmaDslBuilder
 
   @inline override def HEIGHT: Int = height
 

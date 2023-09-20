@@ -5,7 +5,7 @@ import org.ergoplatform.ErgoBox.TokenId
 import sigma.data.{AvlTreeData, RType, SigmaBoolean}
 import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition}
 import org.ergoplatform.sdk.JavaHelpers.collRType
-import sigmastate.eval.CostingSigmaDslBuilder
+import sigmastate.eval.CSigmaDslBuilder
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigma._
 import sigma.ast.SType
@@ -15,7 +15,7 @@ import scala.util.Try
 
 /** Defines methods to be used in contract implementations based on [[SigmaContract]]. */
 trait ContractSyntax { contract: SigmaContract =>
-  override def builder: SigmaDslBuilder = CostingSigmaDslBuilder
+  override def builder: SigmaDslBuilder = CSigmaDslBuilder
 
   /** Instance of contract specification DSL, which can be imported in the body of
    * [[SigmaContract]] implementations. */

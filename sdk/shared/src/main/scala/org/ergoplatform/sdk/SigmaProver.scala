@@ -3,7 +3,7 @@ package org.ergoplatform.sdk
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform._
 import org.ergoplatform.sdk.wallet.protocol.context.BlockchainStateContext
-import sigmastate.eval.{CostingSigmaDslBuilder, SigmaDsl}
+import sigmastate.eval.{CSigmaDslBuilder, SigmaDsl}
 import sigmastate.interpreter.HintsBag
 import sigmastate.utils.Helpers.TryOps
 import sigma.{BigInt, SigmaProp}
@@ -27,7 +27,7 @@ class SigmaProver(_prover: AppkitProvingInterpreter, networkPrefix: NetworkPrefi
 
   /** Returns the prover's secret key. */
   def getSecretKey: BigInt =
-    CostingSigmaDslBuilder.BigInt(_prover.secretKeys(0).privateInput.w)
+    CSigmaDslBuilder.BigInt(_prover.secretKeys(0).privateInput.w)
 
   /** Returns a sequence of EIP-3 addresses associated with the prover's secret keys. */
   def getEip3Addresses: Seq[P2PKAddress] = {

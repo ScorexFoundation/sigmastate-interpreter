@@ -148,7 +148,7 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
       for ((id, v) <- m) {
         res(id) = v
       }
-      CostingSigmaDslBuilder.Colls.fromArray(res)
+      CSigmaDslBuilder.Colls.fromArray(res)
     }
 
     val dataInputs = this.dataBoxes.toArray.map(_.toTestBox).toColl
@@ -359,6 +359,6 @@ case object Global extends NotReadyValue[SGlobal.type] with FixedCostValueCompan
   override val opType: SFunc = SFunc(SUnit, SGlobal)
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     addCost(this.costKind)
-    CostingSigmaDslBuilder
+    CSigmaDslBuilder
   }
 }
