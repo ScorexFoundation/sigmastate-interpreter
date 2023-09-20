@@ -1,8 +1,8 @@
 package sigmastate.utxo
 
 import sigma.ast.SType
+import sigma.data.CAnyValue
 import sigmastate.Values._
-import sigmastate.eval.CAnyValue
 import sigmastate.helpers.CompilerTestingCommons
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms._

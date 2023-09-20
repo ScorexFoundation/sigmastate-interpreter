@@ -4,7 +4,7 @@ package org.ergoplatform.sdk
 import java.math.BigInteger
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen
-import sigma.data.{RType, SigmaBoolean, TupleColl}
+import sigma.data.{CAnyValue, RType, SigmaBoolean, TupleColl}
 import sigma.ast._
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.SType.AnyOps

@@ -3,11 +3,11 @@ package sigmastate.utils
 import debox.cfor
 import io.circe.Decoder
 import org.ergoplatform.settings.ErgoAlgos
-import sigma.data.{OverloadHack, RType}
+import sigma.data.{CAnyValue, OverloadHack, RType}
 import scorex.utils.Ints
 import sigma.crypto.EcPointType
 import sigma.{Coll, Colls, Environment, GroupElement}
-import sigmastate.eval.{CAnyValue, SigmaDsl}
+import sigmastate.eval.SigmaDsl
 
 import java.util
 import java.util.concurrent.locks.Lock

@@ -6,12 +6,12 @@ import sigma.Extensions.ArrayOps
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.SType.AnyOps
 import sigma.ast._
-import sigma.data.AvlTreeData
+import sigma.data.{AvlTreeData, CAnyValue}
 import sigma.util.StringUtil._
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.crypto.CryptoConstants
-import sigmastate.eval.{CAnyValue, InvalidType}
+import sigmastate.eval.InvalidType
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.ContextExtension.VarBinding

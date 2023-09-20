@@ -8,7 +8,7 @@ import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.util.encode.Base16
 import sigma.ast.SType.AnyOps
 import sigma.ast.{SBoolean, SCollection, SCollectionType, SType}
-import sigma.data.{Nullable, RType, SigmaBoolean}
+import sigma.data.{CAnyValue, Nullable, RType, SigmaBoolean}
 import sigma.{Coll, _}
 import sigmastate.Platform
 import sigmastate.Values.{Constant, ConstantNode, SigmaPropConstant, SigmaPropValue, Value}

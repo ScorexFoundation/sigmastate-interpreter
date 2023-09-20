@@ -6,7 +6,7 @@ import io.circe.syntax._
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, Token}
 import org.ergoplatform.settings.ErgoAlgos
-import sigma.data.RType
+import sigma.data.{CAnyValue, RType}
 import scorex.util._
 import sigmastate.Values.{Constant, EvaluatedValue}
 import sigmastate.lang.SigmaParser
