@@ -10,7 +10,7 @@ import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigma.Colls
 import sigma.ast.SByte
-import sigma.data.{AvlTreeData, AvlTreeFlags}
+import sigma.data.{AvlTreeData, AvlTreeFlags, Digest32Coll}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.crypto.CryptoConstants

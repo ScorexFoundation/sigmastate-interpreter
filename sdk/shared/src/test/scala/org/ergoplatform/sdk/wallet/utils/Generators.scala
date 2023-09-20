@@ -15,9 +15,8 @@ import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, ErgoTreePredef, UnsignedErgo
 import sigma.Extensions.ArrayOps
 import scorex.util.{ModifierId, bytesToId}
 import sigma.crypto.CryptoFacade
-import sigma.data.ProveDlog
+import sigma.data.{Digest32Coll, ProveDlog}
 import sigmastate.eval.Extensions.{EvalIterableOps, SigmaBooleanOps}
-import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._
 
 trait Generators {

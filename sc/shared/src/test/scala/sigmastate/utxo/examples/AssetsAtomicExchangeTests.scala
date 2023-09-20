@@ -9,9 +9,8 @@ import scorex.crypto.hash.Blake2b256
 import sigma.ast.SCollection.SByteArray
 import sigmastate._
 import sigma.ast._
-import sigma.data.{CSigmaProp, TrivialProp}
+import sigma.data.{CSigmaProp, Digest32Coll, TrivialProp}
 import sigmastate.Values.{BlockValue, ByteArrayConstant, LongConstant, ValDef, ValUse, Value}
-import sigmastate.eval.Digest32Coll
 import sigmastate.eval.Extensions._
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.utxo._

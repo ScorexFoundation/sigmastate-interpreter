@@ -6,7 +6,7 @@ import scorex.util.ModifierId
 import sigma.Extensions.ArrayOps
 import sigma.SigmaDslTesting
 import sigma.ast._
-import sigma.data.{AvlTreeData, AvlTreeFlags, CollType}
+import sigma.data.{AvlTreeData, AvlTreeFlags, CollType, Digest32Coll}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval._

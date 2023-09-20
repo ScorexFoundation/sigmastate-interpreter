@@ -8,7 +8,7 @@ import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen.{choose, frequency}
 import org.scalacheck.util.Buildable
 import org.scalacheck.{Arbitrary, Gen}
-import sigma.data.{AvlTreeData, AvlTreeFlags, CAND, COR, CTHRESHOLD, ProveDHTuple, ProveDlog, RType, SigmaBoolean}
+import sigma.data._
 import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.util.encode.{Base58, Base64}
 import scorex.util.{ModifierId, bytesToId}

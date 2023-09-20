@@ -19,13 +19,6 @@ package object eval {
     */
   val SigmaDsl = CSigmaDslBuilder
 
-  trait BaseDigestColl extends TaggedType[Coll[Byte]]
-
-  object Digest32Coll extends BaseDigestColl
-
-  type Digest32Coll = Digest32Coll.Type
-  implicit val Digest32CollRType: RType[Digest32Coll] = RType[Coll[Byte]].asInstanceOf[RType[Digest32Coll] ]
-
   /** Implicit conversions between Dsl type and the type wrapped by the corresponding type Dsl type.
     * Here BigInt is Dsl type and BigInteger is wrapped type.
     * @see `sigma.CBigInt`

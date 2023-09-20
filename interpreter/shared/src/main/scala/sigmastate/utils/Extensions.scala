@@ -3,7 +3,8 @@ package sigmastate.utils
 import org.ergoplatform.ErgoBox.TokenId
 import scorex.util.{ModifierId, idToBytes}
 import scorex.utils.{Ints, Longs, Shorts}
-import sigmastate.eval.{Digest32Coll, SigmaDsl}
+import sigma.data.Digest32Coll
+import sigmastate.eval.SigmaDsl
 import sigma.{Coll, Colls}
 
 object Extensions {

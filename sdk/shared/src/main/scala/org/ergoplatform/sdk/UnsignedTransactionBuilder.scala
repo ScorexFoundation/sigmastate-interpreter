@@ -12,6 +12,7 @@ import sigmastate.utils.Extensions.ModifierIdOps
 import sigma.Coll
 import sigma.Extensions.CollBytesOps
 import sigma.PreHeader
+import sigma.data.Digest32CollRType
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Try
