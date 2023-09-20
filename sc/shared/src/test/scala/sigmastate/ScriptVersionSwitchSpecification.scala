@@ -32,7 +32,7 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting {
 
   implicit def IR: IRContext = createIR()
 
-  lazy val b1 = CostingBox(
+  lazy val b1 = CBox(
     new ErgoBox(
       1L,
       new ErgoTree(

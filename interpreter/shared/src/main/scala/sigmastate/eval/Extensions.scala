@@ -103,7 +103,7 @@ object Extensions {
       Safety: used in ErgoLikeContext where boxes cannot be null
       Examined ergo code: all that leads to ErgoLikeContext creation.
       */
-      CostingBox(ebox)
+      CBox(ebox)
     }
   }
 

@@ -65,7 +65,7 @@ trait ContractsTestkit {
     val ergoBox = testBox(value,
       ErgoTree.fromProposition(Values.TrueSigmaProp),
       creationHeight = 0, additionalTokens = Seq(), additionalRegisters = Map())
-    new CostingBox(ergoBox)
+    new CBox(ergoBox)
   }
 
   def testContext(

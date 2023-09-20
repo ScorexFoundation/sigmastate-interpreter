@@ -377,7 +377,7 @@ trait ObjectGenerators extends TypeGenerators
     creationHeight <- heightGen
   } yield new ErgoBoxCandidate(l, b, creationHeight, tokens, ar)
 
-  lazy val boxConstantGen: Gen[BoxConstant] = ergoBoxGen.map { v => BoxConstant(CostingBox(v)) }
+  lazy val boxConstantGen: Gen[BoxConstant] = ergoBoxGen.map { v => BoxConstant(CBox(v)) }
 
   lazy val digest32Gen: Gen[TokenId] = for {
     bytes <- collOfN(TokenId.size, arbByte.arbitrary)

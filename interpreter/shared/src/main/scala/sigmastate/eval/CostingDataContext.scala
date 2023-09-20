@@ -71,12 +71,12 @@ object CAnyValue {
     new CAnyValue(value, t.asInstanceOf[RType[Any]])
 }
 
-import sigmastate.eval.CostingBox._
+import sigmastate.eval.CBox._
 
 /** A default implementation of [[Box]] interface.
   * @see [[Box]] for detailed descriptions
   */
-case class CostingBox(ebox: ErgoBox) extends Box with WrapperOf[ErgoBox] {
+case class CBox(ebox: ErgoBox) extends Box with WrapperOf[ErgoBox] {
   val builder = CostingSigmaDslBuilder
 
   val value = ebox.value
@@ -131,7 +131,7 @@ case class CostingBox(ebox: ErgoBox) extends Box with WrapperOf[ErgoBox] {
   })
 }
 
-object CostingBox {
+object CBox {
 
   import Evaluation._
 
@@ -299,10 +299,10 @@ class CostingSigmaDslBuilder extends SigmaDslBuilder { dsl =>
     * @param ebox  the value to be wrapped
     * @see [[sigmastate.SBox]], [[sigma.Box]]
     */
-  def Box(ebox: ErgoBox): Box = CostingBox(ebox)
+  def Box(ebox: ErgoBox): Box = CBox(ebox)
 
   /** Extracts [[ErgoBox]] from the given [[Box]] instance. This is inverse to the Box method. */
-  def toErgoBox(b: Box): ErgoBox = b.asInstanceOf[CostingBox].ebox
+  def toErgoBox(b: Box): ErgoBox = b.asInstanceOf[CBox].ebox
 
   /** HOTSPOT: don't beautify this code */
   private def toSigmaTrees(props: Array[SigmaProp]): Array[SigmaBoolean] = {

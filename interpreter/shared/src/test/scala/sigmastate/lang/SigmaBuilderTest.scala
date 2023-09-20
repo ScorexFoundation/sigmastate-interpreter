@@ -8,7 +8,7 @@ import sigma.{Environment, VersionContext}
 import sigmastate.Values._
 import sigmastate._
 import sigma.Extensions.ArrayOps
-import sigmastate.eval.{CAnyValue, CostingBox, SigmaDsl}
+import sigmastate.eval.{CAnyValue, CBox, SigmaDsl}
 import sigmastate.exceptions.ConstraintFailed
 import sigmastate.serialization.OpCodes
 import sigma.SigmaTestingData
@@ -208,7 +208,7 @@ class SigmaBuilderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Ma
   }
 
   property("liftToConstant ErgoBox") {
-    val v = TestData.b2.asInstanceOf[CostingBox].wrappedValue
+    val v = TestData.b2.asInstanceOf[CBox].wrappedValue
     val c = BoxConstant(TestData.b2)
     testSuccess(v, c) // TODO v6.0: ErgoBox should not be liftable directly (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/905)
     testFailure(Array.fill(10)(v))

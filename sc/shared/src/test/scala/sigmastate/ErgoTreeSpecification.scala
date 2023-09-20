@@ -9,7 +9,7 @@ import sigma.{Evaluation, VersionContext}
 import sigma.ast.SCollection.SByteArray
 import sigmastate.Values._
 import sigma.VersionContext._
-import sigmastate.eval.{CostingBox, Profiler}
+import sigmastate.eval.{CBox, Profiler}
 import sigmastate.exceptions.{CostLimitException, InterpreterException}
 import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}
 import sigmastate.interpreter.{ErgoTreeEvaluator, EvalSettings}
@@ -691,7 +691,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
     )
 
     def createCtx: ErgoLikeContext = ErgoLikeContextTesting
-        .dummy(CostingBox(fakeSelf), VersionContext.current.activatedVersion)
+        .dummy(CBox(fakeSelf), VersionContext.current.activatedVersion)
         .withErgoTreeVersion(tree.version)
 
     VersionContext.withVersions(activatedVersion = 1, tree.version) {

@@ -13,7 +13,7 @@ import scorex.util.ModifierId
 import sigmastate.Values.{ByteArrayConstant, ConcreteCollection, ConstantPlaceholder, ErgoTree, FalseLeaf, IntConstant, LongConstant, SigmaPropConstant, TrueLeaf}
 import sigmastate.eval._
 import sigma.Extensions.ArrayOps
-import sigmastate.eval.{CHeader, CPreHeader, CostingBox, CostingSigmaDslBuilder, SigmaDsl}
+import sigmastate.eval.{CHeader, CPreHeader, CBox, CostingSigmaDslBuilder, SigmaDsl}
 import sigmastate.helpers.TestingCommons
 import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.serialization.generators.ObjectGenerators
@@ -206,7 +206,7 @@ trait SigmaTestingData extends TestingCommons with ObjectGenerators {
       )
     )
 
-    val b1_instances = new CloneSet(1000, CostingBox(
+    val b1_instances = new CloneSet(1000, CBox(
       new ErgoBox(
         9223372036854775807L,
         new ErgoTree(
@@ -244,7 +244,7 @@ trait SigmaTestingData extends TestingCommons with ObjectGenerators {
 
     val b1: Box = create_b1()
 
-    val b2: Box = CostingBox(
+    val b2: Box = CBox(
       new ErgoBox(
         12345L,
         new ErgoTree(

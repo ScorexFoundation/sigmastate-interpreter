@@ -2339,7 +2339,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   property("NEQ of pre-defined types") {
     verifyNeq(ge1, ge2, 1783, Array[CostItem](FixedCostItem(NamedDesc("EQ_GroupElement"), FixedCost(JitCost(172)))), 1783)(_.asInstanceOf[CGroupElement].copy())
     verifyNeq(t1, t2, 1767, Array[CostItem](FixedCostItem(NamedDesc("EQ_AvlTree"), FixedCost(JitCost(6)))), 1767)(_.asInstanceOf[CAvlTree].copy())
-    verifyNeq(b1, b2, 1767, Array[CostItem](), 1767)(_.asInstanceOf[CostingBox].copy())
+    verifyNeq(b1, b2, 1767, Array[CostItem](), 1767)(_.asInstanceOf[CBox].copy())
     verifyNeq(preH1, preH2, 1766, Array[CostItem](FixedCostItem(NamedDesc("EQ_PreHeader"), FixedCost(JitCost(4)))), 1766)(_.asInstanceOf[CPreHeader].copy())
     verifyNeq(h1, h2, 1767, Array[CostItem](FixedCostItem(NamedDesc("EQ_Header"), FixedCost(JitCost(6)))), 1767)(_.asInstanceOf[CHeader].copy())
   }
@@ -4593,7 +4593,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   def contextData() = {
-    val input = CostingBox(
+    val input = CBox(
       new ErgoBox(
         80946L,
         new ErgoTree(
@@ -4623,7 +4623,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       )
     )
 
-    val dataBox = CostingBox(
+    val dataBox = CBox(
       new ErgoBox(
         -1L,
         new ErgoTree(
@@ -4689,7 +4689,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       ),
       inputs = Coll[Box](input),
       outputs = Coll[Box](
-        CostingBox(
+        CBox(
           new ErgoBox(
             1000000L,
             new ErgoTree(
@@ -4726,7 +4726,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             11
           )
         ),
-        CostingBox(
+        CBox(
           new ErgoBox(
             2769336982721999022L,
             new ErgoTree(
@@ -4771,7 +4771,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   def ctxWithRegsInOutput(ctx: CostingDataContext, regs: AdditionalRegisters) = {
     ctx.copy(
       outputs = Coll({
-        val box = ctx.outputs(0).asInstanceOf[CostingBox]
+        val box = ctx.outputs(0).asInstanceOf[CBox]
         box.copy(ebox = copyBox(box.ebox)(additionalRegisters = regs))
       })
     )
@@ -4780,7 +4780,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   def ctxWithRegsInDataInput(ctx: CostingDataContext, regs: AdditionalRegisters) = {
     ctx.copy(
       _dataInputs = Coll({
-        val box = ctx.dataInputs(0).asInstanceOf[CostingBox]
+        val box = ctx.dataInputs(0).asInstanceOf[CBox]
         box.copy(ebox = copyBox(box.ebox)(additionalRegisters = regs))
       })
     )
@@ -6558,7 +6558,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   def sampleCollBoxes = genSamples[Coll[Box]](collOfN[Box](5, arbitrary[Box]), MinSuccessful(20))
 
-  def create_b1 = CostingBox(
+  def create_b1 = CBox(
     new ErgoBox(
       1L,
       new ErgoTree(
@@ -6594,7 +6594,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     )
   )
 
-  def create_b2 = CostingBox(
+  def create_b2 = CBox(
     new ErgoBox(
       1000000000L,
       new ErgoTree(

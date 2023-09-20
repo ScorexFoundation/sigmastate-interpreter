@@ -23,7 +23,7 @@ import sigmastate.Values.{ByteArrayConstant, Constant, ConstantNode, ErgoTree, I
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.crypto.SigmaProtocolPrivateInput
 import sigmastate.eval.Extensions.SigmaBooleanOps
-import sigmastate.eval.{CompiletimeIRContext, CostingBox, CostingDataContext, IRContext, SigmaDsl}
+import sigmastate.eval.{CompiletimeIRContext, CBox, CostingDataContext, IRContext, SigmaDsl}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaPPrint}
 import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
@@ -345,7 +345,7 @@ class SigmaDslTesting extends AnyPropSpec
             // the context is passed as function argument (see func in the script)
             // Since Context is singleton, we should use this instance as the basis
             // for execution of verify instead of a new dummy context.
-            val self = ctx.selfBox.asInstanceOf[CostingBox]
+            val self = ctx.selfBox.asInstanceOf[CBox]
             val newSelf = self.copy(
               ebox = updatedRegisters(self.ebox, newRegisters)
             )
