@@ -171,7 +171,7 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
     val selfBox = boxesToSpend(selfIndex).toTestBox
     val ergoTreeVersion = currentErgoTreeVersion.getOrElse(
         Interpreter.error(s"Undefined context property: currentErgoTreeVersion"))
-    CostingDataContext(
+    CContext(
       dataInputs, headers, preHeader, inputs, outputs, preHeader.height, selfBox, selfIndex, avlTree,
       preHeader.minerPk.getEncoded, vars, activatedScriptVersion, ergoTreeVersion)
   }

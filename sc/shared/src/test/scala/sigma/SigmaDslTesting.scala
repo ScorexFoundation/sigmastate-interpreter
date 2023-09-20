@@ -23,7 +23,7 @@ import sigmastate.Values.{ByteArrayConstant, Constant, ConstantNode, ErgoTree, I
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.crypto.SigmaProtocolPrivateInput
 import sigmastate.eval.Extensions.SigmaBooleanOps
-import sigmastate.eval.{CompiletimeIRContext, CBox, CostingDataContext, IRContext, SigmaDsl}
+import sigmastate.eval.{CompiletimeIRContext, CBox, CContext, IRContext, SigmaDsl}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaPPrint}
 import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
@@ -257,11 +257,11 @@ class SigmaDslTesting extends AnyPropSpec
       }
     }
 
-    /** Creates a new ErgoLikeContext using given [[CostingDataContext]] as template.
+    /** Creates a new ErgoLikeContext using given [[CContext]] as template.
       * Copies most of the data from ctx and the missing data is taken from the args.
       * This is a helper method to be used in tests only.
       */
-    def createErgoLikeContext(ctx: CostingDataContext,
+    def createErgoLikeContext(ctx: CContext,
                               validationSettings: SigmaValidationSettings,
                               costLimit: Long,
                               initCost: Long
@@ -341,7 +341,7 @@ class SigmaDslTesting extends AnyPropSpec
         )
 
         val ctx = input match {
-          case ctx: CostingDataContext =>
+          case ctx: CContext =>
             // the context is passed as function argument (see func in the script)
             // Since Context is singleton, we should use this instance as the basis
             // for execution of verify instead of a new dummy context.

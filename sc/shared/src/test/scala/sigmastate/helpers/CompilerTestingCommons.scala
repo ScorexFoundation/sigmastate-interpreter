@@ -50,7 +50,7 @@ trait CompilerTestingCommons extends TestingCommons
   def createContexts[A](in: A, bindings: Seq[VarBinding])(implicit tA: RType[A]) = {
     val tpeA = Evaluation.rtypeToSType(tA)
     in match {
-      case ctx: CostingDataContext =>
+      case ctx: CContext =>
         // the context is passed as function argument (this is for testing only)
         // This is to overcome non-functional semantics of context operations
         // (such as Inputs, Height, etc which don't have arguments and refer to the
@@ -85,7 +85,7 @@ trait CompilerTestingCommons extends TestingCommons
           .withErgoTreeVersion(ergoTreeVersionInTests)
           .withBindings(1.toByte -> Constant[SType](in.asInstanceOf[SType#WrappedType], tpeA))
           .withBindings(bindings: _*)
-        val calcCtx = ergoCtx.toSigmaContext().asInstanceOf[CostingDataContext]
+        val calcCtx = ergoCtx.toSigmaContext().asInstanceOf[CContext]
         calcCtx
     }
   }

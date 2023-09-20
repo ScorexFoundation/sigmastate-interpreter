@@ -4675,7 +4675,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       Helpers.decodeBytes("01ff13")
     )
 
-    val ctx = CostingDataContext(
+    val ctx = CContext(
       _dataInputs = Coll[Box](dataBox),
       headers = Coll[Header](header),
       preHeader = CPreHeader(
@@ -4768,7 +4768,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     (input, dataBox, header, ctx, ctx2, ctx3)
   }
 
-  def ctxWithRegsInOutput(ctx: CostingDataContext, regs: AdditionalRegisters) = {
+  def ctxWithRegsInOutput(ctx: CContext, regs: AdditionalRegisters) = {
     ctx.copy(
       outputs = Coll({
         val box = ctx.outputs(0).asInstanceOf[CBox]
@@ -4777,7 +4777,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     )
   }
 
-  def ctxWithRegsInDataInput(ctx: CostingDataContext, regs: AdditionalRegisters) = {
+  def ctxWithRegsInDataInput(ctx: CContext, regs: AdditionalRegisters) = {
     ctx.copy(
       _dataInputs = Coll({
         val box = ctx.dataInputs(0).asInstanceOf[CBox]

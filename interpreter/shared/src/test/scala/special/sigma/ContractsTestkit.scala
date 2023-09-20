@@ -72,7 +72,7 @@ trait ContractsTestkit {
       inputs: Array[Box], outputs: Array[Box], height: Int, self: Box,
       tree: AvlTree, minerPk: Array[Byte], activatedScriptVersion: Byte,
       currErgoTreeVersion: Byte, vars: Array[AnyValue]) =
-    new CostingDataContext(
+    new CContext(
       noInputs.toColl, noHeaders, dummyPreHeader,
       inputs.toColl, outputs.toColl, height, self, inputs.indexOf(self), tree,
       minerPk.toColl, vars.toColl, activatedScriptVersion, currErgoTreeVersion)
@@ -82,13 +82,13 @@ trait ContractsTestkit {
       self: Box,
       activatedScriptVersion: Byte,
       currErgoTreeVersion: Byte,
-      vars: AnyValue*): CostingDataContext = {
+      vars: AnyValue*): CContext = {
     testContext(
       noInputs, noOutputs, height, self, emptyAvlTree, dummyPubkey,
       activatedScriptVersion, currErgoTreeVersion, vars.toArray)
   }
 
-  implicit class TestContextOps(ctx: CostingDataContext) {
+  implicit class TestContextOps(ctx: CContext) {
     def withInputs(inputs: Box*) = ctx.copy(inputs = inputs.toArray.toColl)
 
     def withOutputs(outputs: Box*) = ctx.copy(outputs = outputs.toArray.toColl)

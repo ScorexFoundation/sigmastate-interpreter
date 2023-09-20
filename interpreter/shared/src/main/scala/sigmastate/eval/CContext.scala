@@ -433,22 +433,21 @@ object CSigmaDslBuilder extends CSigmaDslBuilder
 /** A default implementation of [[Context]] interface.
   * @see [[Context]] for detailed descriptions
   */
-case class CostingDataContext(
-                               _dataInputs: Coll[Box],
-                               override val headers: Coll[Header],
-                               override val preHeader: PreHeader,
-                               inputs: Coll[Box],
-                               outputs: Coll[Box],
-                               height: Int,
-                               selfBox: Box,
-                               private val selfIndex: Int,
-                               lastBlockUtxoRootHash: AvlTree,
-                               _minerPubKey: Coll[Byte],
-                               vars: Coll[AnyValue],
-                               override val activatedScriptVersion: Byte,
-                               override val currentErgoTreeVersion: Byte
-                               )
-  extends Context {
+case class CContext(
+    _dataInputs: Coll[Box],
+    override val headers: Coll[Header],
+    override val preHeader: PreHeader,
+    inputs: Coll[Box],
+    outputs: Coll[Box],
+    height: Int,
+    selfBox: Box,
+    private val selfIndex: Int,
+    lastBlockUtxoRootHash: AvlTree,
+    _minerPubKey: Coll[Byte],
+    vars: Coll[AnyValue],
+    override val activatedScriptVersion: Byte,
+    override val currentErgoTreeVersion: Byte
+) extends Context {
   @inline override def builder: SigmaDslBuilder = CSigmaDslBuilder
 
   @inline override def HEIGHT: Int = height
@@ -496,7 +495,7 @@ case class CostingDataContext(
     * @return a new instance (if `bindings` non-empty) with the specified bindings.
     *         other existing bindings are copied to the new instance
     */
-  def withUpdatedVars(bindings: (Int, AnyValue)*): CostingDataContext = {
+  def withUpdatedVars(bindings: (Int, AnyValue)*): CContext = {
     if (bindings.isEmpty) return this
 
     val ids = bindings.map(_._1).toArray
