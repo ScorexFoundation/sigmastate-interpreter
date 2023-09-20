@@ -9,8 +9,8 @@ import sigma.data.CBigInt
 import sigma.serialization.{ReaderPositionLimitExceeded, SerializerException}
 import sigma.util.Extensions.SigmaPropOps
 import sigma.validation.ValidationException
-import sigmastate.Values.ErgoTree.EmptyConstants
-import sigmastate.Values.{BigIntConstant, ByteConstant, ConstantPlaceholder, ErgoTree, IntConstant, ShortConstant, SigmaPropValue, UnparsedErgoTree}
+import sigmastate.ErgoTree.EmptyConstants
+import sigmastate.Values.{BigIntConstant, ByteConstant, ConstantPlaceholder, IntConstant, ShortConstant, SigmaPropValue}
 import sigmastate._
 import sigmastate.eval.Extensions.SigmaBooleanOps
 import sigmastate.eval.IRContext

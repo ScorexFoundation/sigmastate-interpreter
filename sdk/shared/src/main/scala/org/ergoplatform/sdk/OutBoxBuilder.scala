@@ -6,7 +6,8 @@ import org.ergoplatform.{ErgoBox, ErgoBoxCandidate}
 import sigma.Colls
 import sigma.ast.SType
 import sigma.data.{RType, SigmaConstants}
-import sigmastate.Values.{Constant, ErgoTree, EvaluatedValue}
+import sigmastate.ErgoTree
+import sigmastate.Values.{Constant, EvaluatedValue}
 
 import scala.collection.mutable.ArrayBuffer
 

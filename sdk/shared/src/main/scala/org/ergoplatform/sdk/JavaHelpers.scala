@@ -9,17 +9,17 @@ import org.ergoplatform.sdk.wallet.secrets.{DerivationPath, ExtendedSecretKey}
 import org.ergoplatform.sdk.wallet.{Constants, TokensMap}
 import org.ergoplatform.settings.ErgoAlgos
 import scorex.crypto.authds.ADKey
-import sigmastate.utils.Helpers._
 import scorex.util.encode.Base16
 import scorex.util.{ModifierId, bytesToId, idToBytes}
 import sigma.ast.SType
 import sigma.crypto.{CryptoFacade, EcPointType}
 import sigma.data.ExactIntegral.LongIsExactIntegral
-import sigma.data.{Digest32Coll, InverseIso, Iso, ProveDHTuple, ProveDlog, RType, SigmaBoolean, SigmaConstants}
+import sigma.data.{Digest32Coll, Iso, ProveDHTuple, ProveDlog, RType, SigmaBoolean, SigmaConstants}
 import sigma.serialization.GroupElementSerializer
 import sigma.util.StringUtil.StringUtilExtensions
 import sigma.{AnyValue, AvlTree, Coll, Colls, Evaluation, GroupElement, Header}
-import sigmastate.Values.{Constant, ErgoTree, EvaluatedValue, SValue, SigmaPropConstant}
+import sigmastate.ErgoTree
+import sigmastate.Values.{Constant, EvaluatedValue, SValue, SigmaPropConstant}
 import sigmastate.crypto.DiffieHellmanTupleProverInput
 import sigmastate.eval.CSigmaDslBuilder
 import sigmastate.serialization.{ErgoTreeSerializer, SigmaSerializer, ValueSerializer}

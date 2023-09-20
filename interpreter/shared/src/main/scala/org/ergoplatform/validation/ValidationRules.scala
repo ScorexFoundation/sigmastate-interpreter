@@ -6,8 +6,8 @@ import sigma.serialization.{InvalidOpCode, SerializerException}
 import sigma.util.Extensions.toUByte
 import sigma.validation.ValidationRules._
 import sigma.validation._
-import sigmastate.Values.{ErgoTree, SValue}
-import sigmastate._
+import sigmastate.Values.SValue
+import sigmastate.{ErgoTree, _}
 import sigmastate.exceptions._
 import sigmastate.serialization.ValueCodes.OpCode
 import sigmastate.serialization.{ValueCodes, ValueSerializer}

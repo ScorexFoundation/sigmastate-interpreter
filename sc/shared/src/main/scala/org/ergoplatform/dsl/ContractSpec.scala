@@ -5,7 +5,7 @@ import sigmastate.interpreter.{CostedProverResult, ProverResult}
 import sigma.data.RType
 import org.ergoplatform.{ErgoBox, ErgoLikeContext}
 import sigma.{AnyValue, Coll, SigmaDslBuilder, SigmaProp}
-import sigmastate.Values.ErgoTree
+import sigmastate.ErgoTree
 import sigmastate.eval.{CSigmaDslBuilder, IRContext}
 
 import scala.util.Try

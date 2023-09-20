@@ -13,7 +13,8 @@ import scorex.util.encode.Base16
 import sigma.ast.SType
 import sigma.data.{AvlTreeData, Digest32Coll, ProveDlog}
 import sigma.{Coll, Header, PreHeader}
-import sigmastate.Values.{ByteArrayConstant, ByteConstant, ErgoTree, EvaluatedValue, IntConstant, LongArrayConstant, SigmaPropConstant}
+import sigmastate.ErgoTree
+import sigmastate.Values.{ByteArrayConstant, ByteConstant, EvaluatedValue, IntConstant, LongArrayConstant, SigmaPropConstant}
 import sigmastate.crypto.CryptoConstants
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.SerializationSpecification

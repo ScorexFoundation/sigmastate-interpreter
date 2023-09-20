@@ -10,11 +10,10 @@ import sigma.crypto.EcPointType
 import sigma.data.{AvlTreeData, AvlTreeFlags, CollType, PrimitiveType, TrivialProp}
 import sigma.serialization.GroupElementSerializer
 import sigma.{Coll, GroupElement}
-import sigmastate.Values.{ConstantNode, ErgoTree, FuncValue, ValueCompanion}
+import sigmastate.Values.{ConstantNode, FuncValue, ValueCompanion}
 import sigmastate._
 import sigmastate.crypto.GF2_192_Poly
 import sigmastate.interpreter.{CompanionDesc, FixedCostItem, MethodDesc}
-import sigmastate.lang.Terms
 import sigmastate.lang.Terms.MethodCall
 import sigmastate.utxo.SelectField
 

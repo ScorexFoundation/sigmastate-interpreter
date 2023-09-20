@@ -8,7 +8,7 @@ import org.ergoplatform.validation.ValidationRules
 import org.ergoplatform.{ErgoLikeContext, ErgoLikeInterpreter}
 import sigma.data.AvlTreeData
 import sigma.util.Extensions.LongOps
-import sigmastate.Values.ErgoTree
+import sigmastate.ErgoTree
 import sigmastate.eval.addCostChecked
 import sigmastate.exceptions.CostLimitException
 import sigmastate.interpreter.Interpreter

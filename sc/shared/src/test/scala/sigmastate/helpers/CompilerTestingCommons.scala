@@ -4,7 +4,6 @@ import org.ergoplatform._
 import org.ergoplatform.validation.ValidationSpecification
 import org.scalacheck.Arbitrary.arbByte
 import org.scalacheck.Gen
-import org.scalatest.Assertion
 import sigma.util.BenchmarkUtil
 import scalan.TestContexts
 import sigma.ast.{SOption, SType}
@@ -12,7 +11,7 @@ import sigma.{Colls, Evaluation, TestUtils}
 import sigma.data.{RType, SigmaBoolean}
 import sigma.validation.ValidationException
 import sigma.validation.ValidationRules.CheckSerializableTypeCode
-import sigmastate.Values.{Constant, ErgoTree, SValue, SigmaPropValue}
+import sigmastate.Values.{Constant, SValue, SigmaPropValue}
 import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension.VarBinding
@@ -21,7 +20,7 @@ import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.interpreter._
 import sigmastate.lang.{CompilerSettings, SigmaCompiler, Terms}
 import sigmastate.serialization.SigmaSerializer
-import sigmastate.{CompilerTestsBase, JitCost}
+import sigmastate.{CompilerTestsBase, ErgoTree, JitCost}
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag

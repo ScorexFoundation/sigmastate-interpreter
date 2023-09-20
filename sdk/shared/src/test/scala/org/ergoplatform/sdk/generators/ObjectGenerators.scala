@@ -5,7 +5,7 @@ import org.ergoplatform.validation.ValidationSpecification
 import org.scalacheck.Gen
 import sigma.ast.SType
 import sigmastate.TestsBase
-import sigmastate.Values.ErgoTree
+import sigmastate.ErgoTree
 import sigmastate.serialization.generators.{ConcreteCollectionGenerators, TypeGenerators, ObjectGenerators => InterpreterObjectGenerators}
 
 import scala.util.Random

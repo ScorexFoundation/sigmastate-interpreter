@@ -1,7 +1,7 @@
 package sigmastate
 
 import org.scalatest.matchers.should.Matchers
-import sigmastate.Values.{ErgoTree, SigmaPropValue}
+import sigmastate.Values.SigmaPropValue
 import org.ergoplatform.ErgoTreePredef
 import sigma.VersionTesting
 import sigma.data.SigmaBoolean

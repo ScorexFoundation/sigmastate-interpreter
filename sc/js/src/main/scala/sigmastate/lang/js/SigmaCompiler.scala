@@ -37,9 +37,9 @@ class SigmaCompiler(_compiler: sigmastate.lang.SigmaCompiler) extends js.Object 
     require(prop.tpe.isSigmaProp, s"Expected SigmaProp expression type bue got ${prop.tpe}: $prop")
 
     val tree = if (segregateConstants) {
-      Values.ErgoTree.withSegregation(additionalHeaderFlags, prop.asSigmaProp)
+      sigmastate.ErgoTree.withSegregation(additionalHeaderFlags, prop.asSigmaProp)
     } else {
-      Values.ErgoTree.withoutSegregation(additionalHeaderFlags, prop.asSigmaProp)
+      sigmastate.ErgoTree.withoutSegregation(additionalHeaderFlags, prop.asSigmaProp)
     }
     new ErgoTree(tree)
   }

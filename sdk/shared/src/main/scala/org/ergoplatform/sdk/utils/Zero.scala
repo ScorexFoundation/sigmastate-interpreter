@@ -6,7 +6,7 @@ import sigma.data.RType._
 import scorex.crypto.authds.avltree.batch.BatchAVLProver
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ModifierId
-import sigmastate.Values.ErgoTree
+import sigmastate.ErgoTree
 import sigmastate.crypto.CryptoConstants
 import sigmastate.eval._
 import sigma._

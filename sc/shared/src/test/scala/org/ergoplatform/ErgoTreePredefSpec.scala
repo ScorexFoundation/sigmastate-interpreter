@@ -11,7 +11,7 @@ import sigma.Colls
 import sigma.ast.SByte
 import sigma.data.{AvlTreeData, Digest32Coll, ProveDlog, TrivialProp}
 import sigma.util.BenchmarkUtil.measure
-import sigmastate.Values.{ByteArrayConstant, CollectionConstant, ErgoTree, IntConstant, SigmaPropConstant}
+import sigmastate.Values.{ByteArrayConstant, CollectionConstant, IntConstant, SigmaPropConstant}
 import sigmastate._
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}

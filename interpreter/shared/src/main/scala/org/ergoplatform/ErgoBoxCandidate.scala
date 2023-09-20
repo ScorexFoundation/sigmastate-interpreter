@@ -10,6 +10,7 @@ import sigma.ast.SType.AnyOps
 import sigma.data.Digest32Coll
 import sigma.util.safeNewArray
 import sigma.{Coll, Colls}
+import sigmastate.ErgoTree
 import sigmastate.Values._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.SigmaSerializer

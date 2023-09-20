@@ -6,9 +6,9 @@ import sigma.ast.{SBox, SInt, SLong, SSigmaProp}
 import sigma.data.ProveDlog
 import sigmastate.crypto.CryptoConstants
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.Values.{ErgoTree, FalseSigmaProp, IntArrayConstant, IntConstant, LongConstant, SigmaPropConstant, SigmaPropValue, TrueSigmaProp, Value}
+import sigmastate.Values.{FalseSigmaProp, IntArrayConstant, IntConstant, LongConstant, SigmaPropConstant, SigmaPropValue, TrueSigmaProp, Value}
 import sigmastate.utxo._
-import sigmastate._
+import sigmastate.{ErgoTree, _}
 import sigmastate.lang.Terms.ValueOps
 
 object ErgoTreePredef {

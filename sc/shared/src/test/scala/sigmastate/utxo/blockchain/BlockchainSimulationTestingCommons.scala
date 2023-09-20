@@ -5,8 +5,8 @@ import org.ergoplatform._
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Remove}
 import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigmastate.Values
-import sigmastate.Values.{ErgoTree, LongConstant}
+import sigmastate.{ErgoTree, Values}
+import sigmastate.Values.LongConstant
 import sigmastate.eval._
 import sigmastate.helpers.{BlockchainState, CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, ErgoTransactionValidator}
 import sigmastate.helpers.TestingHelpers._

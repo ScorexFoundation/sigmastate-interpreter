@@ -10,14 +10,14 @@ import sigma.data._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ModifierId
-import sigmastate.Values.{ByteArrayConstant, ConcreteCollection, ConstantPlaceholder, ErgoTree, FalseLeaf, IntConstant, LongConstant, SigmaPropConstant, TrueLeaf}
+import sigmastate.Values.{ByteArrayConstant, ConcreteCollection, ConstantPlaceholder, FalseLeaf, IntConstant, LongConstant, SigmaPropConstant, TrueLeaf}
 import sigma.Extensions.ArrayOps
 import sigmastate.eval.{CBox, CHeader, CPreHeader, CSigmaDslBuilder, SigmaDsl}
 import sigmastate.helpers.TestingCommons
 import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers
-import sigmastate._
+import sigmastate.{ErgoTree, _}
 import sigma.ast.{SBoolean, SSigmaProp}
 import sigma.crypto.EcPointType
 

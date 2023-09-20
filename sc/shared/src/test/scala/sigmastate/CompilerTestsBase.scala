@@ -3,7 +3,7 @@ package sigmastate
 import scala.util.DynamicVariable
 import sigmastate.lang.{CompilerResult, CompilerSettings, SigmaCompiler, TransformingSigmaBuilder}
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.Values.{ErgoTree, SValue, SigmaPropValue, Value}
+import sigmastate.Values.{SValue, SigmaPropValue, Value}
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import sigma.ast.SType
 import sigmastate.serialization.ValueSerializer

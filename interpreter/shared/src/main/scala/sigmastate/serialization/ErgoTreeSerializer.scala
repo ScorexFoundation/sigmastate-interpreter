@@ -1,11 +1,11 @@
 package sigmastate.serialization
 
 import org.ergoplatform.validation.ValidationRules.{CheckDeserializedScriptIsSigmaProp, CheckHeaderSizeBit}
-import sigmastate.Values.{Constant, ErgoTree, UnparsedErgoTree}
+import sigmastate.Values.Constant
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.Values.ErgoTree.EmptyConstants
+import sigmastate.ErgoTree.EmptyConstants
 import sigma.util.safeNewArray
 import sigmastate.utxo.ComplexityTable
 import debox.cfor
@@ -14,6 +14,7 @@ import sigma.ast.SType
 import sigma.serialization.{ReaderPositionLimitExceeded, SerializerException}
 import sigma.validation.{SigmaValidationSettings, ValidationException}
 import sigma.validation.ValidationRules.CheckPositionLimit
+import sigmastate.{ErgoTree, UnparsedErgoTree}
 
 import java.util
 
