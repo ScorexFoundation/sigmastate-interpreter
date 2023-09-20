@@ -23,6 +23,7 @@ import sigmastate.Values.{Constant, EvaluatedValue, SValue, SigmaPropConstant}
 import sigmastate.crypto.DiffieHellmanTupleProverInput
 import sigmastate.eval.CSigmaDslBuilder
 import sigmastate.serialization.{ErgoTreeSerializer, SigmaSerializer, ValueSerializer}
+import sigmastate.utils.Helpers._  // required for Scala 2.11
 
 import java.lang.{Boolean => JBoolean, Byte => JByte, Integer => JInt, Long => JLong, Short => JShort, String => JString}
 import java.math.BigInteger

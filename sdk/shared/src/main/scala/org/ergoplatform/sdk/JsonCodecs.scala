@@ -21,6 +21,7 @@ import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
+import sigmastate.utils.Helpers._  // required for Scala 2.11
 
 import java.math.BigInteger
 import scala.collection.mutable
