@@ -39,8 +39,10 @@ import sigmastate.crypto.ProveDHTuple
 import sigmastate.interpreter._
 import org.scalactic.source.Position
 import sigma.VersionContext
+import sigmastate.Values.ErgoTree.HeaderType
 import sigmastate.helpers.SigmaPPrint
 import sigmastate.exceptions.GraphBuildingException
+import supertagged.classic.@@
 
 import scala.collection.compat.immutable.ArraySeq
 
@@ -4612,7 +4614,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       new ErgoBox(
         80946L,
         new ErgoTree(
-          16.toByte,
+          HeaderType @@ 16.toByte,
           Vector(
             SigmaPropConstant(
               CSigmaProp(
@@ -4642,7 +4644,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       new ErgoBox(
         -1L,
         new ErgoTree(
-          0.toByte,
+          HeaderType @@ 0.toByte,
           Vector(),
           Right(SigmaPropConstant(CSigmaProp(ProveDlog(Helpers.decodeECPoint("02af645874c3b53465a5e9d820eb207d6001258c3b708f0d31d7c2e342833dce64")))))
         ),
@@ -4708,7 +4710,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           new ErgoBox(
             1000000L,
             new ErgoTree(
-              16.toByte,
+              HeaderType @@ 16.toByte,
               Vector(
                 SigmaPropConstant(
                   CSigmaProp(
@@ -4745,7 +4747,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           new ErgoBox(
             2769336982721999022L,
             new ErgoTree(
-              0.toByte,
+              HeaderType @@ 0.toByte,
               Vector(),
               Right(SigmaPropConstant(CSigmaProp(ProveDlog(Helpers.decodeECPoint("02d13e1a8c31f32194761adc1cdcbaa746b3e049e682bba9308d8ee84576172991")))))
             ),
@@ -6577,7 +6579,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     new ErgoBox(
       1L,
       new ErgoTree(
-        0.toByte,
+        HeaderType @@ 0.toByte,
         Vector(),
         Right(
           SigmaPropConstant(
@@ -6613,7 +6615,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     new ErgoBox(
       1000000000L,
       new ErgoTree(
-        0.toByte,
+        HeaderType @@ 0.toByte,
         Vector(),
         Right(BoolToSigmaProp(OR(ConcreteCollection(Array(FalseLeaf, AND(ConcreteCollection(Array(FalseLeaf, FalseLeaf), SBoolean))), SBoolean))))
       ),

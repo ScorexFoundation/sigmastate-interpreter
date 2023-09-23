@@ -7,8 +7,8 @@ import io.circe.syntax.EncoderOps
 import org.ergoplatform.sdk.utils.SerializationUtils.{parseString, serializeString}
 import org.ergoplatform.sdk.utils.Zero
 import sigma.util.safeNewArray
-import sigmastate.Values.ErgoTree.headerWithVersion
-import sigmastate.Values.{ErgoTree, _}
+import sigmastate.Values.ErgoTree.{defaultHeaderWithVersion, setConstantSegregation}
+import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval._
 import sigmastate.exceptions.SerializerException
@@ -173,9 +173,9 @@ case class ContractTemplate(
       }
     }
 
-    val usedErgoTreeVersion = headerWithVersion(if (version.isDefined) version.get else treeVersion.get)
+    val usedErgoTreeHeader = defaultHeaderWithVersion(if (version.isDefined) version.get else treeVersion.get)
     ErgoTree(
-      (ErgoTree.ConstantSegregationHeader | usedErgoTreeVersion).toByte,
+      setConstantSegregation(usedErgoTreeHeader),
       constants,
       this.expressionTree
     )

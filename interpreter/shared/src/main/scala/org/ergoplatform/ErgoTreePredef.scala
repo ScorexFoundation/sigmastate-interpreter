@@ -5,7 +5,8 @@ import sigmastate.crypto.DLogProtocol.ProveDlog
 import sigmastate.crypto.CryptoConstants
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{LongConstant, SigmaPropConstant, IntArrayConstant, TrueSigmaProp, Value, FalseSigmaProp, SigmaPropValue, IntConstant, ErgoTree}
+import sigmastate.Values.ErgoTree.HeaderType
+import sigmastate.Values.{ErgoTree, FalseSigmaProp, IntArrayConstant, IntConstant, LongConstant, SigmaPropConstant, SigmaPropValue, TrueSigmaProp, Value}
 import sigmastate.utxo._
 import sigmastate._
 import sigmastate.lang.Terms.ValueOps
@@ -13,17 +14,17 @@ import sigmastate.lang.Terms.ValueOps
 object ErgoTreePredef {
   /** Create ErgoTree with `false` proposition, which is never true.
     *
-    * @param headerFlags ErgoTree header flags to be combined with default header
+    * @param header ErgoTree header to be used in the tree
     * @see ErgoTree.headerWithVersion()
     */
-  def FalseProp(headerFlags: Byte): ErgoTree = ErgoTree.withoutSegregation(headerFlags, FalseSigmaProp)
+  def FalseProp(header: HeaderType): ErgoTree = ErgoTree.withoutSegregation(header, FalseSigmaProp)
 
   /** Create ErgoTree with `true` proposition, which is always true.
     *
-    * @param headerFlags ErgoTree header flags to be combined with default header
+    * @param header ErgoTree header to be used in the tree
     * @see ErgoTree.headerWithVersion()
     */
-  def TrueProp(headerFlags: Byte): ErgoTree = ErgoTree.withoutSegregation(headerFlags, TrueSigmaProp)
+  def TrueProp(header: HeaderType): ErgoTree = ErgoTree.withoutSegregation(header, TrueSigmaProp)
 
   /**
     * Byte array value of the serialized reward output script proposition with pk being substituted

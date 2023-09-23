@@ -26,7 +26,7 @@ case class TestContractSpec(testSuite: CompilerTestingCommons)(implicit val IR: 
     lazy val ergoTree: ErgoTree = {
       val value = testSuite.compile(scriptSpec.env, scriptSpec.code)
       val headerFlags = scriptSpec.scriptVersion match {
-        case Some(version) => ErgoTree.headerWithVersion(version)
+        case Some(version) => ErgoTree.defaultHeaderWithVersion(version)
         case None => testSuite.ergoTreeHeaderInTests
       }
       val tree: ErgoTree = ErgoTree.fromProposition(headerFlags, value.asSigmaProp)

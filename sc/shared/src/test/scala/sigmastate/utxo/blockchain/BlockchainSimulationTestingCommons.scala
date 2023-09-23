@@ -155,7 +155,7 @@ object BlockchainSimulationTestingCommons extends CompilerTestingCommons {
         val boxes = (1 to 50).map(_ =>
           testBox(10,
             ErgoTree.fromProposition(
-              ErgoTree.headerWithVersion(scriptVersion),
+              ErgoTree.defaultHeaderWithVersion(scriptVersion),
               Values.TrueLeaf.toSigmaProp),
             i, Seq(), Map(), txId))
         createTransaction(boxes)

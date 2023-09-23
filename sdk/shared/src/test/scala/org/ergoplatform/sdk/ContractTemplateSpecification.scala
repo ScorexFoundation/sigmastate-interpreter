@@ -9,6 +9,7 @@ import sigmastate.eval.CBigInt
 import sigmastate.helpers.NegativeTesting
 import sigmastate.serialization.{SerializationSpecification, SigmaSerializer}
 import sigma.ContractsTestkit
+import sigmastate.Values.ErgoTree.setConstantSegregation
 
 import java.math.BigInteger
 
@@ -204,13 +205,10 @@ class ContractTemplateSpecification extends SerializationSpecification
       Map("p1" -> IntConstant(10), "p2" -> IntConstant(20)),
       Map.empty[String, Constant[SType]]
     )
-    var expectedErgoTreeVersion = (ErgoTree.ConstantSegregationHeader | ergoTreeVersionInTests).toByte
-    if (ergoTreeVersionInTests > 0) {
-      expectedErgoTreeVersion = (expectedErgoTreeVersion | ErgoTree.SizeFlag).toByte
-    }
+    val expectedErgoTreeHeader = setConstantSegregation(ergoTreeHeaderInTests)
     val expectedErgoTree = Seq(
       ErgoTree(
-        expectedErgoTreeVersion,
+        expectedErgoTreeHeader,
         IndexedSeq(
           ByteConstant(10.toByte),
           ByteConstant(40.toByte),
@@ -219,7 +217,7 @@ class ContractTemplateSpecification extends SerializationSpecification
         expressionTrees(0)
       ),
       ErgoTree(
-        expectedErgoTreeVersion,
+        expectedErgoTreeHeader,
         IndexedSeq(
           IntConstant(10),
           IntConstant(20),
@@ -228,7 +226,7 @@ class ContractTemplateSpecification extends SerializationSpecification
         expressionTrees(1)
       ),
       ErgoTree(
-        expectedErgoTreeVersion,
+        expectedErgoTreeHeader,
         Constant.EmptySeq,
         expressionTrees(2)
       )
@@ -255,12 +253,9 @@ class ContractTemplateSpecification extends SerializationSpecification
       )
     val templateValues = Map("p1" -> IntConstant(10), "p2" -> IntConstant(30))
 
-    var expectedErgoTreeVersion = (ErgoTree.ConstantSegregationHeader | ergoTreeVersionInTests).toByte
-    if (ergoTreeVersionInTests > 0) {
-      expectedErgoTreeVersion = (expectedErgoTreeVersion | ErgoTree.SizeFlag).toByte
-    }
+    val expectedErgoTreeHeader = setConstantSegregation(ergoTreeHeaderInTests)
     val expectedErgoTree = ErgoTree(
-        expectedErgoTreeVersion,
+        expectedErgoTreeHeader,
         IndexedSeq(
           IntConstant(10),
           IntConstant(20),

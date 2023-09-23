@@ -152,7 +152,7 @@ object SigmaPredef {
         { case (_, Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
           ErgoAddressEncoder(networkPrefix).fromString(arg.value).get match {
             case a: P2PKAddress => SigmaPropConstant(a.pubkey)
-            case a@_ => sys.error(s"unsupported address $a")
+            case a => sys.error(s"unsupported address $a")
           }
         }),
       OperationInfo(Constant, "",

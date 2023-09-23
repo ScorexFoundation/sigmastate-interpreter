@@ -325,7 +325,7 @@ class SigmaDslTesting extends AnyPropSpec
             pkAlice,
             DeserializeRegister(ErgoBox.R5, SSigmaProp),  // deserialize pkBob
             DeserializeContext(2, SSigmaProp)))           // deserialize pkCarol
-        val header = ErgoTree.headerWithVersion(ergoTreeVersionInTests)
+        val header = ErgoTree.defaultHeaderWithVersion(ergoTreeVersionInTests)
         ErgoTree.withSegregation(header, sigmastate.SigmaOr(prop, multisig))
       }
 

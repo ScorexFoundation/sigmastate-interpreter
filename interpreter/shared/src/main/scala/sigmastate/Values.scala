@@ -13,7 +13,7 @@ import sigmastate.interpreter.{CompanionDesc, ErgoTreeEvaluator, Interpreter, Na
 import sigmastate.serialization._
 import sigmastate.serialization.OpCodes._
 import sigmastate.TrivialProp.{FalseProp, TrueProp}
-import sigmastate.Values.ErgoTree.substConstants
+import sigmastate.Values.ErgoTree.{HeaderType, substConstants}
 import sigmastate.crypto.DLogProtocol.ProveDlog
 import sigmastate.crypto.{CryptoConstants, ProveDHTuple}
 import sigmastate.lang.Terms._
@@ -35,6 +35,7 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigma.{AvlTree, Coll, Colls, Header, PreHeader, _}
 import sigmastate.lang.SourceContext
 import sigma.util.safeNewArray
+import supertagged.TaggedType
 
 import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
@@ -965,8 +966,8 @@ object Values {
     def isProven: Value[SBoolean.type] = SigmaPropIsProven(p)
     def propBytes: Value[SByteArray] = SigmaPropBytes(p)
     def treeWithSegregation: ErgoTree = ErgoTree.withSegregation(p)
-    def treeWithSegregation(headerFlags: Byte): ErgoTree =
-      ErgoTree.withSegregation(headerFlags, p)
+    def treeWithSegregation(header: HeaderType): ErgoTree =
+      ErgoTree.withSegregation(header, p)
   }
 
   implicit class SigmaBooleanOps(val sb: SigmaBoolean) extends AnyVal {
@@ -1215,7 +1216,7 @@ object Values {
     *                          this flag and provides it to the constructor.
     */
   case class ErgoTree private[sigmastate](
-    header: Byte,
+    header: HeaderType,
     constants: IndexedSeq[Constant[SType]],
     root: Either[UnparsedErgoTree, SigmaPropValue],
     private val givenComplexity: Int,
@@ -1223,7 +1224,7 @@ object Values {
     private val givenDeserialize: Option[Boolean]
   ) {
 
-    def this(header: Byte,
+    def this(header: HeaderType,
              constants: IndexedSeq[Constant[SType]],
              root: Either[UnparsedErgoTree, SigmaPropValue]) =
       this(
@@ -1332,11 +1333,12 @@ object Values {
   }
 
   object ErgoTree {
-    /** Current version of ErgoTree serialization format (aka bite-code language version)*/
-    val VersionFlag: Byte = 0
+    /** Represents information in ErgoTree header. */
+    object HeaderType extends TaggedType[Byte]
+    type HeaderType = HeaderType.Type
 
-    /** Default value of ErgoTree.header byte */
-    val DefaultHeader: Byte = (0 | VersionFlag).toByte
+    /** Current version of ErgoTree serialization format (aka bite-code language version)*/
+    val VersionFlag: Byte = VersionContext.MaxSupportedScriptVersion
 
     /** Header flag to indicate that constant segregation should be applied. */
     val ConstantSegregationFlag: Byte = 0x10
@@ -1347,34 +1349,66 @@ object Values {
     /** Header mask to extract version bits. */
     val VersionMask: Byte = 0x07
 
+    /** Header with all the flags set to 0 and version 0. */
+    val ZeroHeader: HeaderType = HeaderType @@ 0.toByte
+
+    /** Default value of ErgoTree.header byte */
+    val DefaultHeader: HeaderType = HeaderType @@ (0/*VersionFlag | SizeFlag*/).toByte
+
     /** Default header with constant segregation enabled. */
-    val ConstantSegregationHeader: Byte = (DefaultHeader | ConstantSegregationFlag).toByte
+    val ConstantSegregationHeader: HeaderType = HeaderType @@ (DefaultHeader | ConstantSegregationFlag).toByte
 
     /** @return true if the constant segregation flag is set to 1 in the given header byte. */
-    @inline final def isConstantSegregation(header: Byte): Boolean = (header & ConstantSegregationFlag) != 0
+    @inline final def isConstantSegregation(header: HeaderType): Boolean = (header & ConstantSegregationFlag) != 0
 
     /** @return true if the size flag is set to 1 in the given header byte. */
-    @inline final def hasSize(header: Byte): Boolean = (header & SizeFlag) != 0
+    @inline final def hasSize(header: HeaderType): Boolean = (header & SizeFlag) != 0
 
     /** @return a value of the version bits from the given header byte. */
-    @inline final def getVersion(header: Byte): Byte = (header & VersionMask).toByte
+    @inline final def getVersion(header: HeaderType): Byte = (header & VersionMask).toByte
 
-    /** Update the version bits of the given header byte with the given version value. */
-    @inline final def updateVersionBits(header: Byte, version: Byte): Byte = {
+    /** Update the version bits of the given header byte with the given version value,
+      * leaving all other bits unchanged.
+      */
+    @inline final def setVersionBits(header: HeaderType, version: Byte): HeaderType = {
       require(version < 8, s"ErgoTree.version should be < 8: $version")
-      (header | version).toByte
+      val h = header & (~VersionMask) // clear version bits
+      HeaderType @@ (h | version).toByte
+    }
+
+    /** Sets the required bit in the given header:
+      * - The SizeFlag is set if version > 0
+      */
+    @inline final def setRequiredBits(header: HeaderType): HeaderType = {
+      if (getVersion(header) > 0) {
+        // set SizeFlag if version is greater then 0 (see require() in ErgoTree constructor)
+        HeaderType @@ (header | ErgoTree.SizeFlag).toByte
+      } else
+        header
+    }
+
+    /** Sets the ConstantSegregationFlag in the given header */
+    @inline final def setConstantSegregation(header: HeaderType): HeaderType = {
+      HeaderType @@ (header | ConstantSegregationFlag).toByte
+    }
+
+    /** Sets the ConstantSegregationFlag in the given header */
+    @inline final def setSizeBit(header: HeaderType): HeaderType = {
+      HeaderType @@ (header | SizeFlag).toByte
     }
 
     /** Creates valid header byte with the given version.
       * The SizeFlag is set if version > 0 */
-    @inline def headerWithVersion(version: Byte): Byte = {
-      // take default header and embedd the given version in it
-      var h = updateVersionBits(DefaultHeader, version)
-      if (version > 0) {
-        // set SizeFlag if version is greater then 0 (see require() in ErgoTree constructor)
-        h = (h | ErgoTree.SizeFlag).toByte
-      }
-      h
+    @inline final def defaultHeaderWithVersion(version: Byte): HeaderType = {
+      headerWithVersion(DefaultHeader, version)
+    }
+
+    /** Creates valid header byte with the given version.
+      * The SizeFlag is set if version > 0 */
+    @inline final def headerWithVersion(header: HeaderType, version: Byte): HeaderType = {
+      // take the header and embedd the given version in it
+      val h = setVersionBits(header, version)
+      setRequiredBits(h)
     }
 
     /** Substitute [[ConstantPlaceholder]] nodes in the given expression with the constants
@@ -1394,23 +1428,11 @@ object Values {
     }
 
     /** Create an ErgoTree with the given parameters. */
-    def apply(header: Byte, constants: IndexedSeq[Constant[SType]], root: SigmaPropValue): ErgoTree = {
-      new ErgoTree(header, constants, Right(root))
+    def apply(header: HeaderType, constants: IndexedSeq[Constant[SType]], root: SigmaPropValue): ErgoTree = {
+      new ErgoTree(setRequiredBits(header), constants, Right(root))
     }
 
     val EmptyConstants: IndexedSeq[Constant[SType]] = Array[Constant[SType]]()
-
-    /** Create new ErgoTree for the given proposition using the given header flags and
-      * without performing constant segregation.
-      */
-    def withoutSegregation(root: SigmaPropValue): ErgoTree =
-      ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, root)
-
-    /** Create new ErgoTree for the given proposition using the given header flags and
-      * without performing constant segregation.
-      */
-    def withoutSegregation(headerFlags: Byte, root: SigmaPropValue): ErgoTree =
-      ErgoTree((ErgoTree.DefaultHeader | headerFlags).toByte, EmptyConstants, root)
 
     /** Create new ErgoTree for the given proposition using default header.
       * If the property is not a simple constant, then constant segregation is performed.
@@ -1422,10 +1444,10 @@ object Values {
     /** Create new ErgoTree for the given proposition using the given header flags.
       * If the property is not a simple constant, then constant segregation is performed.
       */
-    def fromProposition(headerFlags: Byte, prop: SigmaPropValue): ErgoTree = {
+    def fromProposition(header: HeaderType, prop: SigmaPropValue): ErgoTree = {
       prop match {
-        case SigmaPropConstant(_) => withoutSegregation(headerFlags, prop)
-        case _ => withSegregation(headerFlags, prop)
+        case SigmaPropConstant(_) => withoutSegregation(header, prop)
+        case _ => withSegregation(header, prop)
       }
     }
 
@@ -1439,9 +1461,21 @@ object Values {
     /** Create new ErgoTree for the given sigma proposition using the given header flags
       * and without performing constant segregation.
       */
-    def fromSigmaBoolean(headerFlags: Byte, pk: SigmaBoolean): ErgoTree = {
-      withoutSegregation(headerFlags, pk.toSigmaProp)
+    def fromSigmaBoolean(header: HeaderType, pk: SigmaBoolean): ErgoTree = {
+      withoutSegregation(header, pk.toSigmaProp)
     }
+
+    /** Create new ErgoTree for the given proposition using the given header flags and
+      * without performing constant segregation.
+      */
+    def withoutSegregation(root: SigmaPropValue): ErgoTree =
+      ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, root)
+
+    /** Create new ErgoTree for the given proposition using the given header flags and
+      * without performing constant segregation.
+      */
+    def withoutSegregation(header: HeaderType, root: SigmaPropValue): ErgoTree =
+      ErgoTree(setRequiredBits(header), EmptyConstants, root)
 
     /** Build ErgoTree via serialization of the value with ConstantSegregationHeader, constants segregated
       * from the tree and ConstantPlaceholders referring to the segregated constants.
@@ -1455,18 +1489,20 @@ object Values {
       *                    ConstantSegregationHeader flag.
       * @param prop expression to be transformed into ErgoTree
       **/
-    def withSegregation(headerFlags: Byte, prop: SigmaPropValue): ErgoTree = {
+    def withSegregation(header: HeaderType, prop: SigmaPropValue): ErgoTree = {
       val constantStore = new ConstantStore()
-      val byteWriter = SigmaSerializer.startWriter(constantStore)
+      val w = SigmaSerializer.startWriter(constantStore)
       // serialize value and segregate constants into constantStore
-      ValueSerializer.serialize(prop, byteWriter)
+      ValueSerializer.serialize(prop, w)
       val extractedConstants = constantStore.getAll
-      val r = SigmaSerializer.startReader(byteWriter.toBytes)
+      val r = SigmaSerializer.startReader(w.toBytes)
       r.constantStore = new ConstantStore(extractedConstants)
       // deserialize value with placeholders
       val valueWithPlaceholders = ValueSerializer.deserialize(r).asSigmaProp
-      val header = (ErgoTree.ConstantSegregationHeader | headerFlags).toByte
-      new ErgoTree(header, extractedConstants, Right(valueWithPlaceholders))
+      new ErgoTree(
+        header = setRequiredBits(setConstantSegregation(header)),
+        constants = extractedConstants,
+        root = Right(valueWithPlaceholders))
     }
 
     /** Create new ErgoTree for the given sigma proposition using default header and

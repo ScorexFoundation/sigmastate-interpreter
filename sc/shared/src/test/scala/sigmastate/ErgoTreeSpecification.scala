@@ -21,6 +21,7 @@ import sigmastate.utils.Helpers.TryOps
 import sigmastate.utxo._
 import sigma._
 import sigma.{ContractsTestkit, SigmaDslTesting}
+import sigmastate.Values.ErgoTree.HeaderType
 
 
 /** Regression tests with ErgoTree related test vectors.
@@ -59,13 +60,13 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
 
   property("ErgoTree.toProposition") {
     val t1 = new ErgoTree(
-      16.toByte,
+      HeaderType @@ 16.toByte,
       Array(IntConstant(1)),
       Right(BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), IntConstant(1))))
     )
 
     val t = new ErgoTree(
-      16.toByte,
+      HeaderType @@ 16.toByte,
       Array(IntConstant(1)),
       Left(UnparsedErgoTree(t1.bytes, ValidationException("", ValidationRules.CheckTypeCode, Seq())))
     )
@@ -78,7 +79,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
   property("ErgoTree.template") {
     {
       val t = new ErgoTree(
-        16.toByte,
+        HeaderType @@ 16.toByte,
         Array(IntConstant(1)),
         Right(BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), IntConstant(1))))
       )
@@ -93,7 +94,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
 
   property("ErgoTree.bytes") {
     val t = new ErgoTree(
-      16.toByte,
+      HeaderType @@ 16.toByte,
       Array(IntConstant(1)),
       Right(BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), IntConstant(1))))
     )
@@ -111,7 +112,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
     Value.hasDeserialize(EQ(const, dc)) shouldBe true
     Value.hasDeserialize(Plus(Plus(const, dc), dr)) shouldBe true
     val t = new ErgoTree(
-      16.toByte,
+      HeaderType @@ 16.toByte,
       Array(IntConstant(1)),
       Right(BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), IntConstant(1))))
     )
@@ -121,7 +122,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
   property("ErgoTree.hasDeserialize") {
     {
       val t = new ErgoTree(
-        0.toByte,
+        HeaderType @@ 0.toByte,
         Array[Constant[SType]](),
         Right(TrueSigmaProp))
       t._hasDeserialize shouldBe None
@@ -130,7 +131,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
 
     {
       val t = new ErgoTree(
-        16.toByte,
+        HeaderType @@ 16.toByte,
         Array(IntConstant(1)),
         Right(BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), DeserializeContext(1.toByte, SInt))))
       )
@@ -141,13 +142,13 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
 
   property("ErgoTree equality") {
     val t1 = new ErgoTree(
-      16.toByte,
+      HeaderType @@ 16.toByte,
       Array(IntConstant(1)),
       Right(BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), IntConstant(1))))
     )
-    val t2 = new ErgoTree(16.toByte, Array(IntConstant(1)), Right(TrueSigmaProp))
-    val t3 = new ErgoTree(16.toByte, Array(IntConstant(1)), Right(TrueSigmaProp))
-    val t4 = new ErgoTree(16.toByte, Vector(), Right(TrueSigmaProp))
+    val t2 = new ErgoTree(HeaderType @@ 16.toByte, Array(IntConstant(1)), Right(TrueSigmaProp))
+    val t3 = new ErgoTree(HeaderType @@ 16.toByte, Array(IntConstant(1)), Right(TrueSigmaProp))
+    val t4 = new ErgoTree(HeaderType @@ 16.toByte, Vector(), Right(TrueSigmaProp))
     val t5 = new ErgoTree(ErgoTree.DefaultHeader, Vector(), Right(TrueSigmaProp))
     assert(t1 != t2)
     assert(t2 == t3)
@@ -680,7 +681,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
     val addr = ErgoAddressEncoder.Mainnet.fromString("Fo6oijFP2JM87ac7w").getOrThrow
     val tree = addr.script
     tree shouldBe new ErgoTree(
-      16.toByte,
+      HeaderType @@ 16.toByte,
       Vector(TrueLeaf),
       Right(BoolToSigmaProp(BoolToSigmaProp(ConstantPlaceholder(0, SBoolean)).asBoolValue))
     )
@@ -716,7 +717,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
       val addr = ErgoAddressEncoder.Mainnet.fromString("Fo6oijFP2JM87ac7w").getOrThrow
       val tree = addr.script
       tree shouldBe new ErgoTree(
-        16.toByte,
+        HeaderType @@ 16.toByte,
         Vector(TrueLeaf),
         Right(BoolToSigmaProp(BoolToSigmaProp(ConstantPlaceholder(0, SBoolean)).asBoolValue))
       )
@@ -748,7 +749,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
       // 4503b5d77cb74b4354771b835cd61e9d5257022a8efff0fddfac249e0c25b492
       val addr = ErgoAddressEncoder.Mainnet.fromString("28JURWHTHwTnXJt5F38").getOrThrow
       val tree = addr.script
-      tree shouldBe new ErgoTree(16.toByte, Vector(),
+      tree shouldBe new ErgoTree(HeaderType @@ 16.toByte, Vector(),
         Right(BoolToSigmaProp(
           CreateProveDlog(OptionGet(ExtractRegisterAs(Self, ErgoBox.R4, SOption(SGroupElement)))).asBoolValue)
         ))

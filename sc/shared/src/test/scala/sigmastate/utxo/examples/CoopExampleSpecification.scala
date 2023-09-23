@@ -65,7 +65,7 @@ class CoopExampleSpecification extends CompilerTestingCommons
 
     def pkWithTree(in: DLogProverInput): (ProveDlog, ErgoTree) = {
       val pk = in.publicImage
-      val tree = ErgoTree.fromSigmaBoolean(ErgoTree.headerWithVersion(0), pk)
+      val tree = ErgoTree.fromSigmaBoolean(ErgoTree.defaultHeaderWithVersion(0), pk)
       (pk, tree)
     }
 

@@ -22,6 +22,7 @@ import sigmastate.serialization.{GroupElementSerializer, ValueSerializer}
 import sigmastate.utils.Helpers._
 import sigmastate.{CompilerCrossVersionProps, SType, SigmaAnd}
 import sigma.SigmaDslTesting
+import sigmastate.Values.ErgoTree.setConstantSegregation
 
 import java.math.BigInteger
 
@@ -81,7 +82,7 @@ class ErgoAddressSpecification extends SigmaDslTesting
 
     val p2s: Pay2SAddress = Pay2SAddress(
       ErgoTree.fromProposition(
-        ErgoTree.headerWithVersion(scriptVersion),
+        ErgoTree.defaultHeaderWithVersion(scriptVersion),
         SigmaAnd(pk, pk10)))
     val p2sh: Pay2SHAddress = Pay2SHAddress(pk)
     val p2pk: P2PKAddress = P2PKAddress(pk)
@@ -125,7 +126,7 @@ class ErgoAddressSpecification extends SigmaDslTesting
     val pk = dlogGroup.exponentiate(g, w)
     val pkBytes = GroupElementSerializer.toBytes(pk)
     val encoder = new ErgoAddressEncoder(MainnetNetworkPrefix)
-    val p2pk =  new P2PKAddress(ProveDlog(pk), pkBytes)(encoder)
+    val p2pk =  P2PKAddress(ProveDlog(pk))(encoder)
     val addrStr = p2pk.toString
 
     val prefix = (encoder.networkPrefix + P2PKAddress.addressTypePrefix).toByte
@@ -146,6 +147,11 @@ class ErgoAddressSpecification extends SigmaDslTesting
 
     testFromProposition(scriptVersion = 1,
       expectedP2S = "2MzJLjzX6UNfJHSVvioB6seYZ99FpWHB4Ds1gekHPv5KtNmLJUecgRWwvcGEqbt8ZAokUxGvKMuNgMZFzkPPdTGiYzPQoSR55NT5isCidMywgp52LYV",
+      expectedP2SH = "qETVgcEctaXurNbFRgGUcZEGg4EKa8R4a5UNHY7",
+      expectedP2PK = "3WwXpssaZwcNzaGMv3AgxBdTPJQBt5gCmqBsg3DykQ39bYdhJBsN")
+
+    testFromProposition(scriptVersion = 2,
+      expectedP2S = "2N1Egpu5R9XtomV7x343LTXGrBLEkC8pvMVtjm6V3iHryxVfc6LUJhd1JsswhXMpPXUMatoBgnJ4qMGAC7dha27WkjqVBUsebWBDhig97zhmKS8T4YS",
       expectedP2SH = "qETVgcEctaXurNbFRgGUcZEGg4EKa8R4a5UNHY7",
       expectedP2PK = "3WwXpssaZwcNzaGMv3AgxBdTPJQBt5gCmqBsg3DykQ39bYdhJBsN")
   }
@@ -192,7 +198,7 @@ class ErgoAddressSpecification extends SigmaDslTesting
 
     {
       val unparsedTree = new ErgoTree(
-        (ErgoTree.ConstantSegregationHeader | ergoTreeHeaderInTests).toByte,
+        setConstantSegregation(ergoTreeHeaderInTests),
         Array[Constant[SType]](),
         Left(UnparsedErgoTree(Array[Byte](), ValidationException("", ValidationRules.CheckTypeCode, Seq())))
       )
@@ -204,7 +210,7 @@ class ErgoAddressSpecification extends SigmaDslTesting
 
     {
       val invalidTree = new ErgoTree(
-        (ErgoTree.ConstantSegregationHeader | ergoTreeHeaderInTests).toByte,
+        setConstantSegregation(ergoTreeHeaderInTests),
         Array[Constant[SType]](),
         Right(IntConstant(10).asSigmaProp)
       )

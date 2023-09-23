@@ -1,6 +1,7 @@
 package org.ergoplatform.validation
 
 import sigma.util.Extensions.toUByte
+import sigmastate.Values.ErgoTree.HeaderType
 import sigmastate.Values.{ErgoTree, SValue}
 import sigmastate._
 import sigmastate.exceptions.{InterpreterException, InvalidOpCode, ReaderPositionLimitExceeded, SerializerException, SigmaException}
@@ -240,7 +241,7 @@ object ValidationRules {
 
   object CheckHeaderSizeBit extends ValidationRule(1012,
     "For version greater then 0, size bit should be set.") with SoftForkWhenReplaced {
-    final def apply(header: Byte): Unit = {
+    final def apply(header: HeaderType): Unit = {
       checkRule()
       val version = ErgoTree.getVersion(header)
       if (version != 0 && !ErgoTree.hasSize(header)) {
