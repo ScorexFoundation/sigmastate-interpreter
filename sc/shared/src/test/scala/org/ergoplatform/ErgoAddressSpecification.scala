@@ -22,7 +22,7 @@ import sigmastate.serialization.{GroupElementSerializer, ValueSerializer}
 import sigmastate.utils.Helpers._
 import sigmastate.{CompilerCrossVersionProps, SType, SigmaAnd}
 import sigma.SigmaDslTesting
-import sigmastate.Values.ErgoTree.setConstantSegregation
+import sigmastate.Values.ErgoTree.{ZeroHeader, setConstantSegregation}
 
 import java.math.BigInteger
 
@@ -82,7 +82,7 @@ class ErgoAddressSpecification extends SigmaDslTesting
 
     val p2s: Pay2SAddress = Pay2SAddress(
       ErgoTree.fromProposition(
-        ErgoTree.defaultHeaderWithVersion(scriptVersion),
+        ErgoTree.headerWithVersion(ZeroHeader, scriptVersion),
         SigmaAnd(pk, pk10)))
     val p2sh: Pay2SHAddress = Pay2SHAddress(pk)
     val p2pk: P2PKAddress = P2PKAddress(pk)
