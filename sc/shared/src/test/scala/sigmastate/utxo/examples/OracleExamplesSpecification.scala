@@ -265,8 +265,10 @@ class OracleExamplesSpecification extends CompilerTestingCommons
       spendingTransaction,
       self = sOracle, activatedVersionInTests)
 
-    val prA = alice.prove(emptyEnv + (ScriptNameProp -> "alice_prove"), prop, ctx, fakeMessage).get
-    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, prA, fakeMessage).get._1 shouldBe true
+    val prA = alice.prove(emptyEnv + (ScriptNameProp -> "alice_prove"),
+      mkTestErgoTree(prop), ctx, fakeMessage).get
+    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"),
+      mkTestErgoTree(prop), ctx, prA, fakeMessage).get._1 shouldBe true
   }
 
   case class OracleContract[Spec <: ContractSpec]

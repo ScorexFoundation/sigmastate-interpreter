@@ -39,7 +39,7 @@ class SoftForkabilitySpecification extends SigmaTestingData
   // cast Boolean typed prop to SigmaProp (which is invalid) // ErgoTree v0
   lazy val invalidPropV1: ErgoTree =
     ErgoTree.fromProposition(
-      ErgoTree.defaultHeaderWithVersion(0),
+      ErgoTree.headerWithVersion(ZeroHeader, 0),
       booleanPropV1.asSigmaProp)
 
   lazy val invalidTxV1 = createTransaction(createBox(boxAmt, invalidPropV1, 1))
@@ -48,7 +48,7 @@ class SoftForkabilitySpecification extends SigmaTestingData
   lazy val propV1 = booleanPropV1.toSigmaProp
   lazy val txV1 = createTransaction(
     createBox(boxAmt,
-      ErgoTree.fromProposition(ErgoTree.defaultHeaderWithVersion(0), propV1), // ErgoTree v0
+      ErgoTree.fromProposition(ErgoTree.headerWithVersion(ZeroHeader, 0), propV1), // ErgoTree v0
       1))
   lazy val txV1bytes = txV1.messageToSign
 
@@ -163,7 +163,7 @@ class SoftForkabilitySpecification extends SigmaTestingData
     // prepare bytes using default serialization and then replacing version in the header
     val v2tree_withoutSize_bytes = runOnV2Node {
       val tree = ErgoTree.fromProposition(
-        ErgoTree.defaultHeaderWithVersion(0), propV2)  // ErgoTree v0
+        ErgoTree.headerWithVersion(ZeroHeader, 0), propV2)  // ErgoTree v0
       val bytes = tree.bytes
       // set version to v2 while not setting the size bit,
       // we cannot do this using ErgoTree constructor (due to require() check)

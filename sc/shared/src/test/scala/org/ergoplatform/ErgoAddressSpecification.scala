@@ -286,16 +286,17 @@ class ErgoAddressSpecification extends SigmaDslTesting
     // when everything is ok
     testPay2SHAddress(addr, script = scriptVarId -> ByteArrayConstant(scriptBytes))
 
+    val expectedCost = if (ergoTreeVersionInTests == 0) 88 else 90 // account for size serialized for version > 0
+
     // when limit is low
     {
       val deliberatelySmallLimit = 24
-
       assertExceptionThrown(
         testPay2SHAddress(addr,
           script = scriptVarId -> ByteArrayConstant(scriptBytes),
           costLimit = deliberatelySmallLimit),
         rootCauseLike[CostLimitException](
-          s"Estimated execution cost 88 exceeds the limit $deliberatelySmallLimit")
+          s"Estimated execution cost $expectedCost exceeds the limit $deliberatelySmallLimit")
       )
     }
 
@@ -311,7 +312,7 @@ class ErgoAddressSpecification extends SigmaDslTesting
           costLimit = deliberatelySmallLimit)
       },
       rootCauseLike[CostLimitException](
-        s"Estimated execution cost 88 exceeds the limit $deliberatelySmallLimit")
+        s"Estimated execution cost $expectedCost exceeds the limit $deliberatelySmallLimit")
       )
     }
 

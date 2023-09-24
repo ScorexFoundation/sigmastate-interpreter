@@ -19,6 +19,7 @@ import sigma.util.CollectionUtil._
 import sigma.util.Extensions._
 import sigma.util.StringUtil.StringUtilExtensions
 import sigmastate.SType.AnyOps
+import sigmastate.Values.ErgoTree.ZeroHeader
 import sigmastate.Values.{ByteArrayConstant, Constant, ConstantNode, ErgoTree, IntConstant, SValue}
 import sigmastate.crypto.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate.crypto.SigmaProtocolPrivateInput
@@ -325,7 +326,7 @@ class SigmaDslTesting extends AnyPropSpec
             pkAlice,
             DeserializeRegister(ErgoBox.R5, SSigmaProp),  // deserialize pkBob
             DeserializeContext(2, SSigmaProp)))           // deserialize pkCarol
-        val header = ErgoTree.defaultHeaderWithVersion(ergoTreeVersionInTests)
+        val header = ErgoTree.headerWithVersion(ZeroHeader, ergoTreeVersionInTests)
         ErgoTree.withSegregation(header, sigmastate.SigmaOr(prop, multisig))
       }
 

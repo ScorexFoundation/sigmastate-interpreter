@@ -16,6 +16,7 @@ import scala.collection.mutable
 import scala.util.{Random, Try}
 import scorex.util._
 import sigma.Colls
+import sigmastate.Values.ErgoTree.ZeroHeader
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.utxo.blockchain.BlockchainSimulationTestingCommons.{FullBlock, ValidationState}
@@ -155,7 +156,7 @@ object BlockchainSimulationTestingCommons extends CompilerTestingCommons {
         val boxes = (1 to 50).map(_ =>
           testBox(10,
             ErgoTree.fromProposition(
-              ErgoTree.defaultHeaderWithVersion(scriptVersion),
+              ErgoTree.headerWithVersion(ZeroHeader, scriptVersion),
               Values.TrueLeaf.toSigmaProp),
             i, Seq(), Map(), txId))
         createTransaction(boxes)

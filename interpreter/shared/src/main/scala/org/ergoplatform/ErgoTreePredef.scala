@@ -5,7 +5,7 @@ import sigmastate.crypto.DLogProtocol.ProveDlog
 import sigmastate.crypto.CryptoConstants
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.ErgoTree.HeaderType
+import sigmastate.Values.ErgoTree.{HeaderType, ZeroHeader}
 import sigmastate.Values.{ErgoTree, FalseSigmaProp, IntArrayConstant, IntConstant, LongConstant, SigmaPropConstant, SigmaPropValue, TrueSigmaProp, Value}
 import sigmastate.utxo._
 import sigmastate._
@@ -50,10 +50,10 @@ object ErgoTreePredef {
     * Required script of the box, that collects mining rewards
     */
   def rewardOutputScript(delta: Int, minerPk: ProveDlog): ErgoTree = {
-    SigmaAnd(
+    ErgoTree.withSegregation(ZeroHeader, SigmaAnd(
       GE(Height, Plus(boxCreationHeight(Self), IntConstant(delta))).toSigmaProp,
       SigmaPropConstant(minerPk)
-    ).treeWithSegregation
+    ))
   }
 
   /**
@@ -62,11 +62,11 @@ object ErgoTreePredef {
     */
   def feeProposition(delta: Int = 720): ErgoTree = {
     val out = ByIndex(Outputs, IntConstant(0))
-    AND(
+    ErgoTree.withSegregation(ZeroHeader, AND(
       EQ(Height, boxCreationHeight(out)),
       EQ(ExtractScriptBytes(out), expectedMinerOutScriptBytesVal(delta, MinerPubkey)),
       EQ(SizeOf(Outputs), 1)
-    ).toSigmaProp.treeWithSegregation
+    ).toSigmaProp)
   }
 
   /**
@@ -92,11 +92,13 @@ object ErgoTreePredef {
       EQ(ExtractScriptBytes(minerOut), expectedMinerOutScriptBytesVal(s.minerRewardDelay, MinerPubkey)),
       EQ(Height, boxCreationHeight(minerOut))
     )
-    AND(
-      heightIncreased,
-      correctMinerOutput,
-      OR(AND(outputsNum, sameScriptRule, correctCoinsConsumed, heightCorrect), lastCoins)
-    ).toSigmaProp.treeWithSegregation
+    ErgoTree.withSegregation(ZeroHeader,
+      AND(
+        heightIncreased,
+        correctMinerOutput,
+        OR(AND(outputsNum, sameScriptRule, correctCoinsConsumed, heightCorrect), lastCoins)
+      ).toSigmaProp
+    )
   }
 
   /**
@@ -153,7 +155,7 @@ object ErgoTreePredef {
     // check, that additional rules defined by foundation members are satisfied
     val customProposition = DeserializeRegister(ErgoBox.R4, SSigmaProp)
     // combine 3 conditions above with AND conjunction
-    SigmaAnd(amountCorrect.toSigmaProp, sameScriptRule.toSigmaProp, customProposition).treeWithSegregation
+    ErgoTree.withSegregation(ZeroHeader, SigmaAnd(amountCorrect.toSigmaProp, sameScriptRule.toSigmaProp, customProposition))
   }
 
   /**

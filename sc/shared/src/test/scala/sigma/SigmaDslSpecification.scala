@@ -1,50 +1,41 @@
 package special.sigma
 
-import java.math.BigInteger
+import org.ergoplatform.ErgoBox.AdditionalRegisters
 import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
+import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
-import sigma.data.{ExactIntegral, ExactNumeric, ExactOrdering, RType}
+import org.scalatest.BeforeAndAfterAll
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.util.ModifierId
+import sigma.Extensions._
+import sigma.{VersionContext, _}
+import sigma.data.RType._
+import sigma.data.{ExactIntegral, ExactNumeric, ExactOrdering, RType}
 import sigma.util.Extensions._
-import sigmastate.utils.Extensions._
 import sigmastate.SCollection._
-import sigmastate.Values.IntConstant
+import sigmastate.Values.ErgoTree.{HeaderType, ZeroHeader}
+import sigmastate.Values.{IntConstant, _}
 import sigmastate._
 import sigmastate.crypto.DLogProtocol._
-import sigmastate.Values._
-import sigmastate.lang.Terms.Apply
+import sigmastate.crypto.ProveDHTuple
 import sigmastate.eval.Extensions._
+import sigmastate.eval.OrderingOps._
 import sigmastate.eval._
-import sigmastate.lang.Terms.{MethodCall, PropertyCall}
-import sigmastate.utxo._
-import sigma._
-import sigma.Extensions._
+import sigmastate.helpers.TestingHelpers._
+import sigmastate.interpreter._
+import sigmastate.lang.Terms.{Apply, MethodCall, PropertyCall}
 import sigmastate.serialization.OpCodes.OpCode
+import sigmastate.utils.Extensions._
 import sigmastate.utils.Helpers
 import sigmastate.utils.Helpers._
-import sigmastate.helpers.TestingHelpers._
+import sigmastate.utxo._
 
-import scala.util.{Failure, Success, Try}
-import OrderingOps._
-import org.ergoplatform.ErgoBox.AdditionalRegisters
-import org.scalacheck.Arbitrary._
-import org.scalacheck.Gen.frequency
-import org.scalatest.{BeforeAndAfterAll, Tag}
-import sigma.data.RType._
-import scorex.util.ModifierId
-import sigmastate.crypto.ProveDHTuple
-import sigmastate.interpreter._
-import org.scalactic.source.Position
-import sigma.VersionContext
-import sigmastate.Values.ErgoTree.HeaderType
-import sigmastate.helpers.SigmaPPrint
-import sigmastate.exceptions.GraphBuildingException
-import supertagged.classic.@@
-
+import java.math.BigInteger
 import scala.collection.compat.immutable.ArraySeq
+import scala.util.{Failure, Success}
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to
   * the evaluation of the corresponding ErgoScript operation.
@@ -9656,14 +9647,14 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("substConstants equivalence") {
     // tree without constant segregation
-    val t1 = ErgoTree(ErgoTree.DefaultHeader, Vector(), TrueSigmaProp)
+    val t1 = ErgoTree(ErgoTree.ZeroHeader, Vector(), TrueSigmaProp)
     // tree with constant segregation, but without constants
-    val t2 = ErgoTree(ErgoTree.ConstantSegregationHeader, Vector(), TrueSigmaProp)
+    val t2 = ErgoTree(ErgoTree.setConstantSegregation(ZeroHeader), Vector(), TrueSigmaProp)
     // tree with one segregated constant
-    val t3 = ErgoTree(ErgoTree.ConstantSegregationHeader, Vector(TrueSigmaProp), ConstantPlaceholder(0, SSigmaProp))
+    val t3 = ErgoTree(ErgoTree.setConstantSegregation(ZeroHeader), Vector(TrueSigmaProp), ConstantPlaceholder(0, SSigmaProp))
     // tree with one segregated constant of different type
     val t4 = ErgoTree(
-      ErgoTree.ConstantSegregationHeader,
+      ErgoTree.setConstantSegregation(ZeroHeader),
       Vector(IntConstant(10)),
       BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), IntConstant(20))))
     def costDetails(i: Int) = TracedCost(

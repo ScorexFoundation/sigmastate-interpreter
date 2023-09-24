@@ -1353,7 +1353,7 @@ object Values {
     val ZeroHeader: HeaderType = HeaderType @@ 0.toByte
 
     /** Default value of ErgoTree.header byte */
-    val DefaultHeader: HeaderType = HeaderType @@ (0/*VersionFlag | SizeFlag*/).toByte
+    val DefaultHeader: HeaderType = HeaderType @@ (VersionFlag | SizeFlag).toByte
 
     /** Default header with constant segregation enabled. */
     val ConstantSegregationHeader: HeaderType = HeaderType @@ (DefaultHeader | ConstantSegregationFlag).toByte

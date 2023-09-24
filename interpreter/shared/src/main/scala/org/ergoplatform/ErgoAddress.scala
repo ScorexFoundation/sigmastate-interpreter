@@ -10,7 +10,8 @@ import sigmastate.crypto.DLogProtocol.{ProveDlog, ProveDlogProp}
 import sigmastate.exceptions.SigmaException
 import sigmastate.serialization._
 import sigmastate.utxo.{DeserializeContext, Slice}
-import sigma.Coll
+import sigma.{Coll, VersionContext}
+import sigmastate.Values.ErgoTree.{ZeroHeader, setVersionBits}
 
 import scala.util.Try
 
@@ -163,7 +164,11 @@ class Pay2SHAddress(val scriptHash: Array[Byte])(implicit val encoder: ErgoAddre
       ByteArrayConstant(scriptHash)
     )
     val scriptIsCorrect = DeserializeContext(scriptId, SSigmaProp)
-    ErgoTree.withoutSegregation(SigmaAnd(hashEquals.toSigmaProp, scriptIsCorrect))
+    // Get script version either from the default context or from a context provided by an application
+    // This is never part of the consensus and can be controlled by applications
+    val treeVersion = VersionContext.current.ergoTreeVersion
+    val header = setVersionBits(ZeroHeader, treeVersion)
+    ErgoTree.withoutSegregation(header, SigmaAnd(hashEquals.toSigmaProp, scriptIsCorrect))
   }
 
   override def equals(obj: Any): Boolean = obj match {

@@ -14,22 +14,23 @@ import org.ergoplatform.{ErgoBox, ErgoLikeContext}
 import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition, Token}
 import sigmastate.{AvlTreeData, SType}
 import sigmastate.Values.{ErgoTree, EvaluatedValue}
-import sigmastate.eval.{CSigmaProp, Evaluation, IRContext, CAnyValue}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, CompilerTestingCommons}
+import sigmastate.eval.{CAnyValue, CSigmaProp, Evaluation, IRContext}
+import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.lang.Terms.ValueOps
 import sigma.{AnyValue, SigmaProp}
+import sigmastate.Values.ErgoTree.ZeroHeader
 
 case class TestContractSpec(testSuite: CompilerTestingCommons)(implicit val IR: IRContext) extends ContractSpec {
 
   case class TestPropositionSpec(name: String, dslSpec: Proposition, scriptSpec: ErgoScript) extends PropositionSpec {
     lazy val ergoTree: ErgoTree = {
       val value = testSuite.compile(scriptSpec.env, scriptSpec.code)
-      val headerFlags = scriptSpec.scriptVersion match {
-        case Some(version) => ErgoTree.defaultHeaderWithVersion(version)
+      val header = scriptSpec.scriptVersion match {
+        case Some(version) => ErgoTree.headerWithVersion(ZeroHeader, version)
         case None => testSuite.ergoTreeHeaderInTests
       }
-      val tree: ErgoTree = ErgoTree.fromProposition(headerFlags, value.asSigmaProp)
+      val tree: ErgoTree = ErgoTree.fromProposition(header, value.asSigmaProp)
       tree
     }
   }

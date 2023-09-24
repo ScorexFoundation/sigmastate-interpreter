@@ -2,10 +2,12 @@ package sigmastate
 
 import debox.cfor
 import org.scalactic.source.Position
+
 import scala.util.DynamicVariable
 import org.scalatest.Tag
 import sigmastate.eval.Profiler
 import org.scalatest.propspec.AnyPropSpecLike
+import sigma.VersionContext
 
 trait CrossVersionProps extends AnyPropSpecLike with TestsBase {
   /** Number of times each test property is warmed up (i.e. executed before final execution). */
@@ -29,7 +31,9 @@ trait CrossVersionProps extends AnyPropSpecLike with TestsBase {
         System.gc()
       }
       forEachScriptAndErgoTreeVersion(activatedVersions, ergoTreeVersions) {
-        testFun_Run(testName, testFun)
+        VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
+          testFun_Run(testName, testFun)
+        }
       }
     }
   }
