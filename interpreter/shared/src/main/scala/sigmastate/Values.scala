@@ -965,7 +965,6 @@ object Values {
   implicit class SigmaPropValueOps(val p: Value[SSigmaProp.type]) extends AnyVal {
     def isProven: Value[SBoolean.type] = SigmaPropIsProven(p)
     def propBytes: Value[SByteArray] = SigmaPropBytes(p)
-    def treeWithSegregation: ErgoTree = ErgoTree.withSegregation(p)
     def treeWithSegregation(header: HeaderType): ErgoTree =
       ErgoTree.withSegregation(header, p)
   }
@@ -1455,7 +1454,7 @@ object Values {
       * without performing constant segregation.
       */
     implicit def fromSigmaBoolean(pk: SigmaBoolean): ErgoTree = {
-      withoutSegregation(pk.toSigmaProp)
+      withoutSegregation(ZeroHeader, pk.toSigmaProp)
     }
 
     /** Create new ErgoTree for the given sigma proposition using the given header flags
@@ -1464,12 +1463,6 @@ object Values {
     def fromSigmaBoolean(header: HeaderType, pk: SigmaBoolean): ErgoTree = {
       withoutSegregation(header, pk.toSigmaProp)
     }
-
-    /** Create new ErgoTree for the given proposition using the given header flags and
-      * without performing constant segregation.
-      */
-    def withoutSegregation(root: SigmaPropValue): ErgoTree =
-      ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, root)
 
     /** Create new ErgoTree for the given proposition using the given header flags and
       * without performing constant segregation.
@@ -1504,12 +1497,6 @@ object Values {
         constants = extractedConstants,
         root = Right(valueWithPlaceholders))
     }
-
-    /** Create new ErgoTree for the given sigma proposition using default header and
-      * also performing constant segregation.
-      */
-    def withSegregation(prop: SigmaPropValue): ErgoTree =
-      withSegregation(DefaultHeader, prop)
 
     /** Deserializes an ErgoTree instance from a hexadecimal string.
       *
