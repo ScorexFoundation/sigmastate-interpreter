@@ -189,7 +189,7 @@ object Isos {
 
   val isoBlockchainParameters: Iso[BlockchainParameters, sdk.BlockchainParameters] = new Iso[BlockchainParameters, sdk.BlockchainParameters] {
     override def to(a: BlockchainParameters): sdk.BlockchainParameters = {
-      sdk.BlockchainParameters(
+      sdk.CBlockchainParameters(
         storageFeeFactor = a.storageFeeFactor,
         minValuePerByte = a.minValuePerByte,
         maxBlockSize = a.maxBlockSize,
@@ -222,7 +222,7 @@ object Isos {
 
   implicit val isoBlockchainStateContext: Iso[BlockchainStateContext, context.BlockchainStateContext] = new Iso[BlockchainStateContext, context.BlockchainStateContext] {
     override def to(a: BlockchainStateContext): context.BlockchainStateContext = {
-      context.BlockchainStateContext(
+      context.CBlockchainStateContext(
         sigmaLastHeaders = isoArrayToColl(isoHeader).to(a.sigmaLastHeaders),
         previousStateDigest = isoStringToColl.to(a.previousStateDigest),
         sigmaPreHeader = isoPreHeader.to(a.sigmaPreHeader)
