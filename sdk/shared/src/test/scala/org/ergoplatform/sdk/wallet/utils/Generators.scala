@@ -100,7 +100,7 @@ trait Generators {
     Gen.choose(minValue, CoinsTotalTest / 1000)
   }
 
-  def ergoBoxGen(propGen: Gen[ErgoTree] = Gen.const(TrueLeaf.toSigmaProp),
+  def ergoBoxGen(propGen: Gen[ErgoTree] = Gen.const(ErgoTree.fromProposition(TrueLeaf.toSigmaProp)),
                  tokensGen: Gen[Seq[Token]] = additionalTokensGen,
                  valueGenOpt: Option[Gen[Long]] = None,
                  heightGen: Gen[Int] = heightGen): Gen[ErgoBox] = for {
@@ -144,10 +144,8 @@ trait Generators {
     }
   }
 
-
-
   def unsignedTxGen(secret: SecretKey): Gen[(IndexedSeq[ErgoBox], UnsignedErgoLikeTransaction)] = {
-    val dlog: Gen[ErgoTree] = Gen.const(secret.privateInput.publicImage.asInstanceOf[ProveDlog].toSigmaProp)
+    val dlog: Gen[ErgoTree] = Gen.const(ErgoTree.fromSigmaBoolean(secret.privateInput.publicImage.asInstanceOf[ProveDlog]))
 
     for {
       ins <- Gen.listOfN(2, ergoBoxGen(dlog))

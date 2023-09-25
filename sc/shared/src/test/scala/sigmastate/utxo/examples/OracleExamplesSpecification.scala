@@ -103,7 +103,7 @@ class OracleExamplesSpecification extends CompilerTestingCommons
 
     val oracleBox = testBox(
       value = 1L,
-      ergoTree = oraclePubKey,
+      ergoTree = ErgoTree.fromSigmaBoolean(oraclePubKey),
       creationHeight = 0,
       additionalRegisters = Map(
         reg1 -> LongConstant(temperature),
@@ -156,7 +156,7 @@ class OracleExamplesSpecification extends CompilerTestingCommons
     avlProver.performOneOperation(Lookup(ADKey @@@ oracleBox.id))
     val proof = avlProver.generateProof()
 
-    val newBox1 = testBox(20, alicePubKey, 0, boxIndex = 2)
+    val newBox1 = testBox(20, ErgoTree.fromSigmaBoolean(alicePubKey), 0, boxIndex = 2)
     val newBoxes = IndexedSeq(newBox1)
     val spendingTransaction = createTransaction(newBoxes)
 
@@ -250,8 +250,8 @@ class OracleExamplesSpecification extends CompilerTestingCommons
     )
 
     val sOracle = oracleBox
-    val sAlice = testBox(10, prop, 0, Seq(), Map())
-    val sBob = testBox(10, prop, 0, Seq(), Map())
+    val sAlice = testBox(10, ErgoTree.fromProposition(prop), 0, Seq(), Map())
+    val sBob = testBox(10, ErgoTree.fromProposition(prop), 0, Seq(), Map())
 
     val newBox1 = testBox(20, mkTestErgoTree(alicePubKey), 0)
     val newBoxes = IndexedSeq(newBox1)

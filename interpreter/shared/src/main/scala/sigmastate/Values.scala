@@ -1436,8 +1436,8 @@ object Values {
     /** Create new ErgoTree for the given proposition using default header.
       * If the property is not a simple constant, then constant segregation is performed.
       */
-    implicit def fromProposition(prop: SigmaPropValue): ErgoTree = {
-      fromProposition(ErgoTree.DefaultHeader, prop)
+    def fromProposition(prop: SigmaPropValue): ErgoTree = {
+      fromProposition(ErgoTree.ZeroHeader, prop)
     }
 
     /** Create new ErgoTree for the given proposition using the given header flags.
@@ -1453,7 +1453,7 @@ object Values {
     /** Create new ErgoTree for the given sigma proposition using default header and
       * without performing constant segregation.
       */
-    implicit def fromSigmaBoolean(pk: SigmaBoolean): ErgoTree = {
+    def fromSigmaBoolean(pk: SigmaBoolean): ErgoTree = {
       withoutSegregation(ZeroHeader, pk.toSigmaProp)
     }
 
