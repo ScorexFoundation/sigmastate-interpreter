@@ -170,7 +170,7 @@ class ErgoAddressSpecification extends SigmaDslTesting
 
       assertExceptionThrown(
         ergoAddressEncoder.fromString(addrStr).getOrThrow,
-        t => t.getMessage.contains("Improper content in P2SH script: 41fKjb7zWNw")
+        t => t.getMessage.contains("Invalid length of the hash bytes in P2SH address: 41fKjb7zWNw")
       )
     }
 
@@ -228,7 +228,7 @@ class ErgoAddressSpecification extends SigmaDslTesting
   }
 
   def testPay2SHAddress(address: Pay2SHAddress, scriptBytes: Array[Byte]) = {
-    val scriptId = 1.toByte
+    val scriptId = Pay2SHAddress.scriptId
     val boxToSpend = testBox(10, address.script, creationHeight = 5)
     val ctx = ErgoLikeContextTesting.dummy(boxToSpend, activatedVersionInTests)
         .withExtension(ContextExtension(Seq(
@@ -271,7 +271,7 @@ class ErgoAddressSpecification extends SigmaDslTesting
       res
     }
 
-    val scriptVarId = 1.toByte
+    val scriptVarId = Pay2SHAddress.scriptId
     val script = "{ 1 < 2 }"
     val prop = compile(Map.empty, script).asBoolValue.toSigmaProp
     val scriptBytes = ValueSerializer.serialize(prop)
