@@ -372,7 +372,7 @@ trait JsonCodecs {
       "id" -> tx.id.asJson,
       "inputs" -> tx.inputs.asJson,
       "dataInputs" -> tx.dataInputs.asJson,
-      "outputs" -> tx.outputCandidates.asJson
+      "outputs" -> tx.outputs.asJson
     )
   })
 
@@ -389,7 +389,7 @@ trait JsonCodecs {
       "id" -> tx.id.asJson,
       "inputs" -> tx.inputs.asJson,
       "dataInputs" -> tx.dataInputs.asJson,
-      "outputs" -> tx.outputCandidates.asJson
+      "outputs" -> tx.outputs.asJson
     )
   })
 
