@@ -369,7 +369,6 @@ trait JsonCodecs {
 
   implicit val ergoLikeTransactionEncoder: Encoder[ErgoLikeTransaction] = Encoder.instance({ tx =>
     Json.obj(
-      "type" -> "ELT".asJson, // ErgoLikeTransaction
       "id" -> tx.id.asJson,
       "inputs" -> tx.inputs.asJson,
       "dataInputs" -> tx.dataInputs.asJson,
@@ -387,7 +386,6 @@ trait JsonCodecs {
 
   implicit val unsignedErgoLikeTransactionEncoder: Encoder[UnsignedErgoLikeTransaction] = Encoder.instance({ tx =>
     Json.obj(
-      "type" -> "UELT".asJson, // UnsignedErgoLikeTransaction
       "id" -> tx.id.asJson,
       "inputs" -> tx.inputs.asJson,
       "dataInputs" -> tx.dataInputs.asJson,
@@ -409,15 +407,10 @@ trait JsonCodecs {
     case t => throw new SigmaException(s"Don't know how to encode transaction $t")
   })
 
-  implicit val ergoLikeTransactionTemplateDecoder: Decoder[ErgoLikeTransactionTemplate[_ <: UnsignedInput]] = Decoder.instance({ implicit cursor =>
-    for {
-      t <- cursor.downField("type").as[String]
-      tx <- t match {
-        case "ELT" => ergoLikeTransactionDecoder(cursor)
-        case "UELT" => unsignedErgoLikeTransactionDecoder(cursor)
-      }
-    } yield tx
-  })
+  implicit val ergoLikeTransactionTemplateDecoder: Decoder[ErgoLikeTransactionTemplate[_ <: UnsignedInput]] = {
+    ergoLikeTransactionDecoder.asInstanceOf[Decoder[ErgoLikeTransactionTemplate[_ <: UnsignedInput]]] or
+        unsignedErgoLikeTransactionDecoder.asInstanceOf[Decoder[ErgoLikeTransactionTemplate[_ <: UnsignedInput]]]
+  }
 
   implicit val sigmaValidationSettingsEncoder: Encoder[SigmaValidationSettings] = Encoder.instance({ v =>
     SigmaValidationSettingsSerializer.toBytes(v).asJson
