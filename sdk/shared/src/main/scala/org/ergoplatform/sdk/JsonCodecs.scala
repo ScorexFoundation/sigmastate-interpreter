@@ -379,8 +379,7 @@ trait JsonCodecs {
 
   implicit val ergoLikeTransactionDecoder: Decoder[ErgoLikeTransaction] = Decoder.instance({ implicit cursor =>
     for {
-      t <- cursor.downField("type").as[String]
-      inputs <- {require(t == "ELT"); cursor.downField("inputs").as[IndexedSeq[Input]] }
+      inputs <- cursor.downField("inputs").as[IndexedSeq[Input]]
       dataInputs <- cursor.downField("dataInputs").as[IndexedSeq[DataInput]]
       outputs <- cursor.downField("outputs").as[IndexedSeq[ErgoBoxCandidate]]
     } yield new ErgoLikeTransaction(inputs, dataInputs, outputs)
@@ -398,8 +397,7 @@ trait JsonCodecs {
 
   implicit val unsignedErgoLikeTransactionDecoder: Decoder[UnsignedErgoLikeTransaction] = Decoder.instance({ implicit cursor =>
     for {
-      t <- cursor.downField("type").as[String]
-      inputs <- {require(t == "UELT"); cursor.downField("inputs").as[IndexedSeq[UnsignedInput]] }
+      inputs <- cursor.downField("inputs").as[IndexedSeq[UnsignedInput]]
       dataInputs <- cursor.downField("dataInputs").as[IndexedSeq[DataInput]]
       outputs <- cursor.downField("outputs").as[IndexedSeq[ErgoBoxCandidate]]
     } yield new UnsignedErgoLikeTransaction(inputs, dataInputs, outputs)
