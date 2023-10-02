@@ -188,11 +188,12 @@ lazy val commonDependenies2 = libraryDependencies ++= Seq(
 
 val sigmajsCryptoFacadeVersion = "0.0.7"
 
-lazy val common = crossProject(JVMPlatform, JSPlatform)
-  .in(file("common"))
+lazy val core   = crossProject(JVMPlatform, JSPlatform)
+  .in(file("core"))
   .settings(commonSettings ++ testSettings2,
     commonDependenies2,
     testingDependencies2,
+    scorexUtilDependency,
     publish / skip := true
   )
   .jvmSettings( crossScalaSettings )
@@ -209,59 +210,17 @@ lazy val common = crossProject(JVMPlatform, JSPlatform)
     ),
     useYarn := true
   )
-lazy val commonJS = common.js
-    .enablePlugins(ScalaJSBundlerPlugin)
-
-lazy val corelib = crossProject(JVMPlatform, JSPlatform)
-  .in(file("core-lib"))
-  .dependsOn(common % allConfigDependency)
-  .settings(commonSettings ++ testSettings2,
-    commonDependenies2,
-    testingDependencies2,
-    crossScalaSettings,
-    scryptoDependency,
-    publish / skip := true
-  )
-  .jvmSettings(
-    crossScalaSettings
-  )
-  .jsSettings(
-    crossScalaSettingsJS,
-    libraryDependencies ++= Seq(
-      "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0"
-    ),
-    useYarn := true
-  )
-lazy val corelibJS = corelib.js
-    .enablePlugins(ScalaJSBundlerPlugin)
-
-lazy val graphir = crossProject(JVMPlatform, JSPlatform)
-  .in(file("graph-ir"))
-  .dependsOn(common % allConfigDependency, corelib % allConfigDependency)
-  .settings(
-    commonDependenies2,
-    scryptoDependency,
-    publish / skip := true
-  )
-  .jvmSettings(
-    crossScalaSettings,
-    libraryDependencies ++= Seq(scalameter)
-  )
-  .jsSettings(
-    crossScalaSettingsJS,
-    useYarn := true
-  )
-lazy val graphirJS = graphir.js
+lazy val coreJS = core.js
     .enablePlugins(ScalaJSBundlerPlugin)
 
 lazy val interpreter = crossProject(JVMPlatform, JSPlatform)
   .in(file("interpreter"))
-  .dependsOn(corelib % allConfigDependency)
+  .dependsOn(core % allConfigDependency)
   .settings(
     commonSettings ++ testSettings2,
     commonDependenies2,
     testingDependencies2,
-    scorexUtilDependency, fastparseDependency, circeDependency,
+    scorexUtilDependency, fastparseDependency, circeDependency, scryptoDependency,
     publish / skip := true
   )
   .jvmSettings( crossScalaSettings )
@@ -319,7 +278,7 @@ lazy val parsersJS = parsers.js
 
 lazy val sdk = crossProject(JVMPlatform, JSPlatform)
     .in(file("sdk"))
-    .dependsOn(corelib % allConfigDependency, interpreter % allConfigDependency, parsers % allConfigDependency)
+    .dependsOn(core % allConfigDependency, interpreter % allConfigDependency, parsers % allConfigDependency)
     .settings(commonSettings ++ testSettings2,
       commonDependenies2,
       testingDependencies2,
@@ -351,7 +310,6 @@ lazy val sdkJS = sdk.js
 lazy val sc = crossProject(JVMPlatform, JSPlatform)
     .in(file("sc"))
     .dependsOn(
-      graphir % allConfigDependency,
       interpreter % allConfigDependency,
       parsers % allConfigDependency,
       sdk % allConfigDependency
@@ -361,6 +319,7 @@ lazy val sc = crossProject(JVMPlatform, JSPlatform)
       commonDependenies2,
       testingDependencies2,
       scorexUtilDependency, fastparseDependency, circeDependency,
+      scryptoDependency,
       Test / parallelExecution := false
     )
     .settings(publish / skip := true)
@@ -396,13 +355,13 @@ lazy val scJS = sc.js
 
 
 lazy val sigma = (project in file("."))
-  .aggregate(common.jvm, corelib.jvm, graphir.jvm, interpreter.jvm, parsers.jvm, sc.jvm, sdk.jvm)
+  .aggregate(core.jvm, interpreter.jvm, parsers.jvm, sdk.jvm, sc.jvm)
   .settings(libraryDefSettings, rootSettings)
   .settings(publish / aggregate := false)
   .settings(publishLocal / aggregate := false)
 
 lazy val aggregateCompile = ScopeFilter(
-  inProjects(common.jvm, corelib.jvm, graphir.jvm, interpreter.jvm, parsers.jvm, sc.jvm, sdk.jvm),
+  inProjects(core.jvm, interpreter.jvm, parsers.jvm, sdk.jvm, sc.jvm),
   inConfigurations(Compile))
 
 lazy val rootSettings = Seq(

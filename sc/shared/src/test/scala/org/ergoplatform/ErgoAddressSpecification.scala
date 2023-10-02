@@ -6,13 +6,13 @@ import org.scalatest.{Assertion, TryValues}
 import scorex.crypto.hash.Blake2b256
 import scorex.util.encode.Base58
 import sigmastate.Values.{ByteArrayConstant, Constant, ErgoTree, IntConstant, UnparsedErgoTree}
-import sigmastate.basics.DLogProtocol
-import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
+import sigmastate.crypto.DLogProtocol
+import sigmastate.crypto.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate.eval.InvalidType
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers._
 import sigmastate.interpreter.ContextExtension.VarBinding
-import sigmastate.basics.CryptoConstants.dlogGroup
+import sigmastate.crypto.CryptoConstants.dlogGroup
 import sigmastate.exceptions.CostLimitException
 import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}
@@ -21,7 +21,7 @@ import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.{GroupElementSerializer, ValueSerializer}
 import sigmastate.utils.Helpers._
 import sigmastate.{CompilerCrossVersionProps, SType, SigmaAnd}
-import special.sigma.SigmaDslTesting
+import sigma.SigmaDslTesting
 
 import java.math.BigInteger
 
@@ -170,7 +170,7 @@ class ErgoAddressSpecification extends SigmaDslTesting
 
       assertExceptionThrown(
         ergoAddressEncoder.fromString(addrStr).getOrThrow,
-        t => t.getMessage.contains("Improper content in P2SH script: 41fKjb7zWNw")
+        t => t.getMessage.contains("Invalid length of the hash bytes in P2SH address: 41fKjb7zWNw")
       )
     }
 
@@ -228,7 +228,7 @@ class ErgoAddressSpecification extends SigmaDslTesting
   }
 
   def testPay2SHAddress(address: Pay2SHAddress, scriptBytes: Array[Byte]) = {
-    val scriptId = 1.toByte
+    val scriptId = Pay2SHAddress.scriptId
     val boxToSpend = testBox(10, address.script, creationHeight = 5)
     val ctx = ErgoLikeContextTesting.dummy(boxToSpend, activatedVersionInTests)
         .withExtension(ContextExtension(Seq(
@@ -271,7 +271,7 @@ class ErgoAddressSpecification extends SigmaDslTesting
       res
     }
 
-    val scriptVarId = 1.toByte
+    val scriptVarId = Pay2SHAddress.scriptId
     val script = "{ 1 < 2 }"
     val prop = compile(Map.empty, script).asBoolValue.toSigmaProp
     val scriptBytes = ValueSerializer.serialize(prop)

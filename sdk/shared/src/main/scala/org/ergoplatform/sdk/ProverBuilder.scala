@@ -2,9 +2,9 @@ package org.ergoplatform.sdk
 
 import org.ergoplatform.ErgoAddressEncoder.{MainnetNetworkPrefix, NetworkPrefix}
 import org.ergoplatform.sdk.wallet.secrets.ExtendedSecretKey
-import sigmastate.basics.DLogProtocol.DLogProverInput
-import sigmastate.basics.{DLogProtocol, DiffieHellmanTupleProverInput}
-import special.sigma.GroupElement
+import sigmastate.crypto.DLogProtocol.DLogProverInput
+import sigmastate.crypto.{DLogProtocol, DiffieHellmanTupleProverInput}
+import sigma.GroupElement
 
 import java.math.BigInteger
 import scala.collection.mutable.ArrayBuffer

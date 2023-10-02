@@ -1,19 +1,19 @@
 package org.ergoplatform.sdk.js
 
 import org.ergoplatform.sdk.js.Value.toRuntimeData
-import scalan.RType
-import scalan.RType.PairType
+import sigma.data.{CollType, RType}
+import sigma.data.PairType
 import scorex.util.Extensions.{IntOps, LongOps}
 import scorex.util.encode.Base16
 import sigmastate.SType
 import sigmastate.crypto.Platform
-import sigmastate.eval.{CAvlTree, CGroupElement, CSigmaProp, Colls, CostingBox, Evaluation, SigmaDsl}
+import sigmastate.eval.{CAvlTree, CGroupElement, CSigmaProp, CostingBox, Evaluation, SigmaDsl}
 import sigmastate.fleetSdkCommon.distEsmTypesBoxesMod.Box
 import sigmastate.fleetSdkCommon.distEsmTypesCommonMod
 import sigmastate.fleetSdkCommon.distEsmTypesRegistersMod.NonMandatoryRegisters
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.serialization.{ConstantSerializer, DataSerializer, SigmaSerializer}
-import special.collection.{Coll, CollType}
+import sigma.{Coll, Colls}
 
 import java.math.BigInteger
 import scala.scalajs.js
@@ -82,22 +82,22 @@ object Value extends js.Object {
     * in register and [[sigmastate.Values.Constant]] nodes.
     */
   final private[js] def toRuntimeData(data: Any, rtype: RType[_]): Any = rtype match {
-    case RType.BooleanType => data
-    case RType.ByteType | RType.ShortType | RType.IntType => data
-    case RType.LongType => java.lang.Long.parseLong(data.asInstanceOf[js.BigInt].toString(10))
-    case special.sigma.BigIntRType =>
+    case sigma.BooleanType => data
+    case sigma.ByteType | sigma.ShortType | sigma.IntType => data
+    case sigma.LongType => java.lang.Long.parseLong(data.asInstanceOf[js.BigInt].toString(10))
+    case sigma.BigIntRType =>
       val v = data.asInstanceOf[js.BigInt]
       SigmaDsl.BigInt(new BigInteger(v.toString(16), 16))
-    case special.sigma.GroupElementRType =>
+    case sigma.GroupElementRType =>
       val ge = data.asInstanceOf[GroupElement]
       SigmaDsl.GroupElement(ge.point)
-    case special.sigma.SigmaPropRType =>
+    case sigma.SigmaPropRType =>
       val p = data.asInstanceOf[SigmaProp]
       SigmaDsl.SigmaProp(p.sigmaBoolean)
-    case special.sigma.AvlTreeRType =>
+    case sigma.AvlTreeRType =>
       val t = data.asInstanceOf[AvlTree]
       Isos.isoAvlTree.to(t)
-    case special.sigma.BoxRType =>
+    case sigma.BoxRType =>
       val t = data.asInstanceOf[Box[distEsmTypesCommonMod.Amount, NonMandatoryRegisters]]
       SigmaDsl.Box(Isos.isoBox.to(t))
     case ct: CollType[a] =>
@@ -110,7 +110,7 @@ object Value extends js.Object {
       val x = toRuntimeData(p(0), pt.tFst).asInstanceOf[a]
       val y = toRuntimeData(p(1), pt.tSnd).asInstanceOf[b]
       (x, y)
-    case RType.UnitType => data
+    case sigma.UnitType => data
     case _ =>
       throw new IllegalArgumentException(s"Unsupported type $rtype")
   }
@@ -122,20 +122,20 @@ object Value extends js.Object {
     * @param rtype type descriptor of Sigma runtime value
     */
   final private[js] def fromRuntimeData(value: Any, rtype: RType[_]): Any = rtype match {
-    case RType.BooleanType => value
-    case RType.ByteType | RType.ShortType | RType.IntType => value
-    case RType.LongType => js.BigInt(value.asInstanceOf[Long].toString)
-    case special.sigma.BigIntRType =>
-      val hex = SigmaDsl.toBigInteger(value.asInstanceOf[special.sigma.BigInt]).toString(10)
+    case sigma.BooleanType => value
+    case sigma.ByteType | sigma.ShortType | sigma.IntType => value
+    case sigma.LongType => js.BigInt(value.asInstanceOf[Long].toString)
+    case sigma.BigIntRType =>
+      val hex = SigmaDsl.toBigInteger(value.asInstanceOf[sigma.BigInt]).toString(10)
       js.BigInt(hex)
-    case special.sigma.GroupElementRType =>
+    case sigma.GroupElementRType =>
       val point = value.asInstanceOf[CGroupElement].wrappedValue.asInstanceOf[Platform.Ecp]
       new GroupElement(point)
-    case special.sigma.SigmaPropRType =>
+    case sigma.SigmaPropRType =>
       new SigmaProp(value.asInstanceOf[CSigmaProp].wrappedValue)
-    case special.sigma.AvlTreeRType =>
+    case sigma.AvlTreeRType =>
       Isos.isoAvlTree.from(value.asInstanceOf[CAvlTree])
-    case special.sigma.BoxRType =>
+    case sigma.BoxRType =>
       Isos.isoBox.from(value.asInstanceOf[CostingBox].wrappedValue)
     case ct: CollType[a] =>
       val arr = value.asInstanceOf[Coll[a]].toArray
@@ -143,7 +143,7 @@ object Value extends js.Object {
     case pt: PairType[a, b] =>
       val p = value.asInstanceOf[(a, b)]
       js.Array(fromRuntimeData(p._1, pt.tFst), fromRuntimeData(p._2, pt.tSnd))
-    case RType.UnitType => value
+    case sigma.UnitType => value
     case _ =>
       throw new IllegalArgumentException(s"Unsupported type $rtype")
   }
@@ -154,19 +154,19 @@ object Value extends js.Object {
     * @param rtype type descriptor of Sigma runtime value
     */
   final private def checkJsData[T](data: T, rtype: RType[_]): Any = rtype match {
-    case RType.ByteType => data.asInstanceOf[Int].toByteExact
-    case RType.ShortType => data.asInstanceOf[Int].toShortExact
-    case RType.IntType => data.asInstanceOf[Int].toLong.toIntExact
-    case RType.LongType =>
+    case sigma.ByteType => data.asInstanceOf[Int].toByteExact
+    case sigma.ShortType => data.asInstanceOf[Int].toShortExact
+    case sigma.IntType => data.asInstanceOf[Int].toLong.toIntExact
+    case sigma.LongType =>
       val n = data.asInstanceOf[js.BigInt]
       if (n < MinLong || n > MaxLong)
         throw new ArithmeticException(s"value $n is out of long range")
       n
-    case special.sigma.BigIntRType =>
+    case sigma.BigIntRType =>
       data.asInstanceOf[js.BigInt]
-    case special.sigma.GroupElementRType =>
+    case sigma.GroupElementRType =>
       data.asInstanceOf[GroupElement]
-    case special.sigma.SigmaPropRType =>
+    case sigma.SigmaPropRType =>
       data.asInstanceOf[SigmaProp]
     case PairType(l, r) => data match {
       case arr: js.Array[Any @unchecked] =>

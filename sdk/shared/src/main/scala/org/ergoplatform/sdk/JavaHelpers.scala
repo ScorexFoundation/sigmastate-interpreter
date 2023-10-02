@@ -1,38 +1,34 @@
 package org.ergoplatform.sdk
 
-import scalan.RType
-import special.collection.Coll
-
-import scala.collection.{JavaConverters, mutable}
-import org.ergoplatform._
+import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform.ErgoBox.{Token, TokenId}
+import org.ergoplatform._
+import org.ergoplatform.sdk.Extensions.{CollBuilderOps, PairCollOps}
+import org.ergoplatform.sdk.JavaHelpers.{TokenColl, TokenIdRType}
+import org.ergoplatform.sdk.wallet.secrets.{DerivationPath, ExtendedSecretKey}
+import org.ergoplatform.sdk.wallet.{Constants, TokensMap}
+import org.ergoplatform.settings.ErgoAlgos
+import scorex.crypto.authds.ADKey
+import sigmastate.utils.Helpers._  // don't remove, required for Scala 2.11
+import scorex.util.encode.Base16
+import scorex.util.{ModifierId, bytesToId, idToBytes}
+import sigma.data.ExactIntegral.LongIsExactIntegral
+import sigma.data.RType
+import sigma.util.StringUtil.StringUtilExtensions
+import sigma.{AnyValue, AvlTree, Coll, Colls, GroupElement, Header}
 import sigmastate.SType
 import sigmastate.Values.{Constant, ErgoTree, EvaluatedValue, SValue, SigmaBoolean, SigmaPropConstant}
+import sigmastate.crypto.CryptoConstants.EcPointType
+import sigmastate.crypto.DLogProtocol.ProveDlog
+import sigmastate.crypto.{CryptoFacade, DiffieHellmanTupleProverInput, ProveDHTuple}
+import sigmastate.eval.{CostingSigmaDslBuilder, Digest32Coll, Evaluation}
 import sigmastate.serialization.{ErgoTreeSerializer, GroupElementSerializer, SigmaSerializer, ValueSerializer}
-import scorex.crypto.authds.ADKey
-import org.ergoplatform.settings.ErgoAlgos
-import sigmastate.eval.{CPreHeader, Colls, CostingSigmaDslBuilder, Digest32Coll, Evaluation}
-import special.sigma.{AnyValue, AvlTree, GroupElement, Header}
-import sigmastate.utils.Helpers._  // don't remove, required for Scala 2.11
 
-import java.util
 import java.lang.{Boolean => JBoolean, Byte => JByte, Integer => JInt, Long => JLong, Short => JShort, String => JString}
-import java.util.{List => JList, Map => JMap}
-import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
-import scorex.util.encode.Base16
-import sigmastate.basics.DLogProtocol.ProveDlog
-import scorex.util.{ModifierId, bytesToId, idToBytes}
-import org.ergoplatform.sdk.JavaHelpers.{TokenColl, TokenIdRType}
-import org.ergoplatform.sdk.Extensions.{CollBuilderOps, PairCollOps}
-import org.ergoplatform.sdk.wallet.{Constants, TokensMap}
-import org.ergoplatform.sdk.wallet.secrets.{DerivationPath, ExtendedSecretKey}
-import scalan.ExactIntegral.LongIsExactIntegral
-import scalan.util.StringUtil.StringUtilExtensions
-import sigmastate.basics.CryptoConstants.EcPointType
-import sigmastate.basics.{DiffieHellmanTupleProverInput, ProveDHTuple}
-import sigmastate.crypto.CryptoFacade
-
 import java.math.BigInteger
+import java.util
+import java.util.{List => JList, Map => JMap}
+import scala.collection.{JavaConverters, mutable}
 
 /** Type-class of isomorphisms between types.
   * Isomorphism between two types `A` and `B` essentially say that both types
@@ -242,15 +238,16 @@ object JavaHelpers {
     def toErgoTree: ErgoTree = decodeStringToErgoTree(base16)
   }
 
-  implicit val TokenIdRType: RType[TokenId] = collRType(RType.ByteType).asInstanceOf[RType[TokenId]]
-  implicit val JByteRType: RType[JByte] = RType.ByteType.asInstanceOf[RType[JByte]]
-  implicit val JShortRType: RType[JShort] = RType.ShortType.asInstanceOf[RType[JShort]]
-  implicit val JIntRType: RType[JInt] = RType.IntType.asInstanceOf[RType[JInt]]
-  implicit val JLongRType: RType[JLong] = RType.LongType.asInstanceOf[RType[JLong]]
-  implicit val JBooleanRType: RType[JBoolean] = RType.BooleanType.asInstanceOf[RType[JBoolean]]
+  implicit val TokenIdRType: RType[TokenId] = collRType(sigma.ByteType).asInstanceOf[RType[TokenId]]
+  implicit val JByteRType: RType[JByte] = sigma.ByteType.asInstanceOf[RType[JByte]]
+  implicit val JShortRType: RType[JShort] = sigma.ShortType.asInstanceOf[RType[JShort]]
+  implicit val JIntRType: RType[JInt] = sigma.IntType.asInstanceOf[RType[JInt]]
+  implicit val JLongRType: RType[JLong] = sigma.LongType.asInstanceOf[RType[JLong]]
+  implicit val JBooleanRType: RType[JBoolean] = sigma.BooleanType.asInstanceOf[RType[JBoolean]]
+  implicit val JUnitRType: RType[Unit] = sigma.UnitType
 
-  val HeaderRType: RType[Header] = special.sigma.HeaderRType
-  val PreHeaderRType: RType[special.sigma.PreHeader] = special.sigma.PreHeaderRType
+  val HeaderRType: RType[Header] = sigma.HeaderRType
+  val PreHeaderRType: RType[sigma.PreHeader] = sigma.PreHeaderRType
 
   def Algos: ErgoAlgos = org.ergoplatform.settings.ErgoAlgos
 
@@ -359,17 +356,17 @@ object JavaHelpers {
     DataInput(ADKey @@ boxIdBytes)
   }
 
-  def collRType[T](tItem: RType[T]): RType[Coll[T]] = special.collection.collRType(tItem)
+  def collRType[T](tItem: RType[T]): RType[Coll[T]] = sigma.collRType(tItem)
 
-  def BigIntRType: RType[special.sigma.BigInt] = special.sigma.BigIntRType
+  def BigIntRType: RType[sigma.BigInt] = sigma.BigIntRType
 
-  def GroupElementRType: RType[special.sigma.GroupElement] = special.sigma.GroupElementRType
+  def GroupElementRType: RType[sigma.GroupElement] = sigma.GroupElementRType
 
-  def SigmaPropRType: RType[special.sigma.SigmaProp] = special.sigma.SigmaPropRType
+  def SigmaPropRType: RType[sigma.SigmaProp] = sigma.SigmaPropRType
 
-  def AvlTreeRType: RType[special.sigma.AvlTree] = special.sigma.AvlTreeRType
+  def AvlTreeRType: RType[sigma.AvlTree] = sigma.AvlTreeRType
 
-  def BoxRType: RType[special.sigma.Box] = special.sigma.BoxRType
+  def BoxRType: RType[sigma.Box] = sigma.BoxRType
 
   def SigmaDsl: CostingSigmaDslBuilder = sigmastate.eval.SigmaDsl
 
@@ -409,7 +406,7 @@ object JavaHelpers {
    * @return a mapping from asset id to to balance and total assets number
    */
   def extractAssets(boxes: IndexedSeq[ErgoBoxCandidate]): (Map[Digest32Coll, Long], Int) = {
-    import special.collection.Extensions.CollOps
+    import sigma.Extensions.CollOps
     val map = mutable.Map[Digest32Coll, Long]()
     val assetsNum = boxes.foldLeft(0) { case (acc, box) =>
       require(box.additionalTokens.length <= SigmaConstants.MaxTokens.value, "too many assets in one box")

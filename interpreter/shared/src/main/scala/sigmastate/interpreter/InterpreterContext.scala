@@ -6,8 +6,7 @@ import sigmastate.Values.EvaluatedValue
 import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import special.sigma
-import special.sigma.AnyValue
+import sigma.AnyValue
 
 import scala.collection.mutable
 
@@ -109,8 +108,8 @@ trait InterpreterContext {
   /** Creates a new instance with given validation settings. */
   def withValidationSettings(newVs: SigmaValidationSettings): InterpreterContext
 
-  /** Creates `special.sigma.Context` instance based on this context. The created instance
-    * contains all data represented using types form [[special.sigma]] package.
+  /** Creates `sigma.Context` instance based on this context. The created instance
+    * contains all data represented using types form [[sigma]] package.
     * These types are used internally by ErgoTree interpreter.
     * Thus, this method performs transformation from Ergo to internal Sigma representation
     * of all context data.

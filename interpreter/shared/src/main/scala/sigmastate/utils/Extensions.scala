@@ -4,7 +4,7 @@ import org.ergoplatform.ErgoBox.TokenId
 import scorex.util.{ModifierId, idToBytes}
 import scorex.utils.{Ints, Longs, Shorts}
 import sigmastate.eval.{Digest32Coll, SigmaDsl}
-import special.collection.Coll
+import sigma.{Coll, Colls}
 
 object Extensions {
   implicit class ByteOpsForSigma(val b: Byte) extends AnyVal {
@@ -25,7 +25,7 @@ object Extensions {
       * For example, the Short value {@code 0x1213} would yield the
       * byte array {@code {0x12, 0x13}}.
       */
-    def toBytes: Coll[Byte] = SigmaDsl.Colls.fromArray(Shorts.toByteArray(x))
+    def toBytes: Coll[Byte] = Colls.fromArray(Shorts.toByteArray(x))
 
     /** Returns a big-endian representation of this numeric in a collection of Booleans.
       * Each boolean corresponds to one bit.
@@ -38,7 +38,7 @@ object Extensions {
       * For example, the Int value {@code 0x12131415} would yield the
       * byte array {@code {0x12, 0x13, 0x14, 0x15}}.
       */
-    def toBytes: Coll[Byte] = SigmaDsl.Colls.fromArray(Ints.toByteArray(x))
+    def toBytes: Coll[Byte] = Colls.fromArray(Ints.toByteArray(x))
 
     /** Returns a big-endian representation of this numeric in a collection of Booleans.
       * Each boolean corresponds to one bit.
@@ -51,7 +51,7 @@ object Extensions {
       * For example, the Long value {@code 0x1213141516171819} would yield the
       * byte array {@code {0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19}}.
       */
-    def toBytes: Coll[Byte] = SigmaDsl.Colls.fromArray(Longs.toByteArray(x))
+    def toBytes: Coll[Byte] = Colls.fromArray(Longs.toByteArray(x))
 
     /** Returns a big-endian representation of this numeric in a collection of Booleans.
       * Each boolean corresponds to one bit.
@@ -67,7 +67,7 @@ object Extensions {
     */
   implicit class ModifierIdOps(val id: ModifierId) extends AnyVal {
     /** @return a `Coll[Byte]` representation of the `ModifierId` (decodes using Base16). */
-    def toColl: Coll[Byte] = SigmaDsl.Colls.fromArray(idToBytes(id))
+    def toColl: Coll[Byte] = Colls.fromArray(idToBytes(id))
 
     /** Converts this modifier id to to token id. */
     def toTokenId: TokenId = Digest32Coll @@ toColl

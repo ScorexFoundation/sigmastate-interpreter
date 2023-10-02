@@ -1,12 +1,12 @@
 package org.ergoplatform.sdk.js
 
 import sigmastate.Values.SigmaBoolean
-import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.crypto.DLogProtocol.ProveDlog
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
 
-/** Equivalent of [[special.sigma.SigmaProp]] available from JS. */
+/** Equivalent of [[sigma.SigmaProp]] available from JS. */
 @JSExportTopLevel("SigmaProp")
 class SigmaProp(val sigmaBoolean: SigmaBoolean) extends js.Object {
 }

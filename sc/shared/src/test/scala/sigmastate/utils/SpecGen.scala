@@ -1,17 +1,18 @@
 package sigmastate.utils
 
+import sigma.util.PrintExtensions.IterableExtensions
 import sigmastate._
 import sigmastate.eval.Evaluation._
-import scalan.util.Extensions.ByteOps
-import scalan.util.CollectionUtil
-import scalan.util.PrintExtensions._
+import sigma.util.Extensions.ByteOps
+import sigma.util.CollectionUtil
+import sigma.util.PrintExtensions._
 import sigmastate.Values._
-import sigmastate.lang.SigmaPredef.{PredefinedFuncRegistry, PredefinedFunc}
+import sigmastate.lang.SigmaPredef.{PredefinedFunc, PredefinedFuncRegistry}
 import sigmastate.lang.StdSigmaBuilder
 import sigmastate.lang.Terms.{MethodCall, PropertyCall}
 import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.serialization.{ValueSerializer, OpCodes}
-import sigmastate.utxo.{SigmaPropIsProven, SelectField}
+import sigmastate.serialization.{OpCodes, ValueSerializer}
+import sigmastate.utxo.{SelectField, SigmaPropIsProven}
 
 object SpecGenUtils {
   val types = SType.allPredefTypes.diff(Seq(SString))

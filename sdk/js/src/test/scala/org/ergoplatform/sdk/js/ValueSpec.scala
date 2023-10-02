@@ -6,14 +6,14 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import scorex.util.encode.Base16
 import sigmastate.SType
 import sigmastate.Values.{AvlTreeConstant, BigIntConstant, BooleanConstant, BoxConstant, ByteConstant, Constant, GroupElementConstant, IntConstant, LongConstant, ShortConstant, SigmaPropConstant, UnitConstant}
-import sigmastate.basics.CryptoConstants.dlogGroup
-import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.crypto.CryptoConstants.dlogGroup
+import sigmastate.crypto.DLogProtocol.ProveDlog
 import sigmastate.crypto.CryptoFacade
 import sigmastate.eval.CSigmaProp
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.serialization.ConstantSerializer
 import sigmastate.utils.Helpers
-import special.sigma.SigmaTestingData
+import sigma.SigmaTestingData
 
 import java.math.BigInteger
 

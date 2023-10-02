@@ -2,7 +2,7 @@ package sigmastate.helpers
 
 import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.{ErgoBox, Outputs}
-import scalan.RType
+import sigma.data.{CollType, RType}
 import scorex.util.ModifierId
 import sigmastate.Values._
 import sigmastate._
@@ -12,8 +12,7 @@ import sigmastate.lang.Terms.MethodCall
 import sigmastate.serialization.OpCodes
 import sigmastate.utils.Helpers
 import sigmastate.utxo.SelectField
-import special.collection.CollType
-import special.sigma.SigmaDslTesting
+import sigma.SigmaDslTesting
 
 import java.math.BigInteger
 import scala.collection.mutable.ArrayBuffer
@@ -43,8 +42,8 @@ class SigmaPPrintSpec extends SigmaDslTesting {
     test(SCollectionType(SBoolean), "SBooleanArray")
     test(STuple(Vector(SBoolean, SInt)), "SPair(SBoolean, SInt)")
 
-    test(RType.BooleanType, "RType.BooleanType")
-    test(CollType(RType.ByteType), "CollType(RType.ByteType)")
+    test(sigma.BooleanType, "RType.BooleanType")
+    test(CollType(sigma.ByteType), "CollType(RType.ByteType)")
 
     // exception handlers
     test(new ArithmeticException("msg"), "new ArithmeticException(\"msg\")")

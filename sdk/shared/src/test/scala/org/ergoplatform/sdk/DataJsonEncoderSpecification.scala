@@ -2,19 +2,22 @@ package org.ergoplatform.sdk
 
 
 import java.math.BigInteger
-
 import org.scalacheck.Arbitrary._
-import scalan.RType
+import org.scalacheck.Gen
+import sigma.data.RType
 import sigmastate.SCollection.SByteArray
 import sigmastate.SType.AnyOps
 import sigmastate.Values.SigmaBoolean
 import sigmastate._
 import sigmastate.eval.Extensions._
 import sigmastate.eval.{Evaluation, _}
-import sigmastate.basics.CryptoConstants.EcPointType
+import sigmastate.crypto.CryptoConstants.EcPointType
 import sigmastate.exceptions.SerializerException
-import special.sigma.{Box, AvlTree}
+import sigma.{AvlTree, Box, Colls}
 import sigmastate.serialization.SerializationSpecification
+
+import scala.annotation.nowarn
+import scala.reflect.ClassTag
 
 class DataJsonEncoderSpecification extends SerializationSpecification {
   object JsonCodecs extends JsonCodecs
@@ -47,9 +50,9 @@ class DataJsonEncoderSpecification extends SerializationSpecification {
   }
 
   def testTuples[T <: SType](tpe: T) = {
-    implicit val wWrapped = wrappedTypeGen(tpe)
-    implicit val tag = tpe.classTag[T#WrappedType]
-    implicit val tAny = RType.AnyType
+    implicit val wWrapped: Gen[T#WrappedType]      = wrappedTypeGen(tpe)
+    implicit val tag     : ClassTag[T#WrappedType] = tpe.classTag[T#WrappedType]
+    implicit val tAny    : RType[Any]              = sigma.AnyType
     forAll { in: (T#WrappedType, T#WrappedType) =>
       val (x,y) = (in._1, in._2)
       roundtrip[SType]((x, y).asWrappedType, STuple(tpe, tpe))
@@ -58,11 +61,11 @@ class DataJsonEncoderSpecification extends SerializationSpecification {
     }
   }
 
-  def testAnyValue[T <: SType](tpe: T) = {
+  @nowarn def testAnyValue[T <: SType](tpe: T) = {
     implicit val wWrapped = wrappedTypeGen(tpe)
     implicit val tag = tpe.classTag[T#WrappedType]
     implicit val tT = Evaluation.stypeToRType(tpe)
-    implicit val tAny = RType.AnyType
+    implicit val tAny = sigma.AnyType
     forAll { in: T#WrappedType =>
       val x = CAnyValue(in)
       val json = JsonCodecs.anyValueEncoder(x)
@@ -181,7 +184,7 @@ class DataJsonEncoderSpecification extends SerializationSpecification {
   def testEncodeError[T <: SType](tpe: T) = {
     implicit val wWrapped = wrappedTypeGen(tpe)
     implicit val tag = tpe.classTag[T#WrappedType]
-    implicit val tAny = RType.AnyType
+    implicit val tAny = sigma.AnyType
     forAll { x: T#WrappedType =>
       an[SerializerException] should be thrownBy {
         DataJsonEncoder.encode(TupleColl(x, x, x).asWrappedType, STuple(tpe, tpe, tpe))

@@ -1,4 +1,4 @@
-package special.sigma
+package sigma
 
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.settings.ErgoAlgos
@@ -6,15 +6,15 @@ import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen.containerOfN
 import org.scalacheck.util.Buildable
 import org.scalacheck.{Arbitrary, Gen}
-import scalan.RType
+import sigma.data.RType
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ModifierId
 import sigmastate.Values.{ByteArrayConstant, ConcreteCollection, ConstantPlaceholder, ErgoTree, FalseLeaf, IntConstant, LongConstant, SigmaPropConstant, TrueLeaf}
-import sigmastate.basics.CryptoConstants.EcPointType
-import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.ProveDHTuple
-import sigmastate.eval.{Colls, _}
+import sigmastate.crypto.CryptoConstants.EcPointType
+import sigmastate.crypto.DLogProtocol.ProveDlog
+import sigmastate.crypto.ProveDHTuple
+import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import sigmastate.eval.{CAvlTree, CBigInt, CHeader, CPreHeader, CSigmaProp, CostingBox, CostingSigmaDslBuilder, SigmaDsl}
 import sigmastate.helpers.TestingCommons
@@ -22,13 +22,13 @@ import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers
 import sigmastate._
-import special.collection.Coll
+import sigma.Coll
 
 import java.math.BigInteger
 import scala.reflect.ClassTag
 
 trait SigmaTestingData extends TestingCommons with ObjectGenerators {
-  /** Creates a [[special.collection.Coll]] with the given `items`. */
+  /** Creates a [[sigma.Coll]] with the given `items`. */
   def Coll[T](items: T*)(implicit cT: RType[T]): Coll[T] =
     CostingSigmaDslBuilder.Colls.fromItems(items: _*)
 

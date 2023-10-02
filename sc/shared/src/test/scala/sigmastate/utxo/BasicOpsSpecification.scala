@@ -3,7 +3,7 @@ package sigmastate.utxo
 import java.math.BigInteger
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, R6, R8}
 import org.ergoplatform._
-import scalan.RType
+import sigma.data.RType
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
@@ -13,13 +13,13 @@ import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 import SType.AnyOps
-import sigmastate.basics.CryptoConstants
+import sigmastate.crypto.CryptoConstants
 import sigmastate.eval.{CAnyValue, InvalidType}
 import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultEvalSettings
 import sigmastate.interpreter.EvalSettings
 import sigmastate.utils.Helpers._
-import scalan.util.StringUtil._
+import sigma.util.StringUtil._
 
 class BasicOpsSpecification extends CompilerTestingCommons
   with CompilerCrossVersionProps {
@@ -338,7 +338,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
 
     val dataVar = (lastExtVar + 1).toByte
     val Colls = IR.sigmaDslBuilderValue.Colls
-    implicit val eAny = RType.AnyType
+    implicit val eAny = sigma.AnyType
     val data = Colls.fromItems((Array[Byte](1,2,3).toColl, 10L))
     val env1 = env + ("dataVar" -> CAnyValue(dataVar))
     val dataType = SCollection(STuple(SByteArray, SLong))

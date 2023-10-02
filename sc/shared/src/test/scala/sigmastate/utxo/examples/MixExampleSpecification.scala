@@ -6,8 +6,8 @@ import org.ergoplatform.ErgoBox.{R4, R5}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.{AvlTreeData, CompilerCrossVersionProps}
 import sigmastate.Values.GroupElementConstant
-import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.{DiffieHellmanTupleProverInput, ProveDHTuple, CryptoConstants}
+import sigmastate.crypto.DLogProtocol.ProveDlog
+import sigmastate.crypto.{DiffieHellmanTupleProverInput, ProveDHTuple, CryptoConstants}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, CompilerTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._

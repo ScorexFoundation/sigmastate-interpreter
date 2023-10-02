@@ -5,13 +5,12 @@ import java.nio.charset.StandardCharsets
 
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.validation.ValidationRules.CheckSerializableTypeCode
-import scalan.RType
+import sigma.data.RType
 import sigmastate.Values.SigmaBoolean
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate._
 import sigmastate.eval.{Evaluation, _}
-import special.collection._
-import special.sigma._
+import sigma._
 import debox.cfor
 import sigmastate.exceptions.SerializerException
 import scala.collection.mutable
@@ -126,7 +125,7 @@ object DataSerializer {
         val arr = tuple.items.map { t =>
           deserialize(t, r)
         }.toArray[Any]
-        val coll = Colls.fromArray(arr)(RType.AnyType)
+        val coll = Colls.fromArray(arr)(sigma.AnyType)
         Evaluation.toDslTuple(coll, tuple)
       case t =>
         CheckSerializableTypeCode(t.typeCode)
@@ -147,7 +146,7 @@ object DataSerializer {
           case tTup: STuple if tTup.items.length == 2 =>
             Evaluation.stypeToRType(tpeElem)
           case _: STuple =>
-            collRType(RType.AnyType)
+            collRType(sigma.AnyType)
           case _ =>
             Evaluation.stypeToRType(tpeElem)
         }).asInstanceOf[RType[T#WrappedType]]

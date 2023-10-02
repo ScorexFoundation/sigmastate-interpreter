@@ -6,9 +6,9 @@ import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.Assertion
 import sigmastate.Values.SigmaBoolean
 import sigmastate._
-import sigmastate.basics.DLogProtocol.{ProveDlog, SecondDLogProverMessage}
-import sigmastate.basics.VerifierMessage.Challenge
-import sigmastate.basics.{ProveDHTuple, SecondDHTupleProverMessage}
+import sigmastate.crypto.DLogProtocol.{ProveDlog, SecondDLogProverMessage}
+import sigmastate.crypto.VerifierMessage.Challenge
+import sigmastate.crypto.{ProveDHTuple, SecondDHTupleProverMessage}
 import sigmastate.crypto.GF2_192_Poly
 import sigmastate.eval.Extensions.ArrayOps
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTransactionTesting, TestingCommons}

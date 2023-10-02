@@ -4,8 +4,8 @@ import org.ergoplatform.ErgoLikeInterpreter
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values.SigmaBoolean
 import sigmastate._
-import sigmastate.basics.DLogProtocol.FirstDLogProverMessage
-import sigmastate.basics.{FirstDHTupleProverMessage, SecP256K1Group}
+import sigmastate.crypto.DLogProtocol.FirstDLogProverMessage
+import sigmastate.crypto.{FirstDHTupleProverMessage, SecP256K1Group}
 import sigmastate.exceptions.InterpreterException
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, TestingCommons}
 import sigmastate.interpreter.{HintsBag, ProverInterpreter}

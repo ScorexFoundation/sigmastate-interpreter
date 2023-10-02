@@ -2,14 +2,14 @@ package sigmastate.serialization
 
 import org.ergoplatform.validation.ValidationRules.CheckValidOpCode
 import org.ergoplatform._
+import sigma.util.Extensions.toUByte
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.transformers._
-import sigmastate.serialization.trees.{Relation2Serializer, QuadrupleSerializer}
-import scalan.util.Extensions._
+import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer}
 import sigmastate.utils.SigmaByteWriter.DataInfo
 import sigmastate.utils._
 import sigmastate.utxo.ComplexityTable._

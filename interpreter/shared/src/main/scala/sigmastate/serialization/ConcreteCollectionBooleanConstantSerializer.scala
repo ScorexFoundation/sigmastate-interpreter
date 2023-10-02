@@ -4,7 +4,7 @@ import sigmastate.{SCollection, SBoolean, ArgInfo}
 import sigmastate.Values._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import SigmaByteWriter._
-import sigmastate.util.safeNewArray
+import sigma.util.safeNewArray
 import debox.cfor
 
 case class ConcreteCollectionBooleanConstantSerializer(cons: (IndexedSeq[Value[SBoolean.type]], SBoolean.type) => Value[SCollection[SBoolean.type]])

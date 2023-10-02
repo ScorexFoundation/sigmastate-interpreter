@@ -2,7 +2,7 @@ package org.ergoplatform.sdk.js
 
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, BoxId, TokenId}
 import org.ergoplatform._
-import org.ergoplatform.sdk.wallet.protocol.context.BlockchainStateContext
+import org.ergoplatform.sdk.wallet.protocol.context.{BlockchainStateContext, CBlockchainStateContext}
 import org.ergoplatform.sdk.{ExtendedInputBox, Iso}
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.matchers.should.Matchers
@@ -10,12 +10,9 @@ import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import sigmastate.SType
 import sigmastate.Values.Constant
-import sigmastate.eval.Colls
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.generators.ObjectGenerators
-import special.collection.Coll
-import special.sigma
-import special.sigma.GroupElement
+import sigma.{Coll, Colls, GroupElement}
 
 import scala.scalajs.js
 
@@ -30,7 +27,7 @@ class IsosSpec  extends AnyPropSpec with Matchers with ObjectGenerators with Sca
     stateRoot <- avlTreeGen
     headers <- headersGen(stateRoot)
     preHeader <- preHeaderGen(headers.headOption.map(_.id).getOrElse(modifierIdBytesGen.sample.get))
-  } yield BlockchainStateContext(
+  } yield CBlockchainStateContext(
       sigmaLastHeaders = Colls.fromItems(headers:_*),
       previousStateDigest = stateRoot.digest,
       sigmaPreHeader = preHeader

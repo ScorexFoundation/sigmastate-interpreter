@@ -1,7 +1,7 @@
 package sigmastate.utxo
 
 import org.ergoplatform._
-import scalan.util.BenchmarkUtil
+import sigma.util.BenchmarkUtil
 import sigmastate.helpers.CompilerTestingCommons
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.generators.ObjectGenerators
@@ -9,7 +9,7 @@ import debox.{Buffer => DBuffer}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import sigmastate.util.{MaxArrayLength, safeNewArray}
+import sigma.util.{MaxArrayLength, safeNewArray}
 
 class SerializationRoundTripSpec extends AnyPropSpec
   with ScalaCheckDrivenPropertyChecks

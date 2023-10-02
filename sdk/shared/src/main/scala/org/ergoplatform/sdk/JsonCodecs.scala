@@ -16,8 +16,7 @@ import sigmastate.eval.{CPreHeader, WrapperOf, _}
 import sigmastate.exceptions.SigmaException
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.{AvlTreeData, AvlTreeFlags, SType}
-import special.collection.Coll
-import special.sigma.{AnyValue, Header, PreHeader}
+import sigma.{AnyValue, Coll, Colls, Header, PreHeader}
 
 import scala.util.Try
 import sigmastate.utils.Helpers._  // required for Scala 2.11
@@ -62,11 +61,11 @@ trait JsonCodecs {
     fromTry(Try.apply(DataJsonEncoder.decodeAnyValue(cursor.value)))
   })
 
-  implicit val sigmaBigIntEncoder: Encoder[special.sigma.BigInt] = Encoder.instance({ bigInt =>
+  implicit val sigmaBigIntEncoder: Encoder[sigma.BigInt] = Encoder.instance({ bigInt =>
     JsonNumber.fromDecimalStringUnsafe(bigInt.asInstanceOf[WrapperOf[BigInteger]].wrappedValue.toString).asJson
   })
 
-  implicit val sigmaBigIntDecoder: Decoder[special.sigma.BigInt] = Decoder.instance({ implicit cursor =>
+  implicit val sigmaBigIntDecoder: Decoder[sigma.BigInt] = Decoder.instance({ implicit cursor =>
     for {
       jsonNumber <- cursor.as[JsonNumber]
       bigInt <- fromOption(jsonNumber.toBigInt)
@@ -153,7 +152,7 @@ trait JsonCodecs {
       minerPk <- cursor.downField("minerPk").as[Coll[Byte]]
       powOnetimePk <- cursor.downField("powOnetimePk").as[Coll[Byte]]
       powNonce <- cursor.downField("powNonce").as[Coll[Byte]]
-      powDistance <- cursor.downField("powDistance").as[special.sigma.BigInt]
+      powDistance <- cursor.downField("powDistance").as[sigma.BigInt]
       votes <- cursor.downField("votes").as[Coll[Byte]]
     } yield new CHeader(id, version, parentId, adProofsRoot, stateRoot, transactionsRoot, timestamp, nBits,
       height, extensionRoot, SigmaDsl.decodePoint(minerPk), SigmaDsl.decodePoint(powOnetimePk), powNonce, powDistance, votes)
@@ -369,18 +368,16 @@ trait JsonCodecs {
 
   implicit val ergoLikeTransactionEncoder: Encoder[ErgoLikeTransaction] = Encoder.instance({ tx =>
     Json.obj(
-      "type" -> "ELT".asJson, // ErgoLikeTransaction
       "id" -> tx.id.asJson,
       "inputs" -> tx.inputs.asJson,
       "dataInputs" -> tx.dataInputs.asJson,
-      "outputs" -> tx.outputCandidates.asJson
+      "outputs" -> tx.outputs.asJson
     )
   })
 
   implicit val ergoLikeTransactionDecoder: Decoder[ErgoLikeTransaction] = Decoder.instance({ implicit cursor =>
     for {
-      t <- cursor.downField("type").as[String]
-      inputs <- {require(t == "ELT"); cursor.downField("inputs").as[IndexedSeq[Input]] }
+      inputs <- cursor.downField("inputs").as[IndexedSeq[Input]]
       dataInputs <- cursor.downField("dataInputs").as[IndexedSeq[DataInput]]
       outputs <- cursor.downField("outputs").as[IndexedSeq[ErgoBoxCandidate]]
     } yield new ErgoLikeTransaction(inputs, dataInputs, outputs)
@@ -388,18 +385,16 @@ trait JsonCodecs {
 
   implicit val unsignedErgoLikeTransactionEncoder: Encoder[UnsignedErgoLikeTransaction] = Encoder.instance({ tx =>
     Json.obj(
-      "type" -> "UELT".asJson, // UnsignedErgoLikeTransaction
       "id" -> tx.id.asJson,
       "inputs" -> tx.inputs.asJson,
       "dataInputs" -> tx.dataInputs.asJson,
-      "outputs" -> tx.outputCandidates.asJson
+      "outputs" -> tx.outputs.asJson
     )
   })
 
   implicit val unsignedErgoLikeTransactionDecoder: Decoder[UnsignedErgoLikeTransaction] = Decoder.instance({ implicit cursor =>
     for {
-      t <- cursor.downField("type").as[String]
-      inputs <- {require(t == "UELT"); cursor.downField("inputs").as[IndexedSeq[UnsignedInput]] }
+      inputs <- cursor.downField("inputs").as[IndexedSeq[UnsignedInput]]
       dataInputs <- cursor.downField("dataInputs").as[IndexedSeq[DataInput]]
       outputs <- cursor.downField("outputs").as[IndexedSeq[ErgoBoxCandidate]]
     } yield new UnsignedErgoLikeTransaction(inputs, dataInputs, outputs)
@@ -411,15 +406,10 @@ trait JsonCodecs {
     case t => throw new SigmaException(s"Don't know how to encode transaction $t")
   })
 
-  implicit val ergoLikeTransactionTemplateDecoder: Decoder[ErgoLikeTransactionTemplate[_ <: UnsignedInput]] = Decoder.instance({ implicit cursor =>
-    for {
-      t <- cursor.downField("type").as[String]
-      tx <- t match {
-        case "ELT" => ergoLikeTransactionDecoder(cursor)
-        case "UELT" => unsignedErgoLikeTransactionDecoder(cursor)
-      }
-    } yield tx
-  })
+  implicit val ergoLikeTransactionTemplateDecoder: Decoder[ErgoLikeTransactionTemplate[_ <: UnsignedInput]] = {
+    ergoLikeTransactionDecoder.asInstanceOf[Decoder[ErgoLikeTransactionTemplate[_ <: UnsignedInput]]] or
+        unsignedErgoLikeTransactionDecoder.asInstanceOf[Decoder[ErgoLikeTransactionTemplate[_ <: UnsignedInput]]]
+  }
 
   implicit val sigmaValidationSettingsEncoder: Encoder[SigmaValidationSettings] = Encoder.instance({ v =>
     SigmaValidationSettingsSerializer.toBytes(v).asJson

@@ -1,18 +1,16 @@
 package org.ergoplatform.sdk.utils
 
 import org.ergoplatform.ErgoBox
-import scalan.RType
-import scalan.RType._
+import sigma.data.{CollType, FuncType, OptionType, PairType, RType, TupleType}
+import sigma.data.RType._
 import scorex.crypto.authds.avltree.batch.BatchAVLProver
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ModifierId
 import sigmastate.Values.ErgoTree
-import sigmastate.basics.CryptoConstants
+import sigmastate.crypto.CryptoConstants
 import sigmastate.eval._
 import sigmastate.{AvlTreeData, AvlTreeFlags, TrivialProp}
-import special.Types.TupleType
-import special.collection.{Coll, CollType}
-import special.sigma.{AvlTree, AvlTreeRType, BigInt, BigIntRType, Box, BoxRType, GroupElement, GroupElementRType, SigmaProp, SigmaPropRType}
+import sigma._
 
 import java.math.BigInteger
 import scala.language.implicitConversions

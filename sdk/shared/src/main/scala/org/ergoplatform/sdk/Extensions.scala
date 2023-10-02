@@ -1,11 +1,11 @@
 package org.ergoplatform.sdk
 
 import debox.cfor
-import scalan.RType
-import scalan.rtypeToClassTag // actually used
+import sigma.data.RType
+import sigma.rtypeToClassTag // actually used
 import sigmastate.eval.CPreHeader
-import special.collection.{Coll, CollBuilder, PairColl}
-import special.sigma.{Header, PreHeader}
+import sigma.{Coll, CollBuilder, PairColl}
+import sigma.{Header, PreHeader}
 
 import scala.collection.compat.BuildFrom
 import scala.collection.{GenIterable, immutable}

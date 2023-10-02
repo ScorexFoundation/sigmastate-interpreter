@@ -3,7 +3,7 @@ package org.ergoplatform.sdk.js
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
 
-/** Equivalent of [[special.sigma.Header]] available from JS.
+/** Equivalent of [[sigma.Header]] available from JS.
   * Represents data of the block header available in Sigma propositions.
   */
 @JSExportTopLevel("Header")

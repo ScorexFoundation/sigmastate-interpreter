@@ -8,9 +8,10 @@ import org.scalatest.BeforeAndAfterAll
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
+import sigma.Colls
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.basics.CryptoConstants
+import sigmastate.crypto.CryptoConstants
 import sigmastate.eval.Extensions.ArrayOps
 import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._

@@ -9,9 +9,9 @@ import org.ergoplatform.sdk.wallet.{AssetUtils, TokensMap}
 import scorex.util.{ModifierId, bytesToId}
 import sigmastate.eval.Extensions.ArrayOps
 import sigmastate.utils.Extensions.ModifierIdOps
-import special.collection.Coll
-import special.collection.Extensions.CollBytesOps
-import special.sigma.PreHeader
+import sigma.Coll
+import sigma.Extensions.CollBytesOps
+import sigma.PreHeader
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Try

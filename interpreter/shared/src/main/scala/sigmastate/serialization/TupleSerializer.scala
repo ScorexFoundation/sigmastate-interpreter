@@ -4,7 +4,7 @@ import sigmastate.{SType, ArgInfo}
 import sigmastate.Values._
 import sigmastate.utils.{SigmaByteWriter, SigmaByteReader}
 import sigmastate.serialization.ValueSerializer._
-import sigmastate.util.safeNewArray
+import sigma.util.safeNewArray
 import sigmastate.utils.SigmaByteWriter.{DataInfo, U}
 import debox.cfor
 

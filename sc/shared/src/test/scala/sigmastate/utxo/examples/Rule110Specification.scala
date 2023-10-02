@@ -3,10 +3,11 @@ package sigmastate.utxo.examples
 import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
 import scorex.util._
+import sigma.Colls
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, CompilerTestingCommons, ErgoLikeTestInterpreter}
+import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.Terms._

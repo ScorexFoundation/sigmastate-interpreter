@@ -3,7 +3,7 @@ package sigmastate.serialization.transformers
 import sigmastate.{SigmaTransformerCompanion, SigmaTransformer}
 import sigmastate.Values.{SigmaPropValue, SValue}
 import sigmastate.serialization.ValueSerializer
-import sigmastate.util.safeNewArray
+import sigma.util.safeNewArray
 import sigmastate.utils.SigmaByteWriter.{DataInfo, valuesItemInfo}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import debox.cfor

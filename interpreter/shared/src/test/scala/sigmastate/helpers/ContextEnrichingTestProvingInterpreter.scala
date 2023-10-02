@@ -3,8 +3,8 @@ package sigmastate.helpers
 import scorex.utils.Random
 import sigmastate.SType
 import sigmastate.Values._
-import sigmastate.basics.DLogProtocol.DLogProverInput
-import sigmastate.basics.DiffieHellmanTupleProverInput
+import sigmastate.crypto.DLogProtocol.DLogProverInput
+import sigmastate.crypto.DiffieHellmanTupleProverInput
 
 class ContextEnrichingTestProvingInterpreter
   extends ErgoLikeTestProvingInterpreter with ContextEnrichingProverInterpreter {

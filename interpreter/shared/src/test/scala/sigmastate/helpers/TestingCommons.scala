@@ -9,7 +9,7 @@ import sigmastate.eval.SigmaDsl
 import scorex.crypto.hash.Blake2b256
 import org.ergoplatform.{ErgoBox, ErgoLikeContext}
 import org.scalatest.matchers.should.Matchers
-import sigmastate.basics.CryptoConstants.EcPointType
+import sigmastate.crypto.CryptoConstants.EcPointType
 
 trait TestingCommons extends AnyPropSpec
     with ScalaCheckPropertyChecks

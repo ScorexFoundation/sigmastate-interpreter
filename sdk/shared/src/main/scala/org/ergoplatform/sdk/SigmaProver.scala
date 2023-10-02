@@ -6,7 +6,7 @@ import org.ergoplatform.sdk.wallet.protocol.context.BlockchainStateContext
 import sigmastate.eval.{CostingSigmaDslBuilder, SigmaDsl}
 import sigmastate.interpreter.HintsBag
 import sigmastate.utils.Helpers.TryOps
-import special.sigma.{BigInt, SigmaProp}
+import sigma.{BigInt, SigmaProp}
 
 /** Represents a prover for signing Ergo transactions and messages.
   *

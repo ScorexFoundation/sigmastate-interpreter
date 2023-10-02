@@ -3,13 +3,11 @@ package sigmastate.utils
 import debox.cfor
 import io.circe.Decoder
 import org.ergoplatform.settings.ErgoAlgos
-import scalan.{OverloadHack, RType}
+import sigma.data.{OverloadHack, RType}
 import scorex.utils.Ints
-import sigmastate.Environment
-import sigmastate.eval.{CAnyValue, Colls, SigmaDsl}
-import sigmastate.basics.CryptoConstants.EcPointType
-import special.collection.Coll
-import special.sigma.GroupElement
+import sigma.{Coll, Colls, Environment, GroupElement}
+import sigmastate.eval.{CAnyValue, SigmaDsl}
+import sigmastate.crypto.CryptoConstants.EcPointType
 
 import java.util
 import java.util.concurrent.locks.Lock
@@ -80,15 +78,15 @@ object Helpers {
   }
 
   def deepHashCode[T](arr: Array[T]): Int = arr match {
-    case arr: Array[AnyRef] => util.Arrays.deepHashCode(arr)
-    case arr: Array[Byte] => util.Arrays.hashCode(arr)
-    case arr: Array[Short] => util.Arrays.hashCode(arr)
-    case arr: Array[Int] => util.Arrays.hashCode(arr)
-    case arr: Array[Long] => util.Arrays.hashCode(arr)
-    case arr: Array[Char] => util.Arrays.hashCode(arr)
-    case arr: Array[Float] => util.Arrays.hashCode(arr)
-    case arr: Array[Double] => util.Arrays.hashCode(arr)
-    case arr: Array[Boolean] => util.Arrays.hashCode(arr)
+    case arr: Array[AnyRef] => java.util.Arrays.deepHashCode(arr)
+    case arr: Array[Byte] => java.util.Arrays.hashCode(arr)
+    case arr: Array[Short] => java.util.Arrays.hashCode(arr)
+    case arr: Array[Int] => java.util.Arrays.hashCode(arr)
+    case arr: Array[Long] => java.util.Arrays.hashCode(arr)
+    case arr: Array[Char] => java.util.Arrays.hashCode(arr)
+    case arr: Array[Float] => java.util.Arrays.hashCode(arr)
+    case arr: Array[Double] => java.util.Arrays.hashCode(arr)
+    case arr: Array[Boolean] => java.util.Arrays.hashCode(arr)
   }
 
   /** Optimized hashCode for array of bytes when it represents some hash thus it have
@@ -97,7 +95,7 @@ object Helpers {
     */
   @inline final def safeIdHashCode(id: Array[Byte]): Int =
     if (id != null && id.length >= 4) Ints.fromBytes(id(0), id(1), id(2), id(3))
-    else util.Arrays.hashCode(id)
+    else java.util.Arrays.hashCode(id)
 
   implicit class TryOps[+A](val source: Try[A]) extends AnyVal {
     def fold[B](onError: Throwable => B, onSuccess: A => B) = source match {

@@ -6,14 +6,14 @@ import sigmastate.Values.{ConcreteCollection, LongConstant, SValue, SigmaBoolean
 import sigmastate._
 
 import java.math.BigInteger
-import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.crypto.DLogProtocol.ProveDlog
 import sigmastate.SCollection.SByteArray
-import sigmastate.basics.{ProveDHTuple, CryptoConstants}
+import sigmastate.crypto.{ProveDHTuple, CryptoConstants}
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import special.sigma._
+import sigma._
 import sigmastate.eval._
 import sigmastate.helpers.NegativeTesting
-import special.collection.Coll
+import sigma.Coll
 
 trait LangTests extends Matchers with NegativeTesting {
 
@@ -74,7 +74,7 @@ trait LangTests extends Matchers with NegativeTesting {
   def ty(s: String): SType = SigmaParser.parseType(s)
 
   def assertSrcCtxForAllNodes(tree: SValue): Unit = {
-    import sigmastate.kiama.rewriting.Rewriter._
+    import sigma.kiama.rewriting.Rewriter._
     rewrite(everywherebu(rule[Any] {
       case node: SValue =>
         withClue(s"Missing sourceContext for $node") { node.sourceContext.isDefined shouldBe true }

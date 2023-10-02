@@ -5,13 +5,11 @@ import org.bouncycastle.crypto.ec.CustomNamedCurves
 import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator
 import org.bouncycastle.crypto.params.KeyParameter
 import org.bouncycastle.math.ec.{ECCurve, ECFieldElement, ECPoint}
-import scalan.RType
 
 import java.math.BigInteger
 import sigmastate._
-import sigmastate.basics.BcDlogGroup
-import special.collection.Coll
-import special.sigma._
+import sigma.Coll
+import sigma._
 
 import java.text.Normalizer.Form.NFKD
 import java.text.Normalizer
@@ -175,7 +173,7 @@ object Platform {
     */
   def isCorrectType[T <: SType](value: Any, tpe: T): Boolean = value match {
     case c: Coll[_] => tpe match {
-      case STuple(items) => c.tItem == RType.AnyType && c.length == items.length
+      case STuple(items) => c.tItem == sigma.AnyType && c.length == items.length
       case _: SCollection[_] => true
       case _ => sys.error(s"Collection value $c has unexpected type $tpe")
     }

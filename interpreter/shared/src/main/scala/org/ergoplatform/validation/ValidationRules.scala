@@ -1,6 +1,6 @@
 package org.ergoplatform.validation
 
-import scalan.util.Extensions.toUByte
+import sigma.util.Extensions.toUByte
 import sigmastate.Values.{ErgoTree, SValue}
 import sigmastate._
 import sigmastate.exceptions.{InterpreterException, InvalidOpCode, ReaderPositionLimitExceeded, SerializerException, SigmaException}

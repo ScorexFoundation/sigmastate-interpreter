@@ -1,10 +1,11 @@
 package sigmastate.eval
 
 import org.ergoplatform._
-import scalan.ExactIntegral.{ByteIsExactIntegral, IntIsExactIntegral, LongIsExactIntegral, ShortIsExactIntegral}
-import scalan.ExactOrdering.{ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering, ShortIsExactOrdering}
-import scalan.util.Extensions.ByteOps
-import scalan.{ExactIntegral, ExactNumeric, ExactOrdering, Lazy, MutableLazy, Nullable, SigmaLibrary}
+import scalan.MutableLazy
+import sigma.data.ExactIntegral.{ByteIsExactIntegral, IntIsExactIntegral, LongIsExactIntegral, ShortIsExactIntegral}
+import sigma.data.ExactOrdering.{ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering, ShortIsExactOrdering}
+import sigma.util.Extensions.ByteOps
+import sigma.data.{ExactIntegral, ExactNumeric, ExactOrdering, Lazy, Nullable}
 import sigmastate.Values.Value.Typed
 import sigmastate.Values._
 import sigmastate.interpreter.Interpreter.ScriptEnv
@@ -13,8 +14,9 @@ import sigmastate.lang.Terms.{Ident, Select, Val, ValueOps}
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
 import sigmastate._
-import sigmastate.basics.CryptoConstants.EcPointType
-import sigmastate.exceptions.{SigmaException, GraphBuildingException}
+import sigmastate.crypto.CryptoConstants.EcPointType
+import sigmastate.exceptions.{GraphBuildingException, SigmaException}
+
 import scala.collection.mutable.ArrayBuffer
 
 /** Perform translation of typed expression given by [[Value]] to a graph in IRContext.
@@ -393,7 +395,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
 
   import sigmastate._
 
-  protected implicit def groupElementToECPoint(g: special.sigma.GroupElement): EcPointType = CostingSigmaDslBuilder.toECPoint(g).asInstanceOf[EcPointType]
+  protected implicit def groupElementToECPoint(g: sigma.GroupElement): EcPointType = CostingSigmaDslBuilder.toECPoint(g).asInstanceOf[EcPointType]
 
   def error(msg: String) = throw new GraphBuildingException(msg, None)
   def error(msg: String, srcCtx: Option[SourceContext]) = throw new GraphBuildingException(msg, srcCtx)
@@ -471,7 +473,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         case box: SBox =>
           val boxV = liftConst(box)
           boxV
-        case tree: special.sigma.AvlTree =>
+        case tree: sigma.AvlTree =>
           val treeV = liftConst(tree)
           treeV
         case s: String =>

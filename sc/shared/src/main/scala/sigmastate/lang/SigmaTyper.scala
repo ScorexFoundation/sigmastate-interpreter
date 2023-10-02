@@ -5,8 +5,8 @@ import sigmastate.SCollection._
 import sigmastate.Values._
 import sigmastate._
 import SCollection.SBooleanArray
-import scalan.Nullable
-import scalan.util.Extensions.Ensuring
+import sigma.data.Nullable
+import sigma.util.Extensions.Ensuring
 import sigmastate.lang.Terms._
 import sigmastate.exceptions._
 import sigmastate.lang.SigmaPredef._

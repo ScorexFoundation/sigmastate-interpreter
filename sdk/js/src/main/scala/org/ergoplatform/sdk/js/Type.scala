@@ -1,6 +1,6 @@
 package org.ergoplatform.sdk.js
 
-import scalan.RType
+import sigma.data.RType
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
@@ -20,45 +20,45 @@ class Type(private[js] final val rtype: RType[_]) extends js.Object {
 @JSExportTopLevel("TypeObj")
 object Type extends js.Object {
   /** Descriptor of ErgoScript type Byte. */
-  val Byte = new Type(RType.ByteType)
+  val Byte = new Type(sigma.ByteType)
 
   /** Descriptor of ErgoScript type Short. */
-  val Short = new Type(RType.ShortType)
+  val Short = new Type(sigma.ShortType)
 
   /** Descriptor of ErgoScript type Int. */
-  val Int = new Type(RType.IntType)
+  val Int = new Type(sigma.IntType)
 
   /** Descriptor of ErgoScript type Long. */
-  val Long = new Type(RType.LongType)
+  val Long = new Type(sigma.LongType)
 
   /** Descriptor of ErgoScript type BigInt. */
-  val BigInt = new Type(special.sigma.BigIntRType)
+  val BigInt = new Type(sigma.BigIntRType)
 
   /** Descriptor of ErgoScript type GroupElement. */
-  val GroupElement = new Type(special.sigma.GroupElementRType)
+  val GroupElement = new Type(sigma.GroupElementRType)
 
   /** Descriptor of ErgoScript type SigmaProp. */
-  val SigmaProp = new Type(special.sigma.SigmaPropRType)
+  val SigmaProp = new Type(sigma.SigmaPropRType)
 
   /** Descriptor of ErgoScript type Box. */
-  val Box = new Type(special.sigma.BoxRType)
+  val Box = new Type(sigma.BoxRType)
 
   /** Descriptor of ErgoScript type AvlTree. */
-  val AvlTree = new Type(special.sigma.AvlTreeRType)
+  val AvlTree = new Type(sigma.AvlTreeRType)
 
   /** Descriptor of ErgoScript type Context. */
-  val Context = new Type(special.sigma.ContextRType)
+  val Context = new Type(sigma.ContextRType)
 
   /** Descriptor of ErgoScript type Header. */
-  val Header = new Type(special.sigma.HeaderRType)
+  val Header = new Type(sigma.HeaderRType)
 
   /** Descriptor of ErgoScript type PreHeader. */
-  val PreHeader = new Type(special.sigma.PreHeaderRType)
+  val PreHeader = new Type(sigma.PreHeaderRType)
 
   /** Descriptor of ErgoScript type Global.
     * @see SigmaDslBuilder, SGlobal
     */
-  val SigmaDslBuilder = new Type(special.sigma.SigmaDslBuilderRType)
+  val SigmaDslBuilder = new Type(sigma.SigmaDslBuilderRType)
 
   /** Constructs a new descriptor of ErgoScript pair type (l, r).
     * @param l first component of the pair
@@ -73,6 +73,6 @@ object Type extends js.Object {
     * @param elemType type descriptor of collection elements
     */
   def collType(elemType: Type): Type = {
-    new Type(special.collection.collRType(elemType.rtype))
+    new Type(sigma.collRType(elemType.rtype))
   }
 }

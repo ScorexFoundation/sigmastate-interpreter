@@ -6,14 +6,13 @@ import io.circe.syntax._
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, Token}
 import org.ergoplatform.settings.ErgoAlgos
-import scalan.RType
+import sigma.data.RType
 import scorex.util._
 import sigmastate.Values.{Constant, EvaluatedValue}
 import sigmastate._
 import sigmastate.lang.SigmaParser
 import sigmastate.eval._
-import special.collection.Coll
-import special.sigma._
+import sigma._
 import debox.cfor
 import sigmastate.exceptions.SerializerException
 import scala.collection.compat.immutable.ArraySeq
@@ -191,7 +190,7 @@ object DataJsonEncoder {
         cfor(1)(_ <= tArr.length, _ + 1) { i =>
           collSource += decodeData(json.hcursor.downField(s"_${i}").focus.get, tArr(i - 1))
         }
-        val coll = Colls.fromArray(collSource.result())(RType.AnyType)
+        val coll = Colls.fromArray(collSource.result())(sigma.AnyType)
         Evaluation.toDslTuple(coll, t)
       case SGroupElement =>
         val str = decodeBytes(json)

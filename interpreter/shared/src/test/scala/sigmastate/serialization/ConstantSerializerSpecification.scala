@@ -3,16 +3,16 @@ package sigmastate.serialization
 import java.math.BigInteger
 import org.ergoplatform._
 import org.scalacheck.Arbitrary._
-import scalan.RType
+import sigma.data.RType
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.{BigIntConstant, ByteArrayConstant, Constant, FalseLeaf, GroupGenerator, LongConstant, SValue, TrueLeaf}
-import sigmastate.basics.CryptoConstants.EcPointType
+import sigmastate.crypto.CryptoConstants.EcPointType
 import sigmastate._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import sigmastate.Values._
 import sigmastate.eval.Evaluation
-import special.sigma.AvlTree
+import sigma.{AvlTree, Colls}
 import SType.AnyOps
 import scorex.util.encode.Base16
 import sigmastate.exceptions.SerializerException
@@ -27,7 +27,7 @@ class ConstantSerializerSpecification extends TableSerializationSpecification {
     implicit val tT = Evaluation.stypeToRType(tpe)
     implicit val tag = tT.classTag
     forAll { xs: Array[T#WrappedType] =>
-      implicit val tAny = RType.AnyType
+      implicit val tAny = sigma.AnyType
       roundTripTest(Constant[SCollection[T]](xs.toColl, SCollection(tpe)))
       roundTripTest(Constant[SType](xs.toColl.map(x => (x, x)).asWrappedType, SCollection(STuple(tpe, tpe)))) // pairs are special case
       val triples = xs.toColl.map(x => TupleColl(x, x, x)).asWrappedType
@@ -49,7 +49,7 @@ class ConstantSerializerSpecification extends TableSerializationSpecification {
     implicit val wWrapped = wrappedTypeGen(tpe)
     implicit val tT = Evaluation.stypeToRType(tpe)
     @nowarn implicit val tag = tT.classTag
-    implicit val tAny: RType[Any] = RType.AnyType
+    implicit val tAny: RType[Any] = sigma.AnyType
     forAll { in: (T#WrappedType, T#WrappedType) =>
       val (x,y) = (in._1, in._2)
       roundTripTest(Constant[SType]((x, y).asWrappedType, STuple(tpe, tpe)))

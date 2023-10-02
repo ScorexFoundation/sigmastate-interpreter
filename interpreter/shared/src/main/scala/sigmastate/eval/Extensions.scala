@@ -3,7 +3,7 @@ package sigmastate.eval
 import debox.{cfor, Buffer => DBuffer}
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.TokenId
-import scalan.{Nullable, RType}
+import sigma.data.{Nullable, RType}
 import scorex.util.encode.Base16
 import sigmastate.SType.AnyOps
 import sigmastate.Values.{Constant, ConstantNode}
@@ -11,13 +11,12 @@ import sigmastate.crypto.{CryptoFacade, Ecp}
 import sigmastate.lang.{CheckingSigmaBuilder, TransformingSigmaBuilder}
 import sigmastate.utils.Helpers
 import sigmastate.{Platform, SCollection, SCollectionType, SType}
-import special.collection.Coll
-import special.sigma._
+import sigma.Coll
+import sigma._
 
 import java.math.BigInteger
 
 object Extensions {
-  private val Colls = CostingSigmaDslBuilder.Colls
 
   implicit class ByteExt(val b: Byte) extends AnyVal {
     @inline def toBigInt: BigInt = CostingSigmaDslBuilder.BigInt(BigInteger.valueOf(b.toLong))

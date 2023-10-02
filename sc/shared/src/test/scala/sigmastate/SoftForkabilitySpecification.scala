@@ -7,7 +7,6 @@ import org.scalatest.BeforeAndAfterAll
 import sigmastate.SPrimType.MaxPrimTypeCode
 import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.Values.{ByteArrayConstant, ErgoTree, IntConstant, NotReadyValueInt, UnparsedErgoTree, ValueCompanion}
-import sigmastate.eval.Colls
 import sigmastate.exceptions.{InterpreterException, SerializerException}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
@@ -20,7 +19,7 @@ import sigmastate.serialization.SigmaSerializer.startReader
 import sigmastate.serialization._
 import sigmastate.utils.Helpers._
 import sigmastate.utxo.DeserializeContext
-import special.sigma.SigmaTestingData
+import sigma.{Colls, SigmaTestingData}
 
 class SoftForkabilitySpecification extends SigmaTestingData
     with CompilerTestingCommons

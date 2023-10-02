@@ -3,7 +3,7 @@ package org.ergoplatform.sdk.js
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
 
-/** Equivalent of [[special.sigma.PreHeader]] available from JS.
+/** Equivalent of [[sigma.PreHeader]] available from JS.
   * Only header fields that can be predicted by a miner.
   */
 @JSExportTopLevel("PreHeader")
