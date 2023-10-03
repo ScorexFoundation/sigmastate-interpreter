@@ -6,8 +6,9 @@ import sigmastate.helpers.CompilerTestingCommons
 import org.ergoplatform.dsl.ContractSyntax.Token
 import org.ergoplatform.dsl.TestContractSpec
 import scorex.crypto.hash.Blake2b256
-import sigmastate.SCollection.SByteArray
+import sigma.ast.SCollection.SByteArray
 import sigmastate._
+import sigma.ast._
 import sigmastate.Values.{BlockValue, ByteArrayConstant, LongConstant, ValDef, ValUse, Value}
 import sigmastate.eval.{CSigmaProp, Digest32Coll}
 import sigmastate.eval.Extensions._

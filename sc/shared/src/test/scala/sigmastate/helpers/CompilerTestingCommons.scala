@@ -8,7 +8,8 @@ import org.scalacheck.Gen
 import org.scalatest.Assertion
 import sigma.util.BenchmarkUtil
 import scalan.TestContexts
-import sigma.{Colls, TestUtils}
+import sigma.ast.{SOption, SType}
+import sigma.{Colls, Evaluation, TestUtils}
 import sigma.data.RType
 import sigmastate.Values.{Constant, ErgoTree, SValue, SigmaBoolean, SigmaPropValue}
 import sigmastate.eval._
@@ -19,7 +20,7 @@ import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.interpreter._
 import sigmastate.lang.{CompilerSettings, SigmaCompiler, Terms}
 import sigmastate.serialization.SigmaSerializer
-import sigmastate.{CompilerTestsBase, JitCost, SOption, SType}
+import sigmastate.{CompilerTestsBase, JitCost}
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag

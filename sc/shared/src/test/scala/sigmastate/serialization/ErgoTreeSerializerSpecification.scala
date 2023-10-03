@@ -4,10 +4,12 @@ import java.math.BigInteger
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.validation.ValidationException
 import org.ergoplatform.validation.ValidationRules.CheckDeserializedScriptIsSigmaProp
+import sigma.ast.SInt
+import sigma.data.CBigInt
 import sigmastate.Values.{BigIntConstant, ByteConstant, ConstantPlaceholder, ErgoTree, IntConstant, ShortConstant, SigmaPropValue, UnparsedErgoTree}
 import sigmastate._
-import sigmastate.eval.{CBigInt, IRContext}
-import sigmastate.exceptions.{SerializerException, ReaderPositionLimitExceeded}
+import sigmastate.eval.IRContext
+import sigmastate.exceptions.{ReaderPositionLimitExceeded, SerializerException}
 import sigmastate.helpers.CompilerTestingCommons
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.utxo.{DeserializeContext, DeserializeRegister}

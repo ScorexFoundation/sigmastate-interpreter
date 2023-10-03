@@ -3,18 +3,18 @@ package sigmastate.serialization
 import java.math.BigInteger
 import org.ergoplatform._
 import org.scalacheck.Arbitrary._
-import sigma.data.RType
-import sigmastate.SCollection.SByteArray
+import sigma.data.{RType, TupleColl}
+import sigma.ast.SCollection.SByteArray
 import sigmastate.Values.{BigIntConstant, ByteArrayConstant, Constant, FalseLeaf, GroupGenerator, LongConstant, SValue, TrueLeaf}
 import sigmastate.crypto.CryptoConstants.EcPointType
 import sigmastate._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import sigmastate.Values._
-import sigmastate.eval.Evaluation
-import sigma.{AvlTree, Colls}
-import SType.AnyOps
+import sigma.{AvlTree, Colls, Evaluation}
+import sigma.ast.SType.AnyOps
 import scorex.util.encode.Base16
+import sigma.ast._
 import sigmastate.exceptions.SerializerException
 import sigmastate.lang.DeserializationSigmaBuilder
 

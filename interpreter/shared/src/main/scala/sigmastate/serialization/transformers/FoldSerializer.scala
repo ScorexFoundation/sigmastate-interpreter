@@ -6,7 +6,7 @@ import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.SigmaByteWriter.DataInfo
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.Fold
-import sigmastate.{SCollection, SType, SFunc}
+import sigma.ast.{SCollection, SType, SFunc}
 
 case class FoldSerializer(cons: (Value[SCollection[SType]], Value[SType], Value[SFunc]) => Value[SType])
   extends ValueSerializer[Fold[SType, SType]] {

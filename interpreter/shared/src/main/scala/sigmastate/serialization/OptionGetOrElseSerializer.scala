@@ -1,5 +1,6 @@
 package sigmastate.serialization
 
+import sigma.ast.{SOption, SType}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.Terms._

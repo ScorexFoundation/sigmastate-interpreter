@@ -7,7 +7,6 @@ import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.validation.ValidationException
 import sigma.data.{Nullable, RType}
 import sigma.util.CollectionUtil._
-import sigmastate.SCollection.{SByteArray, SIntArray}
 import sigmastate.crypto.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CompanionDesc, ErgoTreeEvaluator, Interpreter, NamedDesc}
 import sigmastate.serialization._
@@ -24,10 +23,11 @@ import sigma.util.Extensions.ByteOps
 import sigmastate.interpreter.ErgoTreeEvaluator._
 import debox.cfor
 import scorex.util.encode.Base16
+import sigma.ast.SCollection.{SByteArray, SIntArray}
+import sigma.ast._
 import sigmastate.exceptions.InterpreterException
 
 import scala.language.implicitConversions
-import scala.reflect.ClassTag
 import sigmastate.lang.CheckingSigmaBuilder._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.transformers.ProveDHTupleSerializer
@@ -35,6 +35,7 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigma.{AvlTree, Coll, Colls, Header, PreHeader, _}
 import sigmastate.lang.SourceContext
 import sigma.util.safeNewArray
+import sigmastate.serialization.ValueCodes.{ConstantCode, OpCode}
 
 import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
@@ -846,7 +847,8 @@ object Values {
 
     override lazy val value = {
       val xs = items.cast[EvaluatedValue[SAny.type]].map(_.value)
-      Colls.fromArray(xs.toArray(SAny.classTag.asInstanceOf[ClassTag[SAny.WrappedType]]))(sigma.AnyType)
+      implicit val tAny: RType[Any] = sigma.AnyType
+      Colls.fromArray(xs.toArray)
     }
 
     protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
@@ -909,7 +911,7 @@ object Values {
     // TODO refactor: this method is not used and can be removed
     lazy val value = {
       val xs = items.cast[EvaluatedValue[V]].map(_.value)
-      Colls.fromArray(xs.toArray(elementType.classTag.asInstanceOf[ClassTag[V#WrappedType]]))
+      Colls.fromArray(xs.toArray(tElement.classTag))
     }
 
     protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {

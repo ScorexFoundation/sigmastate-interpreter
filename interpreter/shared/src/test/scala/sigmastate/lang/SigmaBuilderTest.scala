@@ -12,6 +12,7 @@ import sigmastate.eval.{CAnyValue, CAvlTree, CostingBox, SigmaDsl}
 import sigmastate.exceptions.ConstraintFailed
 import sigmastate.serialization.OpCodes
 import sigma.SigmaTestingData
+import sigma.ast._
 
 import java.math.BigInteger
 

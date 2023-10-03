@@ -7,6 +7,7 @@ import ValueSerializer._
 import sigma.util.safeNewArray
 import sigmastate.utils.SigmaByteWriter.{DataInfo, U, Vlq}
 import debox.cfor
+import sigma.ast.SType
 
 case class BlockValueSerializer(cons: (IndexedSeq[BlockItem], Value[SType]) => Value[SType])
   extends ValueSerializer[BlockValue] {

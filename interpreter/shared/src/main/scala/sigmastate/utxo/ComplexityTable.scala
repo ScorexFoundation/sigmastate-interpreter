@@ -4,7 +4,7 @@ import org.ergoplatform._
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.Terms._
-import sigmastate.serialization.OpCodes.OpCode
+import sigmastate.serialization.ValueCodes.OpCode
 
 object ComplexityTable {
 

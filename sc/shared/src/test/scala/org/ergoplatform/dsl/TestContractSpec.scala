@@ -12,13 +12,14 @@ import sigma.data.Nullable
 import scala.util.Try
 import org.ergoplatform.{ErgoBox, ErgoLikeContext}
 import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition, Token}
-import sigmastate.{AvlTreeData, SType}
+import sigma.ast.SType
+import sigmastate.AvlTreeData
 import sigmastate.Values.{ErgoTree, EvaluatedValue}
-import sigmastate.eval.{CSigmaProp, Evaluation, IRContext, CAnyValue}
+import sigmastate.eval.{CSigmaProp, IRContext, CAnyValue}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, CompilerTestingCommons}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.lang.Terms.ValueOps
-import sigma.{AnyValue, SigmaProp}
+import sigma.{AnyValue, Evaluation, SigmaProp}
 
 case class TestContractSpec(testSuite: CompilerTestingCommons)(implicit val IR: IRContext) extends ContractSpec {
 

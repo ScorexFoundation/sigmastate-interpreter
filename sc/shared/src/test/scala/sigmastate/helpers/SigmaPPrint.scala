@@ -4,9 +4,10 @@ import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
 import org.ergoplatform.settings.ErgoAlgos
 import pprint.{PPrinter, Tree}
+import sigma.ast.SCollection.{SBooleanArray, SByteArray, SByteArray2}
+import sigma.ast._
 import sigma.data.{CollType, PrimitiveType}
 import sigma.{Coll, GroupElement}
-import sigmastate.SCollection._
 import sigmastate.Values.{ConstantNode, ErgoTree, FuncValue, ValueCompanion}
 import sigmastate._
 import sigmastate.crypto.CryptoConstants.EcPointType
@@ -211,11 +212,11 @@ object SigmaPPrint extends PPrinter {
       Tree.Literal(s"FuncValue.AddToEnvironmentDesc")
     case MethodDesc(method) =>
       Tree.Apply("MethodDesc", Seq(methodLiteral(method)).iterator)
-    case sigmastate.SGlobal =>
+    case SGlobal =>
       Tree.Literal(s"SGlobal")
-    case sigmastate.SCollection =>
+    case SCollection =>
       Tree.Literal(s"SCollection")
-    case sigmastate.SOption =>
+    case SOption =>
       Tree.Literal(s"SOption")
     case t: STypeCompanion if t.isInstanceOf[SType] =>
       Tree.Literal(s"S${t.typeName}")

@@ -1,7 +1,7 @@
 package sigmastate.serialization.generators
 
 import org.ergoplatform.ErgoBox._
-import org.ergoplatform.SigmaConstants.MaxPropositionBytes
+import sigma.data.SigmaConstants.MaxPropositionBytes
 import org.ergoplatform.validation._
 import org.ergoplatform._
 import org.scalacheck.Arbitrary._
@@ -16,7 +16,7 @@ import sigmastate.Values._
 import sigmastate.crypto.DLogProtocol.ProveDlog
 import sigmastate.crypto.{CryptoConstants, ProveDHTuple}
 import sigmastate.eval.Extensions._
-import sigmastate.eval.{CostingBox, SigmaDsl, _}
+import sigmastate.eval._
 import sigmastate.crypto.CryptoConstants.{EcPointType, dlogGroup}
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.lang.TransformingSigmaBuilder._
@@ -24,6 +24,7 @@ import sigmastate._
 import sigmastate.utxo._
 import sigma.Coll
 import sigma._
+import sigma.ast._
 
 import java.math.BigInteger
 import scala.collection.compat.immutable.ArraySeq

@@ -1,7 +1,6 @@
-package org.ergoplatform
+package sigma.data
 
 import sigma.util.CollectionUtil.TraversableOps // used in Scala 2.11
-import sigmastate.crypto.CryptoConstants
 
 /** Descriptor of a constant which represents some size value.
   * @tparam T type of the constant value
@@ -42,7 +41,8 @@ object SigmaConstants {
     "Max length of Box.propositionBytes collection") {
   }
 
-  object MaxBoxSizeWithoutRefs extends SizeConstant[Int](MaxBoxSize.value - (CryptoConstants.hashLength + 2/*size of Short*/), 6,
+  object MaxBoxSizeWithoutRefs extends SizeConstant[Int](
+    MaxBoxSize.value - (32/*CryptoConstants.hashLength*/ + 2/*size of Short*/), 6,
     "Box size should not be greater than provided value") {
   }
 

@@ -10,6 +10,7 @@ package object data {
     */
   @nowarn private def rtypeToClassTag = ???
 
+  val StringClassTag = classTag[String]
   val BigIntClassTag = classTag[BigInt]
   val GroupElementClassTag = classTag[GroupElement]
   val SigmaPropClassTag = classTag[SigmaProp]
@@ -37,5 +38,13 @@ package object data {
     * This is safe because empty arrays are immutable.
     */
   def emptyDBufferOfInt: debox.Buffer[Int] = debox.Buffer.unsafe(EmptyArrayOfInt)
+
+  /** Constructor of tuple value with more than 2 items.
+    * Such long tuples are represented as Coll[Any].
+    * This representaion of tuples is different from representation of pairs (x, y),
+    * where Tuple2 type is used instead of Coll. */
+  def TupleColl(items: Any*): Coll[Any] = Colls.fromItems(items: _*)(sigma.AnyType)
+
+  type KeyValueColl = Coll[(Coll[Byte], Coll[Byte])]
 
 }

@@ -7,13 +7,14 @@ import sigmastate._
 
 import java.math.BigInteger
 import sigmastate.crypto.DLogProtocol.ProveDlog
-import sigmastate.SCollection.SByteArray
-import sigmastate.crypto.{ProveDHTuple, CryptoConstants}
+import sigma.ast.SCollection.SByteArray
+import sigmastate.crypto.{CryptoConstants, ProveDHTuple}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigma._
 import sigmastate.eval._
 import sigmastate.helpers.NegativeTesting
 import sigma.Coll
+import sigma.ast._
 
 trait LangTests extends Matchers with NegativeTesting {
 

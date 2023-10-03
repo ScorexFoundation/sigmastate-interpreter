@@ -6,6 +6,7 @@ import sigmastate.helpers.ContextEnrichingTestProvingInterpreter
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
 import scalan.BaseCtxTests
+import sigma.ast.SSigmaProp
 import sigmastate.lang.LangTests
 import sigma.util.BenchmarkUtil._
 import sigmastate._

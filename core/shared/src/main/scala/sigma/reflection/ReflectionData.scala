@@ -1,6 +1,7 @@
 package sigma.reflection
 
 import sigma._
+import sigma.ast.{SCollectionType, SOption, STuple, SType}
 import sigma.data.RType
 
 import scala.collection.compat.immutable.ArraySeq
@@ -463,4 +464,28 @@ object ReflectionData {
       )
     )
   }
+
+  registerClassEntry(classOf[SCollectionType[_]],
+    constructors = Array(
+      mkConstructor(Array(classOf[SType])) { args =>
+        new SCollectionType(args(0).asInstanceOf[SType])
+      }
+    )
+  )
+
+  registerClassEntry(classOf[SOption[_]],
+    constructors = Array(
+      mkConstructor(Array(classOf[SType])) { args =>
+        new SOption(args(0).asInstanceOf[SType])
+      }
+    )
+  )
+
+  registerClassEntry(classOf[STuple],
+    constructors = Array(
+      mkConstructor(Array(classOf[IndexedSeq[_]])) { args =>
+        new STuple(args(0).asInstanceOf[IndexedSeq[SType]])
+      }
+    )
+  )
 }

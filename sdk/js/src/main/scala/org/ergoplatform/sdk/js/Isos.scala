@@ -2,27 +2,29 @@ package org.ergoplatform.sdk.js
 
 import org.ergoplatform.ErgoBox._
 import org.ergoplatform.sdk.JavaHelpers.UniversalConverter
-import org.ergoplatform.sdk.{Iso, ExtendedInputBox}
+import org.ergoplatform.sdk.{ExtendedInputBox, Iso}
 import org.ergoplatform.sdk.wallet.protocol.context
 import org.ergoplatform._
-import sigma.data.RType
+import org.ergoplatform.sdk.Iso.inverseIso
+import sigma.data.{CBigInt, Iso, RType}
 import scorex.crypto.authds.ADKey
 import scorex.util.ModifierId
 import scorex.util.encode.Base16
 import sigmastate.Values.{Constant, GroupElementConstant}
 import sigmastate.eval.Extensions.ArrayOps
-import sigmastate.eval.{CBigInt, Digest32Coll, Evaluation, CAvlTree, CGroupElement, CPreHeader, CHeader}
+import sigmastate.eval.{CAvlTree, CGroupElement, CHeader, CPreHeader, Digest32Coll}
 import sigmastate.fleetSdkCommon.distEsmTypesBoxesMod.Box
 import sigmastate.fleetSdkCommon.distEsmTypesCommonMod.HexString
 import sigmastate.fleetSdkCommon.distEsmTypesRegistersMod.NonMandatoryRegisters
 import sigmastate.fleetSdkCommon.distEsmTypesTokenMod.TokenAmount
-import sigmastate.fleetSdkCommon.distEsmTypesTransactionsMod.{UnsignedTransaction, SignedTransaction}
-import sigmastate.fleetSdkCommon.{distEsmTypesProverResultMod => proverResultMod, distEsmTypesContextExtensionMod => contextExtensionMod, distEsmTypesInputsMod => inputsMod, distEsmTypesBoxesMod => boxesMod, distEsmTypesCommonMod => commonMod, distEsmTypesRegistersMod => registersMod, distEsmTypesTokenMod => tokenMod}
+import sigmastate.fleetSdkCommon.distEsmTypesTransactionsMod.{SignedTransaction, UnsignedTransaction}
+import sigmastate.fleetSdkCommon.{distEsmTypesBoxesMod => boxesMod, distEsmTypesCommonMod => commonMod, distEsmTypesContextExtensionMod => contextExtensionMod, distEsmTypesInputsMod => inputsMod, distEsmTypesProverResultMod => proverResultMod, distEsmTypesRegistersMod => registersMod, distEsmTypesTokenMod => tokenMod}
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
-import sigmastate.{AvlTreeData, AvlTreeFlags, SType}
-import sigma.{Coll, Colls}
+import sigmastate.{AvlTreeData, AvlTreeFlags}
+import sigma.{Coll, Colls, Evaluation}
 import sigma.Extensions.CollBytesOps
+import sigma.ast.SType
 
 import java.math.BigInteger
 import scala.collection.immutable.ListMap

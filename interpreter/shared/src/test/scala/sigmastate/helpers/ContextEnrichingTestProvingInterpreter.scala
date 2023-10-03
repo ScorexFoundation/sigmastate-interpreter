@@ -1,7 +1,7 @@
 package sigmastate.helpers
 
 import scorex.utils.Random
-import sigmastate.SType
+import sigma.ast.SType
 import sigmastate.Values._
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.crypto.DiffieHellmanTupleProverInput

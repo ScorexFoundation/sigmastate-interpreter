@@ -9,19 +9,19 @@ import org.ergoplatform.sdk.wallet.secrets.{DerivationPath, ExtendedSecretKey}
 import org.ergoplatform.sdk.wallet.{Constants, TokensMap}
 import org.ergoplatform.settings.ErgoAlgos
 import scorex.crypto.authds.ADKey
-import sigmastate.utils.Helpers._  // don't remove, required for Scala 2.11
+import sigmastate.utils.Helpers._
 import scorex.util.encode.Base16
 import scorex.util.{ModifierId, bytesToId, idToBytes}
+import sigma.ast.SType
 import sigma.data.ExactIntegral.LongIsExactIntegral
-import sigma.data.RType
+import sigma.data.{InverseIso, Iso, RType, SigmaConstants}
 import sigma.util.StringUtil.StringUtilExtensions
-import sigma.{AnyValue, AvlTree, Coll, Colls, GroupElement, Header}
-import sigmastate.SType
+import sigma.{AnyValue, AvlTree, Coll, Colls, Evaluation, GroupElement, Header}
 import sigmastate.Values.{Constant, ErgoTree, EvaluatedValue, SValue, SigmaBoolean, SigmaPropConstant}
 import sigmastate.crypto.CryptoConstants.EcPointType
 import sigmastate.crypto.DLogProtocol.ProveDlog
 import sigmastate.crypto.{CryptoFacade, DiffieHellmanTupleProverInput, ProveDHTuple}
-import sigmastate.eval.{CostingSigmaDslBuilder, Digest32Coll, Evaluation}
+import sigmastate.eval.{CostingSigmaDslBuilder, Digest32Coll}
 import sigmastate.serialization.{ErgoTreeSerializer, GroupElementSerializer, SigmaSerializer, ValueSerializer}
 
 import java.lang.{Boolean => JBoolean, Byte => JByte, Integer => JInt, Long => JLong, Short => JShort, String => JString}
@@ -29,33 +29,6 @@ import java.math.BigInteger
 import java.util
 import java.util.{List => JList, Map => JMap}
 import scala.collection.{JavaConverters, mutable}
-
-/** Type-class of isomorphisms between types.
-  * Isomorphism between two types `A` and `B` essentially say that both types
-  * represents the same information (entity) but in a different way.
-  * <p>
-  * The information is not lost so that both are true:
-  * 1) a == from(to(a))
-  * 2) b == to(from(b))
-  * <p>
-  * It is used to define type-full conversions:
-  * - different conversions between Java and Scala data types.
-  * - conversion between Ergo representations and generated API representations
-  */
-abstract class Iso[A, B] {
-  def to(a: A): B
-  def from(b: B): A
-  def andThen[C](iso: Iso[B,C]): Iso[A,C] = ComposeIso(iso, this)
-  def inverse: Iso[B, A] = InverseIso(this)
-}
-final case class InverseIso[A,B](iso: Iso[A,B]) extends Iso[B,A] {
-  override def to(a: B): A = iso.from(a)
-  override def from(b: A): B = iso.to(b)
-}
-final case class ComposeIso[A, B, C](iso2: Iso[B, C], iso1: Iso[A, B]) extends Iso[A, C] {
-  def from(c: C): A = iso1.from(iso2.from(c))
-  def to(a: A): C = iso2.to(iso1.to(a))
-}
 
 trait LowPriorityIsos {
 }

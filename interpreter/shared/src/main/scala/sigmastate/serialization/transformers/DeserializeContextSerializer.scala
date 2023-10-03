@@ -1,11 +1,12 @@
 package sigmastate.serialization.transformers
 
-import sigmastate.{SType, ArgInfo}
+import sigmastate.ArgInfo
 import sigmastate.Values._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.DeserializeContext
 import SigmaByteWriter._
+import sigma.ast.SType
 import sigmastate.Operations.DeserializeContextInfo
 
 case class DeserializeContextSerializer(cons: (Byte, SType) => Value[SType])

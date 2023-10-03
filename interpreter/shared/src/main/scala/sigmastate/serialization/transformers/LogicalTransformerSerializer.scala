@@ -1,12 +1,13 @@
 package sigmastate.serialization.transformers
 
+import sigma.ast.{SBoolean, SCollection}
 import sigmastate.Values.{Value, SValue}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.SigmaByteWriter.DataInfo
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.Transformer
-import sigmastate.{SCollection, SBoolean, LogicalTransformerCompanion}
+import sigmastate.LogicalTransformerCompanion
 
 case class LogicalTransformerSerializer[I <: SCollection[SBoolean.type], O <: SBoolean.type]
 (opDesc: LogicalTransformerCompanion,

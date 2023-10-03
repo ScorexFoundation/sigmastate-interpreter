@@ -1,7 +1,8 @@
 package sigmastate.serialization
 
+import sigma.ast.SGroupElement
 import sigmastate.crypto.DLogProtocol.ProveDlog
-import sigmastate.{SGroupElement, CreateProveDlog}
+import sigmastate.CreateProveDlog
 import sigmastate.Values.{Value, SValue, SigmaPropValue}
 import sigmastate.crypto.CryptoConstants.EcPointType
 import sigmastate.lang.Terms._

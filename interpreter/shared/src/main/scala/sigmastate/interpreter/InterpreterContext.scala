@@ -1,12 +1,12 @@
 package sigmastate.interpreter
 
 import org.ergoplatform.validation.SigmaValidationSettings
-import sigmastate.SType
 import sigmastate.Values.EvaluatedValue
 import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigma.AnyValue
+import sigma.ast.SType
 
 import scala.collection.mutable
 

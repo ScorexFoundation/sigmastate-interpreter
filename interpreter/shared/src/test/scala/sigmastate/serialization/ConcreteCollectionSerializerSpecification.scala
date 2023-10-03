@@ -1,10 +1,10 @@
 package sigmastate.serialization
 
-import sigmastate.Values.{FalseLeaf, Constant, TrueLeaf, IntConstant, TaggedInt, ConcreteCollection}
-import sigmastate._
-import sigmastate.eval.Evaluation
+import sigma.Evaluation
+import sigma.ast.SType
+import sigmastate.Values.{ConcreteCollection, Constant, FalseLeaf, IntConstant, TaggedInt, TrueLeaf}
 import sigmastate.lang.Terms._
-
+import sigma.ast._
 import scala.util.Random
 
 class ConcreteCollectionSerializerSpecification extends TableSerializationSpecification {

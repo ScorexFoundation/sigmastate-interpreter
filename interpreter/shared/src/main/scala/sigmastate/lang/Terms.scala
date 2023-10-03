@@ -2,19 +2,20 @@ package sigmastate.lang
 
 import sigma.kiama.rewriting.Rewriter._
 import sigma.data.Nullable
-import sigmastate.SCollection.{SIntArray, SByteArray}
+import sigma.ast.SCollection.{SByteArray, SIntArray}
 import sigmastate.Values._
 import sigmastate.utils.Overloading.Overload1
 import sigmastate._
-import sigmastate.interpreter.{Interpreter, ErgoTreeEvaluator}
+import sigmastate.interpreter.{ErgoTreeEvaluator, Interpreter}
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.serialization.OpCodes
-import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.lang.TransformingSigmaBuilder._
 
 import scala.language.implicitConversions
 import scala.collection.compat.immutable.ArraySeq
 import debox.cfor
+import sigma.ast._
+import sigmastate.serialization.ValueCodes.OpCode
 
 object Terms {
 
@@ -90,9 +91,10 @@ object Terms {
     override def companion = Select
     override val tpe: SType = resType.getOrElse(obj.tpe match {
       case p: SProduct =>
-        val i = p.methodIndex(field)
-        if (i == -1) NoType
-        else p.methods(i).stype
+        MethodsContainer.getMethod(p, field) match {
+          case Some(m) => m.stype
+          case None => NoType
+        }
       case _ => NoType
     })
     override def opType: SFunc = SFunc(obj.tpe, tpe)
@@ -269,14 +271,6 @@ object Terms {
     override def opCode: OpCode = OpCodes.PropertyCallCode
     /** Cost of: 1) packing args into Array 2) RMethod.invoke */
     override val costKind = FixedCost(JitCost(4))
-  }
-
-  case class STypeParam(ident: STypeVar, upperBound: Option[SType] = None, lowerBound: Option[SType] = None) {
-    assert(upperBound.isEmpty && lowerBound.isEmpty, s"Type parameters with bounds are not supported, but found $this")
-    override def toString = ident.toString + upperBound.fold("")(u => s" <: $u") + lowerBound.fold("")(l => s" >: $l")
-  }
-  object STypeParam {
-    implicit def typeIdentToTypeParam(id: STypeVar): STypeParam = STypeParam(id)
   }
 
   /** Frontend implementation of lambdas. Should be transformed to FuncValue. */

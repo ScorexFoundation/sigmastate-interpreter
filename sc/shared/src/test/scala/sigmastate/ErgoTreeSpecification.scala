@@ -5,11 +5,11 @@ import org.ergoplatform.validation.{ValidationException, ValidationRules}
 import org.ergoplatform.{ErgoAddressEncoder, ErgoBox, ErgoLikeContext, Self}
 import sigma.data.RType.asType
 import sigma.data.{Nullable, RType}
-import sigma.VersionContext
-import sigmastate.SCollection.{SByteArray, checkValidFlatmap}
+import sigma.{Evaluation, VersionContext}
+import sigma.ast.SCollection.SByteArray
 import sigmastate.Values._
 import sigma.VersionContext._
-import sigmastate.eval.{CostingBox, Evaluation, Profiler}
+import sigmastate.eval.{CostingBox, Profiler}
 import sigmastate.exceptions.{CostLimitException, InterpreterException}
 import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}
 import sigmastate.interpreter.{ErgoTreeEvaluator, EvalSettings}
@@ -20,7 +20,9 @@ import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.utils.Helpers.TryOps
 import sigmastate.utxo._
 import sigma._
+import sigma.ast._
 import sigma.{ContractsTestkit, SigmaDslTesting}
+import sigmastate.SCollectionMethods.checkValidFlatmap
 
 
 /** Regression tests with ErgoTree related test vectors.
@@ -228,14 +230,14 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
     { // SNumericType.typeId is erroneously shadowed by SGlobal.typeId
       // this should be preserved in v3.x and fixed in v4.0
       (SNumericType.typeId,  Seq(
-        MInfo(methodId = 1, SGlobal.groupGeneratorMethod),
-        MInfo(2, SGlobal.xorMethod)
+        MInfo(methodId = 1, SGlobalMethods.groupGeneratorMethod),
+        MInfo(2, SGlobalMethods.xorMethod)
       ), true)
     },
 
     { // SBigInt inherit methods from SNumericType.methods
       // however they are not resolvable via SBigInt.typeId
-      import SNumericType._
+      import SNumericTypeMethods._
       (SBigInt.typeId,  Seq(
         MInfo(methodId = 1, ToByteMethod, isResolvableFromIds = false),
         MInfo(2, ToShortMethod, isResolvableFromIds = false),
@@ -246,7 +248,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
         MInfo(7, ToBitsMethod, isResolvableFromIds = false)
       ), true)
     },
-    { import SGroupElement._
+    { import SGroupElementMethods._
       (SGroupElement.typeId,  Seq(
         MInfo(2, GetEncodedMethod),
         MInfo(3, ExponentiateMethod),
@@ -254,13 +256,13 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
         MInfo(5, NegateMethod)
       ), true)
     },
-    { import SSigmaProp._
+    { import SSigmaPropMethods._
       (SSigmaProp.typeId,  Seq(
         MInfo(1, PropBytesMethod),
         MInfo(2, IsProvenMethod)  // TODO v5.x (3h): this method must be removed (see https://github.com/ScorexFoundation/sigmastate-interpreter/pull/800)
       ), true)
     },
-    { import SBox._
+    { import SBoxMethods._
       (SBox.typeId,  Seq(
         MInfo(1, ValueMethod),
         MInfo(2, PropositionBytesMethod),
@@ -274,7 +276,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
         .zipWithIndex
         .map { case (m,i) => MInfo((8 + i + 1).toByte, m) }, true)
     },
-    { import SAvlTree._
+    { import SAvlTreeMethods._
       (SAvlTree.typeId,  Seq(
         MInfo(1, digestMethod),
         MInfo(2, enabledOperationsMethod),
@@ -293,7 +295,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
         MInfo(15, updateDigestMethod)
       ), true)
     },
-    { import SHeader._
+    { import SHeaderMethods._
       (SHeader.typeId,  Seq(
         MInfo(1, idMethod), MInfo(2, versionMethod), MInfo(3, parentIdMethod),
         MInfo(4, ADProofsRootMethod), MInfo(5, stateRootMethod), MInfo(6, transactionsRootMethod),
@@ -302,14 +304,14 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
         MInfo(13, powNonceMethod), MInfo(14, powDistanceMethod), MInfo(15, votesMethod)
       ), true)
     },
-    { import SPreHeader._
+    { import SPreHeaderMethods._
       (SPreHeader.typeId,  Seq(
         MInfo(1, versionMethod), MInfo(2, parentIdMethod), MInfo(3, timestampMethod),
         MInfo(4, nBitsMethod), MInfo(5, heightMethod), MInfo(6, minerPkMethod),
         MInfo(7, votesMethod)
       ), true)
     },
-    { import SContext._
+    { import SContextMethods._
       (SContext.typeId, Seq(
         MInfo(1, dataInputsMethod), MInfo(2, headersMethod), MInfo(3, preHeaderMethod),
         MInfo(4, inputsMethod), MInfo(5, outputsMethod), MInfo(6, heightMethod),
@@ -317,12 +319,12 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
         MInfo(10, minerPubKeyMethod), MInfo(11, getVarMethod)
       ), true)
     },
-    { import SGlobal._
+    { import SGlobalMethods._
       (SGlobal.typeId, Seq(
         MInfo(1, groupGeneratorMethod), MInfo(2, xorMethod)
         ), true)
     },
-    { import SCollection._
+    { import SCollectionMethods._
       (SCollection.typeId, Seq(
         MInfo(1, SizeMethod),
         MInfo(2, GetOrElseMethod),
@@ -364,7 +366,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
         */
       ), true)
     },
-    { import SOption._
+    { import SOptionMethods._
       (SOption.typeId, Seq(
         MInfo(2, IsDefinedMethod),
         MInfo(3, GetMethod),
@@ -384,7 +386,8 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
         case Some(tyDesc) =>
           assert(canHaveMethods, s"Type $tyDesc should NOT have methods")
 
-          tyDesc.methods.length shouldBe methods.length
+          val mc = MethodsContainer(tyDesc.typeId)
+          mc.methods.length shouldBe methods.length
           for (expectedMethod <- methods) {
             if (expectedMethod.isResolvableFromIds) {
 
@@ -612,7 +615,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
     def mkLambda(t: SType, mkBody: SValue => SValue) = {
       MethodCall(
         ValUse(1, SCollectionType(t)),
-        SCollection.getMethodByName("flatMap").withConcreteTypes(
+        SCollectionMethods.getMethodByName("flatMap").withConcreteTypes(
           Map(STypeVar("IV") -> t, STypeVar("OV") -> SByte)
         ),
         Vector(FuncValue(Vector((3, t)), mkBody(ValUse(3, t)))),
@@ -625,7 +628,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
       (SBox, x => ExtractBytes(x.asBox)),
       (SBox, x => ExtractBytesWithNoRef(x.asBox)),
       (SSigmaProp, x => SigmaPropBytes(x.asSigmaProp)),
-      (SBox, x => MethodCall(x, SBox.getMethodByName("id"), Vector(), Map()))
+      (SBox, x => MethodCall(x, SBoxMethods.getMethodByName("id"), Vector(), Map()))
     ).map { case (t, f) => mkLambda(t, f) }
 
     validLambdas.foreach { l =>
@@ -643,7 +646,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
         // invalid MC like `boxes.flatMap(b => b.id, 10)`
         MethodCall(
           ValUse(1, SBox),
-          SCollection.getMethodByName("flatMap").withConcreteTypes(
+          SCollectionMethods.getMethodByName("flatMap").withConcreteTypes(
             Map(STypeVar("IV") -> SBox, STypeVar("OV") -> SByte)
           ),
           Vector(
@@ -655,7 +658,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
         // invalid MC like `boxes.flatMap((b,_) => b.id)`
         MethodCall(
           ValUse(1, SBox),
-          SCollection.getMethodByName("flatMap").withConcreteTypes(
+          SCollectionMethods.getMethodByName("flatMap").withConcreteTypes(
             Map(STypeVar("IV") -> SBox, STypeVar("OV") -> SByte)
           ),
           Vector(

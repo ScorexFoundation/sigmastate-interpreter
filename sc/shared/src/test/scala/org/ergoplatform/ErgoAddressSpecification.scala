@@ -20,9 +20,9 @@ import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.{GroupElementSerializer, ValueSerializer}
 import sigmastate.utils.Helpers._
-import sigmastate.{CompilerCrossVersionProps, SType, SigmaAnd}
+import sigmastate.{CompilerCrossVersionProps, SigmaAnd}
 import sigma.SigmaDslTesting
-
+import sigma.ast.SType
 import java.math.BigInteger
 
 class ErgoAddressSpecification extends SigmaDslTesting

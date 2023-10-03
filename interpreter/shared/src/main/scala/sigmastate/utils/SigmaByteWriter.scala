@@ -2,9 +2,10 @@ package sigmastate.utils
 
 import scorex.util.serialization.{VLQByteBufferWriter, Writer}
 import scorex.util.serialization.Writer.Aux
-import sigmastate.{ArgInfo, SType}
-import sigmastate.Values.{Value, SValue}
-import sigmastate.serialization.{TypeSerializer, ValueSerializer, ConstantStore}
+import sigma.ast.SType
+import sigmastate.ArgInfo
+import sigmastate.Values.{SValue, Value}
+import sigmastate.serialization.{ConstantStore, TypeSerializer, ValueSerializer}
 
 class SigmaByteWriter(val w: Writer,
                       val constantExtractionStore: Option[ConstantStore]) extends Writer {

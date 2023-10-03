@@ -1,11 +1,12 @@
 package sigmastate.utxo
 
+import sigma.ast.SType
 import sigmastate.Values._
 import sigmastate.eval.CAnyValue
 import sigmastate.helpers.CompilerTestingCommons
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms._
-import sigmastate.{GE, ModQ, SType}
+import sigmastate.{GE, ModQ}
 
 /**
   * Specification for compile function

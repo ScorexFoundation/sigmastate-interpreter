@@ -5,6 +5,7 @@ import sigmastate._
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.ValueSerializer._
 import scorex.util.encode.ZigZagEncoder.encodeZigZagLong
+import sigma.ast.{SInt, SLong}
 
 class RelationsSpecification extends TableSerializationSpecification {
 

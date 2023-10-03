@@ -6,7 +6,8 @@ import org.ergoplatform.ErgoBox
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import sigmastate.SCollection._
+import sigma.ast.SCollection.{SByteArray, SLongArray}
+import sigma.ast._
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
@@ -538,7 +539,7 @@ class SigmaParserTest extends AnyPropSpec with ScalaCheckPropertyChecks with Mat
 
   property("Box properties") {
     parse("{ (box: Box) => box.value }") shouldBe Lambda(IndexedSeq("box" -> SBox), NoType, Select(Ident("box"), "value"))
-    parse("{ (box: Box) => box.propositionBytes }") shouldBe Lambda(IndexedSeq("box" -> SBox), NoType, Select(Ident("box"), SBox.PropositionBytes))
+    parse("{ (box: Box) => box.propositionBytes }") shouldBe Lambda(IndexedSeq("box" -> SBox), NoType, Select(Ident("box"), SBoxMethods.PropositionBytes))
     parse("{ (box: Box) => box.bytes }") shouldBe Lambda(IndexedSeq("box" -> SBox), NoType, Select(Ident("box"), "bytes"))
     parse("{ (box: Box) => box.id }") shouldBe Lambda(IndexedSeq("box" -> SBox), NoType, Select(Ident("box"), "id"))
   }

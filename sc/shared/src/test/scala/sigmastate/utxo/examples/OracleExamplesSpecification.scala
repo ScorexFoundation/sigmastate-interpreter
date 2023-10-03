@@ -5,9 +5,10 @@ import org.ergoplatform.ErgoBox.RegisterId
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigmastate.SCollection.SByteArray
+import sigma.ast.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
+import sigma.ast._
 import sigmastate.eval._
 import sigmastate.lang.Terms._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
@@ -135,7 +136,7 @@ class OracleExamplesSpecification extends CompilerTestingCommons
 
     val oracleProp = SigmaAnd(
       OptionIsDefined(IR.builder.mkMethodCall(
-        LastBlockUtxoRootHash, SAvlTree.getMethod,
+        LastBlockUtxoRootHash, SAvlTreeMethods.getMethod,
         IndexedSeq(ExtractId(GetVarBox(22: Byte).get), GetVarByteArray(23: Byte).get)).asOption[SByteArray]),
       EQ(extract[SByteArray](ErgoBox.ScriptRegId), ByteArrayConstant(ErgoTree.fromSigmaBoolean(oraclePubKey).bytes)),
       EQ(Exponentiate(GroupGenerator, extract[SBigInt.type](reg3)),

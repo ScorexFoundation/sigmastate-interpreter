@@ -1,5 +1,6 @@
 package sigmastate.serialization
 
+import sigma.ast.{SBoolean, SInt}
 import sigmastate._
 import sigmastate.utxo._
 

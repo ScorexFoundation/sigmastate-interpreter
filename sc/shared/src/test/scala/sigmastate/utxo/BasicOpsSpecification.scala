@@ -4,7 +4,7 @@ import java.math.BigInteger
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, R6, R8}
 import org.ergoplatform._
 import sigma.data.RType
-import sigmastate.SCollection.SByteArray
+import sigma.ast.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval.Extensions._
@@ -12,7 +12,8 @@ import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingIn
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
-import SType.AnyOps
+import sigma.ast.SType.AnyOps
+import sigma.ast._
 import sigmastate.crypto.CryptoConstants
 import sigmastate.eval.{CAnyValue, InvalidType}
 import sigmastate.interpreter.ContextExtension.VarBinding

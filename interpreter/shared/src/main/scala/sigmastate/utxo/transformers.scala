@@ -1,20 +1,21 @@
 package sigmastate.utxo
 
-import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.lang.Terms._
 import sigmastate._
-import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.OpCodes
 import org.ergoplatform.ErgoBox.RegisterId
+import sigma.ast.SCollection.SByteArray
+import sigma.ast._
 import sigma.data.RType
 import sigmastate.Operations._
-import sigmastate.eval.{Evaluation, SigmaDsl}
+import sigmastate.eval.SigmaDsl
 import sigmastate.exceptions.InterpreterException
 import sigmastate.interpreter.ErgoTreeEvaluator
 import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv, error}
-import sigma.Coll
+import sigma.{Coll, Evaluation}
 import sigma.{Box, SigmaProp}
+import sigmastate.serialization.ValueCodes.OpCode
 
 // TODO refactor: remove this trait as it doesn't have semantic meaning
 
@@ -40,7 +41,7 @@ case class MapCollection[IV <: SType, OV <: SType](
   extends Transformer[SCollection[IV], SCollection[OV]] {
   override def companion = MapCollection
   override val tpe = SCollection[OV](mapper.tpe.tRange.asInstanceOf[OV])
-  override val opType = SCollection.MapMethod.stype.asFunc
+  override val opType = SCollectionMethods.MapMethod.stype.asFunc
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[Any]](env)
     val mapperV = mapper.evalTo[Any => Any](env)
@@ -64,7 +65,7 @@ case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SColle
   extends Transformer[SCollection[IV], SCollection[IV]] {
   override def companion = Append
   override val tpe = input.tpe
-  override val opType = SCollection.AppendMethod.stype
+  override val opType = SCollectionMethods.AppendMethod.stype
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[IV#WrappedType]](env)
     val col2V = col2.evalTo[Coll[IV#WrappedType]](env)
@@ -123,7 +124,7 @@ case class Filter[IV <: SType](input: Value[SCollection[IV]],
   extends Transformer[SCollection[IV], SCollection[IV]] {
   override def companion = Filter
   override def tpe: SCollection[IV] = input.tpe
-  override val opType = SCollection.FilterMethod.stype
+  override val opType = SCollectionMethods.FilterMethod.stype
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[Any]](env)
     val conditionV = condition.evalTo[Any => Boolean](env)
@@ -160,7 +161,7 @@ case class Exists[IV <: SType](override val input: Value[SCollection[IV]],
                                override val condition: Value[SFunc])
   extends BooleanTransformer[IV] {
   override def companion = Exists
-  override val opType = SCollection.ExistsMethod.stype
+  override val opType = SCollectionMethods.ExistsMethod.stype
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[Any]](env)
     val conditionV = condition.evalTo[Any => Boolean](env)
@@ -187,7 +188,7 @@ case class ForAll[IV <: SType](override val input: Value[SCollection[IV]],
                                override val condition: Value[SFunc])
   extends BooleanTransformer[IV] {
   override def companion = ForAll
-  override val opType = SCollection.ForallMethod.stype
+  override val opType = SCollectionMethods.ForallMethod.stype
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[Any]](env)
     val conditionV = condition.evalTo[Any => Boolean](env)
@@ -224,7 +225,7 @@ case class Fold[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
   extends Transformer[SCollection[IV], OV] {
   override def companion = Fold
   implicit override def tpe: OV = zero.tpe
-  val opType: SFunc = SCollection.FoldMethod.stype
+  val opType: SFunc = SCollectionMethods.FoldMethod.stype
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[IV#WrappedType]](env)
     val zeroV = zero.evalTo[OV#WrappedType](env)
@@ -264,7 +265,7 @@ case class ByIndex[V <: SType](input: Value[SCollection[V]],
   extends Transformer[SCollection[V], V] with NotReadyValue[V] {
   override def companion = ByIndex
   override val tpe = input.tpe.elemType
-  override val opType = SCollection.ApplyMethod.stype.asFunc
+  override val opType = SCollectionMethods.ApplyMethod.stype.asFunc
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val inputV = input.evalTo[Coll[V#WrappedType]](env)
     val indexV = index.evalTo[Int](env)
@@ -551,7 +552,7 @@ trait Deserialize[V <: SType] extends NotReadyValue[V]
   */
 case class DeserializeContext[V <: SType](id: Byte, tpe: V) extends Deserialize[V] {
   override def companion = DeserializeContext
-  override val opType = SFunc(SContext.ContextFuncDom, tpe)
+  override val opType = SFunc(SContextMethods.ContextFuncDom, tpe)
 }
 object DeserializeContext extends ValueCompanion {
   override def opCode: OpCode = OpCodes.DeserializeContextCode
@@ -575,7 +576,7 @@ object DeserializeRegister extends ValueCompanion {
 /** See [[sigma.Context.getVar()]] for detailed description. */
 case class GetVar[V <: SType](varId: Byte, override val tpe: SOption[V]) extends NotReadyValue[SOption[V]] {
   override def companion = GetVar
-  override val opType = SFunc(SContext.ContextFuncDom, tpe)
+  override val opType = SFunc(SContextMethods.ContextFuncDom, tpe)
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val t = Evaluation.stypeToRType(tpe.elemType)
     addCost(GetVar.costKind)

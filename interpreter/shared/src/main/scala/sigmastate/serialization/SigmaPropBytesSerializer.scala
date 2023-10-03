@@ -1,7 +1,8 @@
 package sigmastate.serialization
 
+import sigma.ast.SType
 import sigmastate.Values.SValue
-import sigmastate.{Values, SType}
+import sigmastate.Values
 import sigmastate.lang.Terms._
 import sigmastate.utils.SigmaByteWriter.DataInfo
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}

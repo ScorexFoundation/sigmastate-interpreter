@@ -1,14 +1,13 @@
 package sigmastate.serialization
 
 import java.nio.ByteBuffer
-
-import org.ergoplatform.SigmaConstants
 import org.ergoplatform.validation.SigmaValidationSettings
 import scorex.util.ByteArrayBuilder
 import sigmastate.utils._
 import scorex.util.serialization._
+import sigma.data.SigmaConstants
 import sigmastate.exceptions.SerializerException
-import sigmastate.serialization.OpCodes.OpCode
+import sigmastate.serialization.ValueCodes.OpCode
 
 object SigmaSerializer {
   type Position = Int

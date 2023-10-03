@@ -1,10 +1,10 @@
 package sigmastate.lang
 
 import org.ergoplatform._
-import sigmastate.SCollection._
+import sigma.ast.SCollection.{SBooleanArray, SByteArray}
 import sigmastate.Values._
 import sigmastate._
-import SCollection.SBooleanArray
+import sigma.ast._
 import sigma.data.Nullable
 import sigma.util.Extensions.Ensuring
 import sigmastate.lang.Terms._
@@ -74,7 +74,7 @@ class SigmaTyper(val builder: SigmaBuilder,
       env.get(n) match {
         case Some(t) => mkIdent(n, t)
         case None =>
-          SGlobal.method(n) match {
+          SGlobalMethods.method(n) match {
             case Some(method) if method.stype.tDom.length == 1 => // this is like  `groupGenerator` without parentheses
               val srcCtx = i.sourceContext
               processGlobalMethod(srcCtx, method, IndexedSeq())
@@ -87,11 +87,10 @@ class SigmaTyper(val builder: SigmaBuilder,
       val newObj = assignType(env, obj)
       newObj.tpe match {
         case tNewObj: SProduct =>
-          val iField = tNewObj.methodIndex(n)
-          val method = if (iField != -1) {
-            tNewObj.methods(iField)
-          } else
-            throw new MethodNotFound(s"Cannot find method '$n' in in the object $obj of Product type with methods ${tNewObj.methods}", obj.sourceContext.toOption)
+          val method = MethodsContainer.getMethod(tNewObj, n).getOrElse(
+            throw new MethodNotFound(
+              s"Cannot find method '$n' in in the object $obj of Product type with methods",
+              obj.sourceContext.toOption))
           val tMeth = method.stype
           val tRes = tMeth match {
             case SFunc(args, _, _) =>
@@ -138,7 +137,7 @@ class SigmaTyper(val builder: SigmaBuilder,
       val newArgs = args.map(assignType(env, _))
       obj.tpe match {
         case p: SProduct =>
-          p.method(n) match {
+          MethodsContainer.getMethod(p, n) match {
             case Some(method @ SMethod(_, _, genFunTpe @ SFunc(_, _, _), _, _, _, _, _)) =>
               val subst = Map(genFunTpe.tpeParams.head.ident -> rangeTpe)
               val concrFunTpe = applySubst(genFunTpe, subst)
@@ -159,7 +158,7 @@ class SigmaTyper(val builder: SigmaBuilder,
             case Some(method) =>
               error(s"Don't know how to handle method $method in obj $p", sel.sourceContext)
             case None =>
-              throw new MethodNotFound(s"Cannot find method '$n' in in the object $obj of Product type with methods ${p.methods}", obj.sourceContext.toOption)
+              throw new MethodNotFound(s"Cannot find method '$n' in in the object $obj of Product type $p", obj.sourceContext.toOption)
           }
         case _ =>
           error(s"Cannot get field '$n' in in the object $obj of non-product type ${obj.tpe}", sel.sourceContext)
@@ -176,7 +175,7 @@ class SigmaTyper(val builder: SigmaBuilder,
           unifyTypeLists(argTypes, newArgTypes) match {
             case Some(subst) =>
               val concrFunTpe = applySubst(genFunTpe, subst)
-              newObj.tpe.asInstanceOf[SProduct].method(n) match {
+              MethodsContainer.getMethod(newObj.tpe.asInstanceOf[SProduct], n) match {
                 case Some(method) if method.irInfo.irBuilder.isDefined =>
                   val expectedArgs = concrFunTpe.asFunc.tDom
                   if (expectedArgs.length != newArgTypes.length
@@ -198,8 +197,8 @@ class SigmaTyper(val builder: SigmaBuilder,
           mkApply(newSel, newArgs.toArray[SValue])
       }
 
-    case a @ Apply(ident: Ident, args) if SGlobal.hasMethod(ident.name) => // example: groupGenerator()
-      val method = SGlobal.method(ident.name).get
+    case a @ Apply(ident: Ident, args) if SGlobalMethods.hasMethod(ident.name) => // example: groupGenerator()
+      val method = SGlobalMethods.method(ident.name).get
       val srcCtx = a.sourceContext
       val newArgs = args.map(assignType(env, _))
       processGlobalMethod(srcCtx, method, newArgs)
@@ -280,7 +279,7 @@ class SigmaTyper(val builder: SigmaBuilder,
               mkAppend(newObj.asCollection[a], r.asCollection[a])
             else
               error(s"Invalid argument type for $m, expected $tColl but was ${r.tpe}", r.sourceContext)
-          case (SCollection(method), _) =>
+          case (SCollectionMethods(method), _) =>
             val typeSubst = method.stype match {
               case sfunc @ SFunc(_, _, _) =>
                 val newArgsTypes = newArgs.map(_.tpe)
@@ -335,7 +334,7 @@ class SigmaTyper(val builder: SigmaBuilder,
         case SSigmaProp => (m, newArgs) match {
           case ("||" | "&&" | "^", Seq(r)) => r.tpe match {
             case SBoolean =>
-              val (a, b) = (Select(newObj, SSigmaProp.IsProven, Some(SBoolean)).asBoolValue, r.asBoolValue)
+              val (a, b) = (Select(newObj, SSigmaPropMethods.IsProven, Some(SBoolean)).asBoolValue, r.asBoolValue)
               val res = m match {
                 case "||" => mkBinOr(a, b)
                 case "&&" => mkBinAnd(a, b)
@@ -364,7 +363,7 @@ class SigmaTyper(val builder: SigmaBuilder,
               case "^" => mkBinXor(newObj.asBoolValue, r.asBoolValue)
             }
             case SSigmaProp =>
-              val (a, b) = (newObj.asBoolValue, Select(r, SSigmaProp.IsProven, Some(SBoolean)).asBoolValue)
+              val (a, b) = (newObj.asBoolValue, Select(r, SSigmaPropMethods.IsProven, Some(SBoolean)).asBoolValue)
               val res = m match {
                 case "||" => mkBinOr(a, b)
                 case "&&" => mkBinAnd(a, b)

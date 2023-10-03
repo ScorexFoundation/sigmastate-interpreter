@@ -9,7 +9,7 @@ import org.ergoplatform.{ErgoLikeContext, ErgoLikeInterpreter}
 import sigma.util.Extensions.LongOps
 import sigmastate.AvlTreeData
 import sigmastate.Values.ErgoTree
-import sigmastate.eval.Evaluation.addCostChecked
+import sigmastate.eval.addCostChecked
 import sigmastate.exceptions.CostLimitException
 import sigmastate.interpreter.Interpreter
 import sigmastate.interpreter.Interpreter.ScriptEnv

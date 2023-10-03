@@ -1,6 +1,6 @@
 package sigmastate.helpers
 
-import sigmastate.SType
+import sigma.ast.SType
 import sigmastate.Values.{ErgoTree, EvaluatedValue}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.interpreter.{ContextExtension, CostedProverResult, HintsBag, ProverInterpreter}

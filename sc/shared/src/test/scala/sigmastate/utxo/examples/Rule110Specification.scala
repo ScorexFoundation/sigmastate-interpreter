@@ -4,6 +4,7 @@ import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
 import scorex.util._
 import sigma.Colls
+import sigma.ast.{SBoolean, SByte, SInt, SLong}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval._

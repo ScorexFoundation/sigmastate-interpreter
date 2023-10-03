@@ -3,6 +3,7 @@ package sigmastate.lang
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform._
 import scorex.util.encode.Base58
+import sigma.ast.{SAvlTree, SBoolean, SBox, SByte, SCollection, SInt, SSigmaProp, SType}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.exceptions.{GraphBuildingException, InvalidArguments, TyperException}
@@ -80,8 +81,8 @@ class SigmaCompilerTest extends CompilerTestingCommons with LangTests with Objec
   }
 
   property("global methods") {
-    comp(env, "{ groupGenerator }") shouldBe MethodCall(Global, SGlobal.groupGeneratorMethod, IndexedSeq(), Terms.EmptySubst)
-    comp(env, "{ Global.groupGenerator }") shouldBe MethodCall(Global, SGlobal.groupGeneratorMethod, IndexedSeq(), Terms.EmptySubst)
+    comp(env, "{ groupGenerator }") shouldBe MethodCall(Global, SGlobalMethods.groupGeneratorMethod, IndexedSeq(), Terms.EmptySubst)
+    comp(env, "{ Global.groupGenerator }") shouldBe MethodCall(Global, SGlobalMethods.groupGeneratorMethod, IndexedSeq(), Terms.EmptySubst)
     comp(env, "{ Global.xor(arr1, arr2) }") shouldBe Xor(ByteArrayConstant(arr1), ByteArrayConstant(arr2))
     comp(env, "{ xor(arr1, arr2) }") shouldBe Xor(ByteArrayConstant(arr1), ByteArrayConstant(arr2))
   }
@@ -221,24 +222,24 @@ class SigmaCompilerTest extends CompilerTestingCommons with LangTests with Objec
     comp("Coll(true, false).indices") shouldBe
       mkMethodCall(
         ConcreteCollection.fromItems(TrueLeaf, FalseLeaf),
-        SCollection.IndicesMethod.withConcreteTypes(Map(SCollection.tIV -> SBoolean)),
+        SCollectionMethods.IndicesMethod.withConcreteTypes(Map(SCollection.tIV -> SBoolean)),
         Vector()
       )
   }
 
   property("SBox.tokens") {
     comp("SELF.tokens") shouldBe
-      mkMethodCall(Self, SBox.tokensMethod, IndexedSeq())
+      mkMethodCall(Self, SBoxMethods.tokensMethod, IndexedSeq())
   }
 
   property("SContext.dataInputs") {
     comp("CONTEXT.dataInputs") shouldBe
-      mkMethodCall(Context, SContext.dataInputsMethod, IndexedSeq())
+      mkMethodCall(Context, SContextMethods.dataInputsMethod, IndexedSeq())
   }
 
   property("SAvlTree.digest") {
     comp("getVar[AvlTree](1).get.digest") shouldBe
-      mkMethodCall(GetVar(1.toByte, SAvlTree).get, SAvlTree.digestMethod, IndexedSeq())
+      mkMethodCall(GetVar(1.toByte, SAvlTree).get, SAvlTreeMethods.digestMethod, IndexedSeq())
   }
 
   property("SGroupElement.exp") {
@@ -250,7 +251,7 @@ class SigmaCompilerTest extends CompilerTestingCommons with LangTests with Objec
   property("SOption.map") {
     comp("getVar[Int](1).map({(i: Int) => i + 1})") shouldBe
       mkMethodCall(GetVarInt(1),
-        SOption.MapMethod.withConcreteTypes(Map(SType.tT -> SInt, SType.tR -> SInt)),
+        SOptionMethods.MapMethod.withConcreteTypes(Map(SType.tT -> SInt, SType.tR -> SInt)),
         IndexedSeq(FuncValue(
           Vector((1, SInt)),
           Plus(ValUse(1, SInt), IntConstant(1)))), Map()
@@ -260,7 +261,7 @@ class SigmaCompilerTest extends CompilerTestingCommons with LangTests with Objec
   property("SOption.filter") {
     comp("getVar[Int](1).filter({(i: Int) => i > 0})") shouldBe
       mkMethodCall(GetVarInt(1),
-        SOption.FilterMethod.withConcreteTypes(Map(SType.tT -> SInt)),
+        SOptionMethods.FilterMethod.withConcreteTypes(Map(SType.tT -> SInt)),
         IndexedSeq(FuncValue(
           Vector((1, SInt)),
           GT(ValUse(1, SInt), IntConstant(0)))), Map()
@@ -271,7 +272,7 @@ class SigmaCompilerTest extends CompilerTestingCommons with LangTests with Objec
     comp("Coll(1, 2).patch(1, Coll(3), 1)") shouldBe
       mkMethodCall(
         ConcreteCollection.fromItems(IntConstant(1), IntConstant(2)),
-        SCollection.PatchMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+        SCollectionMethods.PatchMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
         Vector(IntConstant(1), ConcreteCollection.fromItems(IntConstant(3)), IntConstant(1)),
         Map())
   }
@@ -280,7 +281,7 @@ class SigmaCompilerTest extends CompilerTestingCommons with LangTests with Objec
     comp("Coll(1, 2).updated(1, 1)") shouldBe
       mkMethodCall(
         ConcreteCollection.fromItems(IntConstant(1), IntConstant(2)),
-        SCollection.UpdatedMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+        SCollectionMethods.UpdatedMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
         Vector(IntConstant(1), IntConstant(1)),
         Map())
   }
@@ -289,7 +290,7 @@ class SigmaCompilerTest extends CompilerTestingCommons with LangTests with Objec
     comp("Coll(1, 2).updateMany(Coll(1), Coll(3))") shouldBe
       mkMethodCall(
         ConcreteCollection.fromItems(IntConstant(1), IntConstant(2)),
-        SCollection.UpdateManyMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+        SCollectionMethods.UpdateManyMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
         Vector(ConcreteCollection.fromItems(IntConstant(1)), ConcreteCollection.fromItems(IntConstant(3))),
         Map())
   }
@@ -298,7 +299,7 @@ class SigmaCompilerTest extends CompilerTestingCommons with LangTests with Objec
     comp("Coll(1, 2).indexOf(1, 0)") shouldBe
       mkMethodCall(
         ConcreteCollection.fromItems(IntConstant(1), IntConstant(2)),
-        SCollection.IndexOfMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+        SCollectionMethods.IndexOfMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
         Vector(IntConstant(1), IntConstant(0)),
         Map())
   }
@@ -307,7 +308,7 @@ class SigmaCompilerTest extends CompilerTestingCommons with LangTests with Objec
     comp("Coll(1, 2).zip(Coll(1, 1))") shouldBe
       mkMethodCall(
         ConcreteCollection.fromItems(IntConstant(1), IntConstant(2)),
-        SCollection.ZipMethod.withConcreteTypes(Map(SCollection.tIV -> SInt, SCollection.tOV -> SInt)),
+        SCollectionMethods.ZipMethod.withConcreteTypes(Map(SCollection.tIV -> SInt, SCollection.tOV -> SInt)),
         Vector(ConcreteCollection.fromItems(IntConstant(1), IntConstant(1)))
       )
   }
