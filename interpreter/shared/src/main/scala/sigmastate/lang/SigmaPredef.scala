@@ -3,15 +3,16 @@ package sigmastate.lang
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress}
 import sigma.data.Nullable
-import scorex.util.encode.{Base64, Base58, Base16}
-import sigmastate.SCollection.{SIntArray, SByteArray}
-import sigmastate.SOption._
-import sigmastate.Values.{StringConstant, SValue, IntValue, SigmaPropConstant, Value, ByteArrayConstant, SigmaPropValue, ValueCompanion, Constant, EvaluatedValue, ConstantPlaceholder, BoolValue}
+import scorex.util.encode.{Base16, Base58, Base64}
+import sigma.ast.SCollection.{SByteArray, SIntArray}
+import sigma.ast.SOption.SIntOption
+import sigma.ast._
+import sigmastate.Values.{BoolValue, ByteArrayConstant, Constant, ConstantPlaceholder, EvaluatedValue, IntValue, SValue, SigmaPropConstant, SigmaPropValue, StringConstant, Value, ValueCompanion}
 import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.exceptions.InvalidArguments
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utxo.{DeserializeRegister, SelectField, DeserializeContext, GetVar}
+import sigmastate.utxo.{DeserializeContext, DeserializeRegister, GetVar, SelectField}
 
 object SigmaPredef {
 

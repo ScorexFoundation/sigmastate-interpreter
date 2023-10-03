@@ -7,6 +7,7 @@ import Values._
 import sigmastate.lang.Terms.Ident
 import sigmastate.lang.syntax.Core
 import syntax.Basic.error
+import sigma.ast._
 
 //noinspection ForwardReference
 /** Parsers of type terms. Can produce values of SType. */

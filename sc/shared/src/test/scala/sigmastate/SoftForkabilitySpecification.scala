@@ -4,6 +4,9 @@ import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules._
 import org.ergoplatform.validation._
 import org.scalatest.BeforeAndAfterAll
+import sigma.ast.{SBoolean, SCollection, SContext, SFunc, SGlobal, SInt}
+import sigma.ast.SPrimType.MaxPrimTypeCode
+import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.SPrimType.MaxPrimTypeCode
 import sigmastate.Values.ErgoTree.{EmptyConstants, HeaderType, ZeroHeader, setSizeBit}
 import sigmastate.Values.{ByteArrayConstant, ErgoTree, IntConstant, NotReadyValueInt, UnparsedErgoTree, ValueCompanion}
@@ -14,12 +17,13 @@ import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.interpreter.{ContextExtension, ErgoTreeEvaluator, ProverResult}
 import sigmastate.lang.Terms._
-import sigmastate.serialization.OpCodes.{LastConstantCode, OpCode}
+import sigmastate.serialization.ValueCodes.LastConstantCode
 import sigmastate.serialization.SigmaSerializer.startReader
 import sigmastate.serialization._
 import sigmastate.utils.Helpers._
 import sigmastate.utxo.DeserializeContext
 import sigma.{Colls, SigmaTestingData}
+import sigmastate.serialization.ValueCodes.OpCode
 
 class SoftForkabilitySpecification extends SigmaTestingData
     with CompilerTestingCommons

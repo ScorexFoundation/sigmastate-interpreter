@@ -20,11 +20,12 @@ import sigma.util.Extensions._
 import sigma.util.StringUtil.StringUtilExtensions
 import sigmastate.SType.AnyOps
 import sigmastate.Values.ErgoTree.ZeroHeader
+import sigma.ast.SType.AnyOps
 import sigmastate.Values.{ByteArrayConstant, Constant, ConstantNode, ErgoTree, IntConstant, SValue}
 import sigmastate.crypto.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate.crypto.SigmaProtocolPrivateInput
 import sigmastate.eval.Extensions._
-import sigmastate.eval.{CompiletimeIRContext, CostingBox, CostingDataContext, Evaluation, IRContext, SigmaDsl}
+import sigmastate.eval.{CompiletimeIRContext, CostingBox, CostingDataContext, IRContext, SigmaDsl}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaPPrint}
 import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
@@ -34,8 +35,8 @@ import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers._
 import sigmastate.utxo.{DeserializeContext, DeserializeRegister, GetVar, OptionGet}
-import sigmastate.{SOption, SSigmaProp, SType, SigmaLeaf, eval}
-
+import sigma.ast.{SOption, SSigmaProp, SType}
+import sigmastate.{SigmaLeaf, eval}
 import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}

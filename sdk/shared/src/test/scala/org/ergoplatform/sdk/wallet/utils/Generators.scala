@@ -10,7 +10,7 @@ import org.scalacheck.{Arbitrary, Gen}
 import scorex.crypto.authds.ADKey
 import sigmastate.Values.{ByteArrayConstant, CollectionConstant, ErgoTree, EvaluatedValue, FalseLeaf, TrueLeaf}
 import sigmastate.crypto.DLogProtocol.ProveDlog
-import sigmastate.{SByte, SType}
+import sigma.ast.{SByte, SType}
 import scorex.util._
 import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, ErgoTreePredef, UnsignedErgoLikeTransaction, UnsignedInput}
 import sigmastate.eval.Extensions._

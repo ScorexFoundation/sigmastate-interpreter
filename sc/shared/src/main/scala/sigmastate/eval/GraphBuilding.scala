@@ -11,9 +11,9 @@ import sigmastate.Values._
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.{SourceContext, Terms}
 import sigmastate.lang.Terms.{Ident, Select, Val, ValueOps}
-import sigmastate.serialization.OpCodes
+import sigmastate.serialization.{OpCodes, ValueCodes}
 import sigmastate.utxo._
-import sigmastate._
+import sigma.ast._
 import sigmastate.crypto.CryptoConstants.EcPointType
 import sigmastate.exceptions.{GraphBuildingException, SigmaException}
 
@@ -298,7 +298,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
     case _: BigIntElem[_] => SBigInt
     case _: GroupElementElem[_] => SGroupElement
     case _: AvlTreeElem[_] => SAvlTree
-    case oe: WOptionElem[_, _] => sigmastate.SOption(elemToSType(oe.eItem))
+    case oe: WOptionElem[_, _] => SOption(elemToSType(oe.eItem))
     case _: BoxElem[_] => SBox
     case _: ContextElem[_] => SContext
     case _: SigmaDslBuilderElem[_] => SGlobal
@@ -390,7 +390,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
     case OpCodes.LtCode  => OrderingLT[A](elemToExactOrdering(eA))
     case OpCodes.GeCode  => OrderingGTEQ[A](elemToExactOrdering(eA))
     case OpCodes.LeCode  => OrderingLTEQ[A](elemToExactOrdering(eA))
-    case _ => error(s"Cannot find BinOp for opcode newOpCode(${opCode.toUByte-OpCodes.LastConstantCode}) and type $eA")
+    case _ => error(s"Cannot find BinOp for opcode newOpCode(${opCode.toUByte - ValueCodes.LastConstantCode}) and type $eA")
   }
 
   import sigmastate._
@@ -510,11 +510,11 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
           error(s"The type of $obj is expected to be Collection to select 'size' property", obj.sourceContext.toOption)
 
       // Rule: proof.isProven --> IsValid(proof)
-      case Select(p, SSigmaProp.IsProven, _) if p.tpe == SSigmaProp =>
+      case Select(p, SSigmaPropMethods.IsProven, _) if p.tpe == SSigmaProp =>
         eval(SigmaPropIsProven(p.asSigmaProp))
 
       // Rule: prop.propBytes --> SigmaProofBytes(prop)
-      case Select(p, SSigmaProp.PropBytes, _) if p.tpe == SSigmaProp =>
+      case Select(p, SSigmaPropMethods.PropBytes, _) if p.tpe == SSigmaProp =>
         eval(SigmaPropBytes(p.asSigmaProp))
 
       // box.R$i[valType] =>
@@ -525,12 +525,12 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
 
       case sel @ Select(obj, field, _) if obj.tpe == SBox =>
         (obj.asValue[SBox.type], field) match {
-          case (box, SBox.Value) => eval(mkExtractAmount(box))
-          case (box, SBox.PropositionBytes) => eval(mkExtractScriptBytes(box))
-          case (box, SBox.Id) => eval(mkExtractId(box))
-          case (box, SBox.Bytes) => eval(mkExtractBytes(box))
-          case (box, SBox.BytesWithoutRef) => eval(mkExtractBytesWithNoRef(box))
-          case (box, SBox.CreationInfo) => eval(mkExtractCreationInfo(box))
+          case (box, SBoxMethods.Value) => eval(mkExtractAmount(box))
+          case (box, SBoxMethods.PropositionBytes) => eval(mkExtractScriptBytes(box))
+          case (box, SBoxMethods.Id) => eval(mkExtractId(box))
+          case (box, SBoxMethods.Bytes) => eval(mkExtractBytes(box))
+          case (box, SBoxMethods.BytesWithoutRef) => eval(mkExtractBytesWithNoRef(box))
+          case (box, SBoxMethods.CreationInfo) => eval(mkExtractCreationInfo(box))
           case _ => error(s"Invalid access to Box property in $sel: field $field is not found", sel.sourceContext.toOption)
         }
 
@@ -539,7 +539,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         eval(mkSelectField(tuple.asTuple, index))
 
       case Select(obj, method, Some(tRes: SNumericType))
-        if obj.tpe.isNumType && obj.asNumValue.tpe.isCastMethod(method) =>
+            if obj.tpe.isNumType && SNumericTypeMethods.isCastMethod(method) =>
         val numValue = obj.asNumValue
         if (numValue.tpe == tRes)
           eval(numValue)
@@ -940,217 +940,217 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val objV = eval(obj)
         val argsV = args.map(eval)
         (objV, method.objType) match {
-          case (xs: RColl[t]@unchecked, SCollection) => method.name match {
-            case SCollection.IndicesMethod.name =>
+          case (xs: RColl[t]@unchecked, SCollectionMethods) => method.name match {
+            case SCollectionMethods.IndicesMethod.name =>
               xs.indices
-            case SCollection.PatchMethod.name =>
+            case SCollectionMethods.PatchMethod.name =>
               val from = asRep[Int](argsV(0))
               val patch = asRep[Coll[t]](argsV(1))
               val replaced = asRep[Int](argsV(2))
               xs.patch(from, patch, replaced)
-            case SCollection.UpdatedMethod.name =>
+            case SCollectionMethods.UpdatedMethod.name =>
               val index = asRep[Int](argsV(0))
               val value = asRep[t](argsV(1))
               xs.updated(index, value)
-            case SCollection.AppendMethod.name =>
+            case SCollectionMethods.AppendMethod.name =>
               val ys = asRep[Coll[t]](argsV(0))
               xs.append(ys)
-            case SCollection.SliceMethod.name =>
+            case SCollectionMethods.SliceMethod.name =>
               val from = asRep[Int](argsV(0))
               val until = asRep[Int](argsV(1))
               xs.slice(from, until)
-            case SCollection.UpdateManyMethod.name =>
+            case SCollectionMethods.UpdateManyMethod.name =>
               val indexes = asRep[Coll[Int]](argsV(0))
               val values = asRep[Coll[t]](argsV(1))
               xs.updateMany(indexes, values)
-            case SCollection.IndexOfMethod.name =>
+            case SCollectionMethods.IndexOfMethod.name =>
               val elem = asRep[t](argsV(0))
               val from = asRep[Int](argsV(1))
               xs.indexOf(elem, from)
-            case SCollection.ZipMethod.name =>
+            case SCollectionMethods.ZipMethod.name =>
               val ys = asRep[Coll[Any]](argsV(0))
               xs.zip(ys)
-            case SCollection.FlatMapMethod.name =>
+            case SCollectionMethods.FlatMapMethod.name =>
               val f = asRep[Any => Coll[Any]](argsV(0))
               xs.flatMap(f)
-            case SCollection.MapMethod.name =>
+            case SCollectionMethods.MapMethod.name =>
               val f = asRep[Any => Any](argsV(0))
               xs.map(f)
-            case SCollection.FilterMethod.name =>
+            case SCollectionMethods.FilterMethod.name =>
               val p = asRep[Any => Boolean](argsV(0))
               xs.filter(p)
-            case SCollection.ForallMethod.name =>
+            case SCollectionMethods.ForallMethod.name =>
               val p = asRep[Any => Boolean](argsV(0))
               xs.forall(p)
-            case SCollection.ExistsMethod.name =>
+            case SCollectionMethods.ExistsMethod.name =>
               val p = asRep[Any => Boolean](argsV(0))
               xs.exists(p)
-            case SCollection.FoldMethod.name =>
+            case SCollectionMethods.FoldMethod.name =>
               val zero = asRep[Any](argsV(0))
               val op = asRep[((Any, Any)) => Any](argsV(1))
               xs.foldLeft(zero, op)
-            case SCollection.GetOrElseMethod.name =>
+            case SCollectionMethods.GetOrElseMethod.name =>
               val i = asRep[Int](argsV(0))
               val d = asRep[t](argsV(1))
               xs.getOrElse(i, d)
             case _ => throwError
           }
-          case (opt: ROption[t]@unchecked, SOption) => method.name match {
-            case SOption.GetMethod.name =>
+          case (opt: ROption[t]@unchecked, SOptionMethods) => method.name match {
+            case SOptionMethods.GetMethod.name =>
               opt.get
-            case SOption.GetOrElseMethod.name =>
+            case SOptionMethods.GetOrElseMethod.name =>
               val defaultTh = asRep[t](argsV(0))
               opt.getOrElse(Thunk(defaultTh))
-            case SOption.IsDefinedMethod.name =>
+            case SOptionMethods.IsDefinedMethod.name =>
               opt.isDefined
-            case SOption.MapMethod.name =>
+            case SOptionMethods.MapMethod.name =>
               opt.map(asRep[t => Any](argsV(0)))
-            case SOption.FilterMethod.name =>
+            case SOptionMethods.FilterMethod.name =>
               opt.filter(asRep[t => Boolean](argsV(0)))
             case _ => throwError
           }
-          case (ge: Ref[GroupElement]@unchecked, SGroupElement) => method.name match {
-            case SGroupElement.GetEncodedMethod.name =>
+          case (ge: Ref[GroupElement]@unchecked, SGroupElementMethods) => method.name match {
+            case SGroupElementMethods.GetEncodedMethod.name =>
               ge.getEncoded
-            case SGroupElement.NegateMethod.name =>
+            case SGroupElementMethods.NegateMethod.name =>
               ge.negate
-            case SGroupElement.MultiplyMethod.name =>
+            case SGroupElementMethods.MultiplyMethod.name =>
               val g2 = asRep[GroupElement](argsV(0))
               ge.multiply(g2)
-            case SGroupElement.ExponentiateMethod.name =>
+            case SGroupElementMethods.ExponentiateMethod.name =>
               val k = asRep[BigInt](argsV(0))
               ge.exp(k)
             case _ => throwError
           }
-          case (box: Ref[Box]@unchecked, SBox) => method.name match {
-            case SBox.tokensMethod.name =>
+          case (box: Ref[Box]@unchecked, SBoxMethods) => method.name match {
+            case SBoxMethods.tokensMethod.name =>
               box.tokens
             case _ => throwError
           }
-          case (ctx: Ref[Context]@unchecked, SContext) => method.name match {
-            case SContext.dataInputsMethod.name =>
+          case (ctx: Ref[Context]@unchecked, SContextMethods) => method.name match {
+            case SContextMethods.dataInputsMethod.name =>
               ctx.dataInputs
-            case SContext.headersMethod.name =>
+            case SContextMethods.headersMethod.name =>
               ctx.headers
-            case SContext.preHeaderMethod.name =>
+            case SContextMethods.preHeaderMethod.name =>
               ctx.preHeader
-            case SContext.inputsMethod.name =>
+            case SContextMethods.inputsMethod.name =>
               ctx.INPUTS
-            case SContext.outputsMethod.name =>
+            case SContextMethods.outputsMethod.name =>
               ctx.OUTPUTS
-            case SContext.heightMethod.name =>
+            case SContextMethods.heightMethod.name =>
               ctx.HEIGHT
-            case SContext.selfMethod.name =>
+            case SContextMethods.selfMethod.name =>
               ctx.SELF
-            case SContext.selfBoxIndexMethod.name =>
+            case SContextMethods.selfBoxIndexMethod.name =>
               ctx.selfBoxIndex
-            case SContext.lastBlockUtxoRootHashMethod.name =>
+            case SContextMethods.lastBlockUtxoRootHashMethod.name =>
               ctx.LastBlockUtxoRootHash
-            case SContext.minerPubKeyMethod.name =>
+            case SContextMethods.minerPubKeyMethod.name =>
               ctx.minerPubKey
             case _ => throwError
           }
-          case (tree: Ref[AvlTree]@unchecked, SAvlTree) => method.name match {
-            case SAvlTree.digestMethod.name =>
+          case (tree: Ref[AvlTree]@unchecked, SAvlTreeMethods) => method.name match {
+            case SAvlTreeMethods.digestMethod.name =>
               tree.digest
-            case SAvlTree.keyLengthMethod.name =>
+            case SAvlTreeMethods.keyLengthMethod.name =>
               tree.keyLength
-            case SAvlTree.valueLengthOptMethod.name =>
+            case SAvlTreeMethods.valueLengthOptMethod.name =>
               tree.valueLengthOpt
-            case SAvlTree.enabledOperationsMethod.name =>
+            case SAvlTreeMethods.enabledOperationsMethod.name =>
               tree.enabledOperations
-            case SAvlTree.isInsertAllowedMethod.name =>
+            case SAvlTreeMethods.isInsertAllowedMethod.name =>
               tree.isInsertAllowed
-            case SAvlTree.isRemoveAllowedMethod.name =>
+            case SAvlTreeMethods.isRemoveAllowedMethod.name =>
               tree.isRemoveAllowed
-            case SAvlTree.isUpdateAllowedMethod.name =>
+            case SAvlTreeMethods.isUpdateAllowedMethod.name =>
               tree.isUpdateAllowed
-            case SAvlTree.updateDigestMethod.name =>
+            case SAvlTreeMethods.updateDigestMethod.name =>
               val digest = asRep[Coll[Byte]](argsV(0))
               tree.updateDigest(digest)
-            case SAvlTree.updateOperationsMethod.name =>
+            case SAvlTreeMethods.updateOperationsMethod.name =>
               val operations = asRep[Byte](argsV(0))
               tree.updateOperations(operations)
-            case SAvlTree.getMethod.name =>
+            case SAvlTreeMethods.getMethod.name =>
               val key = asRep[Coll[Byte]](argsV(0))
               val proof = asRep[Coll[Byte]](argsV(1))
               tree.get(key, proof)
-            case SAvlTree.getManyMethod.name =>
+            case SAvlTreeMethods.getManyMethod.name =>
               val keys = asRep[Coll[Coll[Byte]]](argsV(0))
               val proof = asRep[Coll[Byte]](argsV(1))
               tree.getMany(keys, proof)
-            case SAvlTree.containsMethod.name =>
+            case SAvlTreeMethods.containsMethod.name =>
               val key = asRep[Coll[Byte]](argsV(0))
               val proof = asRep[Coll[Byte]](argsV(1))
               tree.contains(key, proof)
-            case SAvlTree.insertMethod.name =>
+            case SAvlTreeMethods.insertMethod.name =>
               val operations = asRep[Coll[(Coll[Byte], Coll[Byte])]](argsV(0))
               val proof = asRep[Coll[Byte]](argsV(1))
               tree.insert(operations, proof)
-            case SAvlTree.removeMethod.name =>
+            case SAvlTreeMethods.removeMethod.name =>
               val operations = asRep[Coll[Coll[Byte]]](argsV(0))
               val proof = asRep[Coll[Byte]](argsV(1))
               tree.remove(operations, proof)
-            case SAvlTree.updateMethod.name =>
+            case SAvlTreeMethods.updateMethod.name =>
               val operations = asRep[Coll[(Coll[Byte], Coll[Byte])]](argsV(0))
               val proof = asRep[Coll[Byte]](argsV(1))
               tree.update(operations, proof)
             case _ => throwError
           }
-          case (ph: Ref[PreHeader]@unchecked, SPreHeader) => method.name match {
-            case SPreHeader.versionMethod.name =>
+          case (ph: Ref[PreHeader]@unchecked, SPreHeaderMethods) => method.name match {
+            case SPreHeaderMethods.versionMethod.name =>
               ph.version
-            case SPreHeader.parentIdMethod.name =>
+            case SPreHeaderMethods.parentIdMethod.name =>
               ph.parentId
-            case SPreHeader.timestampMethod.name =>
+            case SPreHeaderMethods.timestampMethod.name =>
               ph.timestamp
-            case SPreHeader.nBitsMethod.name =>
+            case SPreHeaderMethods.nBitsMethod.name =>
               ph.nBits
-            case SPreHeader.heightMethod.name =>
+            case SPreHeaderMethods.heightMethod.name =>
               ph.height
-            case SPreHeader.minerPkMethod.name =>
+            case SPreHeaderMethods.minerPkMethod.name =>
               ph.minerPk
-            case SPreHeader.votesMethod.name =>
+            case SPreHeaderMethods.votesMethod.name =>
               ph.votes
             case _ => throwError
           }
-          case (h: Ref[Header]@unchecked, SHeader) => method.name match {
-            case SHeader.idMethod.name =>
+          case (h: Ref[Header]@unchecked, SHeaderMethods) => method.name match {
+            case SHeaderMethods.idMethod.name =>
               h.id
-            case SHeader.versionMethod.name =>
+            case SHeaderMethods.versionMethod.name =>
               h.version
-            case SHeader.parentIdMethod.name =>
+            case SHeaderMethods.parentIdMethod.name =>
               h.parentId
-            case SHeader.ADProofsRootMethod.name =>
+            case SHeaderMethods.ADProofsRootMethod.name =>
               h.ADProofsRoot
-            case SHeader.stateRootMethod.name =>
+            case SHeaderMethods.stateRootMethod.name =>
               h.stateRoot
-            case SHeader.transactionsRootMethod.name =>
+            case SHeaderMethods.transactionsRootMethod.name =>
               h.transactionsRoot
-            case SHeader.timestampMethod.name =>
+            case SHeaderMethods.timestampMethod.name =>
               h.timestamp
-            case SHeader.nBitsMethod.name =>
+            case SHeaderMethods.nBitsMethod.name =>
               h.nBits
-            case SHeader.heightMethod.name =>
+            case SHeaderMethods.heightMethod.name =>
               h.height
-            case SHeader.extensionRootMethod.name =>
+            case SHeaderMethods.extensionRootMethod.name =>
               h.extensionRoot
-            case SHeader.minerPkMethod.name =>
+            case SHeaderMethods.minerPkMethod.name =>
               h.minerPk
-            case SHeader.powOnetimePkMethod.name =>
+            case SHeaderMethods.powOnetimePkMethod.name =>
               h.powOnetimePk
-            case SHeader.powNonceMethod.name =>
+            case SHeaderMethods.powNonceMethod.name =>
               h.powNonce
-            case SHeader.powDistanceMethod.name =>
+            case SHeaderMethods.powDistanceMethod.name =>
               h.powDistance
-            case SHeader.votesMethod.name =>
+            case SHeaderMethods.votesMethod.name =>
               h.votes
             case _ => throwError
           }
-          case (g: Ref[SigmaDslBuilder]@unchecked, SGlobal) => method.name match {
-            case SGlobal.groupGeneratorMethod.name =>
+          case (g: Ref[SigmaDslBuilder]@unchecked, SGlobalMethods) => method.name match {
+            case SGlobalMethods.groupGeneratorMethod.name =>
               g.groupGenerator
-            case SGlobal.xorMethod.name =>
+            case SGlobalMethods.xorMethod.name =>
               val c1 = asRep[Coll[Byte]](argsV(0))
               val c2 = asRep[Coll[Byte]](argsV(1))
               g.xor(c1, c2)

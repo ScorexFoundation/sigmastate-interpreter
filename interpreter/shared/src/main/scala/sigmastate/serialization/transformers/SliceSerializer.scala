@@ -6,7 +6,7 @@ import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.SigmaByteWriter.DataInfo
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.Slice
-import sigmastate.{SInt, SCollection, SType}
+import sigma.ast.{SInt, SCollection, SType}
 
 case class SliceSerializer(cons: (Value[SCollection[SType]], Value[SInt.type], Value[SInt.type]) => Value[SCollection[SType]])
   extends ValueSerializer[Slice[SType]] {

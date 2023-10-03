@@ -3,16 +3,16 @@ package sigmastate.eval
 import debox.{cfor, Buffer => DBuffer}
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.TokenId
-import sigma.data.{Nullable, RType}
 import scorex.util.encode.Base16
-import sigmastate.SType.AnyOps
+import sigma.ast.SType.AnyOps
+import sigma.ast.{SCollection, SCollectionType, SType}
+import sigma.{Coll, _}
+import sigma.data.{Nullable, RType}
+import sigmastate.Platform
 import sigmastate.Values.{Constant, ConstantNode}
 import sigmastate.crypto.{CryptoFacade, Ecp}
 import sigmastate.lang.{CheckingSigmaBuilder, TransformingSigmaBuilder}
 import sigmastate.utils.Helpers
-import sigmastate.{Platform, SCollection, SCollectionType, SType}
-import sigma.Coll
-import sigma._
 
 import java.math.BigInteger
 

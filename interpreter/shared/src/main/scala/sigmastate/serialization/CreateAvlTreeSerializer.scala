@@ -1,7 +1,8 @@
 package sigmastate.serialization
 
-import sigmastate.SCollection._
-import sigmastate.SOption.SIntOption
+import sigma.ast.SCollection.SByteArray
+import sigma.ast.SInt
+import sigma.ast.SOption.SIntOption
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate._
 import sigmastate.Values._

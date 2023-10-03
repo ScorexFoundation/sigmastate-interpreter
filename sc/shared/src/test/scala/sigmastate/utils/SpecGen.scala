@@ -2,7 +2,8 @@ package sigmastate.utils
 
 import sigma.util.PrintExtensions.IterableExtensions
 import sigmastate._
-import sigmastate.eval.Evaluation._
+import sigma.Evaluation._
+import sigma.ast.{SBigInt, SBoolean, SCollection, SEmbeddable, SGlobal, SGroupElement, SNumericType, SOption, SPrimType, SString, SType, STypeCompanion}
 import sigma.util.Extensions.ByteOps
 import sigma.util.CollectionUtil
 import sigma.util.PrintExtensions._
@@ -10,8 +11,8 @@ import sigmastate.Values._
 import sigmastate.lang.SigmaPredef.{PredefinedFunc, PredefinedFuncRegistry}
 import sigmastate.lang.StdSigmaBuilder
 import sigmastate.lang.Terms.{MethodCall, PropertyCall}
-import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.serialization.{OpCodes, ValueSerializer}
+import sigmastate.serialization.ValueCodes.OpCode
+import sigmastate.serialization.{OpCodes, ValueCodes, ValueSerializer}
 import sigmastate.utxo.{SelectField, SigmaPropIsProven}
 
 object SpecGenUtils {
@@ -30,7 +31,7 @@ trait SpecGen {
       args: Seq[ArgInfo], op: Either[PredefinedFunc, SMethod])
 
   def collectSerializers(): Seq[ValueSerializer[_ <: Values.Value[SType]]] = {
-    ((OpCodes.LastConstantCode + 1) to 255).collect {
+    ((ValueCodes.LastConstantCode + 1) to 255).collect {
       case i if ValueSerializer.serializers(i.toByte) != null =>
         val ser = ValueSerializer.serializers(i.toByte)
         assert(i == ser.opDesc.opCode.toUByte)
@@ -39,7 +40,7 @@ trait SpecGen {
   }
 
   def collectFreeCodes(): Seq[Int] = {
-    ((OpCodes.LastConstantCode + 1) to 255).collect {
+    ((ValueCodes.LastConstantCode + 1) to 255).collect {
       case i if ValueSerializer.serializers(i.toByte) == null => i
     }
   }
@@ -47,7 +48,8 @@ trait SpecGen {
   def collectMethods(): Seq[SMethod] = {
     for {
       tc <- typesWithMethods.sortBy(_.typeId)
-      m <- tc.methods.sortBy(_.methodId)
+      mc = MethodsContainer(tc.typeId)
+      m <- mc.methods.sortBy(_.methodId)
     } yield m
   }
 
@@ -215,7 +217,8 @@ trait SpecGen {
   }
 
   def printMethods(tc: STypeCompanion) = {
-    val methodSubsections = for { m <- tc.methods.sortBy(_.methodId) } yield {
+    val mc = MethodsContainer(tc.typeId)
+    val methodSubsections = for { m <- mc.methods.sortBy(_.methodId) } yield {
       methodSubsection(tc.typeName, m)
     }
     val res = methodSubsections.mkString("\n\n")

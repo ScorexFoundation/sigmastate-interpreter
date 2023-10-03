@@ -1,6 +1,6 @@
 package sigmastate.serialization
 
-import sigmastate.SType
+import sigma.ast.SType
 
 import scala.collection.mutable
 

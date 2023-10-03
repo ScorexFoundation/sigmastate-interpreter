@@ -6,7 +6,7 @@ import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.SigmaByteWriter.DataInfo
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.MapCollection
-import sigmastate.{SCollection, SType, SFunc}
+import sigma.ast.{SCollection, SType, SFunc}
 
 case class MapCollectionSerializer(cons: (Value[SCollection[SType]], Value[SFunc]) => Value[SType])
   extends ValueSerializer[MapCollection[SType, SType]] {

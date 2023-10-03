@@ -1,7 +1,6 @@
 package sigmastate.crypto
 
 import java.math.BigInteger
-
 import sigmastate.Values._
 import Value.PropositionCode
 import scorex.util.encode.Base16
@@ -9,9 +8,9 @@ import sigmastate._
 import sigmastate.eval._
 import sigmastate.crypto.VerifierMessage.Challenge
 import CryptoConstants.{EcPointType, dlogGroup}
-import sigmastate.serialization.{OpCodes, GroupElementSerializer}
-import sigmastate.serialization.OpCodes.OpCode
+import sigmastate.serialization.{GroupElementSerializer, OpCodes}
 import sigma.SigmaProp
+import sigmastate.serialization.ValueCodes.OpCode
 
 object DLogProtocol {
 

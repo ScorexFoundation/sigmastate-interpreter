@@ -2,7 +2,7 @@ package sigmastate.serialization
 
 import sigmastate.Values._
 import OpCodes._
-import sigmastate.SBox
+import sigma.ast.SBox
 
 class TaggedVariableSerializerSpecification extends SerializationSpecification {
 

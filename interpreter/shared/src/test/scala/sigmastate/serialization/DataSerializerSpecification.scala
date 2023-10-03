@@ -3,22 +3,24 @@ package sigmastate.serialization
 import java.math.BigInteger
 import org.ergoplatform.ErgoBox
 import org.scalacheck.Arbitrary._
-import sigma.data.RType
-import sigmastate.SCollection.SByteArray
+import sigma.data.{RType, TupleColl}
+import sigma.ast.SCollection.SByteArray
 import sigmastate.Values.{ErgoTree, SigmaBoolean}
 import sigmastate._
-import sigmastate.eval.Evaluation
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import sigmastate.crypto.CryptoConstants.EcPointType
-import sigma.{AvlTree, Colls}
-import SType.AnyOps
+import sigma.{AvlTree, Colls, Evaluation}
+import sigma.ast.SType.AnyOps
+import sigma.ast._
+import org.scalacheck.Gen
 import sigmastate.exceptions.SerializerException
 import sigmastate.interpreter.{CostAccumulator, ErgoTreeEvaluator}
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultProfiler
 import sigmastate.utils.Helpers
 
 import scala.annotation.nowarn
+import scala.reflect.ClassTag
 
 class DataSerializerSpecification extends SerializationSpecification {
 
@@ -76,9 +78,10 @@ class DataSerializerSpecification extends SerializationSpecification {
   }
 
   def testTuples[T <: SType](tpe: T) = {
-    implicit val wWrapped = wrappedTypeGen(tpe)
-    @nowarn implicit val tag = tpe.classTag[T#WrappedType]
-    implicit val tAny: RType[Any] = sigma.AnyType
+    implicit val wWrapped: Gen[T#WrappedType] = wrappedTypeGen(tpe)
+    val tT = Evaluation.stypeToRType(tpe)
+    @nowarn implicit val tag: ClassTag[T#WrappedType] = tT.classTag
+    implicit val tAny       : RType[Any]              = sigma.AnyType
     forAll { in: (T#WrappedType, T#WrappedType) =>
       val (x,y) = (in._1, in._2)
       roundtrip[SType]((x, y).asWrappedType, STuple(tpe, tpe))

@@ -1,5 +1,6 @@
 package sigmastate.lang.syntax
 
+import sigma.ast.{NoType, SType}
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.syntax

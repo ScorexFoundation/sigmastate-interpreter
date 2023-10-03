@@ -9,6 +9,7 @@ import scala.scalajs.js.annotation.JSExportTopLevel
 import org.ergoplatform.sdk.js.{ErgoTree, Value}
 import sigmastate.Values
 import sigmastate.Values.ErgoTree.HeaderType
+import sigmastate.{STypeOps, Values}
 import sigmastate.eval.CompiletimeIRContext
 import sigmastate.lang.Terms.ValueOps
 
@@ -59,7 +60,7 @@ object SigmaCompiler extends js.Object {
     * @return SigmaCompiler instance
     */
   private def create(networkPrefix: Byte): SigmaCompiler = {
-    val compiler = new sigmastate.lang.SigmaCompiler(networkPrefix)
+    val compiler = sigmastate.lang.SigmaCompiler(networkPrefix)
     new SigmaCompiler(compiler)
   }
 }

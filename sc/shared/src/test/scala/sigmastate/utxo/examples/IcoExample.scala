@@ -9,6 +9,7 @@ import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigma.Colls
+import sigma.ast.SByte
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.crypto.CryptoConstants

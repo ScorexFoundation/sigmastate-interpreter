@@ -9,15 +9,15 @@ import org.ergoplatform.settings.ErgoAlgos
 import sigma.data.RType
 import scorex.util._
 import sigmastate.Values.{Constant, EvaluatedValue}
-import sigmastate._
 import sigmastate.lang.SigmaParser
 import sigmastate.eval._
 import sigma._
 import debox.cfor
 import sigmastate.exceptions.SerializerException
+
 import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
-import fastparse.{Parsed, parse}
+import sigma.ast._
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.serialization.DataSerializer
 import sigmastate.serialization.ErgoTreeSerializer

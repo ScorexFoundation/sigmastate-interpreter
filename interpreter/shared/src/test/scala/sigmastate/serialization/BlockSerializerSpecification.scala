@@ -1,9 +1,9 @@
 package sigmastate.serialization
 
 import org.scalacheck.Gen
-import sigmastate.SType
+import sigma.ast.SType
 import sigmastate.Values.Constant
-import sigmastate.lang.{SigmaBuilder, DeserializationSigmaBuilder}
+import sigmastate.lang.{DeserializationSigmaBuilder, SigmaBuilder}
 
 class BlockSerializerSpecification extends SerializationSpecification {
 

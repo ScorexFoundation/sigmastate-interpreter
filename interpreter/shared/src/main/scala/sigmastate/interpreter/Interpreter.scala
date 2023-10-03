@@ -6,23 +6,23 @@ import org.ergoplatform.ErgoLikeContext
 import org.ergoplatform.validation.SigmaValidationSettings
 import org.ergoplatform.validation.ValidationRules._
 import sigmastate.crypto.DLogProtocol.ProveDlog
-import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.crypto.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage, ProveDlog}
 import sigmastate.crypto._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.serialization.{SigmaSerializer, ValueSerializer}
 import sigmastate.utxo.DeserializeContext
-import sigmastate.{SType, _}
-import sigmastate.eval.{Evaluation, Profiler, SigmaDsl}
+import sigmastate._
+import sigmastate.eval.{Profiler, SigmaDsl, addCostChecked}
 import sigmastate.FiatShamirTree._
 import sigmastate.SigSerializer._
-import sigmastate.eval.Evaluation.addCostChecked
 import sigmastate.interpreter.ErgoTreeEvaluator.fixedCostOp
 import sigmastate.utils.Helpers._
 import sigmastate.lang.Terms.ValueOps
 import debox.cfor
-import sigma.VersionContext
+import sigma.ast.SCollection.SByteArray
+import sigma.ast.{SBoolean, SSigmaProp, SType}
+import sigma.{Evaluation, VersionContext}
 import sigma.kiama.rewriting.Strategy
 import sigmastate.exceptions.{CostLimitException, InterpreterException}
 
@@ -51,6 +51,8 @@ trait Interpreter {
   type CTX <: InterpreterContext
 
   type ProofT = UncheckedTree
+
+  private val _ = InterpreterReflection
 
   /** Evaluation settings used by [[ErgoTreeEvaluator]] which is used by this
     * interpreter to perform fullReduction.
@@ -96,7 +98,7 @@ trait Interpreter {
     val script = ValueSerializer.deserialize(r)  // Why ValueSerializer? read NOTE above
     val scriptComplexity = java7.compat.Math.multiplyExact(scriptBytes.length, CostPerByteDeserialized)
 
-    val currCost = Evaluation.addCostChecked(context.initCost, scriptComplexity, context.costLimit)
+    val currCost = addCostChecked(context.initCost, scriptComplexity, context.costLimit)
     val ctx1 = context.withInitCost(currCost).asInstanceOf[CTX]
     (ctx1, script)
   }
@@ -210,7 +212,7 @@ trait Interpreter {
 
           // NOTE, evaluator cost unit needs to be scaled to the cost unit of context
           val evalCost = Eval_SigmaPropConstant.costKind.cost.toBlockCost
-          val resCost = Evaluation.addCostChecked(context.initCost, evalCost, context.costLimit)
+          val resCost = addCostChecked(context.initCost, evalCost, context.costLimit)
           ReductionResult(sb, resCost)
         case _ if !ergoTree.hasDeserialize =>
           val ctx = context.asInstanceOf[ErgoLikeContext]
@@ -241,7 +243,7 @@ trait Interpreter {
     implicit val vs: SigmaValidationSettings = context.validationSettings
     val res = VersionContext.withVersions(context.activatedScriptVersion, ergoTree.version) {
       val deserializeSubstitutionCost = java7.compat.Math.multiplyExact(ergoTree.bytes.length, CostPerTreeByte)
-      val currCost = Evaluation.addCostChecked(context.initCost, deserializeSubstitutionCost, context.costLimit)
+      val currCost = addCostChecked(context.initCost, deserializeSubstitutionCost, context.costLimit)
       val context1 = context.withInitCost(currCost).asInstanceOf[CTX]
       val (propTree, context2) = trySoftForkable[(SigmaPropValue, CTX)](whenSoftFork = (TrueSigmaProp, context1)) {
         applyDeserializeContextJITC(context, prop)

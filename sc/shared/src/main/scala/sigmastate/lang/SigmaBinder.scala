@@ -2,6 +2,7 @@ package sigmastate.lang
 
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform._
+import sigma.ast.NoType
 import sigma.data.Nullable
 import sigma.kiama.rewriting.CallbackRewriter
 import sigmastate.Values._

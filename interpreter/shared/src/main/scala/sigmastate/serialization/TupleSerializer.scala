@@ -1,12 +1,13 @@
 package sigmastate.serialization
 
-import sigmastate.{SType, ArgInfo}
+import sigmastate.{ArgInfo}
 import sigmastate.Values._
 import sigmastate.utils.{SigmaByteWriter, SigmaByteReader}
 import sigmastate.serialization.ValueSerializer._
 import sigma.util.safeNewArray
 import sigmastate.utils.SigmaByteWriter.{DataInfo, U}
 import debox.cfor
+import sigma.ast.SType
 
 case class TupleSerializer(cons: Seq[Value[SType]] => Value[SType])
   extends ValueSerializer[Tuple] {

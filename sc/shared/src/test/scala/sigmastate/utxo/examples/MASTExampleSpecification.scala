@@ -4,7 +4,8 @@ import org.ergoplatform._
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigmastate.SCollection.SByteArray
+import sigma.ast.{SAvlTree, SBoolean, SLong}
+import sigma.ast.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval.Extensions.ArrayOps
@@ -96,7 +97,7 @@ class MASTExampleSpecification extends CompilerTestingCommons
     val merklePathToScript = OptionIsDefined(
       IR.builder.mkMethodCall(
         ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
-        SAvlTree.getMethod,
+        SAvlTreeMethods.getMethod,
         IndexedSeq(
           CalcBlake2b256(GetVarByteArray(scriptId).get),
           GetVarByteArray(proofId).get)).asOption[SByteArray]

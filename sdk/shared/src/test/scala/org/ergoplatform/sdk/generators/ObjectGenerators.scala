@@ -3,9 +3,10 @@ package org.ergoplatform.sdk.generators
 import org.ergoplatform.sdk.{ContractTemplate, Parameter}
 import org.ergoplatform.validation.ValidationSpecification
 import org.scalacheck.Gen
-import sigmastate.Values.{ErgoTree, SigmaPropValue}
+import sigma.ast.SType
+import sigmastate.TestsBase
+import sigmastate.Values.ErgoTree
 import sigmastate.serialization.generators.{ConcreteCollectionGenerators, TypeGenerators, ObjectGenerators => InterpreterObjectGenerators}
-import sigmastate.{SType, TestsBase}
 
 import scala.util.Random
 

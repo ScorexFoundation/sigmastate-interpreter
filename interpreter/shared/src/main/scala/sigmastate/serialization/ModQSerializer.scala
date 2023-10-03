@@ -1,9 +1,10 @@
 package sigmastate.serialization
 
+import sigma.ast.SType
 import sigmastate.Values.Value
 import sigmastate.lang.Terms._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.{ModQ, SType}
+import sigmastate.ModQ
 
 // TODO v6.0: make sure it is covered with tests (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/327)
 object ModQSerializer extends ValueSerializer[ModQ] {

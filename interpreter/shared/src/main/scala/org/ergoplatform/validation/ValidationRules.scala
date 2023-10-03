@@ -1,13 +1,14 @@
 package org.ergoplatform.validation
 
+import sigma.ast.{SGlobal, SOption, TypeCodes}
 import sigma.util.Extensions.toUByte
 import sigmastate.Values.ErgoTree.HeaderType
 import sigmastate.Values.{ErgoTree, SValue}
 import sigmastate._
-import sigmastate.exceptions.{InterpreterException, InvalidOpCode, ReaderPositionLimitExceeded, SerializerException, SigmaException}
-import sigmastate.serialization.OpCodes.OpCode
+import sigmastate.exceptions._
 import sigmastate.serialization.TypeSerializer.embeddableIdToType
-import sigmastate.serialization.{OpCodes, ValueSerializer}
+import sigmastate.serialization.ValueCodes.OpCode
+import sigmastate.serialization.{OpCodes, ValueCodes, ValueSerializer}
 import sigmastate.utxo.DeserializeContext
 
 /** Base class for different validation rules registered in ValidationRules.currentSettings.
@@ -111,7 +112,7 @@ object ValidationRules {
       checkRule()
       if (ser == null || ser.opCode != opCode) {
         throwValidationException(
-          new InvalidOpCode(s"Cannot find serializer for Value with opCode = LastConstantCode + ${toUByte(opCode) - OpCodes.LastConstantCode}"),
+          new InvalidOpCode(s"Cannot find serializer for Value with opCode = LastConstantCode + ${toUByte(opCode) - ValueCodes.LastConstantCode}"),
           Array(opCode))
       }
     }
@@ -187,7 +188,7 @@ object ValidationRules {
     final def apply[T](typeCode: Byte): Unit = {
       checkRule()
       val ucode = toUByte(typeCode)
-      if (typeCode == SOption.OptionTypeCode || ucode > toUByte(OpCodes.LastDataType)) {
+      if (typeCode == SOption.OptionTypeCode || ucode > toUByte(TypeCodes.LastDataType)) {
         // the `typeCode == SOption.OptionTypeCode` condition is added in v5.0 and we
         // throw ValidationException for Option type as well in order to be able to
         // interpret it as soft-fork condition.
@@ -217,7 +218,7 @@ object ValidationRules {
 
   object CheckAndGetMethod extends ValidationRule(1011,
     "Check the type has the declared method.") {
-    final def apply[T](objType: STypeCompanion, methodId: Byte): SMethod = {
+    final def apply[T](objType: MethodsContainer, methodId: Byte): SMethod = {
       checkRule()
       val methodOpt = objType.getMethodById(methodId)
       if (methodOpt.isDefined) methodOpt.get
@@ -232,8 +233,8 @@ object ValidationRules {
                             ruleId: Short,
                             status: RuleStatus,
                             args: Seq[Any]): Boolean = (status, args) match {
-      case (ChangedRule(newValue), Seq(objType: STypeCompanion, methodId: Byte)) =>
-        val key = Array(objType.typeId, methodId)
+      case (ChangedRule(newValue), Seq(objType: MethodsContainer, methodId: Byte)) =>
+        val key = Array(objType.ownerType.typeId, methodId)
         newValue.grouped(2).exists(java.util.Arrays.equals(_, key))
       case _ => false
     }

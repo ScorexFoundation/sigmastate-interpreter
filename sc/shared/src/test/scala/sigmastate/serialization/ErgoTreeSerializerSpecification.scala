@@ -5,8 +5,12 @@ import org.ergoplatform.ErgoBox
 import org.ergoplatform.validation.ValidationException
 import org.ergoplatform.validation.ValidationRules.CheckDeserializedScriptIsSigmaProp
 import sigmastate.Values.ErgoTree.HeaderType
+import sigma.ast.SInt
+import sigma.data.CBigInt
 import sigmastate.Values.{BigIntConstant, ByteConstant, ConstantPlaceholder, ErgoTree, IntConstant, ShortConstant, SigmaPropValue, UnparsedErgoTree}
 import sigmastate._
+import sigmastate.eval.IRContext
+import sigmastate.exceptions.{ReaderPositionLimitExceeded, SerializerException}
 import sigmastate.eval.{CBigInt, IRContext}
 import sigmastate.exceptions.{ReaderPositionLimitExceeded, SerializerException}
 import sigmastate.helpers.CompilerTestingCommons

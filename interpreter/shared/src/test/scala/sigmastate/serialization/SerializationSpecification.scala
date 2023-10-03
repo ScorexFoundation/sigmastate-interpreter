@@ -8,8 +8,8 @@ import org.scalacheck.Arbitrary._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.{ScalaCheckDrivenPropertyChecks, ScalaCheckPropertyChecks}
+import sigma.ast.SType
 import sigmastate.Values._
-import sigmastate.SType
 import sigmastate.helpers.NegativeTesting
 import sigmastate.serialization.generators._
 

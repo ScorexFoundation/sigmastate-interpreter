@@ -3,6 +3,7 @@ package sigmastate.lang
 import fastparse.internal.Logger
 import sigmastate._
 import Values._
+import sigma.ast.{NoType, SInt, SLong, SType}
 import sigma.data.Nullable
 import sigmastate.lang.Terms._
 import sigmastate.lang.syntax.Basic._

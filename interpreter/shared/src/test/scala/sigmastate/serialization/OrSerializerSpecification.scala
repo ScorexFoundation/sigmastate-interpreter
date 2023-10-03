@@ -5,6 +5,7 @@ import sigmastate._
 import sigmastate.eval.Extensions._
 import sigmastate.serialization.OpCodes._
 import scorex.util.encode.ZigZagEncoder.encodeZigZagInt
+import sigma.ast.{SBoolean, SCollection, SCollectionType, SInt}
 
 class OrSerializerSpecification extends TableSerializationSpecification {
 

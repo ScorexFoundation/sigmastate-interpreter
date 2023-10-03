@@ -2,10 +2,10 @@ package org.ergoplatform.sdk
 
 import org.ergoplatform.ErgoBox.TokenId
 import org.ergoplatform.sdk.JavaHelpers.collRType
-import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, SigmaConstants}
+import org.ergoplatform.{ErgoBox, ErgoBoxCandidate}
 import sigma.Colls
-import sigma.data.RType
-import sigmastate.SType
+import sigma.ast.SType
+import sigma.data.{RType, SigmaConstants}
 import sigmastate.Values.{Constant, ErgoTree, EvaluatedValue}
 
 import scala.collection.mutable.ArrayBuffer

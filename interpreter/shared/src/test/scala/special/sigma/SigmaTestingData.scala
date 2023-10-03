@@ -6,7 +6,7 @@ import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen.containerOfN
 import org.scalacheck.util.Buildable
 import org.scalacheck.{Arbitrary, Gen}
-import sigma.data.RType
+import sigma.data.{CBigInt, RType}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ModifierId
@@ -16,12 +16,14 @@ import sigmastate.crypto.DLogProtocol.ProveDlog
 import sigmastate.crypto.ProveDHTuple
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
-import sigmastate.eval.{CAvlTree, CBigInt, CHeader, CPreHeader, CSigmaProp, CostingBox, CostingSigmaDslBuilder, SigmaDsl}
+import sigmastate.eval.{CAvlTree, CHeader, CPreHeader, CSigmaProp, CostingBox, CostingSigmaDslBuilder, SigmaDsl}
 import sigmastate.helpers.TestingCommons
 import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers
 import sigmastate._
+import sigma.Coll
+import sigma.ast.{SBoolean, SSigmaProp}
 import sigmastate.Values.ErgoTree.HeaderType
 
 import java.math.BigInteger

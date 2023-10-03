@@ -1,6 +1,6 @@
 package sigmastate.utils
 
-import sigmastate.SType
+import sigma.ast.SType
 import sigmastate.Values.Value
 import sigmastate.serialization.ValueSerializer
 
@@ -20,15 +20,20 @@ class SparseArrayContainer[T: ClassTag](values: Seq[(Byte, T)]) {
       val dupGroups = sers.groupBy { case (b, _) => b }.filter { case (_, g) => g.size > 1 }.toList
       s"expected distinct codes, got duplicated: $dupGroups"
     })
-    val array = Array.fill[T](256)(null.asInstanceOf[T]) // one item for each OpCode
+    val array = Array.fill[T](256)(null.asInstanceOf[T]) // one item for each code
     sers.foreach { case (code, value) =>
-        array(codeToIndex(code)) = value
+      array(codeToIndex(code)) = value
     }
     array
   }
 
   @inline
-  private def codeToIndex(code: Byte): Int = code + 128
+  private def codeToIndex(code: Byte): Int = code + 128  // -128..127 -> 0..255
+
+  /** @return true if value for the given code is defined
+    * @param code of a value
+    */
+  @inline def contains(code: Byte): Boolean = sparseArray(codeToIndex(code)) != null
 
   /**
     * Returns value for the given code
@@ -62,7 +67,7 @@ class SparseArrayContainer[T: ClassTag](values: Seq[(Byte, T)]) {
 }
 
 object SparseArrayContainer {
-
+  /**  Build a container for the given serializers. */
   def buildForSerializers(sers: Seq[ValueSerializer[_ <: Value[SType]]]): SparseArrayContainer[ValueSerializer[_ <: Value[SType]]] = {
     new SparseArrayContainer(sers.map(s => (s.opCode, s)))
   }

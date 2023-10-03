@@ -5,6 +5,7 @@ import scorex.util.encode.Base16
 import sigmastate._
 import sigma.Coll
 import sigma._
+import sigma.ast._
 
 import java.math.BigInteger
 import scala.scalajs.js

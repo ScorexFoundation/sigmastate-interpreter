@@ -2,11 +2,13 @@ package sigmastate.utxo
 
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, CompilerTestingCommons}
+import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.lang.Terms._
 import org.ergoplatform._
-import sigmastate.SCollection._
+import sigma.ast.SCollection._
+import sigma.ast._
+import sigmastate.SCollectionMethods.{FlatMapMethod, IndexOfMethod, IndicesMethod, PatchMethod, UpdateManyMethod, UpdatedMethod}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.Helpers._
@@ -531,7 +533,7 @@ class CollectionOperationsSpecification extends CompilerTestingCommons
     assertProof("OUTPUTS.zip(INPUTS).size == 2",
       EQ(
         SizeOf(MethodCall(Outputs,
-          SCollection.ZipMethod.withConcreteTypes(Map(SCollection.tIV -> SBox, SCollection.tOV -> SBox)),
+          SCollectionMethods.ZipMethod.withConcreteTypes(Map(SCollection.tIV -> SBox, SCollection.tOV -> SBox)),
           Vector(Inputs),
           Map()).asCollection[STuple]),
         IntConstant(2)),

@@ -1,8 +1,8 @@
 package sigmastate.serialization.generators
 
-import org.scalacheck.{Gen, Arbitrary}
+import org.scalacheck.{Arbitrary, Gen}
 import org.scalacheck.Arbitrary.arbString
-import sigmastate._
+import sigma.ast._
 
 trait TypeGenerators {
   implicit val booleanTypeGen: Gen[SBoolean.type] = Gen.const(SBoolean)

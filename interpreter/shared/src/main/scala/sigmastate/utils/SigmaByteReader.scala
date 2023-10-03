@@ -3,11 +3,11 @@ package sigmastate.utils
 import org.ergoplatform.validation.ValidationRules.CheckPositionLimit
 import scorex.util.Extensions._
 import scorex.util.serialization.Reader
-import sigmastate.SType
 import sigmastate.Values.{SValue, Value}
 import sigmastate.serialization._
 import sigma.util.safeNewArray
 import debox.cfor
+import sigma.ast.SType
 import sigmastate.exceptions.DeserializeCallDepthExceeded
 
 /** Reader used in the concrete implementations of [[SigmaSerializer]].

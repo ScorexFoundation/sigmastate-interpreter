@@ -9,7 +9,7 @@ import scala.scalajs.js.annotation.JSExportTopLevel
 @JSExportTopLevel("ReducedTransaction")
 class ReducedTransaction(val _tx: sdk.ReducedTransaction) extends js.Object {
   /** Serialized bytes of this transaction in hex format. */
-  def toHex: String = _tx.toHex
+  def toHex(): String = _tx.toHex
 }
 
 @JSExportTopLevel("ReducedTransactionObj")

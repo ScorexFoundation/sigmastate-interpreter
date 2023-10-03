@@ -6,7 +6,7 @@ import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.Append
-import sigmastate.{SCollection, SType}
+import sigma.ast.{SCollection, SType}
 
 case class AppendSerializer(cons: (Value[SCollection[SType]], Value[SCollection[SType]]) => Value[SCollection[SType]])
   extends ValueSerializer[Append[SType]] {

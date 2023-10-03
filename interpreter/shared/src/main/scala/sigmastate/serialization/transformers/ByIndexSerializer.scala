@@ -8,7 +8,7 @@ import sigmastate.Operations.ByIndexInfo._
 import sigmastate.utils.SigmaByteWriter.DataInfo
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.ByIndex
-import sigmastate.{SInt, SCollection, SType}
+import sigma.ast.{SInt, SCollection, SType}
 
 case class ByIndexSerializer(cons: (Value[SCollection[SType]], Value[SInt.type], Option[Value[SType]]) => Value[SType])
   extends ValueSerializer[ByIndex[SType]] {

@@ -1,6 +1,7 @@
 package sigmastate.interpreter
 
-import sigmastate.{FixedCost, JitCost, PerItemCost, SMethod, SType, TypeBasedCost}
+import sigma.ast.SType
+import sigmastate.{FixedCost, JitCost, PerItemCost, SMethod, TypeBasedCost}
 import sigmastate.Values.{FixedCostValueCompanion, PerItemCostValueCompanion, ValueCompanion}
 import sigmastate.lang.Terms.MethodCall
 

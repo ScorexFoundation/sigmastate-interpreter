@@ -2,17 +2,18 @@ package sigmastate.serialization
 
 import java.math.BigInteger
 import java.nio.charset.StandardCharsets
-
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.validation.ValidationRules.CheckSerializableTypeCode
 import sigma.data.RType
 import sigmastate.Values.SigmaBoolean
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate._
-import sigmastate.eval.{Evaluation, _}
-import sigma._
+import sigmastate.eval._
+import sigma.{Evaluation, _}
 import debox.cfor
+import sigma.ast._
 import sigmastate.exceptions.SerializerException
+
 import scala.collection.mutable
 
 /** This works in tandem with ConstantSerializer, if you change one make sure to check the other.*/

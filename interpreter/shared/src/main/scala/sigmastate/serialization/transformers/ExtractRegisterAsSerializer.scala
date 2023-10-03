@@ -7,7 +7,8 @@ import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.SigmaByteWriter.DataInfo
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.ExtractRegisterAs
-import sigmastate.{SBox, SOption, ArgInfo, SType}
+import sigma.ast.{SBox, SOption, SType}
+import sigmastate.ArgInfo
 
 case class ExtractRegisterAsSerializer(cons: (Value[SBox.type], RegisterId, SOption[SType]) => Value[SType])
   extends ValueSerializer[ExtractRegisterAs[SType]] {

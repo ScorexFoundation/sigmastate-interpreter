@@ -3,10 +3,11 @@ package sigmastate.serialization
 import sigmastate.Values.{BigIntConstant, ByteArrayConstant, GroupElementConstant, LongConstant}
 import sigmastate._
 import sigmastate.Values._
-import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.utxo.Append
 import OpCodes._
 import scorex.util.encode.ZigZagEncoder.encodeZigZagLong
+import sigma.ast.SLong
+import sigmastate.serialization.ValueCodes.OpCode
 
 class TwoArgumentSerializerSpecification extends TableSerializationSpecification {
 

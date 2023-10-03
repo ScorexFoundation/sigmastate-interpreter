@@ -1,7 +1,6 @@
 package sigmastate
 
 import java.math.BigInteger
-
 import org.ergoplatform.ErgoBox
 import sigma.data.RType
 import scorex.crypto.hash.Digest32
@@ -9,6 +8,7 @@ import sigmastate.Values.SigmaBoolean
 import sigmastate.crypto.CryptoConstants.EcPointType
 import sigma.{Coll, CollBuilder}
 import sigma._
+import sigmastate.exceptions.CostLimitException
 import supertagged.TaggedType
 
 import scala.language.implicitConversions
@@ -21,12 +21,6 @@ package object eval {
     * @see SigmaDslBuilder
     */
   val SigmaDsl = CostingSigmaDslBuilder
-
-  /** Constructor of tuple value with more than 2 items.
-    * Such long tuples are represented as Coll[Any].
-    * This representaion of tuples is different from representation of pairs (x, y),
-    * where Tuple2 type is used instead of Coll. */
-  def TupleColl(items: Any*): Coll[Any] = Colls.fromItems(items:_*)(sigma.AnyType)
 
   trait BaseDigestColl extends TaggedType[Coll[Byte]]
 
@@ -53,4 +47,35 @@ package object eval {
 
   implicit def ergoBoxToBox(p: ErgoBox): Box = SigmaDsl.Box(p)
   implicit def boxToErgoBox(p: Box): ErgoBox = SigmaDsl.toErgoBox(p)
+
+  def msgCostLimitError(
+      cost: Long,
+      limit: Long) = s"Estimated execution cost $cost exceeds the limit $limit"
+
+  /** Helper method to accumulate cost while checking limit.
+    *
+    * @param current current cost value
+    * @param delta additional cost to add to the current value
+    * @param limit total cost limit
+    * @param msgSuffix use case-specific error message suffix
+    * @return new increased cost when it doesn't exceed the limit
+    * @throws CostLimitException
+    */
+  def addCostChecked(
+      current: Long,
+      delta: Long,
+      limit: Long,
+      msgSuffix: => String = ""): Long = {
+    val newCost = java7.compat.Math.addExact(current, delta)
+    if (newCost > limit) {
+      throw new CostLimitException(
+        estimatedCost = newCost,
+        message = {
+          val suffix = if (msgSuffix.isEmpty) "" else s": $msgSuffix"
+          msgCostLimitError(newCost, limit) + suffix
+        },
+        cause = None)
+    }
+    newCost
+  }
 }

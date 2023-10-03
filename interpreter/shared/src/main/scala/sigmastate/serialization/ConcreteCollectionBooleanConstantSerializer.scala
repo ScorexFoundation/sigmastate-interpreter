@@ -1,11 +1,12 @@
 package sigmastate.serialization
 
-import sigmastate.{SCollection, SBoolean, ArgInfo}
 import sigmastate.Values._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import SigmaByteWriter._
 import sigma.util.safeNewArray
 import debox.cfor
+import sigma.ast.{SBoolean, SCollection}
+import sigmastate.ArgInfo
 
 case class ConcreteCollectionBooleanConstantSerializer(cons: (IndexedSeq[Value[SBoolean.type]], SBoolean.type) => Value[SCollection[SBoolean.type]])
   extends ValueSerializer[ConcreteCollection[SBoolean.type]] {

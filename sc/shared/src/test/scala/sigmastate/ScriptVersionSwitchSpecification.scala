@@ -7,6 +7,8 @@ import sigma.VersionContext.MaxSupportedScriptVersion
 import sigma.{Box, SigmaDslTesting}
 import sigmastate.Values.ErgoTree.{HeaderType, ZeroHeader, setConstantSegregation, setVersionBits}
 import sigmastate.Values._
+import sigma.VersionContext.MaxSupportedScriptVersion
+import sigma.ast.{SBoolean, SBox, SCollection, SType}
 import sigmastate.eval._
 import sigmastate.exceptions.InterpreterException
 import sigmastate.helpers.TestingHelpers.createBox
