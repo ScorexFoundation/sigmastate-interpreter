@@ -6,7 +6,6 @@ import sigma.ast.{SBox, SInt, SLong, SSigmaProp}
 import sigmastate.crypto.DLogProtocol.ProveDlog
 import sigmastate.crypto.CryptoConstants
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.SCollection.SByteArray
 import sigmastate.Values.ErgoTree.{HeaderType, ZeroHeader}
 import sigmastate.Values.{ErgoTree, FalseSigmaProp, IntArrayConstant, IntConstant, LongConstant, SigmaPropConstant, SigmaPropValue, TrueSigmaProp, Value}
 import sigmastate.utxo._

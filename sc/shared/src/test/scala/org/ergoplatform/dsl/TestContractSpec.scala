@@ -17,7 +17,7 @@ import sigmastate.AvlTreeData
 import sigmastate.Values.{ErgoTree, EvaluatedValue}
 import sigmastate.eval.{CSigmaProp, IRContext, CAnyValue}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, CompilerTestingCommons}
-import sigmastate.eval.{CAnyValue, CSigmaProp, Evaluation, IRContext}
+import sigmastate.eval.{CAnyValue, CSigmaProp, IRContext}
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.lang.Terms.ValueOps

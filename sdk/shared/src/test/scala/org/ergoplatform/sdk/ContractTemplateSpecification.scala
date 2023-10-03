@@ -10,6 +10,7 @@ import sigmastate.serialization.{SerializationSpecification, SigmaSerializer}
 import sigma.ContractsTestkit
 import sigma.ast.{SByte, SInt, SType}
 import sigma.data.CBigInt
+import sigmastate.Values.ErgoTree.setConstantSegregation
 
 import java.math.BigInteger
 

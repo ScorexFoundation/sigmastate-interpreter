@@ -2,7 +2,6 @@ package sigmastate.serialization
 
 import org.ergoplatform.validation.ValidationRules.{CheckDeserializedScriptIsSigmaProp, CheckHeaderSizeBit, CheckPositionLimit}
 import org.ergoplatform.validation.{SigmaValidationSettings, ValidationException}
-import sigmastate.{SType}
 import sigmastate.Values.{Constant, ErgoTree, UnparsedErgoTree}
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.lang.Terms.ValueOps
@@ -14,10 +13,6 @@ import debox.cfor
 import sigma.VersionContext
 import sigma.ast.SType
 import sigmastate.exceptions.{ReaderPositionLimitExceeded, SerializerException}
-
-import java.util
-import sigmastate.exceptions.{ReaderPositionLimitExceeded, SerializerException}
-
 
 /**
   * Rationale for soft-forkable ErgoTree serialization.

@@ -19,7 +19,6 @@ import sigma.util.Extensions._
 import sigmastate.utils.Extensions._
 import sigma.ast.SCollection._
 import sigmastate.Values.IntConstant
-import sigmastate.SCollection._
 import sigmastate.Values.ErgoTree.{HeaderType, ZeroHeader}
 import sigmastate.Values.{IntConstant, _}
 import sigmastate._
@@ -32,10 +31,11 @@ import sigmastate.lang.Terms.{MethodCall, PropertyCall}
 import sigmastate.utxo._
 import sigma._
 import sigma.Extensions._
+import sigma.ast.{SAvlTree, SBigInt, SBoolean, SBox, SByte, SCollection, SCollectionType, SContext, SGroupElement, SHeader, SInt, SLong, SOption, SPair, SShort, SSigmaProp, STuple, SType, STypeVar}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter._
 import sigmastate.lang.Terms.{Apply, MethodCall, PropertyCall}
-import sigmastate.serialization.OpCodes.OpCode
+import sigmastate.serialization.ValueCodes.OpCode
 import sigmastate.utils.Extensions._
 import sigmastate.utils.Helpers
 import sigmastate.utils.Helpers._

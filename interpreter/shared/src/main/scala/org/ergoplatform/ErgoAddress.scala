@@ -10,8 +10,9 @@ import sigmastate.crypto.DLogProtocol.{ProveDlog, ProveDlogProp}
 import sigmastate.exceptions.SigmaException
 import sigmastate.serialization._
 import sigmastate.utxo.{DeserializeContext, Slice}
-import sigma.Coll
+import sigma.{Coll, VersionContext}
 import sigma.ast.{SInt, SSigmaProp}
+import sigmastate.Values.ErgoTree.{ZeroHeader, setVersionBits}
 
 import scala.util.Try
 
