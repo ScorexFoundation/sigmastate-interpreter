@@ -15,10 +15,8 @@ import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition, Token}
 import sigma.ast.SType
 import sigmastate.Values.{ErgoTree, EvaluatedValue}
 import sigmastate.eval.{CAnyValue, IRContext}
-import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
-import sigmastate.eval.{CSigmaProp, IRContext, CAnyValue}
+import sigmastate.eval.{IRContext, CAnyValue}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, CompilerTestingCommons}
-import sigmastate.eval.{CAnyValue, CSigmaProp, IRContext}
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.lang.Terms.ValueOps

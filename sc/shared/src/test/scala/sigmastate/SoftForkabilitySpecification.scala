@@ -3,13 +3,15 @@ package sigmastate
 import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules._
 import org.scalatest.BeforeAndAfterAll
+import sigma.{Colls, SigmaTestingData}
+import sigma.ast.{SBoolean, SCollection, SContext, SFunc, SGlobal, SInt}
 import sigma.ast.SPrimType.MaxPrimTypeCode
 import sigma.ast.TypeCodes.LastConstantCode
 import sigma.data.AvlTreeData
 import sigma.serialization.SerializerException
 import sigma.validation.ValidationRules.{CheckPrimitiveTypeCode, CheckSerializableTypeCode, CheckTypeCode, CheckTypeWithMethods, trySoftForkable}
 import sigma.validation.{ChangedRule, ReplacedRule, SigmaValidationSettings, ValidationException, ValidationRule}
-import sigmastate.Values.ErgoTree.EmptyConstants
+import sigmastate.Values.ErgoTree.{EmptyConstants, HeaderType, ZeroHeader, setSizeBit}
 import sigmastate.Values.{ByteArrayConstant, ErgoTree, IntConstant, NotReadyValueInt, UnparsedErgoTree, ValueCompanion}
 import sigmastate.exceptions.InterpreterException
 import sigmastate.helpers.TestingHelpers._
@@ -20,8 +22,7 @@ import sigmastate.interpreter.{ContextExtension, ErgoTreeEvaluator, ProverResult
 import sigmastate.lang.Terms._
 import sigmastate.serialization.SigmaSerializer.startReader
 import sigmastate.serialization.{DataSerializer, _}
-import sigmastate.serialization.ValueCodes.{LastConstantCode, OpCode}
-import sigmastate.serialization._
+import sigmastate.serialization.ValueCodes.OpCode
 import sigmastate.utils.Helpers._
 import sigmastate.utxo.DeserializeContext
 

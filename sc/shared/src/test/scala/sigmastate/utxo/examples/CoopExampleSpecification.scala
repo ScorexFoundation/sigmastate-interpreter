@@ -11,6 +11,7 @@ import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingIn
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.lang.Terms._
 import sigmastate.CompilerCrossVersionProps
+import sigmastate.Values.ErgoTree.ZeroHeader
 
 class CoopExampleSpecification extends CompilerTestingCommons
   with CompilerCrossVersionProps {

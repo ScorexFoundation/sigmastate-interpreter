@@ -14,7 +14,7 @@ import sigma.util.CollectionUtil._
 import sigma.util.Extensions._
 import sigma.validation.ValidationException
 import sigma.{AvlTree, Coll, Colls, Header, PreHeader, _}
-import sigmastate.Values.ErgoTree.substConstants
+import sigmastate.Values.ErgoTree.{HeaderType, substConstants}
 import sigmastate.crypto.CryptoConstants
 import sigmastate.eval.Extensions.SigmaBooleanOps
 import sigmastate.eval._
@@ -29,6 +29,7 @@ import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.ValueCodes.OpCode
 import sigmastate.serialization._
 import sigmastate.utxo._
+import supertagged.TaggedType
 
 import java.math.BigInteger
 import java.util.{Arrays, Objects}

@@ -3,7 +3,7 @@ package org.ergoplatform.sdk.js
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, BoxId, TokenId}
 import org.ergoplatform._
 import org.ergoplatform.sdk.wallet.protocol.context.{BlockchainStateContext, CBlockchainStateContext}
-import org.ergoplatform.sdk.{ExtendedInputBox, Iso}
+import org.ergoplatform.sdk.ExtendedInputBox
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
