@@ -12,6 +12,8 @@ import sigma.serialization.SerializerException
 import sigma.util.safeNewArray
 import sigmastate.ErgoTree.headerWithVersion
 import sigmastate.Values._
+import sigmastate.Values.ErgoTree.{ZeroHeader, headerWithVersion, setConstantSegregation}
+import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.{DeserializationSigmaBuilder, StdSigmaBuilder}
 import sigmastate.serialization.{DataSerializer, _}
@@ -174,9 +176,9 @@ case class ContractTemplate(
       }
     }
 
-    val usedErgoTreeVersion = headerWithVersion(if (version.isDefined) version.get else treeVersion.get)
+    val usedErgoTreeHeader = headerWithVersion(ZeroHeader, if (version.isDefined) version.get else treeVersion.get)
     ErgoTree(
-      (ErgoTree.ConstantSegregationHeader | usedErgoTreeVersion).toByte,
+      setConstantSegregation(usedErgoTreeHeader),
       constants,
       this.expressionTree
     )

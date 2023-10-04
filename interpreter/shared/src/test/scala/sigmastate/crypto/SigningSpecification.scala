@@ -5,8 +5,10 @@ import scorex.util.encode.Base16
 import sigma.data.{CAND, COR, ProveDHTuple, SigmaBoolean}
 import sigma.serialization.ProveDHTupleSerializer
 import sigmastate.AtLeast
+import sigmastate.Values.ErgoTree
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.helpers.{ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter, TestingCommons}
+import sigmastate.interpreter.{ContextExtension, HintsBag, ProverResult}
 import sigmastate.interpreter.{ContextExtension, HintsBag, ProverResult}
 
 class SigningSpecification extends TestingCommons {
@@ -23,7 +25,9 @@ class SigningSpecification extends TestingCommons {
     // check that signature is correct
     val verifier = new ErgoLikeTestInterpreter
     val proverResult = ProverResult(signature, ContextExtension.empty)
-    verifier.verify(sk.publicImage, fakeContext, proverResult, msg).get._1 shouldBe true
+    verifier.verify(
+      ErgoTree.fromSigmaBoolean(sk.publicImage),
+      fakeContext, proverResult, msg).get._1 shouldBe true
 
     // print one more random vector for debug purposes
     printSimpleSignature(msg: Array[Byte])
@@ -37,7 +41,7 @@ class SigningSpecification extends TestingCommons {
     // check that signature is correct
     val verifier = new ErgoLikeTestInterpreter
     val proverResult = ProverResult(signature, ContextExtension.empty)
-    verifier.verify(pdht, fakeContext, proverResult, msg).get._1 shouldBe true
+    verifier.verify(ErgoTree.fromSigmaBoolean(pdht), fakeContext, proverResult, msg).get._1 shouldBe true
   }
 
   property("handle improper signature") {
@@ -58,7 +62,7 @@ class SigningSpecification extends TestingCommons {
     val verifier = new ErgoLikeTestInterpreter
     val proverResult = ProverResult(signature, ContextExtension.empty)
     val sigmaTree: SigmaBoolean = CAND(Seq(sk1.publicImage, sk2.publicImage))
-    verifier.verify(sigmaTree, fakeContext, proverResult, msg).get._1 shouldBe true
+    verifier.verify(ErgoTree.fromSigmaBoolean(sigmaTree), fakeContext, proverResult, msg).get._1 shouldBe true
   }
   
   property("OR signature test vector") {
@@ -70,7 +74,9 @@ class SigningSpecification extends TestingCommons {
     val verifier = new ErgoLikeTestInterpreter
     val proverResult = ProverResult(signature, ContextExtension.empty)
     val sigmaTree: SigmaBoolean = COR(Seq(sk1.publicImage, sk2.publicImage))
-    verifier.verify(sigmaTree, fakeContext, proverResult, msg).get._1 shouldBe true
+    verifier.verify(
+      ErgoTree.fromSigmaBoolean(sigmaTree),
+      fakeContext, proverResult, msg).get._1 shouldBe true
   }
 
   property("OR with ProveDHT signature test vector") {
@@ -83,7 +89,9 @@ class SigningSpecification extends TestingCommons {
     val verifier = new ErgoLikeTestInterpreter
     val proverResult = ProverResult(signature, ContextExtension.empty)
     val sigmaTree: SigmaBoolean = COR(Seq(sk1.publicImage, pdht))
-    verifier.verify(sigmaTree, fakeContext, proverResult, msg).get._1 shouldBe true
+    verifier.verify(
+      ErgoTree.fromSigmaBoolean(sigmaTree),
+      fakeContext, proverResult, msg).get._1 shouldBe true
   }
 
   property("AND with OR signature test vector") {
@@ -96,7 +104,9 @@ class SigningSpecification extends TestingCommons {
     val verifier = new ErgoLikeTestInterpreter
     val proverResult = ProverResult(signature, ContextExtension.empty)
     val sigmaTree: SigmaBoolean = CAND(Seq(sk1.publicImage, COR(Seq(sk2.publicImage, sk3.publicImage))))
-    verifier.verify(sigmaTree, fakeContext, proverResult, msg).get._1 shouldBe true
+    verifier.verify(
+      ErgoTree.fromSigmaBoolean(sigmaTree),
+      fakeContext, proverResult, msg).get._1 shouldBe true
   }
 
   property("OR with AND signature test vector") {
@@ -109,7 +119,9 @@ class SigningSpecification extends TestingCommons {
     val verifier = new ErgoLikeTestInterpreter
     val proverResult = ProverResult(signature, ContextExtension.empty)
     val sigmaTree: SigmaBoolean = COR(Seq(sk1.publicImage, CAND(Seq(sk2.publicImage, sk3.publicImage))))
-    verifier.verify(sigmaTree, fakeContext, proverResult, msg).get._1 shouldBe true
+    verifier.verify(
+      ErgoTree.fromSigmaBoolean(sigmaTree),
+      fakeContext, proverResult, msg).get._1 shouldBe true
   }
 
   property("threshold signature test vector") {

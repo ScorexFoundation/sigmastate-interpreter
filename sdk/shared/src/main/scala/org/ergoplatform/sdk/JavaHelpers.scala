@@ -210,6 +210,7 @@ object JavaHelpers {
   implicit val JIntRType: RType[JInt] = sigma.IntType.asInstanceOf[RType[JInt]]
   implicit val JLongRType: RType[JLong] = sigma.LongType.asInstanceOf[RType[JLong]]
   implicit val JBooleanRType: RType[JBoolean] = sigma.BooleanType.asInstanceOf[RType[JBoolean]]
+  implicit val JUnitRType: RType[Unit] = sigma.UnitType
 
   val HeaderRType: RType[Header] = sigma.HeaderRType
   val PreHeaderRType: RType[sigma.PreHeader] = sigma.PreHeaderRType

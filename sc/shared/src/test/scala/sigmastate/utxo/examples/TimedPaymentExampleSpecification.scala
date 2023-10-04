@@ -1,8 +1,8 @@
 package sigmastate.utxo.examples
 
 import org.ergoplatform._
+import sigmastate.Values.{ErgoTree, IntConstant}
 import sigma.data.AvlTreeData
-import sigmastate.Values.IntConstant
 import sigmastate._
 import sigmastate.exceptions.InterpreterException
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
@@ -54,7 +54,7 @@ class TimedPaymentExampleSpecification extends CompilerTestingCommons
     val withdrawHeight = 100
     val confDeadline = 110
 
-    val timedWithdrawOutput = testBox(withdrawAmount, bobPubKey, withdrawHeight)
+    val timedWithdrawOutput = testBox(withdrawAmount, ErgoTree.fromSigmaBoolean(bobPubKey), withdrawHeight)
 
     //normally this transaction would be invalid, but we're not checking it in this test
     val withdrawTx = createTransaction(IndexedSeq(timedWithdrawOutput))

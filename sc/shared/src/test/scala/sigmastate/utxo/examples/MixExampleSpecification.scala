@@ -6,14 +6,13 @@ import scorex.crypto.hash.Blake2b256
 import sigma.data.{AvlTreeData, ProveDHTuple, ProveDlog}
 import sigma.util.Extensions.EcpOps
 import sigmastate.CompilerCrossVersionProps
-import sigmastate.Values.GroupElementConstant
+import sigmastate.Values.{ErgoTree, GroupElementConstant}
 import sigmastate.crypto.{CryptoConstants, DiffieHellmanTupleProverInput}
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 import sigmastate.eval._
-import sigmastate.eval.Extensions._
 
 class MixExampleSpecification extends CompilerTestingCommons
   with CompilerCrossVersionProps {
@@ -185,7 +184,7 @@ class MixExampleSpecification extends CompilerTestingCommons
     val carolPubKey: ProveDlog = carol.dlogSecrets.head.publicImage
 
     val spendHeight = 90
-    val carolOutput = testBox(mixAmount, carolPubKey, spendHeight)
+    val carolOutput = testBox(mixAmount, ErgoTree.fromSigmaBoolean(carolPubKey), spendHeight)
 
     // normally this transaction would be invalid, but we're not checking it in this test
     val spendingTx = createTransaction(carolOutput)

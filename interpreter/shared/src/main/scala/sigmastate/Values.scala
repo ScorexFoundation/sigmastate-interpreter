@@ -11,6 +11,7 @@ import sigma.kiama.rewriting.Rewriter.count
 import sigma.util.CollectionUtil._
 import sigma.util.Extensions._
 import sigma.{AvlTree, Coll, Colls, Header, PreHeader, _}
+import sigmastate.Values.ErgoTree.{HeaderType, substConstants}
 import sigmastate.crypto.CryptoConstants
 import sigmastate.eval._
 import sigmastate.exceptions.InterpreterException
@@ -23,6 +24,7 @@ import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.ValueCodes.OpCode
 import sigmastate.serialization._
 import sigmastate.utxo._
+import supertagged.TaggedType
 
 import java.math.BigInteger
 import java.util.{Arrays, Objects}
@@ -859,9 +861,8 @@ object Values {
   implicit class SigmaPropValueOps(val p: Value[SSigmaProp.type]) extends AnyVal {
     def isProven: Value[SBoolean.type] = SigmaPropIsProven(p)
     def propBytes: Value[SByteArray] = SigmaPropBytes(p)
-    def treeWithSegregation: ErgoTree = ErgoTree.withSegregation(p)
-    def treeWithSegregation(headerFlags: Byte): ErgoTree =
-      ErgoTree.withSegregation(headerFlags, p)
+    def treeWithSegregation(header: HeaderType): ErgoTree =
+      ErgoTree.withSegregation(header, p)
   }
 
   sealed trait BlockItem extends NotReadyValue[SType] {

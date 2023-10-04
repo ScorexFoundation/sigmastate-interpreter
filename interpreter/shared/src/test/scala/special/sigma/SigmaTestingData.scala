@@ -20,6 +20,7 @@ import sigmastate.utils.Helpers
 import sigmastate.{ErgoTree, _}
 import sigma.ast.{SBoolean, SSigmaProp}
 import sigma.crypto.EcPointType
+import sigmastate.Values.ErgoTree.HeaderType
 
 import java.math.BigInteger
 import scala.reflect.ClassTag
@@ -209,7 +210,7 @@ trait SigmaTestingData extends TestingCommons with ObjectGenerators {
       new ErgoBox(
         9223372036854775807L,
         new ErgoTree(
-          16.toByte,
+          HeaderType @@ 16.toByte,
           Array(
             SigmaPropConstant(
               CSigmaProp(
@@ -247,7 +248,7 @@ trait SigmaTestingData extends TestingCommons with ObjectGenerators {
       new ErgoBox(
         12345L,
         new ErgoTree(
-          0.toByte,
+          HeaderType @@ 0.toByte,
           Vector(),
           Right(
             BoolToSigmaProp(

@@ -534,13 +534,22 @@ object ExtractCreationInfo extends SimpleTransformerCompanion {
 
 trait Deserialize[V <: SType] extends NotReadyValue[V]
 
-/** Extracts context variable as Coll[Byte], deserializes it to script and then executes this script in the current context.
-  * The original `Coll[Byte]` of the script is available as `getVar[Coll[Byte]](id)`
+/** This ErgoTree operation work as macros (i.e. executed before ErgoTree reduction) and
+  * allows to inline arbitrary expression at the point where it is used in ErgoTree.
+  *
+  * This operation is executed before ErgoTree reduction as the following:
+  * 1) the context variable `id` is checked to have type Coll[Byte], if not, then this
+  *    node remains in the ErgoTree which means the reduction will fail later.
+  * 2) the bytes collection is deserialized to `expr: Value[V]` using ValueSerializer.deserialize
+  * 3) `this` node is replaced with the deserialized `expr`
+  *
+  * This step are performed for each [[DeserializeContext]] node via single traverse of
+  * ErgoTree. The resulting ErgoTree is passed to reduction.
+  *
+  * NOTE, the original `Coll[Byte]` from context variables is available as `getVar[Coll[Byte]](id)`
+  *
   * @param id identifier of the context variable
-  * @tparam V result type of the deserialized script.
-  * @throws InterpreterException if the actual script type doesn't conform to T
-  * @return result of the script execution in the current context
-  * @since 2.0
+  * @param tpe expected type of the deserialized script (i.e. expected type of `expr`).
   */
 case class DeserializeContext[V <: SType](id: Byte, tpe: V) extends Deserialize[V] {
   override def companion = DeserializeContext

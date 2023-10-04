@@ -3,6 +3,7 @@ package sigmastate
 import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules._
 import org.scalatest.BeforeAndAfterAll
+import sigma.{Colls, SigmaTestingData}
 import sigma.ast.{SBoolean, SCollection, SContext, SFunc, SGlobal, SInt}
 import sigma.ast.SPrimType.MaxPrimTypeCode
 import sigma.ast.TypeCodes.LastConstantCode
@@ -12,6 +13,8 @@ import sigma.validation.ValidationRules.{CheckPrimitiveTypeCode, CheckSerializab
 import sigma.validation.{ChangedRule, ReplacedRule, SigmaValidationSettings, ValidationException, ValidationRule}
 import sigmastate.ErgoTree.EmptyConstants
 import sigmastate.Values.{ByteArrayConstant, IntConstant, NotReadyValueInt, ValueCompanion}
+import sigmastate.Values.ErgoTree.{EmptyConstants, HeaderType, ZeroHeader, setSizeBit}
+import sigmastate.Values.{ByteArrayConstant, ErgoTree, IntConstant, NotReadyValueInt, UnparsedErgoTree, ValueCompanion}
 import sigmastate.exceptions.InterpreterException
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
@@ -21,10 +24,9 @@ import sigmastate.interpreter.{ContextExtension, ErgoTreeEvaluator, ProverResult
 import sigmastate.lang.Terms._
 import sigmastate.serialization.SigmaSerializer.startReader
 import sigmastate.serialization.{DataSerializer, _}
+import sigmastate.serialization.ValueCodes.OpCode
 import sigmastate.utils.Helpers._
 import sigmastate.utxo.DeserializeContext
-import sigma.{Colls, SigmaTestingData}
-import sigmastate.serialization.ValueCodes.OpCode
 
 class SoftForkabilitySpecification extends SigmaTestingData
     with CompilerTestingCommons
@@ -44,7 +46,7 @@ class SoftForkabilitySpecification extends SigmaTestingData
   // cast Boolean typed prop to SigmaProp (which is invalid) // ErgoTree v0
   lazy val invalidPropV1: ErgoTree =
     ErgoTree.fromProposition(
-      ErgoTree.headerWithVersion(0),
+      ErgoTree.headerWithVersion(ZeroHeader, 0),
       booleanPropV1.asSigmaProp)
 
   lazy val invalidTxV1 = createTransaction(createBox(boxAmt, invalidPropV1, 1))
@@ -53,7 +55,7 @@ class SoftForkabilitySpecification extends SigmaTestingData
   lazy val propV1 = booleanPropV1.toSigmaProp
   lazy val txV1 = createTransaction(
     createBox(boxAmt,
-      ErgoTree.fromProposition(ErgoTree.headerWithVersion(0), propV1), // ErgoTree v0
+      ErgoTree.fromProposition(ErgoTree.headerWithVersion(ZeroHeader, 0), propV1), // ErgoTree v0
       1))
   lazy val txV1bytes = txV1.messageToSign
 
@@ -136,7 +138,7 @@ class SoftForkabilitySpecification extends SigmaTestingData
   lazy val booleanPropV2 = GT(Height2, IntConstant(deadline))
 
   lazy val invalidPropV2: ErgoTree = ErgoTree.fromProposition(
-    headerFlags = ErgoTree.headerWithVersion(0),  // ErgoTree v0
+    header = ErgoTree.headerWithVersion(ZeroHeader, 0),  // ErgoTree v0
     prop = booleanPropV2.asSigmaProp)
 
   lazy val invalidTxV2 = createTransaction(createBox(boxAmt, invalidPropV2, 1))
@@ -144,7 +146,7 @@ class SoftForkabilitySpecification extends SigmaTestingData
 
   lazy val propV2 = booleanPropV2.toSigmaProp
   // prepare bytes using special serialization WITH `size flag` in the header
-  lazy val propV2tree = ErgoTree.withSegregation(ErgoTree.SizeFlag,  propV2)
+  lazy val propV2tree = ErgoTree.withSegregation(setSizeBit(ZeroHeader),  propV2)
   lazy val propV2treeBytes = runOnV2Node {
     propV2tree.bytes
   }
@@ -159,7 +161,7 @@ class SoftForkabilitySpecification extends SigmaTestingData
   property("node v1, soft-fork up to v2, script v2 without size bit") {
     // try prepare v2 script without `size bit` in the header
     assertExceptionThrown({
-      ErgoTree(1.toByte, EmptyConstants, propV2)
+      new ErgoTree(HeaderType @@ 1.toByte, EmptyConstants, Right(propV2))
     }, {
       case _: IllegalArgumentException  => true
       case _ => false
@@ -168,7 +170,7 @@ class SoftForkabilitySpecification extends SigmaTestingData
     // prepare bytes using default serialization and then replacing version in the header
     val v2tree_withoutSize_bytes = runOnV2Node {
       val tree = ErgoTree.fromProposition(
-        ErgoTree.headerWithVersion(0), propV2)  // ErgoTree v0
+        ErgoTree.headerWithVersion(ZeroHeader, 0), propV2)  // ErgoTree v0
       val bytes = tree.bytes
       // set version to v2 while not setting the size bit,
       // we cannot do this using ErgoTree constructor (due to require() check)
@@ -273,7 +275,7 @@ class SoftForkabilitySpecification extends SigmaTestingData
     // v1 main script which deserializes v2 script from context
     val mainProp = BinAnd(GT(Height, IntConstant(deadline)), DeserializeContext(1, SBoolean)).toSigmaProp
     val mainTree = ErgoTree.fromProposition(
-      headerFlags = ErgoTree.headerWithVersion(0), // ErgoTree v0
+      header = ErgoTree.headerWithVersion(ZeroHeader, 0), // ErgoTree v0
       prop = mainProp)
 
     val tx = createTransaction(createBox(boxAmt, mainTree, 1))

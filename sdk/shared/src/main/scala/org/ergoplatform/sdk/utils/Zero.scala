@@ -10,6 +10,7 @@ import sigmastate.ErgoTree
 import sigmastate.crypto.CryptoConstants
 import sigmastate.eval._
 import sigma._
+import sigmastate.Values.ErgoTree.HeaderType
 
 import java.math.BigInteger
 import scala.language.implicitConversions
@@ -61,7 +62,7 @@ object Zero extends ZeroLowPriority {
     new ErgoBox(
       LongIsZero.zero,
       new ErgoTree(
-        ByteIsZero.zero,
+        HeaderType @@ ByteIsZero.zero,
         IndexedSeq.empty,
         Right(sigmaPropIsZero.zero)
       ),

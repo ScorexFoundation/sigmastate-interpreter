@@ -11,6 +11,8 @@ import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingIn
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.lang.Terms._
 import sigmastate.{CompilerCrossVersionProps, ErgoTree}
+import sigmastate.CompilerCrossVersionProps
+import sigmastate.Values.ErgoTree.ZeroHeader
 
 class CoopExampleSpecification extends CompilerTestingCommons
   with CompilerCrossVersionProps {
@@ -66,7 +68,7 @@ class CoopExampleSpecification extends CompilerTestingCommons
 
     def pkWithTree(in: DLogProverInput): (ProveDlog, ErgoTree) = {
       val pk = in.publicImage
-      val tree = ErgoTree.fromSigmaBoolean(ErgoTree.headerWithVersion(0), pk)
+      val tree = ErgoTree.fromSigmaBoolean(ErgoTree.headerWithVersion(ZeroHeader, 0), pk)
       (pk, tree)
     }
 

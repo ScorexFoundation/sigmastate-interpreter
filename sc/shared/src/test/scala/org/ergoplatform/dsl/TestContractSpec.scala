@@ -26,11 +26,11 @@ case class TestContractSpec(testSuite: CompilerTestingCommons)(implicit val IR: 
   case class TestPropositionSpec(name: String, dslSpec: Proposition, scriptSpec: ErgoScript) extends PropositionSpec {
     lazy val ergoTree: ErgoTree = {
       val value = testSuite.compile(scriptSpec.env, scriptSpec.code)
-      val headerFlags = scriptSpec.scriptVersion match {
-        case Some(version) => ErgoTree.headerWithVersion(version)
+      val header = scriptSpec.scriptVersion match {
+        case Some(version) => ErgoTree.headerWithVersion(ZeroHeader, version)
         case None => testSuite.ergoTreeHeaderInTests
       }
-      val tree: ErgoTree = ErgoTree.fromProposition(headerFlags, value.asSigmaProp)
+      val tree: ErgoTree = ErgoTree.fromProposition(header, value.asSigmaProp)
       tree
     }
   }

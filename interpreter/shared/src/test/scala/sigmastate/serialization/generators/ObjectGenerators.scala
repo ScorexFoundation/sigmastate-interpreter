@@ -29,6 +29,7 @@ import sigma.crypto.EcPointType
 import sigma.util.Extensions.EcpOps
 import sigma.validation.{ChangedRule, DisabledRule, EnabledRule, ReplacedRule, RuleStatus}
 import sigma.validation.ValidationRules.FirstRuleId
+import sigmastate.Values.ErgoTree.ZeroHeader
 
 import java.math.BigInteger
 import scala.collection.compat.immutable.ArraySeq
@@ -684,15 +685,15 @@ trait ObjectGenerators extends TypeGenerators
     sigmaBoolean <- Gen.delay(sigmaBooleanGen)
     propWithConstants <- Gen.delay(logicalExprTreeNodeGen(Seq(AND.apply, OR.apply, XorOf.apply)).map(_.toSigmaProp))
     prop <- Gen.oneOf(propWithConstants, sigmaBoolean.toSigmaPropValue)
-    treeBuilder <- Gen.oneOf(Seq[SigmaPropValue => ErgoTree](ErgoTree.withSegregation,
-      ErgoTree.withoutSegregation))
+    treeBuilder <- Gen.oneOf(Seq[SigmaPropValue => ErgoTree](ErgoTree.withSegregation(ZeroHeader, _),
+      ErgoTree.withoutSegregation(ZeroHeader, _)))
   } yield treeBuilder(prop)
 
   lazy val ergoTreeWithSegregationGen: Gen[ErgoTree] = for {
     sigmaBoolean <- Gen.delay(sigmaBooleanGen)
     propWithConstants <- Gen.delay(logicalExprTreeNodeGen(Seq(AND.apply, OR.apply, XorOf.apply)).map(_.toSigmaProp))
     prop <- Gen.oneOf(propWithConstants, sigmaBoolean.toSigmaPropValue)
-  } yield ErgoTree.withSegregation(prop)
+  } yield ErgoTree.withSegregation(ZeroHeader, prop)
 
   def headerGen(stateRoot: AvlTree, parentId: Coll[Byte]): Gen[Header] = for {
     id <- modifierIdBytesGen

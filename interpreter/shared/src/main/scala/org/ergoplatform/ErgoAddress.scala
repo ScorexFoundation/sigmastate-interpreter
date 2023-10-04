@@ -10,9 +10,11 @@ import sigmastate.crypto.DLogProtocol.ProveDlogProp
 import sigmastate.serialization._
 import sigmastate.utxo.{DeserializeContext, Slice}
 import sigma.{Coll, SigmaException}
+import sigma.{Coll, VersionContext}
 import sigma.ast.{SInt, SSigmaProp}
 import sigma.data.ProveDlog
 import sigma.serialization.GroupElementSerializer
+import sigmastate.Values.ErgoTree.{ZeroHeader, setVersionBits}
 
 import scala.util.Try
 
@@ -130,7 +132,9 @@ object P2PKAddress {
   }
 }
 
-/** Implementation of pay-to-script-hash [[ErgoAddress]]. */
+/** Implementation of pay-to-script-hash [[ErgoAddress]].
+  * @param scriptHash first 192 bits of the Blake2b256 hash of serialized script bytes
+  */
 class Pay2SHAddress(val scriptHash: Array[Byte])(implicit val encoder: ErgoAddressEncoder) extends ErgoAddress {
   override val addressTypePrefix: Byte = Pay2SHAddress.addressTypePrefix
 
@@ -143,12 +147,12 @@ class Pay2SHAddress(val scriptHash: Array[Byte])(implicit val encoder: ErgoAddre
   /** The proposition which checks that `contextVar(scriptId)` has original script
     * (whose hash equals to this [[scriptHash]]) which evaluates to true.
     *
-    * Assumes the context variable is accessed as `getVar[Coll[Byte]](1).get`
+    * Assumes the context variable is accessed as `getVar[Coll[Byte]](126).get`
     * and contains serialized original script bytes.
     *
-    * NOTE: This script is not stored in [[contentBytes]] of the address.
+    * NOTE: This `script` field is not stored in [[contentBytes]] of the address.
     * So the address doesn't depend on this script which means this specific script can be
-    * changed without breaking the addresses.
+    * changed without breaking the existing p2sh addresses.
     *
     * NOTE: The ErgoTree is created without segregation of the constants.
     *
@@ -160,10 +164,14 @@ class Pay2SHAddress(val scriptHash: Array[Byte])(implicit val encoder: ErgoAddre
   override val script = {
     val hashEquals = EQ(
       Slice(CalcBlake2b256(GetVarByteArray(scriptId).get), IntConstant(0), IntConstant(24)),
-      scriptHash
+      ByteArrayConstant(scriptHash)
     )
     val scriptIsCorrect = DeserializeContext(scriptId, SSigmaProp)
-    ErgoTree.withoutSegregation(SigmaAnd(hashEquals.toSigmaProp, scriptIsCorrect))
+    // Get script version either from the default context or from a context provided by an application
+    // This is never part of the consensus and can be controlled by applications
+    val treeVersion = VersionContext.current.ergoTreeVersion
+    val header = setVersionBits(ZeroHeader, treeVersion)
+    ErgoTree.withoutSegregation(header, SigmaAnd(hashEquals.toSigmaProp, scriptIsCorrect))
   }
 
   override def equals(obj: Any): Boolean = obj match {
@@ -178,9 +186,10 @@ class Pay2SHAddress(val scriptHash: Array[Byte])(implicit val encoder: ErgoAddre
 
 object Pay2SHAddress {
   /** An id of the context variable used in pay-to-script-hash address script.
+    * Note, value 127 is used for strage rent in Ergo node, see org.ergoplatform.wallet.interpreter.ErgoInterpreter
     * @see [[Pay2SHAddress.script]]
     */
-  val scriptId = 1: Byte
+  val scriptId = 126: Byte
 
   /** Value added to the prefix byte in the serialized bytes of an encoded P2SH address.
     * @see [[ErgoAddressEncoder.toString]]
@@ -302,7 +311,7 @@ case class ErgoAddressEncoder(networkPrefix: NetworkPrefix) {
           new P2PKAddress(ProveDlog(p), contentBytes)
         case Pay2SHAddress.addressTypePrefix =>
           if (contentBytes.length != 24) { //192-bits hash used
-            throw new Exception(s"Improper content in P2SH script: $addrBase58Str")
+            throw new Exception(s"Invalid length of the hash bytes in P2SH address: $addrBase58Str")
           }
           new Pay2SHAddress(contentBytes)
         case Pay2SAddress.addressTypePrefix =>
@@ -330,7 +339,8 @@ case class ErgoAddressEncoder(networkPrefix: NetworkPrefix) {
   }
 
   /** Converts the given [[ErgoTree]] to the corresponding [[ErgoAddress]].
-    * It is inverse of [[ErgoAddress.script]] such that `fromProposition(addr.script) == addr`
+    * It is inverse of [[ErgoAddress.script]] such that
+    * `ErgoAddressEncoder.fromProposition(addr.script) == addr`
     *
     * @return Failure(ex) if the `proposition` cannot be converted to any type of address.
     */

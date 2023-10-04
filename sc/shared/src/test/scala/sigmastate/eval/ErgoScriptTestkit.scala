@@ -5,6 +5,7 @@ import org.ergoplatform.validation.ValidationSpecification
 import org.ergoplatform.{Context => _, _}
 import scalan.BaseCtxTests
 import sigma.VersionContext
+import sigmastate.Values.{BigIntArrayConstant, ErgoTree, EvaluatedValue, SValue, SigmaPropConstant, Value}
 import sigma.ast.SType
 import sigma.data.AvlTreeData
 import sigmastate.Values.{BigIntArrayConstant, EvaluatedValue, SValue, SigmaPropConstant, Value}
@@ -69,8 +70,8 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
 
   lazy val boxToSpend = testBox(10, TrueTree, 0,
     additionalRegisters = Map(ErgoBox.R4 -> BigIntArrayConstant(bigIntegerArr1)))
-  lazy val tx1Output1 = testBox(minToRaise, projectPubKey, 0)
-  lazy val tx1Output2 = testBox(1, projectPubKey, 0)
+  lazy val tx1Output1 = testBox(minToRaise, ErgoTree.fromProposition(projectPubKey), 0)
+  lazy val tx1Output2 = testBox(1, ErgoTree.fromProposition(projectPubKey), 0)
   lazy val tx1 = new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(), IndexedSeq(tx1Output1, tx1Output2))
   lazy val ergoCtx = ErgoLikeContextTesting(
     currentHeight = timeout - 1,

@@ -26,7 +26,7 @@ class ErgoLikeTransactionSpec extends SigmaDslTesting {
     val token2 = "a3ff007f00057600808001ff8f8000019000ffdb806fff7cc0b6015eb37fa600"
     val b1 = new ErgoBoxCandidate(
       10L,
-      ErgoTree(ErgoTree.DefaultHeader, Vector(), TrueSigmaProp),
+      ErgoTree(ErgoTree.ZeroHeader, Vector(), TrueSigmaProp),
       100,
       Coll(
         (Digest32Coll @@@ (ErgoAlgos.decodeUnsafe(token1).toColl)) -> 10000000L,
@@ -35,7 +35,7 @@ class ErgoLikeTransactionSpec extends SigmaDslTesting {
     )
     val b1_clone = new ErgoBoxCandidate(
       10L,
-      ErgoTree(ErgoTree.DefaultHeader, Vector(), TrueSigmaProp),
+      ErgoTree(ErgoTree.ZeroHeader, Vector(), TrueSigmaProp),
       100,
       Coll(
         Digest32Coll @@ (ErgoAlgos.decodeUnsafe(token1).toColl) -> 10000000L,

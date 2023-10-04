@@ -115,7 +115,7 @@ class MASTExampleSpecification extends CompilerTestingCommons
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(selfBox),
-      createTransaction(testBox(1, recipientProposition, 0)),
+      createTransaction(testBox(1, ErgoTree.fromSigmaBoolean(recipientProposition), 0)),
       self = selfBox, activatedVersionInTests)
 
     avlProver.performOneOperation(Lookup(knownSecretTreeKey))

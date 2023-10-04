@@ -41,8 +41,8 @@ object VersionContext {
   val JitActivationVersion: Byte = 2
 
   private val _defaultContext = VersionContext(
-    activatedVersion = 1/* v4.x */,
-    ergoTreeVersion = 1
+    activatedVersion = 2/* v5.x */,
+    ergoTreeVersion = 2
   )
 
   /** Universally accessible version context which is used to version the code

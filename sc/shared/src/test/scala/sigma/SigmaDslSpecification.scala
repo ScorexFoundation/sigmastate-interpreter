@@ -17,6 +17,7 @@ import sigma.data.RType._
 import sigma.data._
 import sigma.util.Extensions.{BooleanOps, IntOps, LongOps}
 import sigma.{VersionContext, data, _}
+import sigmastate.Values.ErgoTree.{HeaderType, ZeroHeader}
 import sigmastate.Values.{IntConstant, _}
 import sigmastate._
 import sigmastate.eval.Extensions.{AvlTreeOps, ByteExt, IntExt, LongExt, ShortExt}
@@ -4597,7 +4598,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       new ErgoBox(
         80946L,
         new ErgoTree(
-          16.toByte,
+          HeaderType @@ 16.toByte,
           Vector(
             SigmaPropConstant(
               CSigmaProp(
@@ -4627,7 +4628,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       new ErgoBox(
         -1L,
         new ErgoTree(
-          0.toByte,
+          HeaderType @@ 0.toByte,
           Vector(),
           Right(SigmaPropConstant(CSigmaProp(ProveDlog(Helpers.decodeECPoint("02af645874c3b53465a5e9d820eb207d6001258c3b708f0d31d7c2e342833dce64")))))
         ),
@@ -4693,7 +4694,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           new ErgoBox(
             1000000L,
             new ErgoTree(
-              16.toByte,
+              HeaderType @@ 16.toByte,
               Vector(
                 SigmaPropConstant(
                   CSigmaProp(
@@ -4730,7 +4731,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           new ErgoBox(
             2769336982721999022L,
             new ErgoTree(
-              0.toByte,
+              HeaderType @@ 0.toByte,
               Vector(),
               Right(SigmaPropConstant(CSigmaProp(ProveDlog(Helpers.decodeECPoint("02d13e1a8c31f32194761adc1cdcbaa746b3e049e682bba9308d8ee84576172991")))))
             ),
@@ -6562,7 +6563,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     new ErgoBox(
       1L,
       new ErgoTree(
-        0.toByte,
+        HeaderType @@ 0.toByte,
         Vector(),
         Right(
           SigmaPropConstant(
@@ -6598,7 +6599,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     new ErgoBox(
       1000000000L,
       new ErgoTree(
-        0.toByte,
+        HeaderType @@ 0.toByte,
         Vector(),
         Right(BoolToSigmaProp(OR(ConcreteCollection(Array(FalseLeaf, AND(ConcreteCollection(Array(FalseLeaf, FalseLeaf), SBoolean))), SBoolean))))
       ),
@@ -9639,14 +9640,14 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("substConstants equivalence") {
     // tree without constant segregation
-    val t1 = ErgoTree(ErgoTree.DefaultHeader, Vector(), TrueSigmaProp)
+    val t1 = ErgoTree(ErgoTree.ZeroHeader, Vector(), TrueSigmaProp)
     // tree with constant segregation, but without constants
-    val t2 = ErgoTree(ErgoTree.ConstantSegregationHeader, Vector(), TrueSigmaProp)
+    val t2 = ErgoTree(ErgoTree.setConstantSegregation(ZeroHeader), Vector(), TrueSigmaProp)
     // tree with one segregated constant
-    val t3 = ErgoTree(ErgoTree.ConstantSegregationHeader, Vector(TrueSigmaProp), ConstantPlaceholder(0, SSigmaProp))
+    val t3 = ErgoTree(ErgoTree.setConstantSegregation(ZeroHeader), Vector(TrueSigmaProp), ConstantPlaceholder(0, SSigmaProp))
     // tree with one segregated constant of different type
     val t4 = ErgoTree(
-      ErgoTree.ConstantSegregationHeader,
+      ErgoTree.setConstantSegregation(ZeroHeader),
       Vector(IntConstant(10)),
       BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), IntConstant(20))))
     def costDetails(i: Int) = TracedCost(

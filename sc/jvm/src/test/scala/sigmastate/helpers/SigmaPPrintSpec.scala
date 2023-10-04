@@ -7,6 +7,8 @@ import sigma.Extensions.ArrayOps
 import sigma.SigmaDslTesting
 import sigma.ast._
 import sigma.data.{AvlTreeData, AvlTreeFlags, CollType, Digest32Coll}
+import sigma.data.{AvlTreeData, AvlTreeFlags, CollType}
+import sigmastate.Values.ErgoTree.HeaderType
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval._
@@ -89,7 +91,7 @@ class SigmaPPrintSpec extends SigmaDslTesting {
         |)""".stripMargin)
     test(
       new ErgoTree(
-        16.toByte,
+        HeaderType @@ 16.toByte,
         Vector(IntArrayConstant(Array(10, 20))),
         Right(BoolToSigmaProp(TrueLeaf))
       ),
@@ -102,7 +104,7 @@ class SigmaPPrintSpec extends SigmaDslTesting {
       CBox(
         new ErgoBox(
             9223372036854775807L,
-          new ErgoTree(0.toByte, Vector(), Right(BoolToSigmaProp(FalseLeaf))),
+          new ErgoTree(HeaderType @@ 0.toByte, Vector(), Right(BoolToSigmaProp(FalseLeaf))),
           Coll(
             (Digest32Coll @@ (ErgoAlgos.decodeUnsafe("6e789ab7b2fffff12280a6cd01557f6fb22b7f80ff7aff8e1f7f15973d7f0001").toColl), 10000000L)
           ),
