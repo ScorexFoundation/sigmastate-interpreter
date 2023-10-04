@@ -1,6 +1,6 @@
 package sigmastate.utxo.examples
 
-import org.ergoplatform.ErgoBox.{R6, R4, R5}
+import org.ergoplatform.ErgoBox.{R4, R5, R6}
 import org.ergoplatform._
 import sigma.data.AvlTreeData
 import sigmastate.CompilerCrossVersionProps
@@ -127,7 +127,7 @@ class ColdWalletAdvContractExampleSpecification extends CompilerTestingCommons
         R6 -> LongConstant(avbl2Key) // new avbl2Key (= old avbl2Key)
       )
     )
-    val firstWithdrawOutput1Key = testBox(firstWithdrawAmount1Key, carolPubKey, firstWithdrawHeight)
+    val firstWithdrawOutput1Key = testBox(firstWithdrawAmount1Key, ErgoTree.fromSigmaBoolean(carolPubKey), firstWithdrawHeight)
 
     //normally this transaction would be invalid, but we're not checking it in this test
     val firstWithdrawTx1Key = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(firstChangeOutput1Key, firstWithdrawOutput1Key))
@@ -164,7 +164,7 @@ class ColdWalletAdvContractExampleSpecification extends CompilerTestingCommons
         R6 -> LongConstant(avbl2Key - firstWithdrawAmount2Key) // new avbl2Key (= old avbl2Key)
       )
     )
-    val firstWithdrawOutput2Key = testBox(firstWithdrawAmount2Key, carolPubKey, firstWithdrawHeight)
+    val firstWithdrawOutput2Key = testBox(firstWithdrawAmount2Key, ErgoTree.fromSigmaBoolean(carolPubKey), firstWithdrawHeight)
 
     //normally this transaction would be invalid, but we're not checking it in this test
     val firstWithdrawTx2Key = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(firstChangeOutput2Key, firstWithdrawOutput2Key))

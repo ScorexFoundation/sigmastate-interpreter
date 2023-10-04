@@ -8,6 +8,8 @@ import sigma.data.{AvlTreeData, ProveDlog}
 import sigmastate.Values.{ByteArrayConstant, ByteConstant, IntConstant, SigmaPropConstant}
 import sigmastate._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
+import sigmastate.crypto.DLogProtocol.ProveDlog
+import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
@@ -184,7 +186,7 @@ class RPSGameExampleSpecification extends CompilerTestingCommons
     val carolPubKey:ProveDlog = carol.dlogSecrets.head.publicImage
 
     // note that playAmount below is not checked. It could be anything.
-    val gameOverOutput = testBox(playAmount, carolPubKey, gameOverHeight)
+    val gameOverOutput = testBox(playAmount, ErgoTree.fromSigmaBoolean(carolPubKey), gameOverHeight)
 
     // normally this transaction would be invalid, but we're not checking it in this test
     val gameOverTx = createTransaction(gameOverOutput)
@@ -273,7 +275,7 @@ class RPSGameExampleSpecification extends CompilerTestingCommons
 
     // assume Bob is paying to Carol
     // note that playAmount*2 below is not checked. It could be anything.
-    val defaultWinOutput = testBox(playAmount*2, carolPubKey, defaultWinHeight)
+    val defaultWinOutput = testBox(playAmount*2, ErgoTree.fromSigmaBoolean(carolPubKey), defaultWinHeight)
 
     //normally this transaction would invalid (why?), but we're not checking it in this test
     val defaultWinTx = createTransaction(defaultWinOutput)

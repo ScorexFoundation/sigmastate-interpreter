@@ -1,19 +1,17 @@
 package sigma.ast
 
-import debox.cfor
 import sigma.Evaluation.stypeToRType
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.SType.TypeCode
 import sigma.data.OverloadHack.Overloaded1
-import sigma.data.{CBigInt, Nullable, RType, SigmaConstants}
+import sigma.data.{CBigInt, Nullable, SigmaConstants}
 import sigma.reflection.{RClass, RMethod, ReflectionData}
 import sigma.util.Extensions.{IntOps, LongOps, ShortOps}
-import sigma.{AvlTree, BigInt, Box, Coll, Colls, Context, Evaluation, GroupElement, Header, PreHeader, SigmaDslBuilder, SigmaProp}
+import sigma.{AvlTree, BigInt, Box, Coll, Context, Evaluation, GroupElement, Header, PreHeader, SigmaDslBuilder, SigmaProp}
 
 import java.math.BigInteger
-import scala.util.{Failure, Success}
 
-/** Base type for all AST nodes of sigma lang. */
+/** Base type for all AST nodes of ErgoTree. */
 trait SigmaNode extends Product
 
 /** Every type descriptor is a tree represented by nodes in SType hierarchy.
@@ -65,9 +63,6 @@ sealed trait SType extends SigmaNode {
 object SType {
   /** Representation of type codes used in serialization. */
   type TypeCode = Byte
-
-  val DummyValue = 0.asWrappedType
-
 
   /** Named type variables and parameters used in generic types and method signatures.
     * Generic type terms like `(Coll[IV],(IV) => Boolean) => Boolean` are used to represent
@@ -313,7 +308,6 @@ trait SMonoType extends SType with STypeCompanion {
 
 /** Marker trait for all numeric types. */
 trait SNumericType extends SProduct with STypeCompanion {
-  import SNumericType._
   /** Upcasts the given value of a smaller type to this larger type.
     * Corresponds to section 5.1.2 Widening Primitive Conversion of Java Language Spec.
     * @param n numeric value to be converted
@@ -695,8 +689,6 @@ object SCollection extends STypeCompanion {
   /** Costructs a collection type with the given type of elements. */
   implicit def typeCollection[V <: SType](implicit tV: V): SCollection[V] = SCollection[V](tV)
 
-  import SType.{paramIV, paramIVSeq, paramOV}
-
   /** Helper descriptors reused across different method descriptors. */
   def tIV = SType.tIV
   def tOV = SType.tOV
@@ -737,7 +729,6 @@ object SCollection extends STypeCompanion {
 
 /** Type descriptor of tuple type. */
 case class STuple(items: IndexedSeq[SType]) extends SCollection[SAny.type] {
-  import STuple._
   override val typeCode = STuple.TupleTypeCode
 
   /** Lazily computed value representing true | false | none.

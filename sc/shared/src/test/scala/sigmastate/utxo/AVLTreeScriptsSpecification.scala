@@ -212,7 +212,7 @@ class AVLTreeScriptsSpecification extends CompilerTestingCommons
     ).asBoolValue.toSigmaProp
     prop shouldBe propExp
 
-    val newBox1 = testBox(10, pubkey, 0)
+    val newBox1 = testBox(10, ErgoTree.fromSigmaBoolean(pubkey), 0)
     val newBoxes = IndexedSeq(newBox1)
 
     val spendingTransaction = createTransaction(newBoxes)
@@ -260,7 +260,7 @@ class AVLTreeScriptsSpecification extends CompilerTestingCommons
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(selfBox),
-      createTransaction(testBox(1, recipientProposition, 0)),
+      createTransaction(testBox(1, ErgoTree.fromSigmaBoolean(recipientProposition), 0)),
       self = selfBox, activatedVersionInTests)
 
     avlProver.performOneOperation(Lookup(treeElements.head._1))
@@ -328,7 +328,7 @@ class AVLTreeScriptsSpecification extends CompilerTestingCommons
     ).asBoolValue.toSigmaProp
     prop shouldBe propExp
 
-    val newBox1 = testBox(10, pubkey, 0)
+    val newBox1 = testBox(10, ErgoTree.fromSigmaBoolean(pubkey), 0)
     val newBoxes = IndexedSeq(newBox1)
 
     val spendingTransaction = createTransaction(newBoxes)
@@ -382,7 +382,7 @@ class AVLTreeScriptsSpecification extends CompilerTestingCommons
 
     val propTree = ErgoTree.fromProposition(ergoTreeHeaderInTests, prop)
 
-    val newBox1 = testBox(10, pubkey, 0)
+    val newBox1 = testBox(10, ErgoTree.fromSigmaBoolean(pubkey), 0)
     val newBoxes = IndexedSeq(newBox1)
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)

@@ -1,6 +1,5 @@
 package sigmastate.serialization
 
-import java.math.BigInteger
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.validation.ValidationRules.CheckDeserializedScriptIsSigmaProp
 import sigma.SigmaProp
@@ -10,6 +9,7 @@ import sigma.serialization.{ReaderPositionLimitExceeded, SerializerException}
 import sigma.util.Extensions.SigmaPropOps
 import sigma.validation.ValidationException
 import sigmastate.Values.ErgoTree.EmptyConstants
+import sigmastate.Values.ErgoTree.HeaderType
 import sigmastate.Values.{BigIntConstant, ByteConstant, ConstantPlaceholder, ErgoTree, IntConstant, ShortConstant, SigmaPropValue, UnparsedErgoTree}
 import sigmastate._
 import sigmastate.eval.Extensions.SigmaBooleanOps
@@ -17,6 +17,8 @@ import sigmastate.eval.IRContext
 import sigmastate.helpers.CompilerTestingCommons
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.utxo.{DeserializeContext, DeserializeRegister}
+
+import java.math.BigInteger
 
 class ErgoTreeSerializerSpecification extends SerializationSpecification
   with CompilerTestingCommons with CompilerCrossVersionProps {
@@ -38,7 +40,7 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification
       Seq(ErgoTree(ergoTreeHeaderInTests, constants, outExpr))
     } else {
       Seq(
-        ErgoTree((ConstantSegregationHeader | ergoTreeHeaderInTests).toByte, constants, outExpr),
+        ErgoTree(setConstantSegregation(ergoTreeHeaderInTests), constants, outExpr),
         ErgoTree(ergoTreeHeaderInTests, EmptyConstants, prop)
       )
     }
@@ -177,7 +179,7 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification
 
     forAll(samples) { (exp, hasDeserialize) =>
       val t = new ErgoTree(
-        16.toByte,
+        HeaderType @@ 16.toByte,
         Array(IntConstant(1)),
         Right(BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), exp)))
       )

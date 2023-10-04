@@ -185,7 +185,7 @@ class MixExampleSpecification extends CompilerTestingCommons
     val carolPubKey: ProveDlog = carol.dlogSecrets.head.publicImage
 
     val spendHeight = 90
-    val carolOutput = testBox(mixAmount, carolPubKey, spendHeight)
+    val carolOutput = testBox(mixAmount, ErgoTree.fromSigmaBoolean(carolPubKey), spendHeight)
 
     // normally this transaction would be invalid, but we're not checking it in this test
     val spendingTx = createTransaction(carolOutput)

@@ -17,17 +17,17 @@ class SigmaProver(_prover: sdk.SigmaProver) extends js.Object {
     * The returned address corresponds to the master secret derived from the mnemonic
     * phrase configured in the [[ProverBuilder]].
     */
-  def getP2PKAddress: String = {
+  def getP2PKAddress(): String = {
     val addr = _prover.getP2PKAddress
     addr.toString
   }
 
   /** Returns the prover's secret key. */
-  def getSecretKey: js.BigInt =
+  def getSecretKey(): js.BigInt =
     isoBigInt.from(_prover.getSecretKey)
 
-  /** Returns a sequence of EIP-3 addresses associated with the prover's secret keys. */
-  def getEip3Addresses: js.Array[String] = {
+  /** Returns an array of EIP-3 addresses associated with the prover's secret keys. */
+  def getEip3Addresses(): js.Array[String] = {
     val addresses = _prover.getEip3Addresses
     js.Array(addresses.map(_.toString): _*)
   }

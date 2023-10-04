@@ -95,3 +95,17 @@ class ProverBuilder(parameters: BlockchainParameters, network: Byte) extends js.
     new SigmaProver(p)
   }
 }
+
+@JSExportTopLevel("ProverBuilderObj")
+object ProverBuilder extends js.Object {
+  /** Creates a new [[ProverBuilder]] instance with the given blockchain parameters
+    * and network prefix.
+    *
+    * @param parameters Blockchain parameters re-adjustable via miners voting and
+    *                   voting-related data. All of them are included into extension
+    *                   section of a first block of a voting epoch.
+    * @param network    Network prefix to use for addresses.
+    */
+  def create(parameters: BlockchainParameters, network: Byte): ProverBuilder =
+    new ProverBuilder(parameters, network)
+}
