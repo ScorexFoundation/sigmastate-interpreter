@@ -5,8 +5,7 @@ import sigmastate.Values.Constant
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.ErgoTree.EmptyConstants
-import sigmastate.Values.ErgoTree.{EmptyConstants, HeaderType}
+import sigmastate.ErgoTree.{EmptyConstants, HeaderType}
 import sigma.util.safeNewArray
 import sigmastate.utxo.ComplexityTable
 import debox.cfor

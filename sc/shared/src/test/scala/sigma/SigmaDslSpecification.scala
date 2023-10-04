@@ -17,7 +17,7 @@ import sigma.data.RType._
 import sigma.data._
 import sigma.util.Extensions.{BooleanOps, IntOps, LongOps}
 import sigma.{VersionContext, data, _}
-import sigmastate.Values.ErgoTree.{HeaderType, ZeroHeader}
+import sigmastate.ErgoTree.{HeaderType, ZeroHeader}
 import sigmastate.Values.{IntConstant, _}
 import sigmastate._
 import sigmastate.eval.Extensions.{AvlTreeOps, ByteExt, IntExt, LongExt, ShortExt}

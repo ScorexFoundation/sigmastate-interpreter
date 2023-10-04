@@ -2,6 +2,7 @@ package sigmastate
 
 import debox.cfor
 import sigma.data.{CAND, COR, CTHRESHOLD, ProveDHTuple, ProveDlog, SigmaBoolean, SigmaLeaf}
+import sigmastate.ErgoTree.ZeroHeader
 import sigmastate.Values.SigmaPropConstant
 import sigmastate.crypto.DLogProtocol.FirstDLogProverMessage
 import sigmastate.crypto.VerifierMessage.Challenge
@@ -13,10 +14,6 @@ import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.SigmaByteWriter
 
 import java.math.BigInteger
-import debox.cfor
-import sigmastate.Values.ErgoTree.ZeroHeader
-import sigmastate.crypto.GF2_192_Poly
-
 import scala.language.existentials
 
 object ConjectureType extends Enumeration {

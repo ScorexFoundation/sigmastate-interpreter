@@ -24,7 +24,7 @@ import sigma.ast._
 import sigma.validation.ValidationException
 import sigma.validation.ValidationRules.CheckTypeCode
 import sigma.{ContractsTestkit, SigmaDslTesting}
-import sigmastate.Values.ErgoTree.HeaderType
+import sigmastate.ErgoTree.HeaderType
 import sigmastate.SCollectionMethods.checkValidFlatmap
 
 

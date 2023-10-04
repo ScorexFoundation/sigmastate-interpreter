@@ -29,7 +29,7 @@ import sigma.crypto.EcPointType
 import sigma.util.Extensions.EcpOps
 import sigma.validation.{ChangedRule, DisabledRule, EnabledRule, ReplacedRule, RuleStatus}
 import sigma.validation.ValidationRules.FirstRuleId
-import sigmastate.Values.ErgoTree.ZeroHeader
+import sigmastate.ErgoTree.ZeroHeader
 
 import java.math.BigInteger
 import scala.collection.compat.immutable.ArraySeq

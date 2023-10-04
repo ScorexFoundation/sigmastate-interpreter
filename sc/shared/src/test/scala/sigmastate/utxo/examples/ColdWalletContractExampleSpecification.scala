@@ -5,8 +5,8 @@ import org.ergoplatform._
 import sigma.data.AvlTreeData
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
-import sigmastate.CompilerCrossVersionProps
-import sigmastate.Values.{ErgoTree, IntConstant, LongConstant}
+import sigmastate.{CompilerCrossVersionProps, ErgoTree}
+import sigmastate.Values.{IntConstant, LongConstant}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
 

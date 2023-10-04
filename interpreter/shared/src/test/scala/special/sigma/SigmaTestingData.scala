@@ -20,7 +20,7 @@ import sigmastate.utils.Helpers
 import sigmastate.{ErgoTree, _}
 import sigma.ast.{SBoolean, SSigmaProp}
 import sigma.crypto.EcPointType
-import sigmastate.Values.ErgoTree.HeaderType
+import sigmastate.ErgoTree.HeaderType
 
 import java.math.BigInteger
 import scala.reflect.ClassTag

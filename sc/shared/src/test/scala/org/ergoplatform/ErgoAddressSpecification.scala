@@ -20,7 +20,7 @@ import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.Helpers._
 import sigmastate.{CompilerCrossVersionProps, ErgoTree, SigmaAnd, UnparsedErgoTree}
 import sigma.SigmaDslTesting
-import sigmastate.Values.ErgoTree.{ZeroHeader, setConstantSegregation}
+import sigmastate.ErgoTree.{ZeroHeader, setConstantSegregation}
 
 import sigma.ast.SType
 import sigma.data.ProveDlog

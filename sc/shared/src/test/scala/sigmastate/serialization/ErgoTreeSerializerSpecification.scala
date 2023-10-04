@@ -10,9 +10,7 @@ import sigma.util.Extensions.SigmaPropOps
 import sigma.validation.ValidationException
 import sigmastate.ErgoTree.EmptyConstants
 import sigmastate.Values.{BigIntConstant, ByteConstant, ConstantPlaceholder, IntConstant, ShortConstant, SigmaPropValue}
-import sigmastate.Values.ErgoTree.EmptyConstants
-import sigmastate.Values.ErgoTree.HeaderType
-import sigmastate.Values.{BigIntConstant, ByteConstant, ConstantPlaceholder, ErgoTree, IntConstant, ShortConstant, SigmaPropValue, UnparsedErgoTree}
+import sigmastate.ErgoTree.HeaderType
 import sigmastate._
 import sigmastate.eval.Extensions.SigmaBooleanOps
 import sigmastate.eval.IRContext

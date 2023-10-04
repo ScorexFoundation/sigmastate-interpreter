@@ -18,7 +18,7 @@ import sigma.util.BenchmarkUtil
 import sigma.util.CollectionUtil._
 import sigma.util.Extensions._
 import sigma.util.StringUtil.StringUtilExtensions
-import sigmastate.Values.ErgoTree.ZeroHeader
+import sigmastate.ErgoTree.ZeroHeader
 import sigma.ast.SType.AnyOps
 import sigmastate.Values.{ByteArrayConstant, Constant, ConstantNode, IntConstant, SValue}
 import sigmastate.crypto.DLogProtocol.DLogProverInput

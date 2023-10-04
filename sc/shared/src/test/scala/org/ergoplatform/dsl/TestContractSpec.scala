@@ -20,6 +20,7 @@ import sigmastate.helpers.TestingHelpers._
 import sigmastate.lang.Terms.ValueOps
 import sigma.{AnyValue, Evaluation, SigmaProp}
 import sigmastate.ErgoTree
+import sigmastate.ErgoTree.ZeroHeader
 
 case class TestContractSpec(testSuite: CompilerTestingCommons)(implicit val IR: IRContext) extends ContractSpec {
 

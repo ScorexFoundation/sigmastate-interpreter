@@ -10,7 +10,7 @@ import sigmastate.ErgoTree
 import sigmastate.crypto.CryptoConstants
 import sigmastate.eval._
 import sigma._
-import sigmastate.Values.ErgoTree.HeaderType
+import sigmastate.ErgoTree.HeaderType
 
 import java.math.BigInteger
 import scala.language.implicitConversions

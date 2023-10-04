@@ -10,9 +10,7 @@ import sigma.Evaluation
 import sigma.ast.SType
 import sigma.serialization.SerializerException
 import sigma.util.safeNewArray
-import sigmastate.ErgoTree.headerWithVersion
-import sigmastate.Values._
-import sigmastate.Values.ErgoTree.{ZeroHeader, headerWithVersion, setConstantSegregation}
+import sigmastate.ErgoTree.{ZeroHeader, headerWithVersion, setConstantSegregation}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.{DeserializationSigmaBuilder, StdSigmaBuilder}
