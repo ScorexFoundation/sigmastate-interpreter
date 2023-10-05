@@ -1,9 +1,10 @@
 package sigmastate.serialization
 
 import sigma.Evaluation
-import sigma.ast.global.{IntConstant, TaggedInt}
+import sigma.ast.global.{IntConstant, OptionValueOps}
 import sigma.ast._
 import sigmastate.lang.Terms._
+import sigmastate.utxo.GetVar
 
 import scala.util.Random
 
@@ -37,8 +38,8 @@ class ConcreteCollectionSerializerSpecification extends TableSerializationSpecif
   }
 
   property("ConcreteCollection: Serializer round trip with different types seq") {
-    forAll { (i: IntConstant, ti: TaggedInt) =>
-      val seq = Random.shuffle(Seq(i.asIntValue, ti.asIntValue)).toArray
+    forAll(intConstGen, getVarIntGen) { (i: IntConstant, ti: GetVar[SInt.type]) =>
+      val seq = Random.shuffle(Seq(i.asIntValue, ti.get)).toArray
       roundTripTest(ConcreteCollection.fromSeq(seq))
     }
   }

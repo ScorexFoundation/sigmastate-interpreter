@@ -77,11 +77,9 @@ trait ObjectGenerators extends TypeGenerators
   implicit lazy val arbBoxConstant: Arbitrary[BoxConstant] = Arbitrary(boxConstantGen)
   implicit lazy val arbAvlTreeConstant: Arbitrary[AvlTreeConstant] = Arbitrary(avlTreeConstantGen)
   implicit lazy val arbBigIntConstant: Arbitrary[BigIntConstant] = Arbitrary(bigIntConstGen)
-  implicit lazy val arbTaggedInt: Arbitrary[TaggedInt] = Arbitrary(taggedVar[SInt.type])
-  implicit lazy val arbTaggedLong: Arbitrary[TaggedLong] = Arbitrary(taggedVar[SLong.type])
-  implicit lazy val arbTaggedBox: Arbitrary[TaggedBox] = Arbitrary(taggedVar[SBox.type])
-  implicit lazy val arbTaggedAvlTree: Arbitrary[TaggedAvlTree] = Arbitrary(taggedAvlTreeGen)
-  implicit lazy val arbProveDlog: Arbitrary[ProveDlog] = Arbitrary(proveDlogGen)
+  implicit lazy val arbGetVarBox: Arbitrary[BoxValue] = Arbitrary(getVar[SBox.type])
+  implicit lazy val arbGetVarAvlTree : Arbitrary[AvlTreeValue]   = Arbitrary(getVarAvlTreeGen)
+  implicit lazy val arbProveDlog     : Arbitrary[ProveDlog]      = Arbitrary(proveDlogGen)
   implicit lazy val arbProveDHT: Arbitrary[ProveDHTuple] = Arbitrary(proveDHTGen)
   implicit lazy val arbRegisterIdentifier: Arbitrary[RegisterId] = Arbitrary(registerIdentifierGen)
   implicit lazy val arbBigInteger: Arbitrary[BigInteger] = Arbitrary(Arbitrary.arbBigInt.arbitrary.map(_.bigInteger))
@@ -169,10 +167,10 @@ trait ObjectGenerators extends TypeGenerators
       shortConstGen, intConstGen, longConstGen, bigIntConstGen, byteArrayConstGen,
       intArrayConstGen, groupElementConstGen).asInstanceOf[Gen[Constant[SType]]]
 
-  def taggedVar[T <: SType](implicit aT: Arbitrary[T]): Gen[TaggedVariable[T]] = for {
+  def getVar[T <: SType](implicit aT: Arbitrary[T]): Gen[Value[T]] = for {
     t <- aT.arbitrary
     id <- arbByte.arbitrary
-  } yield mkTaggedVariable(id, t)
+  } yield mkGetVar(id, t).get
 
 
   lazy val proveDlogGen: Gen[ProveDlog] = for {v <- groupElementGen} yield ProveDlog(v)
@@ -211,8 +209,8 @@ trait ObjectGenerators extends TypeGenerators
 
   lazy val registerIdentifierGen: Gen[RegisterId] = Gen.oneOf(R0, R1, R2, R3, R4, R5, R6, R7, R8, R9)
 
-  lazy val taggedAvlTreeGen: Gen[TaggedAvlTree] =
-    arbByte.arbitrary.map { v => TaggedAvlTree(v).asInstanceOf[TaggedAvlTree] }
+  lazy val getVarAvlTreeGen: Gen[AvlTreeValue] =
+    arbByte.arbitrary.map { v => mkGetVar(v, SAvlTree).get }
 
   lazy val evaluatedValueGen: Gen[EvaluatedValue[SType]] =
     Gen.oneOf(booleanConstGen.asInstanceOf[Gen[EvaluatedValue[SType]]], byteArrayConstGen, longConstGen)
@@ -328,10 +326,10 @@ trait ObjectGenerators extends TypeGenerators
       booleanConstGen,
       bigIntConstGen,
       groupElementConstGen,
-      taggedVar[SInt.type],
-      taggedVar[SLong.type],
-      taggedVar[SBox.type],
-      taggedVar(Arbitrary(sTupleGen(2, 10)))
+      getVar[SInt.type],
+      getVar[SLong.type],
+      getVar[SBox.type],
+      getVar(Arbitrary(sTupleGen(2, 10)))
     ))
   } yield mkTuple(values).asInstanceOf[Tuple]
 
@@ -484,23 +482,23 @@ trait ObjectGenerators extends TypeGenerators
   } yield mkSizeOf(input).asInstanceOf[SizeOf[SInt.type]]
 
   lazy val extractAmountGen: Gen[ExtractAmount] =
-    arbTaggedBox.arbitrary.map { b => mkExtractAmount(b).asInstanceOf[ExtractAmount] }
+    arbGetVarBox.arbitrary.map { b => mkExtractAmount(b).asInstanceOf[ExtractAmount] }
   lazy val extractScriptBytesGen: Gen[ExtractScriptBytes] =
-    arbTaggedBox.arbitrary.map { b => mkExtractScriptBytes(b).asInstanceOf[ExtractScriptBytes] }
+    arbGetVarBox.arbitrary.map { b => mkExtractScriptBytes(b).asInstanceOf[ExtractScriptBytes] }
   lazy val extractBytesGen: Gen[ExtractBytes] =
-    arbTaggedBox.arbitrary.map { b => mkExtractBytes(b).asInstanceOf[ExtractBytes] }
+    arbGetVarBox.arbitrary.map { b => mkExtractBytes(b).asInstanceOf[ExtractBytes] }
   lazy val extractBytesWithNoRefGen: Gen[ExtractBytesWithNoRef] =
-    arbTaggedBox.arbitrary.map { b =>
+    arbGetVarBox.arbitrary.map { b =>
       mkExtractBytesWithNoRef(b).asInstanceOf[ExtractBytesWithNoRef]
     }
   lazy val extractIdGen: Gen[ExtractId] =
-    arbTaggedBox.arbitrary.map { b => mkExtractId(b).asInstanceOf[ExtractId] }
+    arbGetVarBox.arbitrary.map { b => mkExtractId(b).asInstanceOf[ExtractId] }
   lazy val extractRegisterAsGen: Gen[ExtractRegisterAs[SInt.type]] = for {
-    input <- arbTaggedBox.arbitrary
+    input <- arbGetVarBox.arbitrary
     r <- arbRegisterIdentifier.arbitrary
   } yield ExtractRegisterAs(input, r)(SInt)
   lazy val extractCreationInfoGen: Gen[ExtractCreationInfo] =
-    arbTaggedBox.arbitrary.map { b => mkExtractCreationInfo(b).asInstanceOf[ExtractCreationInfo] }
+    arbGetVarBox.arbitrary.map { b => mkExtractCreationInfo(b).asInstanceOf[ExtractCreationInfo] }
 
   lazy val deserializeContextGen: Gen[DeserializeContext[SBoolean.type]] =
     Arbitrary.arbitrary[Byte].map(b =>

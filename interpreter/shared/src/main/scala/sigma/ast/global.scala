@@ -4,7 +4,6 @@ import sigma.ast.SCollection.{SByteArray, SIntArray}
 import sigma.data.{CSigmaProp, TrivialProp}
 import sigmastate.ErgoTree.HeaderType
 import sigmastate._
-import sigmastate.lang.StdSigmaBuilder.mkTaggedVariable
 import sigmastate.utxo._
 
 object global {
@@ -59,47 +58,19 @@ object global {
 
   type AvlTreeConstant = Constant[SAvlTree.type]
 
-  val FalseSigmaProp = SigmaPropConstant(CSigmaProp(TrivialProp.FalseProp))
-
-  val TrueSigmaProp  = SigmaPropConstant(CSigmaProp(TrivialProp.TrueProp))
-
-  type TaggedBoolean = TaggedVariable[SBoolean.type]
-
-  type TaggedByte = TaggedVariable[SByte.type]
-
-  type TaggedShort = TaggedVariable[SShort.type]
-
-  type TaggedInt = TaggedVariable[SInt.type]
-
-  type TaggedLong = TaggedVariable[SLong.type]
-
-  type TaggedBigInt = TaggedVariable[SBigInt.type]
-
-  type TaggedBox = TaggedVariable[SBox.type]
-
-  type TaggedGroupElement = TaggedVariable[SGroupElement.type]
-
-  type TaggedSigmaProp = TaggedVariable[SSigmaProp.type]
-
-  type TaggedAvlTree = TaggedVariable[SAvlTree.type]
-
-  type TaggedByteArray = TaggedVariable[SCollection[SByte.type]]
-
-  def TaggedBox(id: Byte): Value[SBox.type] = mkTaggedVariable(id, SBox)
-
-  def TaggedAvlTree(id: Byte): Value[SAvlTree.type] = mkTaggedVariable(id, SAvlTree)
-
   type CollectionConstant[T <: SType] = Constant[SCollection[T]]
 
   type CollectionValue[T <: SType] = Value[SCollection[T]]
+
+  val FalseSigmaProp = SigmaPropConstant(CSigmaProp(TrivialProp.FalseProp))
+
+  val TrueSigmaProp  = SigmaPropConstant(CSigmaProp(TrivialProp.TrueProp))
 
   implicit class CollectionOps[T <: SType](val coll: Value[SCollection[T]]) extends AnyVal {
     def length: Int = matchCase(_.items.length, _.value.length, _.items.length)
 
     def items = matchCase(_.items, _ => sys.error(s"Cannot get 'items' property of node $coll"), _.items)
 
-    //    def isEvaluatedCollection =
-    //      coll.evaluated && matchCase(_.items.forall(_.evaluated), _ => true, _.items.forall(_.evaluated))
     def matchCase[R](
         whenConcrete: ConcreteCollection[T] => R,
         whenConstant: CollectionConstant[T] => R,
