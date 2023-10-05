@@ -1,7 +1,6 @@
-package org.ergoplatform.sdk.js
+package sigma.interpreter.js
 
 import sigma.js.Value
-import sigmastate.Values
 
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.JSRichIterableOnce
@@ -36,7 +35,7 @@ class ErgoTree(tree: sigmastate.ErgoTree) extends js.Object {
   /** Returns segregated constants of this tree as [[js.Array]]. */
   def constants(): js.Array[Value] = {
     val constants = tree.constants
-    val values = constants.map(Isos.isoValueToConstant.from)
+    val values = constants.map(isoValueToConstant.from)
     values.toJSArray
   }
 }

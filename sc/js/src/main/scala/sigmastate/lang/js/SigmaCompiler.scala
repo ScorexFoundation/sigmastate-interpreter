@@ -1,15 +1,13 @@
 package sigmastate.lang.js
 
 import org.ergoplatform.ErgoAddressEncoder
-import org.ergoplatform.sdk.js.Isos.isoValueToConstant
 import org.scalablytyped.runtime.StringDictionary
+import sigma.interpreter.js.{ErgoTree, isoValueToConstant}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
-import org.ergoplatform.sdk.js.ErgoTree
 import sigma.js.Value
 import sigmastate.ErgoTree.HeaderType
-import sigmastate.Values
 import sigmastate.eval.CompiletimeIRContext
 import sigmastate.lang.Terms.ValueOps
 
