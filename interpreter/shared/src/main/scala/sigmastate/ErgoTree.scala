@@ -4,11 +4,12 @@ import org.ergoplatform.settings.ErgoAlgos
 import scorex.util.encode.Base16
 import sigma.VersionContext
 import sigma.ast.SType
+import sigma.ast.global._
 import sigma.data.SigmaBoolean
 import sigma.kiama.rewriting.Rewriter.{everywherebu, strategy}
 import sigma.validation.ValidationException
 import sigmastate.ErgoTree.{HeaderType, substConstants}
-import sigmastate.Values.{Constant, ConstantPlaceholder, SValue, SigmaPropConstant, SigmaPropValue, Value}
+import sigma.ast.{Constant, ConstantPlaceholder, SigmaPropConstant, Value}
 import sigmastate.eval.Extensions.SigmaBooleanOps
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer

@@ -2,7 +2,7 @@ package sigmastate.serialization
 
 import org.ergoplatform.Outputs
 import sigma.ast.{SBox, SByte, SCollection}
-import sigmastate.Values.{FuncValue, ValUse}
+import sigma.ast.{FuncValue, ValUse}
 import sigmastate.lang.Terms.MethodCall
 import sigmastate.utxo.ExtractScriptBytes
 import sigmastate._

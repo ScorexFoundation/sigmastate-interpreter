@@ -5,8 +5,9 @@ import org.ergoplatform.validation.ValidationSpecification
 import org.ergoplatform.{Context => _, _}
 import scalan.BaseCtxTests
 import sigma.VersionContext
-import sigmastate.Values.{BigIntArrayConstant, EvaluatedValue, SValue, SigmaPropConstant, Value}
+import sigma.ast.{BigIntArrayConstant, EvaluatedValue, SigmaPropConstant, Value}
 import sigma.ast.SType
+import sigma.ast.global.SValue
 import sigma.data.AvlTreeData
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting}

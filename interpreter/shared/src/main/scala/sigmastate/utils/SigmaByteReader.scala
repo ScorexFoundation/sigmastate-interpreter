@@ -4,7 +4,8 @@ import debox.cfor
 import scorex.util.serialization.Reader
 import sigma.serialization.CoreByteReader
 import sigma.util.safeNewArray
-import sigmastate.Values.{SValue, Value}
+import sigma.ast._
+import sigma.ast.global._
 import sigmastate.serialization._
 
 /** Reader used in the concrete implementations of [[SigmaSerializer]].
@@ -13,7 +14,7 @@ import sigmastate.serialization._
   *
   * @param r                              the underlying reader this reader reads from
   * @param constantStore                  the store of constants which is used to resolve
-  *                                       [[sigmastate.Values.ConstantPlaceholder]]
+  *                                       [[sigma.ast.ConstantPlaceholder]]
   * @param resolvePlaceholdersToConstants if true then resolved constants will be
   *                                       substituted in the tree instead of the placeholder.
   * @param maxTreeDepth                   limit on the tree depth (recursive invocations)

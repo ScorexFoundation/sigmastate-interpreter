@@ -5,7 +5,7 @@ import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigma.Colls
 import sigma.data.{AvlTreeData, AvlTreeFlags}
-import sigmastate.Values.AvlTreeConstant
+import sigma.ast.AvlTreeConstant
 import sigmastate.eval._
 import sigma.Extensions.ArrayOps
 import sigmastate.eval.Extensions.AvlTreeOps

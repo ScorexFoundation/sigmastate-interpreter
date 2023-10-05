@@ -2,7 +2,7 @@ package sigmastate.serialization
 
 import org.scalatest.prop.TableFor2
 import sigma.ast.SType
-import sigmastate.Values._
+import sigma.ast._
 
 trait TableSerializationSpecification extends SerializationSpecification {
   def objects: TableFor2[_ <: Value[_ <: SType], Array[Byte]]

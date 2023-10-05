@@ -1,21 +1,19 @@
 package sigmastate.lang
 
 import org.scalatest.matchers.should.Matchers
-import sigmastate.lang.Terms.{Ident, MethodCallLike}
-import sigmastate.Values.{ConcreteCollection, LongConstant, SValue, Value}
-import sigmastate._
-
-import java.math.BigInteger
+import sigma.{Coll, _}
 import sigma.ast.SCollection.SByteArray
-import sigmastate.crypto.CryptoConstants
-import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigma._
-import sigmastate.eval._
-import sigmastate.helpers.NegativeTesting
-import sigma.Coll
+import sigma.ast.global.SValue
 import sigma.ast._
 import sigma.data.{CAnyValue, ProveDHTuple, ProveDlog, SigmaBoolean}
 import sigma.util.Extensions.BigIntegerOps
+import sigmastate.crypto.CryptoConstants
+import sigmastate.eval._
+import sigmastate.helpers.NegativeTesting
+import sigmastate.interpreter.Interpreter.ScriptEnv
+import sigmastate.lang.Terms.{Ident, MethodCallLike}
+
+import java.math.BigInteger
 
 trait LangTests extends Matchers with NegativeTesting {
 

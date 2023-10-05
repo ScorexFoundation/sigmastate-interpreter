@@ -2,7 +2,8 @@ package sigmastate.interpreter
 
 import org.ergoplatform.ErgoLikeContext
 import sigmastate.{ErgoTree, FixedCost, JitCost, PerItemCost, TypeBasedCost}
-import sigmastate.Values._
+import sigma.ast._
+import sigma.ast.global._
 import sigmastate.eval.Profiler
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.interpreter.Interpreter.ReductionResult
@@ -507,7 +508,7 @@ object ErgoTreeEvaluator {
     * @param costAccumulator [[CostAccumulator]] instance used for accumulating costs
     * @param constants       collection of segregated constants which can be refered by
     *                        [[ConstantPlaceholder]]s in `exp`
-    * @param exp             ErgoTree expression represented as [[sigmastate.Values.Value]]
+    * @param exp             ErgoTree expression represented as [[sigma.ast.Value]]
     * @param evalSettings    evaluation settings
     * @return 1) the result of evaluating `exp` in a given context and
     *         2) an accumulated JIT cost estimation.

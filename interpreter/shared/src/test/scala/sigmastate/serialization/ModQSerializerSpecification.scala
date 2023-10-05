@@ -1,6 +1,6 @@
 package sigmastate.serialization
 
-import sigmastate.Values.BigIntConstant
+import sigma.ast.global.BigIntConstant
 import sigmastate._
 
 class ModQSerializerSpecification extends SerializationSpecification {

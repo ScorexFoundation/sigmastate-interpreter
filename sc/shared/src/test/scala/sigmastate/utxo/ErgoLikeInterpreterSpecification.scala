@@ -6,9 +6,9 @@ import org.ergoplatform._
 import org.scalatest.TryValues._
 import scorex.crypto.hash.Blake2b256
 import sigma.ast.SCollection.SByteArray
-import sigmastate.Values._
-import sigmastate._
 import sigma.ast._
+import sigmastate._
+import sigma.ast.global._
 import sigma.data.{AvlTreeData, ProveDHTuple, ProveDlog, TrivialProp}
 import sigma.util.Extensions.EcpOps
 import sigma.validation.ValidationException

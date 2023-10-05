@@ -4,7 +4,8 @@ import scorex.util.serialization.Writer
 import sigma.ast.SType
 import sigma.serialization.CoreByteWriter
 import sigma.serialization.CoreByteWriter.{ArgInfo, DataInfo, FormatDescriptor, SeqFmt}
-import sigmastate.Values.{SValue, Value}
+import sigma.ast._
+import sigma.ast.global._
 import sigmastate.serialization.{ConstantStore, TypeSerializer, ValueSerializer}
 
 class SigmaByteWriter(override val w: Writer,

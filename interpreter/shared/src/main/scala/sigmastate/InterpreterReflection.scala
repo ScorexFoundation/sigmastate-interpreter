@@ -5,11 +5,11 @@ import sigma.reflection.ReflectionData.registerClassEntry
 import sigma.reflection.{ReflectionData, mkConstructor, mkMethod}
 import sigma.Coll
 import sigma.ast.SCollection.{SBooleanArray, SByteArray, SIntArray}
-import sigma.ast.{SAny, SAvlTree, SCollectionType, SFunc, SNumericType, SOption, SSigmaProp, STuple, SType, STypeParam, STypeVar}
+import sigma.ast._
+import sigma.ast.global._
 import sigma.data.{CAND, COR, CTHRESHOLD}
 import sigma.{AvlTree, SigmaDslBuilder}
 import sigmastate.SAvlTreeMethods.KeyValueColl
-import sigmastate.Values._
 import sigmastate.crypto.VerifierMessage.Challenge
 import sigmastate.crypto.GF2_192_Poly
 import sigmastate.interpreter.ErgoTreeEvaluator

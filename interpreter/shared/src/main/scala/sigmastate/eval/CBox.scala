@@ -7,7 +7,8 @@ import sigma.ast.SCollection.SByteArray
 import sigma.ast.{SInt, STuple, SType}
 import sigma.data.{CAnyValue, RType, WrapperOf}
 import sigma.{AnyValue, Box, Coll, Colls}
-import sigmastate.Values.{ConstantNode, EvaluatedValue, SValue}
+import sigma.ast.{ConstantNode, EvaluatedValue}
+import sigma.ast.global._
 import sigmastate.eval.CBox.regs
 import sigmastate.eval.Extensions.toAnyValue
 

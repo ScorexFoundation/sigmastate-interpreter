@@ -6,7 +6,7 @@ import scorex.util.ModifierId
 import sigmastate.ErgoTree.{DefaultHeader, HeaderType, ZeroHeader, setConstantSegregation, setVersionBits}
 import sigma.VersionContext.MaxSupportedScriptVersion
 import sigma.{Box, SigmaDslTesting}
-import sigmastate.Values._
+import sigma.ast._
 import sigma.ast.{SBoolean, SBox, SCollection, SType}
 import sigmastate.eval._
 import sigmastate.exceptions.InterpreterException

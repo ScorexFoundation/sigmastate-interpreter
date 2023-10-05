@@ -5,14 +5,16 @@ import org.ergoplatform._
 import org.scalacheck.Arbitrary._
 import sigma.data.{RType, SigmaBoolean, TupleColl}
 import sigma.ast.SCollection.SByteArray
-import sigmastate.Values.{BigIntConstant, ByteArrayConstant, Constant, FalseLeaf, GroupGenerator, LongConstant, SValue, TrueLeaf}
+import sigma.ast.{BigIntConstant, ByteArrayConstant, Constant, FalseLeaf, GroupGenerator, LongConstant, TrueLeaf}
 import sigmastate.eval._
 import sigma.Extensions.ArrayOps
-import sigmastate.Values._
+import sigma.ast._
 import sigma.{AvlTree, Colls, Evaluation}
 import sigma.ast.SType.AnyOps
 import scorex.util.encode.Base16
-import sigma.ast._
+import sigma.ast.BoolArrayConstant.BoolArrayTypeCode
+import sigma.ast.ByteArrayConstant.ByteArrayTypeCode
+import sigma.ast.global.{BoolValue, SValue}
 import sigma.crypto.EcPointType
 import sigma.serialization.SerializerException
 import sigma.util.Extensions.{BigIntegerOps, EcpOps, SigmaBooleanOps}

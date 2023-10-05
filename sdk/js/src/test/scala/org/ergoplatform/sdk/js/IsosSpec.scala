@@ -12,7 +12,7 @@ import sigma.ast.SType
 import sigma.data.Iso
 import sigma.js.AvlTree
 import sigma.{Coll, Colls, GroupElement}
-import sigmastate.Values.Constant
+import sigma.ast.Constant
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.generators.ObjectGenerators
 

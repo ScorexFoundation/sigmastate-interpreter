@@ -2,7 +2,8 @@ package sigmastate.utxo
 
 import sigma.ast.SType
 import sigma.data.CAnyValue
-import sigmastate.Values._
+import sigma.ast._
+import sigma.ast.global.{GetVarInt, OptionValueOps}
 import sigmastate.helpers.CompilerTestingCommons
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms._

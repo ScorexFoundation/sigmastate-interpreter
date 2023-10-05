@@ -12,6 +12,7 @@ import scorex.crypto.authds.ADKey
 import scorex.util.encode.Base16
 import scorex.util.{ModifierId, bytesToId, idToBytes}
 import sigma.ast.SType
+import sigma.ast.global.SValue
 import sigma.crypto.{CryptoFacade, EcPointType}
 import sigma.data.ExactIntegral.LongIsExactIntegral
 import sigma.data.{Digest32Coll, Iso, ProveDHTuple, ProveDlog, RType, SigmaBoolean, SigmaConstants}
@@ -19,7 +20,7 @@ import sigma.serialization.GroupElementSerializer
 import sigma.util.StringUtil.StringUtilExtensions
 import sigma.{AnyValue, AvlTree, Coll, Colls, Evaluation, GroupElement, Header}
 import sigmastate.ErgoTree
-import sigmastate.Values.{Constant, EvaluatedValue, SValue, SigmaPropConstant}
+import sigma.ast.{Constant, EvaluatedValue, SigmaPropConstant}
 import sigmastate.crypto.DiffieHellmanTupleProverInput
 import sigmastate.eval.CSigmaDslBuilder
 import sigmastate.serialization.{ErgoTreeSerializer, SigmaSerializer, ValueSerializer}

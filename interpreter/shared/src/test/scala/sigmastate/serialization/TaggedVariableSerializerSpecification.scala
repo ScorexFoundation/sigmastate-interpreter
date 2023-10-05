@@ -1,8 +1,8 @@
 package sigmastate.serialization
 
-import sigmastate.Values._
 import OpCodes._
 import sigma.ast.SBox
+import sigma.ast.global.{TaggedBox, TaggedInt}
 
 class TaggedVariableSerializerSpecification extends SerializationSpecification {
 

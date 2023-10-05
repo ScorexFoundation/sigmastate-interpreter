@@ -2,7 +2,7 @@ package sigmastate.eval
 
 import org.ergoplatform.{Height, Inputs, Outputs, Self}
 import sigmastate._
-import sigmastate.Values.{BlockValue, FuncValue, IntConstant, LongConstant, SigmaPropConstant, ValDef, ValUse}
+import sigma.ast.{BlockValue, FuncValue, IntConstant, LongConstant, SigmaPropConstant, ValDef, ValUse}
 import sigmastate.helpers.ContextEnrichingTestProvingInterpreter
 import sigmastate.interpreter.Interpreter._
 import scalan.BaseCtxTests

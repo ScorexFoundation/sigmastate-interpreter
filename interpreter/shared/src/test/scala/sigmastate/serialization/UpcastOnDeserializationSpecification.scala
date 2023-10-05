@@ -2,7 +2,7 @@ package sigmastate.serialization
 
 import org.ergoplatform.Outputs
 import sigma.ast.{SInt, SLong}
-import sigmastate.Values.{ByteConstant, IntConstant, LongConstant}
+import sigma.ast.{ByteConstant, IntConstant, LongConstant}
 import sigmastate.lang.CheckingSigmaBuilder
 import sigmastate.utxo.ByIndex
 import sigmastate.Upcast

@@ -8,7 +8,6 @@ import sigma.SigmaDslTesting
 import sigma.ast._
 import sigma.data.{AvlTreeData, AvlTreeFlags, CollType, Digest32Coll}
 import sigmastate.ErgoTree.HeaderType
-import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval._
 import sigmastate.lang.Terms.MethodCall

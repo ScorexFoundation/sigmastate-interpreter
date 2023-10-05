@@ -11,10 +11,11 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigma.Colls
 import sigma.ast.SByte
 import sigma.data.{AvlTreeData, AvlTreeFlags, Digest32Coll}
-import sigmastate.Values._
+import sigma.ast._
 import sigmastate._
 import sigmastate.crypto.CryptoConstants
 import sigma.Extensions.ArrayOps
+import sigma.ast.global.{CollectionConstant, SigmaPropValue}
 import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter}

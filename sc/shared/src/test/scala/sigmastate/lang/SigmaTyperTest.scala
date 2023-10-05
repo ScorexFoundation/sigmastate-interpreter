@@ -7,10 +7,10 @@ import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import sigma.Colls
 import sigma.ast.SCollection._
-import sigmastate.Values._
-import sigmastate._
 import sigma.ast._
+import sigma.ast.global.{SValue, SigmaPropValue, SigmaPropValueOps}
 import sigma.data.ProveDlog
+import sigmastate._
 import sigmastate.crypto.CryptoConstants
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.exceptions.TyperException

@@ -3,9 +3,8 @@ package sigmastate
 import debox.cfor
 import org.scalameter.api.Bench
 import sigma.BenchmarkGens
-import sigma.ast.SType
-import sigma.crypto.Platform
-import sigmastate.Values.{IntConstant, SValue}
+import sigma.ast.{IntConstant, SType}
+import sigma.ast.global.SValue
 import sigmastate.serialization.OpCodes.PlusCode
 
 object ErgoTreeBenchmarks extends Bench.LocalTime with BenchmarkGens { suite: Bench[Double] =>
@@ -13,7 +12,7 @@ object ErgoTreeBenchmarks extends Bench.LocalTime with BenchmarkGens { suite: Be
   override def maxSize: Int = 10000
 
   /** Expected approximate results:
-    * ::Benchmark allocation of sigmastate.Values.ArithOp, EQ, IntConstant::
+    * ::Benchmark allocation of sigma.ast.ArithOp, EQ, IntConstant::
     * name: OpenJDK 64-Bit Server VM
     * osArch: x86_64
     * osName: Mac OS X
@@ -24,7 +23,7 @@ object ErgoTreeBenchmarks extends Bench.LocalTime with BenchmarkGens { suite: Be
     * Parameters(size -> 1000): 0.696851 ms
     * Parameters(size -> 10000): 5.687967 ms
     */
-  performance of "allocation of sigmastate.Values" in {
+  performance of "allocation of sigma.ast" in {
     measure method "ArithOp, EQ, IntConstant" in {
       using(sizes) in { size =>
         val arr = new Array[SValue](size)

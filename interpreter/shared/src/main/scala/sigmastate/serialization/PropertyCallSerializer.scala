@@ -2,9 +2,9 @@ package sigmastate.serialization
 
 import sigma.ast.{EmptySubst, SType, STypeSubst}
 import sigma.serialization.CoreByteWriter.{ArgInfo, DataInfo}
-import sigmastate.Values._
+import sigma.ast._
+import sigma.ast.global.SValue
 import sigmastate._
-import sigmastate.lang.Terms
 import sigmastate.lang.Terms.{MethodCall, PropertyCall}
 import sigmastate.utils.SigmaByteWriter._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}

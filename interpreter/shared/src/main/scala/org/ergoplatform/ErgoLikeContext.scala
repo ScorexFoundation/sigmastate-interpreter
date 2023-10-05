@@ -1,6 +1,6 @@
 package org.ergoplatform
 
-import sigmastate.Values._
+import sigma.ast._
 import sigmastate._
 import sigmastate.eval.Extensions._
 import sigmastate.eval._

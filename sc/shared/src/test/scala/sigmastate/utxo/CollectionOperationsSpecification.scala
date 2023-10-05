@@ -1,13 +1,13 @@
 package sigmastate.utxo
 
-import sigmastate.Values._
+import sigma.ast._
 import sigmastate._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.lang.Terms._
 import org.ergoplatform._
 import sigma.ast.SCollection._
-import sigma.ast._
+import sigma.ast.global._
 import sigma.data.AvlTreeData
 import sigmastate.SCollectionMethods.{FlatMapMethod, IndexOfMethod, IndicesMethod, PatchMethod, UpdateManyMethod, UpdatedMethod}
 import sigmastate.eval.Extensions.SigmaBooleanOps

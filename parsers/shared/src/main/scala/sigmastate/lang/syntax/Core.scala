@@ -1,8 +1,7 @@
 package sigmastate.lang.syntax
 
-import sigma.ast.{NoType, SType}
-import sigmastate._
-import sigmastate.Values._
+import sigma.ast.global.SValue
+import sigma.ast._
 import sigmastate.lang.syntax
 
 /** Keywords and identifiers used in expressions. */

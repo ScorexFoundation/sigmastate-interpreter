@@ -1,8 +1,7 @@
 package sigmastate.serialization
 
 import sigma.ast.SType
-import sigmastate.Values._
-import sigmastate._
+import sigma.ast._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 // TODO v6.0: remove this class (https://github.com/ScorexFoundation/sigmastate-interpreter/issues/584)

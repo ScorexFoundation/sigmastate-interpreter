@@ -1,9 +1,7 @@
 package sigmastate.lang
 
 import fastparse.internal.Logger
-import sigmastate._
-import Values._
-import sigma.ast.{NoType, SInt, SLong, SType}
+import sigma.ast._
 import sigma.data.Nullable
 import sigmastate.lang.Terms._
 import sigmastate.lang.syntax.Basic._
@@ -14,7 +12,8 @@ import scala.util.DynamicVariable
 
 /** Main facade to ErgoScript parser implementation. */
 object SigmaParser extends Exprs with Types with Core {
-  import fastparse._; import ScalaWhitespace._
+  import fastparse._
+  import ScalaWhitespace._
   import builder._
 
   private val currentInput = new DynamicVariable[String]("")

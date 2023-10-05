@@ -1,15 +1,13 @@
 import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, ErgoLikeContext}
 import sigma.ast._
 import sigma.data.{AvlTreeData, GeneralType, RType, SigmaBoolean}
-import sigmastate.Values._
-import sigmastate.lang.{CheckingSigmaBuilder, Terms}
+import sigmastate.lang.CheckingSigmaBuilder
 
 import scala.annotation.nowarn
 import scala.reflect.classTag
 
 package object sigmastate {
   import CheckingSigmaBuilder._
-
   /** Shadow the implicit from sigma package so it doesn't interfere with the resolution
     * of ClassTags below.
     */
@@ -55,5 +53,4 @@ package object sigmastate {
   /** Helper method to create "max" operation node. */
   def Max[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
     mkMax(left, right)
-
 }

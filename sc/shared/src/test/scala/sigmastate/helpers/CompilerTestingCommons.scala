@@ -11,7 +11,8 @@ import sigma.{Colls, Evaluation, TestUtils}
 import sigma.data.{RType, SigmaBoolean}
 import sigma.validation.ValidationException
 import sigma.validation.ValidationRules.CheckSerializableTypeCode
-import sigmastate.Values.{Constant, SValue, SigmaPropValue}
+import sigma.ast.Constant
+import sigma.ast.global.{SValue, SigmaPropValue}
 import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension.VarBinding

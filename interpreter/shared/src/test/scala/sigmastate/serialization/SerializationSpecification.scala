@@ -9,7 +9,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.{ScalaCheckDrivenPropertyChecks, ScalaCheckPropertyChecks}
 import sigma.ast.SType
-import sigmastate.Values._
+import sigma.ast._
 import sigmastate.helpers.NegativeTesting
 import sigmastate.serialization.generators._
 

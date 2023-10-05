@@ -8,15 +8,14 @@ import scorex.crypto.authds.{ADKey, ADValue}
 import sigma.ast.SCollection.{SBooleanArray, SBoxArray, SByteArray, SByteArray2, SHeaderArray}
 import sigma.ast.SType.TypeCode
 import sigma.ast._
+import sigma.ast.global.SValue
 import sigma.data.{Nullable, RType, SigmaConstants}
 import sigma.reflection.RClass
 import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma.{Coll, _}
 import sigmastate.SMethod.{MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
-import sigmastate.Values._
 import sigmastate.eval._
 import sigmastate.interpreter._
-import sigmastate.lang.Terms
 import sigmastate.lang.Terms._
 import sigmastate.utils.Overloading.Overload1
 import sigmastate.utils.SparseArrayContainer

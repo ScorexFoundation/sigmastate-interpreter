@@ -2,7 +2,7 @@ package sigmastate.serialization.generators
 
 import org.scalacheck.{Arbitrary, Gen}
 import sigma.ast.SInt
-import sigmastate.Values.{FalseLeaf, TrueLeaf}
+import sigma.ast.{FalseLeaf, TrueLeaf}
 import sigmastate.{If, TreeLookup}
 
 trait RelationGenerators {

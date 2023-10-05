@@ -1,13 +1,13 @@
 package sigmastate.serialization
 
-import sigmastate.Values.{BigIntConstant, ByteArrayConstant, GroupElementConstant, LongConstant}
-import sigmastate._
-import sigmastate.Values._
-import sigmastate.utxo.Append
-import OpCodes._
 import scorex.util.encode.ZigZagEncoder.encodeZigZagLong
-import sigma.ast.SLong
+import sigma.ast.ByteArrayConstant.ByteArrayTypeCode
+import sigma.ast.global.{BigIntConstant, GroupElementConstant, LongConstant}
+import sigma.ast.{ByteArrayConstant, LongConstant, SLong}
+import sigmastate._
+import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.ValueCodes.OpCode
+import sigmastate.utxo.Append
 
 class TwoArgumentSerializerSpecification extends TableSerializationSpecification {
 

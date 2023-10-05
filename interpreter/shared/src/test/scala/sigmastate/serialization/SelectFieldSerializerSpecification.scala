@@ -1,7 +1,8 @@
 package sigmastate.serialization
 
 import org.scalacheck.Gen
-import sigmastate.Values.{FalseLeaf, IntConstant, Tuple}
+import sigma.ast.global.CollectionOps
+import sigma.ast.{FalseLeaf, IntConstant, Tuple}
 import sigmastate.serialization.OpCodes.{SelectFieldCode, TupleCode}
 import sigmastate.utxo.SelectField
 

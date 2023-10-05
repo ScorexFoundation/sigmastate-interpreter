@@ -2,7 +2,8 @@ package sigmastate.serialization.trees
 
 import sigma.ast.SType
 import sigma.serialization.CoreByteWriter.DataInfo
-import sigmastate.Values._
+import sigma.ast._
+import sigma.ast.global.SValue
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.SigmaByteWriter._

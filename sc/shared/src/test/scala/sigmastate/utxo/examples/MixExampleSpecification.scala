@@ -6,7 +6,8 @@ import scorex.crypto.hash.Blake2b256
 import sigma.data.{AvlTreeData, ProveDHTuple, ProveDlog}
 import sigma.util.Extensions.EcpOps
 import sigmastate.{CompilerCrossVersionProps, ErgoTree}
-import sigmastate.Values.GroupElementConstant
+import sigma.ast.GroupElementConstant
+import sigma.ast.global.GroupElementConstant
 import sigmastate.crypto.{CryptoConstants, DiffieHellmanTupleProverInput}
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._

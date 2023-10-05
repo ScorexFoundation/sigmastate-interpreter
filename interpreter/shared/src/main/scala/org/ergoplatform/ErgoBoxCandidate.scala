@@ -11,7 +11,8 @@ import sigma.data.Digest32Coll
 import sigma.util.safeNewArray
 import sigma.{Coll, Colls}
 import sigmastate.ErgoTree
-import sigmastate.Values._
+import sigma.ast._
+import sigma.ast.global._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}

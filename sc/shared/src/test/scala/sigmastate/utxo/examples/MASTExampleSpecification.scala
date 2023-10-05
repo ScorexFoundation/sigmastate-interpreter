@@ -7,9 +7,10 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigma.ast.{SAvlTree, SBoolean, SLong}
 import sigma.ast.SCollection.SByteArray
 import sigma.data.{AvlTreeData, AvlTreeFlags}
-import sigmastate.Values._
+import sigma.ast._
 import sigmastate._
 import sigma.Extensions.ArrayOps
+import sigma.ast.global.{GetVarByteArray, OptionValueOps}
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.lang.Terms._

@@ -4,10 +4,10 @@ import debox.cfor
 import org.ergoplatform.ErgoBox.RegisterId
 import sigma.ast.SCollection.{SByteArray, SIntArray}
 import sigma.ast.SOption.SIntOption
-import sigma.ast.{STypeSubst, _}
+import sigma.ast._
+import sigma.ast.global._
 import sigma.data.Nullable
 import sigma.{AnyValue, Coll, Colls, Environment, Evaluation}
-import sigmastate.Values._
 import sigmastate._
 import sigmastate.exceptions.ConstraintFailed
 import sigmastate.lang.Constraints._

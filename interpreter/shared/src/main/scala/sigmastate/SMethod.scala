@@ -1,17 +1,16 @@
 package sigmastate
 
 import debox.cfor
-import org.ergoplatform.validation.ValidationRules
-import sigma.{Coll, Evaluation}
 import sigma.ast._
+import sigma.ast.global._
 import sigma.data.RType
 import sigma.reflection.{RClass, RMethod}
 import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma.validation.ValidationRules.CheckTypeWithMethods
+import sigma.{Coll, Evaluation}
 import sigmastate.SMethod.{InvokeDescBuilder, MethodCostFunc}
-import sigmastate.Values.{SValue, ValueCompanion}
-import sigmastate.interpreter.{CostDetails, ErgoTreeEvaluator, FixedCostItem, GivenCost, MethodDesc, SeqCostItem, TracedCost}
-import sigmastate.lang.{SigmaBuilder, Terms}
+import sigmastate.interpreter._
+import sigmastate.lang.SigmaBuilder
 import sigmastate.lang.Terms.{MethodCall, OperationId}
 
 import scala.collection.compat.immutable.ArraySeq

@@ -7,11 +7,11 @@ import scorex.crypto.authds.avltree.batch.{Insert, Lookup, Remove, Update}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.util.encode.Base16
 import sigma.ast.SType.AnyOps
-import sigma.ast.{SBoolean, SCollection, SCollectionType, SType}
 import sigma.data.{CAnyValue, Digest32Coll, Nullable, RType, SigmaBoolean}
 import sigma.{Coll, _}
 import sigmastate.Platform
-import sigmastate.Values.{Constant, ConstantNode, SigmaPropConstant, SigmaPropValue, Value}
+import sigma.ast._
+import sigma.ast.global._
 import sigmastate.interpreter.Interpreter
 import sigmastate.lang.{CheckingSigmaBuilder, TransformingSigmaBuilder}
 import sigmastate.utils.Helpers

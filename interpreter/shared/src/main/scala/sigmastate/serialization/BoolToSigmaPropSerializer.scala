@@ -1,12 +1,12 @@
 package sigmastate.serialization
 
-import sigma.ast.SType
+import sigma.ast._
+import sigma.ast.global._
 import sigma.serialization.CoreByteWriter.DataInfo
-import sigmastate.Values.{BoolValue, SValue, SigmaPropValue}
+import sigmastate.BoolToSigmaProp
 import sigmastate.lang.Terms._
 import sigmastate.utils.SigmaByteWriter._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.{BoolToSigmaProp, Values}
 
 case class BoolToSigmaPropSerializer(cons: BoolValue => SigmaPropValue) extends ValueSerializer[BoolToSigmaProp] {
   import sigmastate.Operations.BoolToSigmaPropInfo._
@@ -17,7 +17,7 @@ case class BoolToSigmaPropSerializer(cons: BoolValue => SigmaPropValue) extends 
     w.putValue(obj.value, conditionInfo)
   }
 
-  def parse(r: SigmaByteReader): Values.Value[SType] = {
+  def parse(r: SigmaByteReader): Value[SType] = {
     val p = r.getValue().asBoolValue
     cons(p)
   }

@@ -2,7 +2,8 @@ package sigmastate.serialization.transformers
 
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
-import sigmastate.Values.{SValue, Value}
+import sigma.ast.global.SValue
+import sigma.ast.Value
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.SigmaByteWriter._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}

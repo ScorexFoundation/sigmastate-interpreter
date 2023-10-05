@@ -3,7 +3,8 @@ package sigmastate.lang
 import sigma.kiama.rewriting.Rewriter._
 import sigma.data.Nullable
 import sigma.ast.SCollection.{SByteArray, SIntArray}
-import sigmastate.Values._
+import sigma.ast._
+import sigma.ast.global._
 import sigmastate.utils.Overloading.Overload1
 import sigmastate._
 import sigmastate.interpreter.{ErgoTreeEvaluator, Interpreter}
@@ -117,7 +118,7 @@ object Terms {
     def apply(name: String): Ident = Ident(name, NoType)
   }
 
-  // TODO refactor: move to sigmastate.Values
+  // TODO refactor: move to sigma.ast
   /** ErgoTree node which represents application of function `func` to the given arguments.
     * @param func expression which evaluates to a function
     * @param args arguments of the function application
@@ -257,7 +258,7 @@ object Terms {
     override val costKind = FixedCost(JitCost(4))
 
     /** Helper constructor which allows to cast the resulting node to the specified
-      * [[sigmastate.Values.Value]] type `T`.
+      * [[sigma.ast.Value]] type `T`.
       * @see [[sigmastate.lang.Terms.MethodCall]]
       */
     def typed[T <: SValue](obj: Value[SType],

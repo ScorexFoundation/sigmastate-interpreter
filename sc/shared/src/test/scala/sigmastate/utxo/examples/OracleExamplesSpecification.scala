@@ -6,9 +6,8 @@ import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigma.ast.SCollection.SByteArray
-import sigmastate.Values._
-import sigmastate._
 import sigma.ast._
+import sigmastate._
 import sigmastate.eval._
 import sigmastate.lang.Terms._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
@@ -21,6 +20,7 @@ import sigma.Extensions.ArrayOps
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.utxo._
 import sigma.Context
+import sigma.ast.global._
 import sigma.crypto.CryptoFacade
 import sigma.data.{AvlTreeData, AvlTreeFlags}
 import sigmastate.utils.Helpers._

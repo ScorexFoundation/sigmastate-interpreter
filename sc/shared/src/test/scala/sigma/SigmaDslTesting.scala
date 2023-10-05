@@ -20,11 +20,12 @@ import sigma.util.Extensions._
 import sigma.util.StringUtil.StringUtilExtensions
 import sigmastate.ErgoTree.ZeroHeader
 import sigma.ast.SType.AnyOps
-import sigmastate.Values.{ByteArrayConstant, Constant, ConstantNode, IntConstant, SValue}
+import sigma.ast.global.SValue
+import sigma.ast.{ByteArrayConstant, Constant, ConstantNode, IntConstant}
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.crypto.SigmaProtocolPrivateInput
 import sigmastate.eval.Extensions.SigmaBooleanOps
-import sigmastate.eval.{CompiletimeIRContext, CBox, CContext, IRContext, SigmaDsl}
+import sigmastate.eval.{CBox, CContext, CompiletimeIRContext, IRContext, SigmaDsl}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaPPrint}
 import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}

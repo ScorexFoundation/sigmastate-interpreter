@@ -1,6 +1,6 @@
 package sigmastate.serialization.transformers
 
-import sigmastate.Values.Value
+import sigma.ast.Value
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}

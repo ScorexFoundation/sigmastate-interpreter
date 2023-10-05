@@ -7,7 +7,7 @@ import sigma.Colls
 import sigma.ast.SType
 import sigma.data.{RType, SigmaConstants}
 import sigmastate.ErgoTree
-import sigmastate.Values.{Constant, EvaluatedValue}
+import sigma.ast.{Constant, EvaluatedValue}
 
 import scala.collection.mutable.ArrayBuffer
 

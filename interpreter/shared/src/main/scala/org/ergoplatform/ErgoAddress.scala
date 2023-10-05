@@ -9,7 +9,8 @@ import sigma.data.ProveDlog
 import sigma.serialization.GroupElementSerializer
 import sigma.{Coll, SigmaException, VersionContext}
 import sigmastate.ErgoTree.{ZeroHeader, setVersionBits}
-import sigmastate.Values._
+import sigma.ast._
+import sigma.ast.global._
 import sigmastate._
 import sigmastate.crypto.DLogProtocol.ProveDlogProp
 import sigmastate.serialization._

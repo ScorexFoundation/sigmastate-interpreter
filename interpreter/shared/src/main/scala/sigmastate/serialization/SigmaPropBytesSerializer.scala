@@ -1,9 +1,8 @@
 package sigmastate.serialization
 
-import sigma.ast.SType
+import sigma.ast.{SType, Value}
 import sigma.serialization.CoreByteWriter.DataInfo
-import sigmastate.Values.SValue
-import sigmastate.Values
+import sigma.ast.global.SValue
 import sigmastate.lang.Terms._
 import sigmastate.utils.SigmaByteWriter._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
@@ -18,7 +17,7 @@ object SigmaPropBytesSerializer extends ValueSerializer[SigmaPropBytes] {
     w.putValue(obj.input, thisInfo)
   }
 
-  def parse(r: SigmaByteReader): Values.Value[SType] = {
+  def parse(r: SigmaByteReader): Value[SType] = {
     val p = r.getValue().asSigmaProp
     SigmaPropBytes(p)
   }

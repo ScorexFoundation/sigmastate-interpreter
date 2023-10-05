@@ -1,6 +1,6 @@
 package sigmastate.serialization
 
-import sigmastate.Values._
+import sigma.ast._
 import sigmastate._
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.ValueSerializer._

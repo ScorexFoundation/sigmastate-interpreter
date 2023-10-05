@@ -1,15 +1,14 @@
 package sigmastate.lang.syntax
 
+import fastparse.NoWhitespace._
 import fastparse._
-import NoWhitespace._
-import Identifiers._
-import sigmastate._
-import Values._
-import sigma.ast.{SBoolean, SInt, SLong, SString, SType}
-
-import java.lang.Long.parseLong
-import java.lang.Integer.parseInt
+import sigma.ast.global.BooleanConstant
+import sigma.ast.{SBoolean, SInt, SLong, SString, SType, Value}
+import sigmastate.lang.syntax.Identifiers._
 import sigmastate.lang.{SigmaBuilder, SourceContext, StdSigmaBuilder}
+
+import java.lang.Integer.parseInt
+import java.lang.Long.parseLong
 
 /** Parsers of literal expressions. */
 trait Literals { l =>

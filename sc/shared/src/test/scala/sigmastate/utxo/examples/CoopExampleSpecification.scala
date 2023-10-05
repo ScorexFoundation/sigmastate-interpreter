@@ -6,7 +6,7 @@ import org.scalatest.TryValues._
 import scorex.crypto.hash.Blake2b256
 import sigma.data.{AvlTreeData, ProveDlog}
 import sigmastate.ErgoTree.ZeroHeader
-import sigmastate.Values.{BooleanConstant, ByteArrayConstant}
+import sigma.ast.{BooleanConstant, ByteArrayConstant}
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}

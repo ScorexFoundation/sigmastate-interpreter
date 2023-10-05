@@ -1,7 +1,7 @@
 package sigmastate.serialization
 
 import sigma.ast.SType
-import sigmastate.Values.{Value, ValueCompanion}
+import sigma.ast.{Value, ValueCompanion}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 case class CaseObjectSerialization[V <: Value[SType]](override val opDesc: ValueCompanion, obj: V)

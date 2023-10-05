@@ -3,8 +3,9 @@ package sigmastate.utxo.examples
 import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
 import sigma.Colls
+import sigma.ast.global.OptionValueOps
 import sigma.ast.{SBoolean, SBox, SInt, SLong, SOption}
-import sigmastate.Values.{BlockValue, IntConstant, LongConstant, ValDef, ValUse}
+import sigma.ast.{BlockValue, IntConstant, LongConstant, ValDef, ValUse}
 import sigmastate.{ErgoTree, _}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting}

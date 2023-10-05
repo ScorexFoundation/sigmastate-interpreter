@@ -8,10 +8,9 @@ import scorex.util._
 import scorex.utils.{Ints, Shorts}
 import sigma.Extensions.ArrayOps
 import sigma.ast.SCollection.SByteArray
-import sigma.ast.{SCollection, SLong, STuple, SType}
 import sigma.ast.SType.AnyOps
 import sigma.data.{Digest32Coll, SigmaConstants}
-import sigmastate.Values._
+import sigma.ast._
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.ExtractCreationInfo

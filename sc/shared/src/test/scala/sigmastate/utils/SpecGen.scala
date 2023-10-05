@@ -9,7 +9,7 @@ import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma.util.Extensions.ByteOps
 import sigma.util.CollectionUtil
 import sigma.util.PrintExtensions._
-import sigmastate.Values._
+import sigma.ast._
 import sigmastate.lang.SigmaPredef.{PredefinedFunc, PredefinedFuncRegistry}
 import sigmastate.lang.StdSigmaBuilder
 import sigmastate.lang.Terms.{MethodCall, PropertyCall}
@@ -32,7 +32,7 @@ trait SpecGen {
       description: String,
       args: Seq[ArgInfo], op: Either[PredefinedFunc, SMethod])
 
-  def collectSerializers(): Seq[ValueSerializer[_ <: Values.Value[SType]]] = {
+  def collectSerializers(): Seq[ValueSerializer[_ <: Value[SType]]] = {
     ((LastConstantCode + 1) to 255).collect {
       case i if ValueSerializer.serializers(i.toByte) != null =>
         val ser = ValueSerializer.serializers(i.toByte)

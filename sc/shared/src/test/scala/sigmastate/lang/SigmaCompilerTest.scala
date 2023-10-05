@@ -3,8 +3,8 @@ package sigmastate.lang
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform._
 import scorex.util.encode.Base58
-import sigma.ast.{EmptySubst, SAvlTree, SBoolean, SBox, SByte, SCollection, SInt, SSigmaProp, SType}
-import sigmastate.Values._
+import sigma.ast._
+import sigma.ast.global._
 import sigmastate._
 import sigmastate.exceptions.{GraphBuildingException, InvalidArguments, TyperException}
 import sigmastate.helpers.CompilerTestingCommons

@@ -13,7 +13,8 @@ import sigma.util.{BenchmarkUtil, safeNewArray}
 import sigma.validation.ValidationException
 import sigma.validation.ValidationRules.CheckPositionLimit
 import sigma.{Colls, Environment}
-import sigmastate.Values.{BlockValue, GetVarInt, IntConstant, SValue, SigmaPropValue, Tuple, ValDef, ValUse}
+import sigma.ast._
+import sigma.ast.global._
 import sigmastate._
 import sigma.Extensions.ArrayOps
 import sigmastate.eval.Extensions.{EvalIterableOps, SigmaBooleanOps}

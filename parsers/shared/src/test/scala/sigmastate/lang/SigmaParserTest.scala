@@ -8,7 +8,8 @@ import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import sigma.ast.SCollection.{SByteArray, SLongArray}
 import sigma.ast._
-import sigmastate.Values._
+import sigma.ast._
+import sigma.ast.global.SValue
 import sigmastate._
 import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
 import sigmastate.lang.Terms._

@@ -230,9 +230,27 @@ lazy val coreJS = core.js
       )
     )
 
+lazy val data = crossProject(JVMPlatform, JSPlatform)
+  .in(file("data"))
+  .dependsOn(core % allConfigDependency)
+  .settings(
+    commonSettings ++ testSettings2,
+    commonDependenies2,
+    testingDependencies2,
+    scorexUtilDependency, fastparseDependency, circeDependency, scryptoDependency,
+    publish / skip := true
+  )
+  .jvmSettings( crossScalaSettings )
+  .jsSettings(
+    crossScalaSettingsJS,
+    useYarn := true
+  )
+lazy val dataJS = data.js
+    .enablePlugins(ScalaJSBundlerPlugin)
+
 lazy val interpreter = crossProject(JVMPlatform, JSPlatform)
   .in(file("interpreter"))
-  .dependsOn(core % allConfigDependency)
+  .dependsOn(core % allConfigDependency, data % allConfigDependency)
   .settings(
     commonSettings ++ testSettings2,
     commonDependenies2,

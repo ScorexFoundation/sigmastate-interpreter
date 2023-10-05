@@ -3,9 +3,9 @@ package sigmastate.utxo.examples
 import org.ergoplatform.Height
 import scorex.crypto.hash.Blake2b256
 import scorex.utils.Random
-import sigma.ast.{SBoolean, SByte, SCollection}
 import sigma.data.AvlTreeData
-import sigmastate.Values._
+import sigma.ast._
+import sigma.ast.global.{CollectionConstant, GetVarByteArray, OptionValueOps}
 import sigmastate._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.helpers._

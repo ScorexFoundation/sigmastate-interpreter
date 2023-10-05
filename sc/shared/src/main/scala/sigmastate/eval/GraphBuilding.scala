@@ -4,20 +4,20 @@ import org.ergoplatform._
 import scalan.MutableLazy
 import sigma.SigmaException
 import sigma.ast.TypeCodes.LastConstantCode
+import sigma.ast.Value.Typed
+import sigma.ast._
+import sigma.ast.global.SValue
+import sigma.crypto.EcPointType
 import sigma.data.ExactIntegral.{ByteIsExactIntegral, IntIsExactIntegral, LongIsExactIntegral, ShortIsExactIntegral}
 import sigma.data.ExactOrdering.{ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering, ShortIsExactOrdering}
-import sigma.util.Extensions.ByteOps
 import sigma.data.{ExactIntegral, ExactNumeric, ExactOrdering, Lazy, Nullable}
-import sigmastate.Values.Value.Typed
-import sigmastate.Values._
-import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.{SourceContext, Terms}
-import sigmastate.lang.Terms.{Ident, Select, Val, ValueOps}
-import sigmastate.serialization.{OpCodes, ValueCodes}
-import sigmastate.utxo._
-import sigma.ast._
-import sigma.crypto.EcPointType
+import sigma.util.Extensions.ByteOps
 import sigmastate.exceptions.GraphBuildingException
+import sigmastate.interpreter.Interpreter.ScriptEnv
+import sigmastate.lang.Terms.{Ident, Select, Val, ValueOps}
+import sigmastate.lang.{SourceContext, Terms}
+import sigmastate.serialization.OpCodes
+import sigmastate.utxo._
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -313,8 +313,6 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
     case _ => error(s"Don't know how to convert Elem $e to SType")
   }
 
-  import Liftables._
-
   /** Translates Elem to the corresponding Liftable instance.
     * @param eWT type descriptor
     */
@@ -603,7 +601,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val r = asRep[GroupElement](_r)
         l.multiply(r)
 
-      case Values.GroupGenerator =>
+      case GroupGenerator =>
         sigmaDslBuilder.groupGenerator
 
       case sigmastate.ByteArrayToBigInt(In(arr)) =>
@@ -641,7 +639,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         }
 
       // (x, y)
-      case Values.Tuple(InSeq(Seq(x, y))) =>
+      case Tuple(InSeq(Seq(x, y))) =>
         Pair(x, y)
 
       // xs.exists(predicate) or xs.forall(predicate)

@@ -1,31 +1,28 @@
 package sigmastate
 
 import org.ergoplatform.settings.ErgoAlgos
-import org.ergoplatform.validation.ValidationRules
 import org.ergoplatform.{ErgoAddressEncoder, ErgoBox, ErgoLikeContext, Self}
+import sigma.VersionContext._
+import sigma.ast.SCollection.SByteArray
+import sigma.ast._
+import sigma.ast.global.{SValue, SigmaPropValue, TrueSigmaProp}
 import sigma.data.RType.asType
 import sigma.data.{Nullable, RType, TrivialProp}
-import sigma.{Evaluation, VersionContext}
-import sigma.ast.SCollection.SByteArray
-import sigmastate.Values._
-import sigma.VersionContext._
+import sigma.validation.ValidationException
+import sigma.validation.ValidationRules.CheckTypeCode
+import sigma._
+import sigmastate.ErgoTree.HeaderType
+import sigmastate.SCollectionMethods.checkValidFlatmap
 import sigmastate.eval.{CBox, Profiler}
 import sigmastate.exceptions.{CostLimitException, InterpreterException}
 import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}
-import sigmastate.interpreter.{ErgoTreeEvaluator, EvalSettings}
 import sigmastate.interpreter.Interpreter.ReductionResult
-import sigmastate.lang.{CompilerSettings, SourceContext}
+import sigmastate.interpreter.{ErgoTreeEvaluator, EvalSettings}
 import sigmastate.lang.Terms._
+import sigmastate.lang.{CompilerSettings, SourceContext}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.utils.Helpers.TryOps
 import sigmastate.utxo._
-import sigma._
-import sigma.ast._
-import sigma.validation.ValidationException
-import sigma.validation.ValidationRules.CheckTypeCode
-import sigma.{ContractsTestkit, SigmaDslTesting}
-import sigmastate.ErgoTree.HeaderType
-import sigmastate.SCollectionMethods.checkValidFlatmap
 
 
 /** Regression tests with ErgoTree related test vectors.

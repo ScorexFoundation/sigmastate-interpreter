@@ -1,12 +1,12 @@
 package sigmastate.utxo
 
-import sigmastate.Values._
+import sigma.ast._
 import sigmastate.lang.Terms._
 import sigmastate._
 import sigmastate.serialization.OpCodes
 import org.ergoplatform.ErgoBox.RegisterId
 import sigma.ast.SCollection.SByteArray
-import sigma.ast._
+import sigma.ast.global.SValue
 import sigma.data.RType
 import sigma.serialization.CoreByteWriter.ArgInfo
 import sigmastate.Operations._

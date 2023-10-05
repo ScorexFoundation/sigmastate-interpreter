@@ -6,7 +6,7 @@ import scorex.util.encode.Base16
 import scorex.util.{ModifierId, Random}
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.{SInt, SPair, SSigmaProp, SType}
-import sigmastate.Values._
+import sigma.ast._
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.eval._
@@ -17,6 +17,7 @@ import sigmastate.helpers.TestingHelpers.copyTransaction
 import sigmastate.utils.Helpers
 import sigma.SigmaDslTesting
 import sigma.Extensions._
+import sigma.ast.global.TrueSigmaProp
 import sigma.data.{CSigmaProp, Digest32Coll, TrivialProp}
 
 class ErgoLikeTransactionSpec extends SigmaDslTesting {

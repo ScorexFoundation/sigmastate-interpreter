@@ -8,7 +8,7 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigma.Colls
 import sigma.data.{AvlTreeData, AvlTreeFlags, Digest32Coll, TrivialProp}
 import sigmastate.CompilerCrossVersionProps
-import sigmastate.Values.{AvlTreeConstant, ByteArrayConstant, LongConstant, SigmaPropConstant}
+import sigma.ast.{AvlTreeConstant, ByteArrayConstant, LongConstant, SigmaPropConstant}
 import sigma.Extensions.ArrayOps
 import sigmastate.eval.{IRContext, SigmaDsl}
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter}

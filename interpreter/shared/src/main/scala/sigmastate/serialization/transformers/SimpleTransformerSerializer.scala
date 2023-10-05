@@ -1,8 +1,9 @@
 package sigmastate.serialization.transformers
 
 import sigma.ast.SType
+import sigma.ast.global.SValue
 import sigma.serialization.CoreByteWriter.DataInfo
-import sigmastate.Values.{SValue, Value}
+import sigma.ast.Value
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.SigmaByteWriter._

@@ -2,7 +2,7 @@ package sigmastate.serialization
 
 import sigma.ast.SType
 import sigmastate.ModQ
-import sigmastate.Values.Value
+import sigma.ast.Value
 import sigmastate.lang.Terms._
 import sigmastate.utils.SigmaByteWriter._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}

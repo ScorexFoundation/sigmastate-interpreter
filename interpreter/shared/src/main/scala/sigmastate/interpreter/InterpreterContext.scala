@@ -1,6 +1,6 @@
 package sigmastate.interpreter
 
-import sigmastate.Values.EvaluatedValue
+import sigma.ast.EvaluatedValue
 import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
@@ -14,7 +14,7 @@ import scala.collection.mutable
   * User-defined variables to be put into context.
   * Each variable is identified by `id: Byte` and can be accessed from a script
   * using `getVar[T](id)` operation.
-  * The value of the variable is represented by [[sigmastate.Values.Constant]] instance,
+  * The value of the variable is represented by [[sigma.ast.Constant]] instance,
   * which contains both data value and [[SType]] descriptor. The descriptor is checked
   * against the type `T` expected in the script operation. If the types don't match,
   * exception is thrown and the box spending (protected by the script) fails.

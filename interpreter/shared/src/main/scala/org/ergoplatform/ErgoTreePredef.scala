@@ -2,12 +2,12 @@ package org.ergoplatform
 
 import org.ergoplatform.settings.MonetarySettings
 import sigma.ast.SCollection.SByteArray
-import sigma.ast.{SBox, SInt, SLong, SSigmaProp}
+import sigma.ast._
+import sigma.ast.global._
 import sigma.data.ProveDlog
 import sigmastate.ErgoTree.{HeaderType, ZeroHeader}
 import sigmastate.crypto.CryptoConstants
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.Values.{FalseSigmaProp, IntArrayConstant, IntConstant, LongConstant, SigmaPropConstant, SigmaPropValue, TrueSigmaProp, Value}
 import sigmastate.utxo._
 import sigmastate.{ErgoTree, _}
 import sigmastate.lang.Terms.ValueOps
@@ -43,7 +43,7 @@ object ErgoTreePredef {
     // first segregated constant is delta, so key is second constant
     val positions = IntArrayConstant(Array[Int](1))
     val minerPubkeySigmaProp = CreateProveDlog(DecodePoint(minerPkBytesVal))
-    val newVals = Values.ConcreteCollection(Array[SigmaPropValue](minerPubkeySigmaProp), SSigmaProp)
+    val newVals = ConcreteCollection(Array[SigmaPropValue](minerPubkeySigmaProp), SSigmaProp)
     SubstConstants(genericMinerPropBytes, positions, newVals)
   }
 

@@ -5,7 +5,7 @@ import sigma.util.CollectionUtil._
 import sigma.VersionContext
 import sigma.kiama.rewriting.Strategy
 import sigma.data.TrivialProp.{FalseProp, TrueProp}
-import sigmastate.Values._
+import sigma.ast._
 import sigma.VersionContext.MaxSupportedScriptVersion
 import sigmastate._
 import sigmastate.crypto.DLogProtocol._

@@ -1,6 +1,6 @@
 package sigmastate.serialization
 
-import sigmastate.Values.{Constant, ConstantNode, ConstantPlaceholder}
+import sigma.ast.{Constant, ConstantNode, ConstantPlaceholder}
 import sigmastate.lang.SigmaBuilder
 import debox.Buffer
 import sigma.ast.SType
@@ -14,7 +14,7 @@ class ConstantStore(private val constants: IndexedSeq[Constant[SType]] = Constan
     store += c.asInstanceOf[Constant[SType]]
     val tpe = c.asInstanceOf[ConstantNode[T]].tpe
     builder.mkConstantPlaceholder[tpe.type](store.length - 1, tpe)
-      .asInstanceOf[sigmastate.Values.ConstantPlaceholder[T]]
+      .asInstanceOf[sigma.ast.ConstantPlaceholder[T]]
   }
 
   @inline final def get(index: Int): Constant[SType] = store(index)

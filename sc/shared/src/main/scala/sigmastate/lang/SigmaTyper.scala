@@ -2,14 +2,14 @@ package sigmastate.lang
 
 import org.ergoplatform._
 import sigma.ast.SCollection.{SBooleanArray, SByteArray}
-import sigmastate.Values._
-import sigmastate._
 import sigma.ast._
+import sigma.ast.global.SValue
 import sigma.data.{Nullable, SigmaBoolean}
 import sigma.util.Extensions.Ensuring
-import sigmastate.lang.Terms._
+import sigmastate._
 import sigmastate.exceptions._
 import sigmastate.lang.SigmaPredef._
+import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
 

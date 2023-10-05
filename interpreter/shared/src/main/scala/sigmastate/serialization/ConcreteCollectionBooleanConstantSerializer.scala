@@ -1,6 +1,7 @@
 package sigmastate.serialization
 
-import sigmastate.Values._
+import sigma.ast._
+import sigma.ast.global._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigma.util.safeNewArray
 import debox.cfor

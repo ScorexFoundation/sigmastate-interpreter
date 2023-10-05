@@ -5,7 +5,7 @@ import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import scorex.util.encode.Base16
 import sigma.ast.SType
-import sigmastate.Values._
+import sigma.ast._
 import sigmastate.crypto.CryptoConstants.dlogGroup
 import sigma.crypto.CryptoFacade
 import sigmastate.lang.DeserializationSigmaBuilder

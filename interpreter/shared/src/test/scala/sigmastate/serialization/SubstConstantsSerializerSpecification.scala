@@ -1,7 +1,8 @@
 package sigmastate.serialization
 
 import sigma.ast.SInt
-import sigmastate.Values.{ConcreteCollection, IntConstant, IntArrayConstant, IntValue}
+import sigma.ast.global.IntValue
+import sigma.ast.{ConcreteCollection, IntArrayConstant, IntConstant}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.{CrossVersionProps, EQ, SubstConstants}
 

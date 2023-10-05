@@ -1,7 +1,7 @@
 package sigmastate.serialization
 
 import sigma.ast.SType
-import sigmastate.Values._
+import sigma.ast._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 case class ConstantPlaceholderSerializer(cons: (Int, SType) => Value[SType])

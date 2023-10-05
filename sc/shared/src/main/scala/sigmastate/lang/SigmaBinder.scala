@@ -5,7 +5,8 @@ import org.ergoplatform._
 import sigma.ast.NoType
 import sigma.data.Nullable
 import sigma.kiama.rewriting.CallbackRewriter
-import sigmastate.Values._
+import sigma.ast._
+import sigma.ast.global.SValue
 import sigmastate._
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry

@@ -6,7 +6,7 @@ import scala.scalajs.js
 import scala.scalajs.js.JSConverters.JSRichIterableOnce
 import scala.scalajs.js.annotation.JSExportTopLevel
 
-/** An exported JavaScript class wrapping the Scala `Values.ErgoTree` type. */
+/** An exported JavaScript class wrapping the Scala `ErgoTree` type. */
 @JSExportTopLevel("ErgoTree")
 class ErgoTree(tree: sigmastate.ErgoTree) extends js.Object {
   /** The first byte of serialized byte array which determines interpretation of the rest of the array. */

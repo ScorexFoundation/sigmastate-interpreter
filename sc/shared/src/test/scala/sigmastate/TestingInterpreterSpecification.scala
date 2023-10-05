@@ -2,7 +2,8 @@ package sigmastate
 
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values._
+import sigma.ast._
+import sigma.ast.global._
 import sigmastate.interpreter._
 import Interpreter._
 import sigmastate.lang.Terms._

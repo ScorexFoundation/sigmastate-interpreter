@@ -2,22 +2,20 @@ package org.ergoplatform.sdk.wallet.utils
 
 import org.ergoplatform.ErgoBox.{BoxId, NonMandatoryRegisterId, Token}
 import org.ergoplatform.sdk.wallet.Constants
-import org.ergoplatform.sdk.wallet.secrets.ExtendedPublicKey
-import org.ergoplatform.sdk.wallet.secrets.{DerivationPath, ExtendedSecretKey, Index, SecretKey}
+import org.ergoplatform.sdk.wallet.secrets._
 import org.ergoplatform.sdk.wallet.settings.EncryptionSettings
+import org.ergoplatform._
 import org.scalacheck.Arbitrary.arbByte
 import org.scalacheck.{Arbitrary, Gen}
 import scorex.crypto.authds.ADKey
-import sigmastate.Values.{ByteArrayConstant, CollectionConstant, EvaluatedValue, FalseLeaf, TrueLeaf}
-import sigma.ast.{SByte, SType}
 import scorex.util._
-import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, ErgoTreePredef, UnsignedErgoLikeTransaction, UnsignedInput}
 import sigma.Extensions.ArrayOps
-import scorex.util.{ModifierId, bytesToId}
+import sigma.ast._
+import sigma.ast.global.CollectionConstant
 import sigma.crypto.CryptoFacade
 import sigma.data.{Digest32Coll, ProveDlog}
 import sigmastate.ErgoTree
-import sigmastate.eval.Extensions.{EvalIterableOps, SigmaBooleanOps}
+import sigmastate.eval.Extensions.EvalIterableOps
 import sigmastate.helpers.TestingHelpers._
 
 trait Generators {

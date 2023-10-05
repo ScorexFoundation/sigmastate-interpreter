@@ -1,14 +1,12 @@
 package sigmastate.serialization
 
-import sigmastate.Values._
-import sigmastate._
-import sigmastate.serialization.OpCodes._
-import scorex.util.Extensions._
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import ValueSerializer._
-import sigma.util.safeNewArray
 import debox.cfor
-import sigma.ast.{SType, STypeVar}
+import scorex.util.Extensions._
+import sigma.ast._
+import sigma.util.safeNewArray
+import sigmastate.serialization.OpCodes._
+import sigmastate.serialization.ValueSerializer._
+import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 case class ValDefSerializer(override val opDesc: ValueCompanion) extends ValueSerializer[ValDef] {
 

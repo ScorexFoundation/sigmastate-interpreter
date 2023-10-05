@@ -3,7 +3,7 @@ package sigmastate.utxo.examples
 import sigmastate.interpreter.Interpreter._
 import org.ergoplatform._
 import sigma.data.AvlTreeData
-import sigmastate.Values.ShortConstant
+import sigma.ast.ShortConstant
 import sigmastate._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._

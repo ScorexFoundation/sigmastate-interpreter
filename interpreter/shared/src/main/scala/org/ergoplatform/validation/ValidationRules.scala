@@ -7,12 +7,12 @@ import sigma.util.Extensions.toUByte
 import sigma.validation.ValidationRules._
 import sigma.validation._
 import sigmastate.ErgoTree.HeaderType
-import sigmastate.Values.SValue
+import sigma.ast.global._
 import sigmastate.exceptions._
 import sigmastate.serialization.ValueCodes.OpCode
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.DeserializeContext
-import sigmastate.{ErgoTree, _}
+import sigmastate._
 
 /** All validation rules which are used to check soft-forkable conditions. Each validation
   * rule throws a [[org.ergoplatform.validation.ValidationException]]. Each

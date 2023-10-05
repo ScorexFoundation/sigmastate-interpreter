@@ -5,8 +5,8 @@ import org.ergoplatform._
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Remove}
 import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigmastate.{ErgoTree, Values}
-import sigmastate.Values.LongConstant
+import sigmastate.ErgoTree
+import sigma.ast.{LongConstant, TrueLeaf}
 import sigmastate.eval._
 import sigmastate.helpers.{BlockchainState, CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, ErgoTransactionValidator}
 import sigmastate.helpers.TestingHelpers._
@@ -159,7 +159,7 @@ object BlockchainSimulationTestingCommons extends CompilerTestingCommons {
           testBox(10,
             ErgoTree.fromProposition(
               ErgoTree.headerWithVersion(ZeroHeader, scriptVersion),
-              Values.TrueLeaf.toSigmaProp),
+              TrueLeaf.toSigmaProp),
             i, Seq(), Map(), txId))
         createTransaction(boxes)
       },

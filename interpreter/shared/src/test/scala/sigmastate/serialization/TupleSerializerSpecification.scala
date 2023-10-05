@@ -1,6 +1,6 @@
 package sigmastate.serialization
 
-import sigmastate.Values.{FalseLeaf, IntConstant, Tuple}
+import sigma.ast.{FalseLeaf, IntConstant, Tuple}
 
 class TupleSerializerSpecification extends TableSerializationSpecification {
 

@@ -15,7 +15,7 @@ import sigmastate.Operations._
 import sigma.ast._
 import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma.validation.SigmaValidationSettings
-import sigmastate.Values._
+import sigma.ast.global._
 import sigmastate.eval.Extensions.EvalCollOps
 import sigmastate.eval.NumericOps.{BigIntIsExactIntegral, BigIntIsExactOrdering}
 import sigmastate.eval.SigmaDsl

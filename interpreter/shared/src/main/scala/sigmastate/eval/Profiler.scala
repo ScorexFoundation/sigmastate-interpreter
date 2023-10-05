@@ -1,17 +1,15 @@
 package sigmastate.eval
 
-import sigmastate.{FixedCost, JitCost, SMethod}
-import sigmastate.Values.SValue
-import sigmastate.serialization.{OpCodes, ValueCodes, ValueSerializer}
-import sigmastate.serialization.ValueSerializer.getSerializer
-import sigma.util.Extensions.ByteOps
-import debox.{Buffer => DBuffer, Map => DMap}
-import debox.sp
+import debox.{sp, Buffer => DBuffer, Map => DMap}
 import sigma.ast.TypeCodes.LastConstantCode
-import sigma.util.Extensions.DBufferOps
+import sigma.ast.global._
+import sigma.util.Extensions.{ByteOps, DBufferOps}
 import sigmastate.interpreter.{CostItem, FixedCostItem, SeqCostItem, TypeBasedCostItem}
 import sigmastate.lang.Terms.{MethodCall, PropertyCall}
 import sigmastate.serialization.ValueCodes.OpCode
+import sigmastate.serialization.ValueSerializer
+import sigmastate.serialization.ValueSerializer.getSerializer
+import sigmastate.{FixedCost, JitCost, SMethod}
 
 import scala.reflect.ClassTag
 

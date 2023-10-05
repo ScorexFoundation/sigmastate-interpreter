@@ -1,7 +1,7 @@
 package sigmastate.serialization.transformers
 
 import sigmastate.{SigmaTransformer, SigmaTransformerCompanion}
-import sigmastate.Values.{SValue, SigmaPropValue}
+import sigma.ast.global.{SValue, SigmaPropValue}
 import sigmastate.serialization.ValueSerializer
 import sigma.util.safeNewArray
 import sigmastate.utils.SigmaByteWriter._

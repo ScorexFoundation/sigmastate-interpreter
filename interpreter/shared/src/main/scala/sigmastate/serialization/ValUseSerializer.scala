@@ -1,8 +1,6 @@
 package sigmastate.serialization
 
-import sigma.ast.SType
-import sigmastate.Values._
-import sigmastate._
+import sigma.ast.{SType, _}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 case class ValUseSerializer(cons: (Int, SType) => Value[SType]) extends ValueSerializer[ValUse[SType]] {

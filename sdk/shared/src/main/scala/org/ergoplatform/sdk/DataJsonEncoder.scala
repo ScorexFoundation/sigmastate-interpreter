@@ -8,7 +8,7 @@ import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, Token}
 import org.ergoplatform.settings.ErgoAlgos
 import sigma.data.{CAnyValue, RType}
 import scorex.util._
-import sigmastate.Values.{Constant, EvaluatedValue}
+import sigma.ast.{Constant, EvaluatedValue}
 import sigmastate.lang.SigmaParser
 import sigmastate.eval._
 import sigma._

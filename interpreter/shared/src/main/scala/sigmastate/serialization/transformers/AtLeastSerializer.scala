@@ -1,8 +1,9 @@
 package sigmastate.serialization.transformers
 
+import sigma.ast.global.SigmaPropValue
 import sigma.ast.{SCollection, SInt, SSigmaProp}
 import sigmastate.Operations.AtLeastInfo
-import sigmastate.Values.{SigmaPropValue, Value}
+import sigma.ast.Value
 import sigmastate.lang.Terms._
 import sigmastate._
 import sigmastate.serialization.ValueSerializer

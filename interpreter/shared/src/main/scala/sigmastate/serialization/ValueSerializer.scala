@@ -7,7 +7,6 @@ import sigma.ast.TypeCodes.LastConstantCode
 import sigma.ast._
 import sigma.serialization.CoreByteWriter.DataInfo
 import sigma.util.Extensions.toUByte
-import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.serialization.ValueCodes.OpCode

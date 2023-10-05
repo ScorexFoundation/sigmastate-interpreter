@@ -1,11 +1,10 @@
 package sigma
 
 import sigma.Extensions.ArrayOps
+import sigma.ast.global.TrueSigmaProp
 import sigma.data.{AvlTreeData, RType}
 import sigmastate.ErgoTree
-import sigmastate.Values
 import sigmastate.eval._
-import sigmastate.eval.Extensions._
 import sigmastate.helpers.TestingHelpers._
 import sigma.data._
 
@@ -63,7 +62,7 @@ trait ContractsTestkit {
 
   def newAliceBox(@nowarn id: Byte, value: Long): Box = {
     val ergoBox = testBox(value,
-      ErgoTree.fromProposition(Values.TrueSigmaProp),
+      ErgoTree.fromProposition(TrueSigmaProp),
       creationHeight = 0, additionalTokens = Seq(), additionalRegisters = Map())
     new CBox(ergoBox)
   }
