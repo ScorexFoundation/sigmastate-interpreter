@@ -504,7 +504,6 @@ class SigmaTyper(val builder: SigmaBuilder,
     case Inputs => Inputs
     case Outputs => Outputs
     case LastBlockUtxoRootHash => LastBlockUtxoRootHash
-    case v: ContextVariable[_] => v
     case v: GetVar[_] => v
     case v: OptionGet[_] => v
     case v: EvaluatedValue[_] => v

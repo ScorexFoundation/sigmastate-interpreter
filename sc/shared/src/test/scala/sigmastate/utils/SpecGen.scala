@@ -257,7 +257,7 @@ object GenPrimOpsApp extends SpecGen {
     val methods = collectMethods()
     val ops = collectSerializableOperations()
     val noOps = Set(
-      TaggedVariable, ValUse, ConstantPlaceholder, TrueLeaf, FalseLeaf,
+      ValUse, ConstantPlaceholder, TrueLeaf, FalseLeaf,
       ConcreteCollection, ConcreteCollectionBooleanConstant, Tuple, SelectField, SigmaPropIsProven, ValDef, FunDef, BlockValue
     )
 

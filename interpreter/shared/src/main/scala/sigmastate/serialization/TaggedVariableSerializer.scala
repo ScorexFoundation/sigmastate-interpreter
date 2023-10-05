@@ -5,6 +5,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
+// TODO v6.0: remove this class (https://github.com/ScorexFoundation/sigmastate-interpreter/issues/584)
 case class TaggedVariableSerializer(cons: (Byte, SType) => Value[SType])
   extends ValueSerializer[TaggedVariable[_ <: SType]] {
   override def opDesc = TaggedVariable

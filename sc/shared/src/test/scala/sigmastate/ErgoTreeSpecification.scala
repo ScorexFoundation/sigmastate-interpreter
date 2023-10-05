@@ -51,7 +51,6 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
       Block(Seq(), null),
       ValNode("x", SInt, null),
       ApplyTypes(null, Seq()),
-      TaggedVariableNode(1, SByte),
       ValDef(1, null),
       ValUse(1, SInt),
       BlockValue(IndexedSeq(), null)

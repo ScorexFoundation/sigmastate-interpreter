@@ -390,12 +390,9 @@ object Values {
   trait NotReadyValue[S <: SType] extends Value[S] {
   }
 
-  /** Base class for references to context variables. */
-  trait ContextVariable[S <: SType] extends NotReadyValue[S] {
-  }
-
+  // TODO v6.0: remove these TaggedVariable and TaggedVariableNode (https://github.com/ScorexFoundation/sigmastate-interpreter/issues/584)
   /** Reference a context variable by id. */
-  trait TaggedVariable[T <: SType] extends ContextVariable[T] {
+  trait TaggedVariable[T <: SType] extends NotReadyValue[T] {
     val varId: Byte
   }
 
