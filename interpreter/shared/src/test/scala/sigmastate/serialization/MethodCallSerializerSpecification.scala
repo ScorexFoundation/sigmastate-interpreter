@@ -1,11 +1,9 @@
 package sigmastate.serialization
 
 import org.ergoplatform.Outputs
-import sigma.ast.{SBox, SByte, SCollection}
-import sigma.ast.{FuncValue, ValUse}
+import sigma.ast.{FuncValue, SBox, SByte, SCollection, SCollectionMethods, ValUse}
 import sigmastate.lang.Terms.MethodCall
 import sigmastate.utxo.ExtractScriptBytes
-import sigmastate._
 
 class MethodCallSerializerSpecification extends SerializationSpecification {
 

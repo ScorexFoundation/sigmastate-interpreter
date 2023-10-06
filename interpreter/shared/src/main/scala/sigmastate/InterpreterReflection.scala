@@ -9,7 +9,7 @@ import sigma.ast._
 import sigma.ast.global._
 import sigma.data.{CAND, COR, CTHRESHOLD}
 import sigma.{AvlTree, SigmaDslBuilder}
-import sigmastate.SAvlTreeMethods.KeyValueColl
+import SAvlTreeMethods.KeyValueColl
 import sigmastate.crypto.VerifierMessage.Challenge
 import sigmastate.crypto.GF2_192_Poly
 import sigmastate.interpreter.ErgoTreeEvaluator

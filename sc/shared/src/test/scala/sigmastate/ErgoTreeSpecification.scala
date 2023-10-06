@@ -12,7 +12,7 @@ import sigma.validation.ValidationException
 import sigma.validation.ValidationRules.CheckTypeCode
 import sigma._
 import sigmastate.ErgoTree.HeaderType
-import sigmastate.SCollectionMethods.checkValidFlatmap
+import SCollectionMethods.checkValidFlatmap
 import sigmastate.eval.{CBox, Profiler}
 import sigmastate.exceptions.{CostLimitException, InterpreterException}
 import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}

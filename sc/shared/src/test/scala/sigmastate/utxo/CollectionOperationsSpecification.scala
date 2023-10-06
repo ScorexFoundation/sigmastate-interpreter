@@ -9,7 +9,7 @@ import org.ergoplatform._
 import sigma.ast.SCollection._
 import sigma.ast.global._
 import sigma.data.AvlTreeData
-import sigmastate.SCollectionMethods.{FlatMapMethod, IndexOfMethod, IndicesMethod, PatchMethod, UpdateManyMethod, UpdatedMethod}
+import SCollectionMethods.{FlatMapMethod, IndexOfMethod, IndicesMethod, PatchMethod, UpdateManyMethod, UpdatedMethod}
 import sigmastate.eval.Extensions.SigmaBooleanOps
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.serialization.OpCodes._

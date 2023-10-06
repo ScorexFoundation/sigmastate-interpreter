@@ -6,7 +6,7 @@ import sigma.kiama.rewriting.Rewriter.{everywherebu, rewrite, rule}
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform.Global
 import scalan.GraphIRReflection
-import sigma.ast.Value
+import sigma.ast.{SCollectionMethods, SGlobalMethods, SGroupElementMethods, Value}
 import sigmastate.eval.IRContext
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
@@ -15,8 +15,8 @@ import sigmastate.lang.syntax.ParserException
 import sigmastate.utxo._
 import sigma.ast._
 import sigma.ast.global.SValue
-import sigmastate.SCollectionMethods.{ExistsMethod, ForallMethod, MapMethod}
-import sigmastate.{Exponentiate, InterpreterReflection, MultiplyGroup, SCollectionMethods, SGlobalMethods, SGroupElementMethods, Xor}
+import SCollectionMethods.{ExistsMethod, ForallMethod, MapMethod}
+import sigmastate.{Exponentiate, InterpreterReflection, MultiplyGroup, Xor}
 
 /**
   * @param networkPrefix    network prefix to decode an ergo address from string (PK op)
