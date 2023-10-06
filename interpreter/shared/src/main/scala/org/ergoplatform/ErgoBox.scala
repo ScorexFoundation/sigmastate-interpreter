@@ -13,8 +13,7 @@ import sigma.data.{Digest32Coll, SigmaConstants}
 import sigma.ast._
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
-import sigmastate.utxo.ExtractCreationInfo
-import sigma.{Colls, _}
+import sigma._
 import sigmastate.ErgoTree
 
 /**

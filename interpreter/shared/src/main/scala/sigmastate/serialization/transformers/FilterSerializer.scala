@@ -1,10 +1,9 @@
 package sigmastate.serialization.transformers
 
-import sigma.ast.Value
+import sigma.ast.{Filter, Value}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.utxo.Filter
 import sigma.ast.{SCollection, SType, SFunc}
 
 case class FilterSerializer(cons: (Value[SCollection[SType]], Value[SFunc]) => Value[SCollection[SType]]) extends ValueSerializer[Filter[SType]] {

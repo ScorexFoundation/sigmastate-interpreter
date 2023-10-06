@@ -16,7 +16,6 @@ import sigmastate.helpers.TestingHelpers._
 import sigmastate.lang.Terms._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utxo._
 import sigmastate.eval._
 
 import scala.util.Random

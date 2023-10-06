@@ -1,12 +1,11 @@
 package sigmastate.serialization.transformers
 
 import sigma.ast.Operations.AppendInfo
-import sigma.ast.Value
+import sigma.ast.{Append, Value}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utils.SigmaByteWriter._
-import sigmastate.utxo.Append
 import sigma.ast.{SCollection, SType}
 
 case class AppendSerializer(cons: (Value[SCollection[SType]], Value[SCollection[SType]]) => Value[SCollection[SType]])

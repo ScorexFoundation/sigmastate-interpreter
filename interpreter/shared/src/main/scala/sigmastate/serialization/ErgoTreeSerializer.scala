@@ -1,13 +1,12 @@
 package sigmastate.serialization
 
 import org.ergoplatform.validation.ValidationRules.{CheckDeserializedScriptIsSigmaProp, CheckHeaderSizeBit}
-import sigma.ast.{Constant, SType, SubstConstants}
+import sigma.ast.{ComplexityTable, Constant, SType, SubstConstants}
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.ErgoTree.{EmptyConstants, HeaderType}
 import sigma.util.safeNewArray
-import sigmastate.utxo.ComplexityTable
 import debox.cfor
 import sigma.VersionContext
 import sigma.serialization.{ReaderPositionLimitExceeded, SerializerException}

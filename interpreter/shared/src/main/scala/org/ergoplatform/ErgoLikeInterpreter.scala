@@ -4,7 +4,6 @@ import sigma.ast.SCollection.SByteArray
 import sigma.ast._
 import sigma.ast.global._
 import sigmastate.interpreter.Interpreter
-import sigmastate.utxo._
 
 
 /** Base class of verifying interpreter which expects ErgoLikeContext as input of

@@ -6,7 +6,7 @@ import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.serialization.{Reader, VLQByteBufferReader}
-import sigma.ast.{SBoolean, SInt}
+import sigma.ast.{SBoolean, SInt, SizeOf}
 import sigma.data.{AvlTreeData, AvlTreeFlags, CAND, SigmaBoolean}
 import sigma.serialization.{DeserializeCallDepthExceeded, InvalidTypePrefix, ReaderPositionLimitExceeded, SerializerException}
 import sigma.util.{BenchmarkUtil, safeNewArray}
@@ -24,8 +24,6 @@ import sigmastate.interpreter.{ContextExtension, CostedProverResult}
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.Helpers._
 import sigmastate.utils.SigmaByteReader
-import sigmastate.utxo.SizeOf
-
 import java.nio.ByteBuffer
 import scala.collection.immutable.Seq
 import scala.collection.mutable

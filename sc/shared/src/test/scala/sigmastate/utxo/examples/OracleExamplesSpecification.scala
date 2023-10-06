@@ -18,7 +18,6 @@ import sigmastate.crypto.CryptoConstants
 import sigmastate.crypto.BigIntegers
 import sigma.Extensions.ArrayOps
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.utxo._
 import sigma.Context
 import sigma.ast.global._
 import sigma.crypto.CryptoFacade

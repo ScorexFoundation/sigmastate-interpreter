@@ -8,7 +8,6 @@ import sigma.data.ProveDlog
 import sigmastate.ErgoTree.{HeaderType, ZeroHeader}
 import sigmastate.crypto.CryptoConstants
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.utxo._
 import sigmastate._
 import sigmastate.lang.Terms.ValueOps
 

@@ -1,8 +1,6 @@
-package sigmastate.utxo
+package sigma.ast
 
 import org.ergoplatform._
-import sigmastate._
-import sigma.ast._
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueCodes.OpCode
 

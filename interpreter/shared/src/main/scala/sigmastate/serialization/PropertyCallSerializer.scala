@@ -1,14 +1,12 @@
 package sigmastate.serialization
 
-import sigma.ast.{EmptySubst, SType, STypeSubst}
+import sigma.ast.{ComplexityTable, EmptySubst, SType, STypeSubst}
 import sigma.serialization.CoreByteWriter.{ArgInfo, DataInfo}
 import sigma.ast._
 import sigma.ast.global.SValue
-import sigmastate._
 import sigmastate.lang.Terms.{MethodCall, PropertyCall}
 import sigmastate.utils.SigmaByteWriter._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.utxo.ComplexityTable
 
 case class PropertyCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value[SType]], STypeSubst) => Value[SType])
   extends ValueSerializer[MethodCall] {

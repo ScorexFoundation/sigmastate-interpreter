@@ -2,7 +2,7 @@ package sigmastate.serialization.transformers
 
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
-import sigma.ast.Value
+import sigma.ast.{DeserializeRegister, Value}
 import sigmastate.serialization.ValueSerializer
 import ValueSerializer._
 import sigma.ast.SType
@@ -11,7 +11,6 @@ import sigma.serialization.CoreByteWriter.{ArgInfo, DataInfo}
 import sigma.ast.Operations.DeserializeRegisterInfo._
 import sigmastate.utils.SigmaByteWriter._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.utxo.DeserializeRegister
 
 case class DeserializeRegisterSerializer(cons: (RegisterId, SType, Option[Value[SType]]) => Value[SType])
   extends ValueSerializer[DeserializeRegister[SType]] {

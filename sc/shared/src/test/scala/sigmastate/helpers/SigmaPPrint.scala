@@ -15,8 +15,6 @@ import sigmastate._
 import sigmastate.crypto.GF2_192_Poly
 import sigmastate.interpreter.{CompanionDesc, FixedCostItem, MethodDesc}
 import sigmastate.lang.Terms.MethodCall
-import sigmastate.utxo.SelectField
-
 import java.math.BigInteger
 import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable

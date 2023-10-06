@@ -21,7 +21,7 @@ import sigma.util.StringUtil.StringUtilExtensions
 import sigmastate.ErgoTree.ZeroHeader
 import sigma.ast.SType.AnyOps
 import sigma.ast.global.SValue
-import sigma.ast.{AtLeast, ByteArrayConstant, Constant, ConstantNode, IntConstant, SOption, SSigmaProp, SType, SigmaOr}
+import sigma.ast._
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.crypto.SigmaProtocolPrivateInput
 import sigmastate.eval.Extensions.SigmaBooleanOps
@@ -34,7 +34,6 @@ import sigmastate.lang.Terms.{Apply, ValueOps}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers._
-import sigmastate.utxo.{DeserializeContext, DeserializeRegister, GetVar, OptionGet}
 import sigma.validation.ValidationRules.CheckSerializableTypeCode
 import sigma.validation.{SigmaValidationSettings, ValidationException}
 import sigmastate.{ErgoTree, eval}

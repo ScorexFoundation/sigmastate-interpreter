@@ -3,7 +3,6 @@ package sigmastate.eval
 
 import sigma.ast._
 import org.ergoplatform._
-import sigmastate._
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.ConstantStore
@@ -241,7 +240,7 @@ trait TreeBuilding extends SigmaLibrary { IR: IRContext =>
         val col = recurse(colSym)
         mkByIndex(col, index.asIntValue, None)
       case CollM.length(col) =>
-        utxo.SizeOf(recurse(col).asCollection[SType])
+        sigma.ast.SizeOf(recurse(col).asCollection[SType])
       case CollM.exists(colSym, pSym) =>
         val Seq(col, p) = Seq(colSym, pSym).map(recurse)
         mkExists(col.asCollection[SType], p.asFunc)

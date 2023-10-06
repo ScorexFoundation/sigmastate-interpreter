@@ -17,7 +17,6 @@ import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms.{Ident, Select, Val, ValueOps}
 import sigmastate.lang.{SourceContext, Terms}
 import sigmastate.serialization.OpCodes
-import sigmastate.utxo._
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -613,15 +612,15 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         sigmaDslBuilder.longToByteArray(xV)
 
       // opt.get
-      case utxo.OptionGet(In(opt: ROption[_]@unchecked)) =>
+      case OptionGet(In(opt: ROption[_]@unchecked)) =>
         opt.get
 
       // opt.isDefined
-      case utxo.OptionIsDefined(In(opt: ROption[_]@unchecked)) =>
+      case OptionIsDefined(In(opt: ROption[_]@unchecked)) =>
         opt.isDefined
 
       // opt.getOrElse(default)
-      case utxo.OptionGetOrElse(In(opt: ROption[a]@unchecked), In(default)) =>
+      case OptionGetOrElse(In(opt: ROption[a]@unchecked), In(default)) =>
         opt.getOrElse(asRep[a](default))
 
       // tup._1 or tup._2
@@ -720,7 +719,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val res = sigmaDslBuilder.sha256(inputV)
         res
 
-      case utxo.SizeOf(In(xs)) =>
+      case ast.SizeOf(In(xs)) =>
         xs.elem.asInstanceOf[Any] match {
           case _: CollElem[a,_] =>
             val xsV = asRep[Coll[a]](xs)
@@ -749,26 +748,26 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val pV = asRep[SigmaProp](eval(p))
         pV.propBytes
 
-      case utxo.ExtractId(In(box: Ref[Box]@unchecked)) =>
+      case ExtractId(In(box: Ref[Box]@unchecked)) =>
         box.id
 
-      case utxo.ExtractBytesWithNoRef(In(box: Ref[Box]@unchecked)) =>
+      case ExtractBytesWithNoRef(In(box: Ref[Box]@unchecked)) =>
         box.bytesWithoutRef
 
-      case utxo.ExtractAmount(In(box)) =>
+      case ExtractAmount(In(box)) =>
         val boxV = asRep[Box](box)
         boxV.value
 
-      case utxo.ExtractScriptBytes(In(box: Ref[Box]@unchecked)) =>
+      case ExtractScriptBytes(In(box: Ref[Box]@unchecked)) =>
         box.propositionBytes
 
-      case utxo.ExtractBytes(In(box: Ref[Box]@unchecked)) =>
+      case ExtractBytes(In(box: Ref[Box]@unchecked)) =>
         box.bytes
 
-      case utxo.ExtractCreationInfo(In(box: Ref[Box]@unchecked)) =>
+      case ExtractCreationInfo(In(box: Ref[Box]@unchecked)) =>
         box.creationInfo
 
-      case utxo.ExtractRegisterAs(In(box: Ref[Box]@unchecked), regId, optTpe) =>
+      case ExtractRegisterAs(In(box: Ref[Box]@unchecked), regId, optTpe) =>
         val elem = stypeToElem(optTpe.elemType).asInstanceOf[Elem[Any]]
         val i: Ref[Int] = regId.number.toInt
         box.getReg(i)(elem)

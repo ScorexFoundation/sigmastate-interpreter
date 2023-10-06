@@ -1,21 +1,18 @@
-package sigmastate.utxo
+package sigma.ast
 
-import sigma.ast._
-import sigmastate.lang.Terms._
-import sigmastate._
-import sigmastate.serialization.OpCodes
 import org.ergoplatform.ErgoBox.RegisterId
+import sigma.ast.Operations._
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.global.SValue
 import sigma.data.RType
 import sigma.serialization.CoreByteWriter.ArgInfo
-import Operations._
+import sigma.{Box, Coll, Evaluation, SigmaProp}
+import sigmastate._
 import sigmastate.eval.SigmaDsl
-import sigmastate.exceptions.InterpreterException
 import sigmastate.interpreter.ErgoTreeEvaluator
 import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv, error}
-import sigma.{Coll, Evaluation}
-import sigma.{Box, SigmaProp}
+import sigmastate.lang.Terms._
+import sigmastate.serialization.OpCodes
 import sigmastate.serialization.ValueCodes.OpCode
 
 // TODO refactor: remove this trait as it doesn't have semantic meaning

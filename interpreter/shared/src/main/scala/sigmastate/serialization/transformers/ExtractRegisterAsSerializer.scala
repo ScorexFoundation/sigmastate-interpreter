@@ -3,11 +3,10 @@ package sigmastate.serialization.transformers
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
 import sigma.ast.global.SValue
-import sigma.ast.Value
+import sigma.ast.{ExtractRegisterAs, Value}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.SigmaByteWriter._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.utxo.ExtractRegisterAs
 import sigma.ast.{SBox, SOption, SType}
 import sigma.serialization.CoreByteWriter.{ArgInfo, DataInfo}
 

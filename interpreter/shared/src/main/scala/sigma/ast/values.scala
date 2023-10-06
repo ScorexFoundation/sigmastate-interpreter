@@ -22,7 +22,6 @@ import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.ValueCodes.OpCode
 import sigmastate.serialization._
-import sigmastate.utxo._
 
 import java.math.BigInteger
 import java.util.{Arrays, Objects}

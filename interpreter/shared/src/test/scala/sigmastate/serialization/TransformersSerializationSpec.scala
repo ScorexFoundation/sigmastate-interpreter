@@ -1,8 +1,6 @@
 package sigmastate.serialization
 
-import sigma.ast.{AtLeast, ByteArrayToBigInt, CalcBlake2b256, CalcSha256, LongToByteArray, SBoolean, SInt, XorOf}
-import sigmastate._
-import sigmastate.utxo._
+import sigma.ast._
 
 class TransformersSerializationSpec extends SerializationSpecification {
 

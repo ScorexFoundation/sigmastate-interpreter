@@ -1,21 +1,17 @@
 package sigmastate.utils
 
-import sigma.util.PrintExtensions.IterableExtensions
-import sigmastate._
 import sigma.Evaluation._
 import sigma.ast.TypeCodes.LastConstantCode
-import sigma.ast.{SBigInt, SBoolean, SCollection, SEmbeddable, SGlobal, SGroupElement, SNumericType, SOption, SPrimType, SString, SType, STypeCompanion}
-import sigma.serialization.CoreByteWriter.ArgInfo
-import sigma.util.Extensions.ByteOps
-import sigma.util.CollectionUtil
-import sigma.util.PrintExtensions._
 import sigma.ast._
+import sigma.serialization.CoreByteWriter.ArgInfo
+import sigma.util.CollectionUtil
+import sigma.util.Extensions.ByteOps
+import sigma.util.PrintExtensions._
 import sigmastate.lang.SigmaPredef.{PredefinedFunc, PredefinedFuncRegistry}
 import sigmastate.lang.StdSigmaBuilder
 import sigmastate.lang.Terms.{MethodCall, PropertyCall}
 import sigmastate.serialization.ValueCodes.OpCode
-import sigmastate.serialization.{OpCodes, ValueCodes, ValueSerializer}
-import sigmastate.utxo.{SelectField, SigmaPropIsProven}
+import sigmastate.serialization.ValueSerializer
 
 object SpecGenUtils {
   val types = SType.allPredefTypes.diff(Seq(SString))

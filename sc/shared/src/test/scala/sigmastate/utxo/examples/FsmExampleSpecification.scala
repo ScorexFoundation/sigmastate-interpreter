@@ -18,7 +18,6 @@ import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingIn
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utxo._
 
 
 class FsmExampleSpecification extends CompilerTestingCommons

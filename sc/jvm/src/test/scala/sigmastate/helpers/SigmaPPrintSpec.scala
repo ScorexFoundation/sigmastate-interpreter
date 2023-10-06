@@ -13,8 +13,6 @@ import sigmastate.eval._
 import sigmastate.lang.Terms.MethodCall
 import sigmastate.serialization.OpCodes
 import sigmastate.utils.Helpers
-import sigmastate.utxo.SelectField
-
 import java.math.BigInteger
 import scala.collection.mutable.ArrayBuffer
 

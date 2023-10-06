@@ -4,14 +4,13 @@ import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
 import sigma.Colls
 import sigma.ast.global.OptionValueOps
-import sigma.ast.{AND, BinAnd, BinOr, BlockValue, BoolToSigmaProp, EQ, GT, If, IntConstant, LE, LT, LongConstant, SBoolean, SBox, SInt, SLong, SOption, Upcast, ValDef, ValUse}
+import sigma.ast._
 import sigmastate._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.lang.Terms._
-import sigmastate.utxo._
 import sigmastate.utxo.blockchain.BlockchainSimulationTestingCommons._
 
 /**

@@ -10,6 +10,7 @@ import sigma.ast.SCollection._
 import sigma.ast.global._
 import sigma.data.AvlTreeData
 import SCollectionMethods.{FlatMapMethod, IndexOfMethod, IndicesMethod, PatchMethod, UpdateManyMethod, UpdatedMethod}
+import sigma.ast
 import sigmastate.eval.Extensions.SigmaBooleanOps
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.serialization.OpCodes._
@@ -219,8 +220,8 @@ class CollectionOperationsSpecification extends CompilerTestingCommons
       FuncValue(
         Vector((1, SBox)),
         EQ(
-          utxo.ExtractRegisterAs[SLong.type](ValUse(1, SBox), reg1).get,
-          Plus(utxo.ExtractRegisterAs[SLong.type](Self, reg1).get, LongConstant(1)))
+          ast.ExtractRegisterAs[SLong.type](ValUse(1, SBox), reg1).get,
+          Plus(ast.ExtractRegisterAs[SLong.type](Self, reg1).get, LongConstant(1)))
       )
     ).toSigmaProp
     prop shouldBe propExpected
@@ -262,8 +263,8 @@ class CollectionOperationsSpecification extends CompilerTestingCommons
       FuncValue(
         Vector((1, SBox)),
         EQ(
-          utxo.ExtractRegisterAs[SLong.type](ValUse(1, SBox), reg1).getOrElse(LongConstant(0)),
-          Plus(utxo.ExtractRegisterAs[SLong.type](Self, reg1).get, LongConstant(1))
+          ast.ExtractRegisterAs[SLong.type](ValUse(1, SBox), reg1).getOrElse(LongConstant(0)),
+          Plus(ast.ExtractRegisterAs[SLong.type](Self, reg1).get, LongConstant(1))
         )
       )
     ).toSigmaProp

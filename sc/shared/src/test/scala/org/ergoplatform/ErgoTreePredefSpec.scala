@@ -8,7 +8,7 @@ import org.scalacheck.Gen
 import scorex.crypto.hash.Blake2b256
 import scorex.util.Random
 import sigma.Colls
-import sigma.ast.{AtLeast, ByteArrayConstant, CollectionConstant, EQ, IntConstant, SByte, SigmaPropConstant}
+import sigma.ast._
 import sigma.ast.global.CollectionConstant
 import sigma.data.{AvlTreeData, Digest32Coll, ProveDlog, TrivialProp}
 import sigma.util.BenchmarkUtil.measure
@@ -20,7 +20,6 @@ import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utxo.{ByIndex, ExtractCreationInfo, SelectField}
 import sigmastate.utils.Helpers._
 
 import scala.util.Try

@@ -7,14 +7,12 @@ import sigma.ast.TypeCodes.LastConstantCode
 import sigma.ast._
 import sigma.serialization.CoreByteWriter.DataInfo
 import sigma.util.Extensions.toUByte
-import sigmastate._
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.serialization.ValueCodes.OpCode
 import sigmastate.serialization.transformers._
 import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer}
 import sigmastate.utils._
-import sigmastate.utxo.ComplexityTable._
-import sigmastate.utxo._
+import ComplexityTable._
 
 import scala.collection.mutable
 

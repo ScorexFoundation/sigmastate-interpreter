@@ -23,8 +23,6 @@ import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.ValueCodes.OpCode
 import sigmastate.serialization._
-import sigmastate.utxo.{SimpleTransformerCompanion, Transformer}
-
 import scala.collection.mutable
 
 /** Embedding of Boolean values to SigmaProp values. As an example, this operation allows boolean experesions

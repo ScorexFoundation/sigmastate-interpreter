@@ -6,14 +6,13 @@ import sigma.data.Nullable
 import scorex.util.encode.{Base16, Base58, Base64}
 import sigma.ast.SCollection.{SByteArray, SIntArray}
 import sigma.ast.SOption.SIntOption
-import sigma.ast._
+import sigma.ast.{SigmaPropConstant, _}
 import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma.ast.global._
 import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.exceptions.InvalidArguments
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utxo.{DeserializeContext, DeserializeRegister, GetVar, SelectField}
 
 object SigmaPredef {
 

@@ -15,7 +15,6 @@ import sigmastate.crypto.GF2_192_Poly
 import sigmastate.interpreter.ErgoTreeEvaluator
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueCodes.OpCode
-import sigmastate.utxo._
 
 /** Reflection metadata for `interpreter` module.
   * For each class of this module that needs reflection metadata,

@@ -1,14 +1,12 @@
 package sigmastate.serialization.transformers
 
 import sigma.ast.global.SValue
-import sigma.ast.{NumericCastCompanion, SNumericType, SType, Value}
+import sigma.ast.{NumericCastCompanion, SNumericType, SType, Transformer, Value}
 import sigma.serialization.CoreByteWriter.{ArgInfo, DataInfo}
-import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.SigmaByteWriter._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.utxo.Transformer
 
 case class NumericCastSerializer(opDesc: NumericCastCompanion,
                                  cons: (Value[SNumericType], SNumericType) => Value[SNumericType])

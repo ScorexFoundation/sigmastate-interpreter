@@ -1,10 +1,9 @@
 package sigmastate.serialization
 
 import sigma.ast.Operations.SelectFieldInfo
-import sigma.ast.Value
+import sigma.ast.{SelectField, Value}
 import sigmastate.lang.Terms._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.utxo.SelectField
 import SelectFieldInfo._
 import sigma.ast.global.SValue
 import sigma.ast.{STuple, SType}

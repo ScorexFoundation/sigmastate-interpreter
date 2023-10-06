@@ -21,7 +21,6 @@ import sigmastate.crypto.CryptoConstants.dlogGroup
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.lang.TransformingSigmaBuilder._
 import sigmastate._
-import sigmastate.utxo._
 import sigma.Coll
 import sigma.Extensions.ArrayOps
 import sigma._

@@ -13,7 +13,6 @@ import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingIn
 import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utxo._
 import sigmastate.utxo.blockchain.BlockchainSimulationTestingCommons._
 
 /**

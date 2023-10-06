@@ -30,7 +30,6 @@ import sigmastate.serialization.ValueCodes.OpCode
 import sigmastate.utils.Extensions._
 import sigmastate.utils.Helpers
 import sigmastate.utils.Helpers._
-import sigmastate.utxo._
 
 import java.math.BigInteger
 import scala.collection.compat.immutable.ArraySeq

@@ -3,7 +3,6 @@ package sigmastate.serialization
 import sigma.ast._
 import sigma.serialization.CoreByteWriter.{ArgInfo, DataInfo}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.utxo.GetVar
 
 case class GetVarSerializer(cons: (Byte, SType) => Value[SOption[SType]])
   extends ValueSerializer[GetVar[_ <: SType]] {

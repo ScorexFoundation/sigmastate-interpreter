@@ -14,7 +14,6 @@ import sigmastate.lang.Constraints._
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.ValueCodes.OpCode
-import sigmastate.utxo._
 
 import scala.util.DynamicVariable
 

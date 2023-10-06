@@ -4,8 +4,6 @@ import sigma.Evaluation
 import sigma.ast.global.{IntConstant, OptionValueOps}
 import sigma.ast._
 import sigmastate.lang.Terms._
-import sigmastate.utxo.GetVar
-
 import scala.util.Random
 
 class ConcreteCollectionSerializerSpecification extends TableSerializationSpecification {

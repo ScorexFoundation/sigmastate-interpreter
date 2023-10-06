@@ -3,7 +3,7 @@ package sigmastate.serialization
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.validation.ValidationRules.CheckDeserializedScriptIsSigmaProp
 import sigma.SigmaProp
-import sigma.ast.{BigIntConstant, BoolToSigmaProp, ByteConstant, ConstantPlaceholder, EQ, IntConstant, SInt, ShortConstant}
+import sigma.ast._
 import sigma.ast.global.SigmaPropValue
 import sigma.data.CBigInt
 import sigma.serialization.{ReaderPositionLimitExceeded, SerializerException}
@@ -16,8 +16,6 @@ import sigmastate.eval.Extensions.SigmaBooleanOps
 import sigmastate.eval.IRContext
 import sigmastate.helpers.CompilerTestingCommons
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.utxo.{DeserializeContext, DeserializeRegister}
-
 import java.math.BigInteger
 
 class ErgoTreeSerializerSpecification extends SerializationSpecification

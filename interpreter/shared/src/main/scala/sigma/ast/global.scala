@@ -4,7 +4,6 @@ import sigma.ast.SCollection.{SByteArray, SIntArray}
 import sigma.data.{CSigmaProp, TrivialProp}
 import sigmastate.ErgoTree.HeaderType
 import sigmastate._
-import sigmastate.utxo._
 
 object global {
   /** Force initialization of reflection. */

@@ -6,12 +6,10 @@ import sigma.ast._
 import sigma.ast.global.SValue
 import sigma.data.{Nullable, SigmaBoolean}
 import sigma.util.Extensions.Ensuring
-import sigmastate._
 import sigmastate.exceptions._
 import sigmastate.lang.SigmaPredef._
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes
-import sigmastate.utxo._
 
 import scala.collection.mutable.ArrayBuffer
 

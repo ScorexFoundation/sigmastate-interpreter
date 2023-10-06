@@ -1,7 +1,7 @@
 package org.ergoplatform.validation
 
 import sigma.SigmaException
-import sigma.ast.{MethodsContainer, SMethod}
+import sigma.ast.{DeserializeContext, MethodsContainer, SMethod}
 import sigma.ast.TypeCodes.LastConstantCode
 import sigma.serialization.{InvalidOpCode, SerializerException}
 import sigma.util.Extensions.toUByte
@@ -12,7 +12,6 @@ import sigma.ast.global._
 import sigmastate.exceptions._
 import sigmastate.serialization.ValueCodes.OpCode
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utxo.DeserializeContext
 import sigmastate._
 
 /** All validation rules which are used to check soft-forkable conditions. Each validation

@@ -4,7 +4,7 @@ import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.encode.Base58
 import scorex.utils.Ints
-import sigma.ast.{SInt, SSigmaProp}
+import sigma.ast.{DeserializeContext, SInt, SSigmaProp, Slice}
 import sigma.data.ProveDlog
 import sigma.serialization.GroupElementSerializer
 import sigma.{Coll, SigmaException, VersionContext}
@@ -14,8 +14,6 @@ import sigma.ast.global._
 import sigmastate._
 import sigmastate.crypto.DLogProtocol.ProveDlogProp
 import sigmastate.serialization._
-import sigmastate.utxo.{DeserializeContext, Slice}
-
 import scala.util.Try
 
 /**

@@ -3,7 +3,6 @@ package sigmastate.serialization.transformers
 import sigma.ast._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.utxo.DeserializeContext
 import sigma.ast.SType
 import sigma.serialization.CoreByteWriter.{ArgInfo, DataInfo}
 import Operations.DeserializeContextInfo

@@ -20,10 +20,9 @@ import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.interpreter.{ContextExtension, ErgoTreeEvaluator, ProverResult}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.SigmaSerializer.startReader
-import sigmastate.serialization.{DataSerializer, _}
+import sigmastate.serialization._
 import sigmastate.serialization.ValueCodes.OpCode
 import sigmastate.utils.Helpers._
-import sigmastate.utxo.DeserializeContext
 
 class SoftForkabilitySpecification extends SigmaTestingData
     with CompilerTestingCommons

@@ -6,7 +6,6 @@ import sigma.serialization.CoreByteWriter.DataInfo
 import sigmastate.lang.Terms._
 import sigmastate.utils.SigmaByteWriter._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.utxo.OptionGetOrElse
 
 case class OptionGetOrElseSerializer(cons: (Value[SOption[SType]], Value[SType]) => Value[SType])
   extends ValueSerializer[OptionGetOrElse[_ <: SType]] {

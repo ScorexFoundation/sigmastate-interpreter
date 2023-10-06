@@ -12,7 +12,6 @@ import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
 import sigmastate.lang.Terms.MethodCall
 import sigmastate.lang.syntax.ParserException
-import sigmastate.utxo._
 import sigma.ast._
 import sigma.ast.global.SValue
 import SCollectionMethods.{ExistsMethod, ForallMethod, MapMethod}

@@ -1,12 +1,11 @@
 package sigmastate.serialization.transformers
 
 import sigma.ast.global.SValue
-import sigma.ast.Value
+import sigma.ast.{BooleanTransformer, BooleanTransformerCompanion, Value}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.SigmaByteWriter._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.utxo.{BooleanTransformer, BooleanTransformerCompanion}
 import sigma.ast.{SBoolean, SCollection, SFunc, SType}
 import sigma.serialization.CoreByteWriter.DataInfo
 

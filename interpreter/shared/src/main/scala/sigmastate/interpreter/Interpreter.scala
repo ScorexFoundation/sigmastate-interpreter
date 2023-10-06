@@ -11,7 +11,6 @@ import sigmastate.crypto.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMes
 import sigmastate.crypto._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.serialization.{SigmaSerializer, ValueSerializer}
-import sigmastate.utxo.DeserializeContext
 import sigmastate._
 import sigmastate.eval.{Profiler, SigmaDsl, addCostChecked}
 import sigmastate.FiatShamirTree._
@@ -75,13 +74,13 @@ trait Interpreter {
 
   /** The cost of Value[T] deserialization is O(n), where n is the length of its bytes
     * array. To evaluate [[DeserializeContext]] and
-    * [[sigmastate.utxo.DeserializeRegister]] we add the following cost of deserialization
+    * [[DeserializeRegister]] we add the following cost of deserialization
     * for each byte.
     */
   val CostPerByteDeserialized = 2
 
   /** The cost of substituting [[DeserializeContext]] and
-    * [[sigmastate.utxo.DeserializeRegister]] nodes with the deserialized expression is
+    * [[DeserializeRegister]] nodes with the deserialized expression is
     * O(n), where n is the number of bytes in ErgoTree.
     * The following is the cost added for each ErgoTree.bytes.
     */

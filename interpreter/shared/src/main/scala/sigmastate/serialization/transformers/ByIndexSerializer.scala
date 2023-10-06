@@ -1,6 +1,6 @@
 package sigmastate.serialization.transformers
 
-import sigma.ast.Value
+import sigma.ast.{ByIndex, Value}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
 import ValueSerializer._
@@ -8,7 +8,6 @@ import sigma.ast.global.SValue
 import sigma.ast.Operations.ByIndexInfo._
 import sigmastate.utils.SigmaByteWriter._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.utxo.ByIndex
 import sigma.ast.{SCollection, SInt, SType}
 import sigma.serialization.CoreByteWriter.DataInfo
 
