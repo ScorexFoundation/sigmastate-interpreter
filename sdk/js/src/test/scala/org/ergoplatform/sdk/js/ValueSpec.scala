@@ -9,7 +9,7 @@ import sigma.ast._
 import sigmastate.crypto.CryptoConstants.dlogGroup
 import sigma.crypto.CryptoFacade
 import sigmastate.lang.DeserializationSigmaBuilder
-import sigmastate.serialization.ConstantSerializer
+import sigma.serialization.ConstantSerializer
 import sigmastate.utils.Helpers
 import sigma.SigmaTestingData
 import sigma.data.{CSigmaProp, ProveDlog}

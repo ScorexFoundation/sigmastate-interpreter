@@ -5,9 +5,9 @@ import sigma.ast.SCollection.SByteArray
 import sigma.ast._
 import sigma.ast.global._
 import sigma.data.ProveDlog
-import sigmastate.ErgoTree.{HeaderType, ZeroHeader}
+import ErgoTree.{HeaderType, ZeroHeader}
 import sigmastate.crypto.CryptoConstants
-import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate._
 import sigmastate.lang.Terms.ValueOps
 

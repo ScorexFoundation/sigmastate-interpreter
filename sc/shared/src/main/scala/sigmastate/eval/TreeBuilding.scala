@@ -4,13 +4,13 @@ package sigmastate.eval
 import sigma.ast._
 import org.ergoplatform._
 import sigmastate.lang.Terms.ValueOps
-import sigmastate.serialization.OpCodes._
-import sigmastate.serialization.ConstantStore
+import sigma.serialization.OpCodes._
+import sigma.serialization.ConstantStore
 import sigma.ast.global._
 import sigma.data.{ProveDHTuple, ProveDlog}
 
 import scala.collection.mutable.ArrayBuffer
-import sigmastate.serialization.ValueCodes.OpCode
+import sigma.serialization.ValueCodes.OpCode
 
 /** Implementation of IR-graph to ErgoTree expression translation.
   * This, in a sense, is inverse to [[GraphBuilding]], however roundtrip identity is not

@@ -17,6 +17,7 @@ import sigmastate.utils.Helpers
 import sigma.Coll
 import sigma.Extensions.ArrayOps
 import sigma.data.{CAND, COR, CTHRESHOLD, ProveDHTuple, ProveDlog, SigmaBoolean}
+import sigma.serialization.SigSerializer
 
 import java.math.BigInteger
 import scala.util.Try

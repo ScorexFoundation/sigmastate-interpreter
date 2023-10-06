@@ -13,10 +13,9 @@ import sigma.serialization.GroupElementSerializer
 import sigma.util.Extensions.BigIntegerOps
 import sigma.validation.SigmaValidationSettings
 import sigma.{VersionContext, _}
-import sigmastate._
 import sigmastate.crypto.CryptoConstants
 import sigmastate.eval.Extensions._
-import sigmastate.serialization.SigmaSerializer
+import sigma.serialization.SigmaSerializer
 
 import java.math.BigInteger
 import scala.annotation.unused

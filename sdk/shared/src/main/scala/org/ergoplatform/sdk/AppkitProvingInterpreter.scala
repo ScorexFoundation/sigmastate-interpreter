@@ -15,9 +15,7 @@ import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.crypto.{DiffieHellmanTupleProverInput, SigmaProtocolPrivateInput}
 import sigmastate.interpreter.Interpreter.{ReductionResult, estimateCryptoVerifyCost}
 import sigmastate.interpreter._
-import sigmastate.serialization.SigmaSerializer
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-
+import sigma.serialization.{SigmaByteReader, SigmaByteWriter, SigmaSerializer}
 import java.util
 import java.util.{Objects, List => JList}
 import scala.collection.mutable

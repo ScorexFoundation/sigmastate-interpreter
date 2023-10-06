@@ -5,13 +5,13 @@ import org.scalatest.Assertion
 import org.scalatest.TryValues._
 import scorex.crypto.hash.Blake2b256
 import sigma.data.{AvlTreeData, ProveDlog}
-import sigmastate.ErgoTree.ZeroHeader
-import sigma.ast.{BooleanConstant, ByteArrayConstant}
+import sigma.ast.ErgoTree.ZeroHeader
+import sigma.ast.{BooleanConstant, ByteArrayConstant, ErgoTree}
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.lang.Terms._
-import sigmastate.{CompilerCrossVersionProps, ErgoTree}
+import sigmastate.{CompilerCrossVersionProps}
 
 class CoopExampleSpecification extends CompilerTestingCommons
   with CompilerCrossVersionProps {

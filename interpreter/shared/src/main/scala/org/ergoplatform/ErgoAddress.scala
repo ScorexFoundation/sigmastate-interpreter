@@ -8,12 +8,11 @@ import sigma.ast.{DeserializeContext, SInt, SSigmaProp, Slice}
 import sigma.data.ProveDlog
 import sigma.serialization.GroupElementSerializer
 import sigma.{Coll, SigmaException, VersionContext}
-import sigmastate.ErgoTree.{ZeroHeader, setVersionBits}
+import sigma.ast.ErgoTree.{ZeroHeader, setVersionBits}
 import sigma.ast._
 import sigma.ast.global._
-import sigmastate._
 import sigmastate.crypto.DLogProtocol.ProveDlogProp
-import sigmastate.serialization._
+import sigma.serialization._
 import scala.util.Try
 
 /**

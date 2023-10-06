@@ -6,7 +6,7 @@ import org.scalacheck.Arbitrary.arbByte
 import org.scalacheck.Gen
 import sigma.util.BenchmarkUtil
 import scalan.TestContexts
-import sigma.ast.{JitCost, SOption, SType}
+import sigma.ast.{ErgoTree, JitCost, SOption, SType}
 import sigma.{Colls, Evaluation, TestUtils}
 import sigma.data.{RType, SigmaBoolean}
 import sigma.validation.ValidationException
@@ -20,8 +20,8 @@ import sigmastate.interpreter.ErgoTreeEvaluator.DefaultProfiler
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.interpreter._
 import sigmastate.lang.{CompilerSettings, SigmaCompiler, Terms}
-import sigmastate.serialization.SigmaSerializer
-import sigmastate.{CompilerTestsBase, ErgoTree}
+import sigma.serialization.SigmaSerializer
+import sigmastate.{CompilerTestsBase}
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag

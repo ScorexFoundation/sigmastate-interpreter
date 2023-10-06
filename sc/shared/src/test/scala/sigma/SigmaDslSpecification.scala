@@ -18,7 +18,7 @@ import sigma.data.RType._
 import sigma.data._
 import sigma.util.Extensions.{BooleanOps, IntOps, LongOps}
 import sigma.{VersionContext, data, _}
-import sigmastate.ErgoTree.{HeaderType, ZeroHeader}
+import ErgoTree.{HeaderType, ZeroHeader}
 import sigmastate._
 import sigmastate.eval.Extensions.{AvlTreeOps, ByteExt, IntExt, LongExt, ShortExt}
 import sigmastate.eval.OrderingOps._
@@ -26,7 +26,7 @@ import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter._
 import sigmastate.lang.Terms.{Apply, MethodCall, PropertyCall}
-import sigmastate.serialization.ValueCodes.OpCode
+import sigma.serialization.ValueCodes.OpCode
 import sigmastate.utils.Extensions._
 import sigmastate.utils.Helpers
 import sigmastate.utils.Helpers._

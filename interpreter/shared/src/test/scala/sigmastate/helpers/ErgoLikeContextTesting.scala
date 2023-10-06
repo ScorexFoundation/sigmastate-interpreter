@@ -12,7 +12,7 @@ import sigmastate.crypto.CryptoConstants
 import sigmastate.eval._
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultEvalSettings
-import sigmastate.serialization.SigmaSerializer
+import sigma.serialization.SigmaSerializer
 
 object ErgoLikeContextTesting {
   /* NO HF PROOF:

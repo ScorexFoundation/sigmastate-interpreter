@@ -1,8 +1,7 @@
 package sigmastate.interpreter
 
 import org.ergoplatform.ErgoLikeContext
-import sigmastate.ErgoTree
-import sigma.ast._
+import sigma.ast.{ErgoTree, _}
 import sigma.ast.global._
 import sigmastate.eval.Profiler
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv

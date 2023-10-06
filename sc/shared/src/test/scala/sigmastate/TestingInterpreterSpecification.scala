@@ -15,7 +15,7 @@ import sigma.util.Extensions.IntOps
 import sigmastate.crypto.CryptoConstants
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
 import sigmastate.helpers.TestingHelpers._
-import sigmastate.serialization.ValueSerializer
+import sigma.serialization.ValueSerializer
 import sigmastate.utils.Helpers._
 
 import scala.util.Random

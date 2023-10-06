@@ -2,11 +2,8 @@ package sigma.serialization
 
 import scorex.util.Extensions._
 import scorex.util.serialization.Reader
-import sigma.util.safeNewArray
-import debox.cfor
 import sigma.ast.SType
 import sigma.validation.ValidationRules.CheckPositionLimit
-import sigmastate.serialization.TypeSerializer
 
 /** Reader used in the concrete implementations of [[SigmaSerializer]].
   * It decorates the given reader, delegates most of the methods to it, but also adds new

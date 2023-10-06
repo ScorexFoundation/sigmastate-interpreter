@@ -1,6 +1,6 @@
 package sigmastate.utils
 
-import sigmastate.serialization.generators.ObjectGenerators
+import sigma.serialization.generators.ObjectGenerators
 import Helpers._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec

@@ -2,10 +2,9 @@ package sigmastate.crypto
 
 import org.scalacheck.Gen
 import scorex.util.encode.Base16
-import sigma.ast.AtLeast
+import sigma.ast.{AtLeast, ErgoTree}
 import sigma.data.{CAND, COR, ProveDHTuple, SigmaBoolean}
 import sigma.serialization.ProveDHTupleSerializer
-import sigmastate.{ErgoTree}
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.helpers.{ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter, TestingCommons}
 import sigmastate.interpreter.{ContextExtension, HintsBag, ProverResult}

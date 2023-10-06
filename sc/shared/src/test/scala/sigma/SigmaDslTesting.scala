@@ -18,7 +18,7 @@ import sigma.util.BenchmarkUtil
 import sigma.util.CollectionUtil._
 import sigma.util.Extensions._
 import sigma.util.StringUtil.StringUtilExtensions
-import sigmastate.ErgoTree.ZeroHeader
+import sigma.ast.ErgoTree.ZeroHeader
 import sigma.ast.SType.AnyOps
 import sigma.ast.global.SValue
 import sigma.ast._
@@ -31,12 +31,12 @@ import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoL
 import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
 import sigmastate.interpreter._
 import sigmastate.lang.Terms.{Apply, ValueOps}
-import sigmastate.serialization.ValueSerializer
-import sigmastate.serialization.generators.ObjectGenerators
+import sigma.serialization.ValueSerializer
+import sigma.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers._
 import sigma.validation.ValidationRules.CheckSerializableTypeCode
 import sigma.validation.{SigmaValidationSettings, ValidationException}
-import sigmastate.{ErgoTree, eval}
+import sigmastate.eval
 
 import scala.collection.mutable
 import scala.reflect.ClassTag

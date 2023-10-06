@@ -8,7 +8,7 @@ import sigma.ast.SCollection.SByteArray
 import sigma.ast.{SInt, SPair, SSigmaProp, SType}
 import sigma.ast._
 import sigmastate.interpreter.{ContextExtension, ProverResult}
-import sigmastate.serialization.SigmaSerializer
+import sigma.serialization.SigmaSerializer
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import sigmastate._

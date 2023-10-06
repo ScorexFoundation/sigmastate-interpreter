@@ -14,7 +14,7 @@ import sigmastate.eval.{IRContext, SigmaDsl}
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
-import sigmastate.serialization.ErgoTreeSerializer
+import sigma.serialization.ErgoTreeSerializer
 import sigmastate.lang.Terms._
 
 import scala.util.Random

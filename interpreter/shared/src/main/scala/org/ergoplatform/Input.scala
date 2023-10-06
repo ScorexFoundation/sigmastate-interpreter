@@ -6,8 +6,8 @@ import org.ergoplatform.ErgoBox.BoxId
 import org.ergoplatform.settings.ErgoAlgos
 import scorex.crypto.authds.ADKey
 import sigmastate.interpreter.{ContextExtension, ProverResult}
-import sigmastate.serialization.SigmaSerializer
-import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
+import sigma.serialization.{SigmaByteReader, SigmaByteWriter, SigmaSerializer}
+import sigmastate.utils.Helpers
 
 /**
   * Inputs, that are used to enrich script context, but won't be spent by the transaction

@@ -4,7 +4,7 @@ import sigma.util.Extensions.ByteOps
 import sigma.util.FileUtil
 import sigma.util.PrintExtensions._
 import sigmastate.lang.Terms.{MethodCall, PropertyCall}
-import sigmastate.serialization.ValueSerializer._
+import sigma.serialization.ValueSerializer._
 
 /** Generate contents of ErgoTree serializer format specification.
   * To generate serialization formats, it is necessary that all branches of serializers

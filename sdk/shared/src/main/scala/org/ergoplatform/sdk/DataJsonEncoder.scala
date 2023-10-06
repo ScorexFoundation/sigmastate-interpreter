@@ -18,8 +18,8 @@ import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
 import sigma.ast._
 import sigma.serialization.SerializerException
-import sigmastate.serialization.{DataSerializer, SigmaSerializer}
-import sigmastate.serialization.ErgoTreeSerializer
+import sigma.serialization.{DataSerializer, SigmaSerializer}
+import sigma.serialization.ErgoTreeSerializer
 
 object DataJsonEncoder {
   def encode[T <: SType](v: T#WrappedType, tpe: T): Json = {

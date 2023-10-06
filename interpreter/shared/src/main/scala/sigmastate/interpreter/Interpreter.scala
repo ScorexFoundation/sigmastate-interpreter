@@ -1,31 +1,29 @@
 package sigmastate.interpreter
 
-import java.util
-import sigma.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
+import debox.cfor
 import org.ergoplatform.ErgoLikeContext
-import sigma.validation.SigmaValidationSettings
 import org.ergoplatform.validation.ValidationRules._
-import sigma.ast._
+import sigma.VersionContext
+import sigma.ast.SCollection.SByteArray
 import sigma.ast.global._
+import sigma.ast._
+import sigma.data.{CAND, COR, CTHRESHOLD, ProveDHTuple, ProveDlog, SigmaBoolean, TrivialProp}
+import sigma.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
+import sigma.kiama.rewriting.Strategy
+import sigma.serialization.SigSerializer._
+import sigma.serialization.{SigSerializer, SigmaSerializer, ValueSerializer}
+import sigma.validation.SigmaValidationSettings
+import sigma.validation.ValidationRules.trySoftForkable
+import sigmastate.FiatShamirTree._
+import sigmastate._
 import sigmastate.crypto.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
 import sigmastate.crypto._
-import sigmastate.interpreter.Interpreter._
-import sigmastate.serialization.{SigmaSerializer, ValueSerializer}
-import sigmastate._
 import sigmastate.eval.{Profiler, SigmaDsl, addCostChecked}
-import sigmastate.FiatShamirTree._
-import sigmastate.SigSerializer._
-import sigmastate.interpreter.ErgoTreeEvaluator.fixedCostOp
-import sigmastate.utils.Helpers._
-import sigmastate.lang.Terms.ValueOps
-import debox.cfor
-import sigma.ast.SCollection.SByteArray
-import sigma.ast.{SBoolean, SSigmaProp, SType}
-import sigma.data.{CAND, COR, CTHRESHOLD, ProveDHTuple, ProveDlog, SigmaBoolean, TrivialProp}
-import sigma.{Evaluation, VersionContext}
-import sigma.kiama.rewriting.Strategy
-import sigma.validation.ValidationRules.trySoftForkable
 import sigmastate.exceptions.{CostLimitException, InterpreterException}
+import sigmastate.interpreter.ErgoTreeEvaluator.fixedCostOp
+import sigmastate.interpreter.Interpreter._
+import sigmastate.lang.Terms.ValueOps
+import sigmastate.utils.Helpers._
 
 import scala.util.{Success, Try}
 
@@ -397,7 +395,7 @@ trait Interpreter {
     * per the verifier algorithm of the leaf's Sigma-protocol.
     * If the verifier algorithm of the Sigma-protocol for any of the leaves rejects, then reject the entire proof.
     */
-  private[sigmastate] val computeCommitments: Strategy = everywherebu(rule[Any] {
+  val computeCommitments: Strategy = everywherebu(rule[Any] {
     case c: UncheckedConjecture => c // Do nothing for internal nodes
 
     case sn: UncheckedSchnorr =>

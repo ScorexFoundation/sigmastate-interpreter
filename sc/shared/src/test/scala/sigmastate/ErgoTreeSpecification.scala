@@ -1,4 +1,4 @@
-package sigmastate
+package sigma
 
 import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.{ErgoAddressEncoder, ErgoBox, ErgoLikeContext, Self}
@@ -10,8 +10,7 @@ import sigma.data.RType.asType
 import sigma.data.{Nullable, RType, TrivialProp}
 import sigma.validation.ValidationException
 import sigma.validation.ValidationRules.CheckTypeCode
-import sigma._
-import sigmastate.ErgoTree.HeaderType
+import ErgoTree.HeaderType
 import SCollectionMethods.checkValidFlatmap
 import sigmastate.eval.{CBox, Profiler}
 import sigmastate.exceptions.{CostLimitException, InterpreterException}
@@ -20,7 +19,8 @@ import sigmastate.interpreter.Interpreter.ReductionResult
 import sigmastate.interpreter.{ErgoTreeEvaluator, EvalSettings}
 import sigmastate.lang.Terms._
 import sigmastate.lang.{CompilerSettings, SourceContext}
-import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigmastate.Plus
 import sigmastate.utils.Helpers.TryOps
 
 

@@ -1,10 +1,8 @@
 package sigmastate.interpreter
 
-import java.util
 
 import scorex.util.encode.Base16
-import sigmastate.serialization.SigmaSerializer
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import sigma.serialization.{SigmaByteReader, SigmaByteWriter, SigmaSerializer}
 
 /**
   * Proof of correctness of tx spending

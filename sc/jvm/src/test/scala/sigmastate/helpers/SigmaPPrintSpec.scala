@@ -7,11 +7,10 @@ import sigma.Extensions.ArrayOps
 import sigma.SigmaDslTesting
 import sigma.ast._
 import sigma.data.{AvlTreeData, AvlTreeFlags, CollType, Digest32Coll}
-import sigmastate.ErgoTree.HeaderType
-import sigmastate._
+import ErgoTree.HeaderType
 import sigmastate.eval._
 import sigmastate.lang.Terms.MethodCall
-import sigmastate.serialization.OpCodes
+import sigma.serialization.OpCodes
 import sigmastate.utils.Helpers
 import java.math.BigInteger
 import scala.collection.mutable.ArrayBuffer

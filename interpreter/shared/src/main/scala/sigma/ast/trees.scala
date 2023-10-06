@@ -20,9 +20,9 @@ import sigmastate.eval.NumericOps.{BigIntIsExactIntegral, BigIntIsExactOrdering}
 import sigmastate.eval.SigmaDsl
 import sigmastate.interpreter.ErgoTreeEvaluator
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
-import sigmastate.serialization.OpCodes._
-import sigmastate.serialization.ValueCodes.OpCode
-import sigmastate.serialization._
+import sigma.serialization.OpCodes._
+import sigma.serialization.ValueCodes.OpCode
+import sigma.serialization._
 import scala.collection.mutable
 
 /** Embedding of Boolean values to SigmaProp values. As an example, this operation allows boolean experesions

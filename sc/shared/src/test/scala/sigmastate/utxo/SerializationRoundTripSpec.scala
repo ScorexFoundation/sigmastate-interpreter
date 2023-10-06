@@ -4,7 +4,7 @@ import org.ergoplatform._
 import sigma.util.BenchmarkUtil
 import sigmastate.helpers.CompilerTestingCommons
 import sigmastate.interpreter.{ContextExtension, ProverResult}
-import sigmastate.serialization.generators.ObjectGenerators
+import sigma.serialization.generators.ObjectGenerators
 import debox.{Buffer => DBuffer}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec

@@ -24,7 +24,7 @@ import sigmastate.fleetSdkCommon.distEsmTypesTokenMod.TokenAmount
 import sigmastate.fleetSdkCommon.distEsmTypesTransactionsMod.{SignedTransaction, UnsignedTransaction}
 import sigmastate.fleetSdkCommon.{distEsmTypesBoxesMod => boxesMod, distEsmTypesCommonMod => commonMod, distEsmTypesContextExtensionMod => contextExtensionMod, distEsmTypesInputsMod => inputsMod, distEsmTypesProverResultMod => proverResultMod, distEsmTypesRegistersMod => registersMod, distEsmTypesTokenMod => tokenMod}
 import sigmastate.interpreter.{ContextExtension, ProverResult}
-import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
+import sigma.serialization.{ErgoTreeSerializer, ValueSerializer}
 import sigma.data.Digest32CollRType
 
 import java.math.BigInteger

@@ -17,7 +17,7 @@ import sigmastate.lang.Terms._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.serialization.ValueSerializer
+import sigma.serialization.ValueSerializer
 
 
 class FsmExampleSpecification extends CompilerTestingCommons

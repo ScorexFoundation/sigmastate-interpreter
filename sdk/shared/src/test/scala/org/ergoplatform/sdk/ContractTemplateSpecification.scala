@@ -6,12 +6,12 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import sigma.ast._
 import sigmastate._
 import sigmastate.helpers.NegativeTesting
-import sigmastate.serialization.{SerializationSpecification, SigmaSerializer}
+import sigma.serialization.{SerializationSpecification, SigmaSerializer}
 import sigma.ContractsTestkit
 import sigma.ast.global.SigmaPropValue
 import sigma.ast.{SByte, SInt, SType}
 import sigma.data.CBigInt
-import sigmastate.ErgoTree.setConstantSegregation
+import ErgoTree.setConstantSegregation
 
 import java.math.BigInteger
 

@@ -19,7 +19,7 @@ import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.lang.Terms.ValueOps
-import sigmastate.serialization.ValueSerializer
+import sigma.serialization.ValueSerializer
 import sigmastate.utils.Helpers._
 
 import scala.util.Try

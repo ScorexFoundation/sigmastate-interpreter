@@ -1,4 +1,4 @@
-package sigmastate.serialization
+package sigma.serialization
 
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.validation.ValidationRules.CheckDeserializedScriptIsSigmaProp
@@ -6,16 +6,15 @@ import sigma.SigmaProp
 import sigma.ast._
 import sigma.ast.global.SigmaPropValue
 import sigma.data.CBigInt
-import sigma.serialization.{ReaderPositionLimitExceeded, SerializerException}
 import sigma.util.Extensions.SigmaPropOps
 import sigma.validation.ValidationException
-import sigmastate.ErgoTree.EmptyConstants
-import sigmastate.ErgoTree.HeaderType
+import ErgoTree.EmptyConstants
+import ErgoTree.HeaderType
 import sigmastate._
 import sigmastate.eval.Extensions.SigmaBooleanOps
 import sigmastate.eval.IRContext
 import sigmastate.helpers.CompilerTestingCommons
-import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
 import java.math.BigInteger
 
 class ErgoTreeSerializerSpecification extends SerializationSpecification

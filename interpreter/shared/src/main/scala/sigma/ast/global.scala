@@ -2,7 +2,7 @@ package sigma.ast
 
 import sigma.ast.SCollection.{SByteArray, SIntArray}
 import sigma.data.{CSigmaProp, TrivialProp}
-import sigmastate.ErgoTree.HeaderType
+import ErgoTree.HeaderType
 import sigmastate._
 
 object global {

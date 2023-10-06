@@ -12,7 +12,7 @@ import sigma.ast.global._
 import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.exceptions.InvalidArguments
-import sigmastate.serialization.ValueSerializer
+import sigma.serialization.ValueSerializer
 
 object SigmaPredef {
 

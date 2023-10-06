@@ -6,17 +6,15 @@ import sigma.ast.SCollection.{SByteArray, SIntArray}
 import sigma.ast._
 import sigma.ast.global._
 import sigmastate.utils.Overloading.Overload1
-import sigmastate._
 import sigmastate.interpreter.{ErgoTreeEvaluator, Interpreter}
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
-import sigmastate.serialization.OpCodes
+import sigma.serialization.OpCodes
 import sigmastate.lang.TransformingSigmaBuilder._
 
 import scala.language.implicitConversions
 import scala.collection.compat.immutable.ArraySeq
 import debox.cfor
-import sigma.ast._
-import sigmastate.serialization.ValueCodes.OpCode
+import sigma.serialization.ValueCodes.OpCode
 
 object Terms {
 

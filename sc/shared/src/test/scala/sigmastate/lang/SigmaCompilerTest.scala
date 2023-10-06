@@ -10,8 +10,8 @@ import sigmastate.exceptions.{GraphBuildingException, InvalidArguments, TyperExc
 import sigmastate.helpers.CompilerTestingCommons
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms.{Apply, MethodCall, ZKProofBlock}
-import sigmastate.serialization.ValueSerializer
-import sigmastate.serialization.generators.ObjectGenerators
+import sigma.serialization.ValueSerializer
+import sigma.serialization.generators.ObjectGenerators
 import scala.annotation.unused
 
 class SigmaCompilerTest extends CompilerTestingCommons with LangTests with ObjectGenerators {

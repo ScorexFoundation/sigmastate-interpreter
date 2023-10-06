@@ -5,7 +5,7 @@ import org.ergoplatform.validation.ValidationSpecification
 import org.ergoplatform.{Context => _, _}
 import scalan.BaseCtxTests
 import sigma.VersionContext
-import sigma.ast.{BigIntArrayConstant, EvaluatedValue, SigmaPropConstant, Value}
+import sigma.ast.{BigIntArrayConstant, ErgoTree, EvaluatedValue, SigmaPropConstant, Value}
 import sigma.ast.SType
 import sigma.ast.global.SValue
 import sigma.data.AvlTreeData
@@ -15,8 +15,8 @@ import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.interpreter.{ContextExtension, ErgoTreeEvaluator}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.lang.{CompilerResult, CompilerSettings, LangTests, SigmaCompiler}
-import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.{CompilerTestsBase, ErgoTree}
+import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigmastate.{CompilerTestsBase}
 import sigma.{ContractsTestkit, Context => DContext}
 
 import scala.annotation.unused

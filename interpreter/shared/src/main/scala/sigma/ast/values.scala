@@ -19,9 +19,9 @@ import sigmastate.interpreter.ErgoTreeEvaluator._
 import sigmastate.interpreter.{CompanionDesc, ErgoTreeEvaluator, Interpreter, NamedDesc}
 import sigmastate.lang.SourceContext
 import sigmastate.lang.Terms._
-import sigmastate.serialization.OpCodes._
-import sigmastate.serialization.ValueCodes.OpCode
-import sigmastate.serialization._
+import sigma.serialization.OpCodes._
+import sigma.serialization.ValueCodes.OpCode
+import sigma.serialization._
 
 import java.math.BigInteger
 import java.util.{Arrays, Objects}
@@ -31,7 +31,7 @@ import scala.language.implicitConversions
 
 /** Base class for all ErgoTree expression nodes.
   *
-  * @see [[sigmastate.ErgoTree]]
+  * @see [[ErgoTree]]
   */
 abstract class Value[+S <: SType] extends SigmaNode {
   /** The companion node descriptor with opCode, cost and other metadata. */

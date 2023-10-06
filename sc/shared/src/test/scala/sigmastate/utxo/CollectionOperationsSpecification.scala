@@ -13,7 +13,7 @@ import SCollectionMethods.{FlatMapMethod, IndexOfMethod, IndicesMethod, PatchMet
 import sigma.ast
 import sigmastate.eval.Extensions.SigmaBooleanOps
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.serialization.OpCodes._
+import sigma.serialization.OpCodes._
 import sigmastate.utils.Helpers._
 
 class CollectionOperationsSpecification extends CompilerTestingCommons

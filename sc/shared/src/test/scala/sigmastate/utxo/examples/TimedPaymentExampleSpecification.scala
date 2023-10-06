@@ -1,7 +1,7 @@
 package sigmastate.utxo.examples
 
 import org.ergoplatform._
-import sigma.ast.IntConstant
+import sigma.ast.{ErgoTree, IntConstant}
 import sigma.data.AvlTreeData
 import sigmastate._
 import sigmastate.exceptions.InterpreterException

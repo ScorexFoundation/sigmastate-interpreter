@@ -7,9 +7,9 @@ import sigma.ast.global._
 import sigma.util.Extensions.{ByteOps, DBufferOps}
 import sigmastate.interpreter.{CostItem, FixedCostItem, SeqCostItem, TypeBasedCostItem}
 import sigmastate.lang.Terms.{MethodCall, PropertyCall}
-import sigmastate.serialization.ValueCodes.OpCode
-import sigmastate.serialization.ValueSerializer
-import sigmastate.serialization.ValueSerializer.getSerializer
+import sigma.serialization.ValueCodes.OpCode
+import sigma.serialization.ValueSerializer
+import sigma.serialization.ValueSerializer.getSerializer
 import scala.reflect.ClassTag
 
 /** Holds a series of profile measurements associated with a key.

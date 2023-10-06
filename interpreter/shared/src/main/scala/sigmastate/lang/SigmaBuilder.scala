@@ -12,8 +12,8 @@ import sigmastate._
 import sigmastate.exceptions.ConstraintFailed
 import sigmastate.lang.Constraints._
 import sigmastate.lang.Terms._
-import sigmastate.serialization.OpCodes
-import sigmastate.serialization.ValueCodes.OpCode
+import sigma.serialization.OpCodes
+import sigma.serialization.ValueCodes.OpCode
 
 import scala.util.DynamicVariable
 

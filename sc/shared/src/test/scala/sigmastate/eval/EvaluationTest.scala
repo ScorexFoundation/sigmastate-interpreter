@@ -1,7 +1,7 @@
 package sigmastate.eval
 
 import org.ergoplatform.ErgoBox
-import sigma.ast.{AND, ConcreteCollection, CreateProveDlog, DecodePoint, EQ, IntArrayConstant, IntConstant, SSigmaProp, SigmaPropConstant, SubstConstants}
+import sigma.ast.{AND, ConcreteCollection, CreateProveDlog, DecodePoint, EQ, ErgoTree, IntArrayConstant, IntConstant, SSigmaProp, SigmaPropConstant, SubstConstants}
 import sigmastate.helpers.ContextEnrichingTestProvingInterpreter
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
@@ -10,9 +10,8 @@ import sigma.ast.global.{SigmaPropValue, SigmaPropValueOps}
 import sigma.data.ProveDlog
 import sigmastate.lang.LangTests
 import sigma.util.BenchmarkUtil._
-import sigmastate._
 import sigmastate.crypto.DLogProtocol.DLogProverInput
-import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
 
 class EvaluationTest extends BaseCtxTests
     with LangTests with ExampleContracts with ErgoScriptTestkit {

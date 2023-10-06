@@ -4,7 +4,7 @@ import org.ergoplatform.ErgoAddressEncoder.{MainnetNetworkPrefix, TestnetNetwork
 import org.scalatest.{Assertion, TryValues}
 import scorex.crypto.hash.Blake2b256
 import scorex.util.encode.Base58
-import sigma.ast.{ByteArrayConstant, Constant, IntConstant, SigmaAnd}
+import sigma.ast.{ByteArrayConstant, Constant, ErgoTree, IntConstant, SigmaAnd, UnparsedErgoTree}
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.eval.InvalidType
 import sigmastate.helpers.TestingHelpers._
@@ -15,12 +15,12 @@ import sigmastate.exceptions.CostLimitException
 import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}
 import sigmastate.lang.Terms.ValueOps
-import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.serialization.ValueSerializer
+import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigma.serialization.ValueSerializer
 import sigmastate.utils.Helpers._
-import sigmastate.{CompilerCrossVersionProps, ErgoTree, UnparsedErgoTree}
+import sigmastate.{CompilerCrossVersionProps}
 import sigma.SigmaDslTesting
-import sigmastate.ErgoTree.{ZeroHeader, setConstantSegregation}
+import sigma.ast.ErgoTree.{ZeroHeader, setConstantSegregation}
 
 import sigma.ast.SType
 import sigma.data.ProveDlog

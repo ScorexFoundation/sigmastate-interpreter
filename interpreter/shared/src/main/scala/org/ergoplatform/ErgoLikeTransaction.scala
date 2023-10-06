@@ -12,9 +12,7 @@ import sigmastate._
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigmastate.interpreter.ProverResult
-import sigmastate.serialization.SigmaSerializer
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-
+import sigma.serialization.{SigmaByteReader, SigmaByteWriter, SigmaSerializer}
 import scala.util.Try
 
 trait ErgoBoxReader {

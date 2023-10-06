@@ -16,7 +16,7 @@ import sigmastate.exceptions.GraphBuildingException
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms.{Ident, Select, Val, ValueOps}
 import sigmastate.lang.{SourceContext, Terms}
-import sigmastate.serialization.OpCodes
+import sigma.serialization.OpCodes
 
 import scala.collection.mutable.ArrayBuffer
 

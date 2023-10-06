@@ -5,8 +5,7 @@ import org.ergoplatform._
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Remove}
 import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigmastate.ErgoTree
-import sigma.ast.{LongConstant, TrueLeaf}
+import sigma.ast.{ErgoTree, LongConstant, TrueLeaf}
 import sigmastate.eval._
 import sigmastate.helpers.{BlockchainState, CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, ErgoTransactionValidator}
 import sigmastate.helpers.TestingHelpers._
@@ -17,7 +16,7 @@ import scala.util.{Random, Try}
 import scorex.util._
 import sigma.Colls
 import sigma.data.{AvlTreeData, AvlTreeFlags}
-import sigmastate.ErgoTree.ZeroHeader
+import ErgoTree.ZeroHeader
 import sigmastate.eval.Extensions.SigmaBooleanOps
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}

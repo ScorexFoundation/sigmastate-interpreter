@@ -14,7 +14,7 @@ import sigma.util.Extensions.{BigIntegerOps, EcpOps, SigmaBooleanOps}
 import sigma.Extensions.ArrayOps
 import sigmastate.eval._
 import sigma.{AvlTree, Box, Colls, Evaluation}
-import sigmastate.serialization.SerializationSpecification
+import sigma.serialization.SerializationSpecification
 
 import scala.annotation.nowarn
 import scala.reflect.ClassTag

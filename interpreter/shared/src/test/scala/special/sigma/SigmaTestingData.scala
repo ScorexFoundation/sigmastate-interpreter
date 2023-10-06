@@ -14,13 +14,12 @@ import sigma.ast._
 import sigma.Extensions.ArrayOps
 import sigmastate.eval.{CBox, CHeader, CPreHeader, CSigmaDslBuilder, SigmaDsl}
 import sigmastate.helpers.TestingCommons
-import sigmastate.serialization.ErgoTreeSerializer
-import sigmastate.serialization.generators.ObjectGenerators
+import sigma.serialization.ErgoTreeSerializer
+import sigma.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers
-import sigmastate.{ErgoTree, _}
 import sigma.ast.{SBoolean, SSigmaProp}
 import sigma.crypto.EcPointType
-import sigmastate.ErgoTree.HeaderType
+import ErgoTree.HeaderType
 
 import java.math.BigInteger
 import scala.reflect.ClassTag

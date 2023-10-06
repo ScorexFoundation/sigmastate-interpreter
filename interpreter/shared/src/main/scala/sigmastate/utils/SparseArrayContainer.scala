@@ -2,7 +2,7 @@ package sigmastate.utils
 
 import sigma.ast.SType
 import sigma.ast.Value
-import sigmastate.serialization.ValueSerializer
+import sigma.serialization.ValueSerializer
 
 import scala.reflect.ClassTag
 

@@ -3,10 +3,10 @@ package sigmastate.helpers
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, Token, allZerosModifierId}
 import org.ergoplatform._
 import scorex.util.ModifierId
+import sigma.ast.ErgoTree
 import sigma.data.{AvlTreeData, CollOverArray, PairOfCols}
 import sigma.validation.SigmaValidationSettings
 import sigma.{Coll, Header, PreHeader}
-import sigmastate.ErgoTree
 import sigmastate.eval._
 import sigmastate.interpreter.ContextExtension
 

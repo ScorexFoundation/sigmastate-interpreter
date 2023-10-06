@@ -1,4 +1,4 @@
-package sigmastate.serialization
+package sigma.serialization
 
 import org.ergoplatform.{ErgoBoxCandidate, Outputs}
 import org.scalacheck.Gen
@@ -21,9 +21,8 @@ import sigmastate.eval.Extensions.{EvalIterableOps, SigmaBooleanOps}
 import sigmastate.eval._
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}
-import sigmastate.serialization.OpCodes._
+import sigma.serialization.OpCodes._
 import sigmastate.utils.Helpers._
-import sigmastate.utils.SigmaByteReader
 import java.nio.ByteBuffer
 import scala.collection.immutable.Seq
 import scala.collection.mutable

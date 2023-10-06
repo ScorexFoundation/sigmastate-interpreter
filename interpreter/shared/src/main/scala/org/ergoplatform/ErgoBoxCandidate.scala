@@ -5,18 +5,15 @@ import org.ergoplatform.ErgoBox._
 import org.ergoplatform.settings.ErgoAlgos
 import scorex.util.{ModifierId, bytesToId}
 import sigma.Extensions.{ArrayOps, CollOps}
-import sigma.ast.SType
+import sigma.ast.{ErgoTree, SType}
 import sigma.ast.SType.AnyOps
 import sigma.data.Digest32Coll
 import sigma.util.safeNewArray
 import sigma.{Coll, Colls}
-import sigmastate.ErgoTree
 import sigma.ast._
 import sigma.ast.global._
-import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.serialization.SigmaSerializer
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-
+import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigma.serialization.{SigmaByteReader, SigmaByteWriter, SigmaSerializer}
 import scala.collection.{immutable, mutable}
 import scala.runtime.ScalaRunTime
 

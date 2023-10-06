@@ -10,9 +10,8 @@ import sigmastate._
 import sigma.Extensions.ArrayOps
 import sigmastate.eval.{CBox, SigmaDsl}
 import sigmastate.exceptions.ConstraintFailed
-import sigmastate.serialization.OpCodes
+import sigma.serialization.OpCodes
 import sigma.SigmaTestingData
-import sigma.ast._
 
 import java.math.BigInteger
 

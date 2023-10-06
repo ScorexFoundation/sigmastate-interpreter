@@ -7,7 +7,6 @@ import org.bouncycastle.crypto.params.KeyParameter
 import org.bouncycastle.math.ec.{ECCurve, ECFieldElement, ECPoint}
 
 import java.math.BigInteger
-import sigmastate._
 import sigma.Coll
 import sigma._
 import sigma.ast._

@@ -2,8 +2,7 @@ package sigmastate.interpreter
 
 import sigma.ast.EvaluatedValue
 import sigmastate.interpreter.ContextExtension.VarBinding
-import sigmastate.serialization.SigmaSerializer
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import sigma.serialization.{SigmaByteReader, SigmaByteWriter, SigmaSerializer}
 import sigma.AnyValue
 import sigma.ast.SType
 import sigma.validation.SigmaValidationSettings

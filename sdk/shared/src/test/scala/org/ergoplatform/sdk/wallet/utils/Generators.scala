@@ -14,7 +14,6 @@ import sigma.ast._
 import sigma.ast.global.CollectionConstant
 import sigma.crypto.CryptoFacade
 import sigma.data.{Digest32Coll, ProveDlog}
-import sigmastate.ErgoTree
 import sigmastate.eval.Extensions.EvalIterableOps
 import sigmastate.helpers.TestingHelpers._
 

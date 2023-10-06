@@ -2,17 +2,15 @@ package sigmastate
 
 import debox.cfor
 import sigma.data.{CAND, COR, CTHRESHOLD, ProveDHTuple, ProveDlog, SigmaBoolean, SigmaLeaf}
-import sigmastate.ErgoTree.ZeroHeader
-import sigma.ast.{FixedCost, JitCost, SigmaPropConstant}
+import sigma.ast.ErgoTree.ZeroHeader
+import sigma.ast.{ErgoTree, FixedCost, JitCost, SigmaPropConstant}
 import sigmastate.crypto.DLogProtocol.FirstDLogProverMessage
 import sigmastate.crypto.VerifierMessage.Challenge
 import sigmastate.crypto.{FirstDHTupleProverMessage, FirstProverMessage, GF2_192_Poly}
 import sigmastate.interpreter.ErgoTreeEvaluator.fixedCostOp
 import sigmastate.interpreter.{ErgoTreeEvaluator, NamedDesc, OperationCostInfo}
-import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.serialization.SigmaSerializer
-import sigmastate.utils.SigmaByteWriter
-
+import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigma.serialization.{SigmaByteWriter, SigmaSerializer}
 import java.math.BigInteger
 import scala.language.existentials
 

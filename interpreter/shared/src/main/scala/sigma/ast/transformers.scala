@@ -12,8 +12,8 @@ import sigmastate.eval.SigmaDsl
 import sigmastate.interpreter.ErgoTreeEvaluator
 import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv, error}
 import sigmastate.lang.Terms._
-import sigmastate.serialization.OpCodes
-import sigmastate.serialization.ValueCodes.OpCode
+import sigma.serialization.OpCodes
+import sigma.serialization.ValueCodes.OpCode
 
 // TODO refactor: remove this trait as it doesn't have semantic meaning
 

@@ -14,7 +14,7 @@ import sigma.js.AvlTree
 import sigma.{Coll, Colls, GroupElement}
 import sigma.ast.Constant
 import sigmastate.interpreter.{ContextExtension, ProverResult}
-import sigmastate.serialization.generators.ObjectGenerators
+import sigma.serialization.generators.ObjectGenerators
 
 import scala.scalajs.js
 

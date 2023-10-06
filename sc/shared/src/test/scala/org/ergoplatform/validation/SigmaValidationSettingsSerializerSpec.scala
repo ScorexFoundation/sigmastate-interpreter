@@ -1,11 +1,10 @@
 package org.ergoplatform.validation
 
 import org.ergoplatform.validation.ValidationRules.currentSettings
-import org.scalatest.Assertion
 import sigma.validation.{DisabledRule, SigmaValidationSettings}
 import sigma.validation.ValidationRules.FirstRuleId
 import sigmastate.helpers.CompilerTestingCommons
-import sigmastate.serialization.SerializationSpecification
+import sigma.serialization.SerializationSpecification
 
 class SigmaValidationSettingsSerializerSpec extends SerializationSpecification with CompilerTestingCommons {
 

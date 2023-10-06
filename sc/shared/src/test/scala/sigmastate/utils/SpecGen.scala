@@ -10,8 +10,8 @@ import sigma.util.PrintExtensions._
 import sigmastate.lang.SigmaPredef.{PredefinedFunc, PredefinedFuncRegistry}
 import sigmastate.lang.StdSigmaBuilder
 import sigmastate.lang.Terms.{MethodCall, PropertyCall}
-import sigmastate.serialization.ValueCodes.OpCode
-import sigmastate.serialization.ValueSerializer
+import sigma.serialization.ValueCodes.OpCode
+import sigma.serialization.ValueSerializer
 
 object SpecGenUtils {
   val types = SType.allPredefTypes.diff(Seq(SString))

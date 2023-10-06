@@ -12,11 +12,10 @@ import scorex.util.ModifierId
 import scorex.util.encode.Base16
 import sigma.data.{AvlTreeData, Digest32Coll, ProveDlog}
 import sigma.{Coll, Header, PreHeader}
-import sigmastate.ErgoTree
-import sigma.ast._
+import sigma.ast.{ErgoTree, _}
 import sigmastate.crypto.CryptoConstants
 import sigmastate.interpreter.{ContextExtension, ProverResult}
-import sigmastate.serialization.SerializationSpecification
+import sigma.serialization.SerializationSpecification
 import sigmastate.utils.Helpers.DecoderResultOps  // required for Scala 2.11
 
 class JsonSerializationSpec extends SerializationSpecification with JsonCodecs {

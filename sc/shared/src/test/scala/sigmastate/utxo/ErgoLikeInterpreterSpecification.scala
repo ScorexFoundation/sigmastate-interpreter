@@ -20,7 +20,7 @@ import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}
 import sigmastate.lang.Terms._
-import sigmastate.serialization.{SerializationSpecification, ValueSerializer}
+import sigma.serialization.{SerializationSpecification, ValueSerializer}
 import sigmastate.utils.Helpers._
 
 class ErgoLikeInterpreterSpecification extends CompilerTestingCommons

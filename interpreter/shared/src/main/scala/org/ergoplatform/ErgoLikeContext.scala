@@ -7,7 +7,7 @@ import sigmastate.eval._
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.interpreter.{ContextExtension, ErgoTreeEvaluator, Interpreter, InterpreterContext}
 import sigmastate.exceptions.InterpreterException
-import sigmastate.serialization.OpCodes
+import sigma.serialization.OpCodes
 import sigma.Coll
 import sigma.{AnyValue, Header, PreHeader}
 import debox.cfor
@@ -16,7 +16,7 @@ import sigma.ast.{SBox, SCollection, SContext, SFunc, SGlobal, SInt, SType, SUni
 import sigma.ast.SType.{AnyOps, TypeCode}
 import sigma.data.{AvlTreeData, CAvlTree, SigmaConstants}
 import sigma.validation.SigmaValidationSettings
-import sigmastate.serialization.ValueCodes.OpCode
+import sigma.serialization.ValueCodes.OpCode
 
 /** Represents a script evaluation context to be passed to a prover and a verifier to execute and
   * validate guarding proposition of input boxes of a transaction.

@@ -5,12 +5,11 @@ import sigmastate.interpreter.{CostedProverResult, ProverResult}
 import sigma.data.RType
 import org.ergoplatform.{ErgoBox, ErgoLikeContext}
 import sigma.{AnyValue, Coll, SigmaDslBuilder, SigmaProp}
-import sigmastate.ErgoTree
 import sigmastate.eval.{CSigmaDslBuilder, IRContext}
 
 import scala.util.Try
 import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition, Token}
-
+import sigma.ast.ErgoTree
 import scala.language.implicitConversions
 
 trait ContractSpec {

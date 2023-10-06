@@ -22,8 +22,8 @@ import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingIn
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.interpreter.Interpreter
 import sigmastate.lang.Terms._
-import sigmastate.serialization.ErgoTreeSerializer
-import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigma.serialization.ErgoTreeSerializer
+import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
 
 import scala.util.Random
 

@@ -9,7 +9,7 @@ import sigma.util.Extensions.Ensuring
 import sigmastate.exceptions._
 import sigmastate.lang.SigmaPredef._
 import sigmastate.lang.Terms._
-import sigmastate.serialization.OpCodes
+import sigma.serialization.OpCodes
 
 import scala.collection.mutable.ArrayBuffer
 

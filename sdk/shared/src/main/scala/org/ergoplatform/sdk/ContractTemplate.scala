@@ -8,16 +8,13 @@ import org.ergoplatform.sdk.utils.SerializationUtils.{parseString, serializeStri
 import org.ergoplatform.sdk.utils.Zero
 import sigma.Evaluation
 import sigma.ast.SType
-import sigma.serialization.SerializerException
+import sigma.serialization.{SerializerException, SigmaByteReader, SigmaByteWriter}
 import sigma.util.safeNewArray
-import sigmastate.ErgoTree.{ZeroHeader, headerWithVersion, setConstantSegregation}
+import sigma.ast.ErgoTree.{ZeroHeader, headerWithVersion, setConstantSegregation}
 import sigma.ast._
 import sigma.ast.global.SigmaPropValue
-import sigmastate._
 import sigmastate.lang.{DeserializationSigmaBuilder, StdSigmaBuilder}
-import sigmastate.serialization._
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-
+import sigma.serialization._
 import java.util.Objects
 import scala.collection.mutable
 import scala.language.implicitConversions

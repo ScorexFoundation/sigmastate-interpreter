@@ -11,7 +11,7 @@ import sigma.data.AvlTreeData
 import sigma.serialization.SerializerException
 import sigma.validation.ValidationRules.{CheckPrimitiveTypeCode, CheckSerializableTypeCode, CheckTypeCode, CheckTypeWithMethods, trySoftForkable}
 import sigma.validation.{ChangedRule, ReplacedRule, SigmaValidationSettings, ValidationException, ValidationRule}
-import sigmastate.ErgoTree.{EmptyConstants, HeaderType, ZeroHeader, setSizeBit}
+import ErgoTree.{EmptyConstants, HeaderType, ZeroHeader, setSizeBit}
 import sigmastate.exceptions.InterpreterException
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
@@ -19,9 +19,9 @@ import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.interpreter.{ContextExtension, ErgoTreeEvaluator, ProverResult}
 import sigmastate.lang.Terms._
-import sigmastate.serialization.SigmaSerializer.startReader
-import sigmastate.serialization._
-import sigmastate.serialization.ValueCodes.OpCode
+import sigma.serialization.SigmaSerializer.startReader
+import sigma.serialization._
+import sigma.serialization.ValueCodes.OpCode
 import sigmastate.utils.Helpers._
 
 class SoftForkabilitySpecification extends SigmaTestingData

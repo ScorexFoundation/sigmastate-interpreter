@@ -4,7 +4,7 @@ import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import sigmastate.serialization.generators.ObjectGenerators
+import sigma.serialization.generators.ObjectGenerators
 
 class SparseArrayContainerSpecification extends AnyPropSpec
   with ObjectGenerators
