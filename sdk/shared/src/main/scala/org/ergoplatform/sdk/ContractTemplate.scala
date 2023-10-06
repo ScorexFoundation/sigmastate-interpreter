@@ -15,7 +15,7 @@ import sigma.ast._
 import sigma.ast.global.SigmaPropValue
 import sigmastate._
 import sigmastate.lang.{DeserializationSigmaBuilder, StdSigmaBuilder}
-import sigmastate.serialization.{DataSerializer, _}
+import sigmastate.serialization._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 import java.util.Objects

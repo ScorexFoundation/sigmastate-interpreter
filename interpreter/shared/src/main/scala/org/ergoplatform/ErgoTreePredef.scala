@@ -9,7 +9,7 @@ import sigmastate.ErgoTree.{HeaderType, ZeroHeader}
 import sigmastate.crypto.CryptoConstants
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.utxo._
-import sigmastate.{ErgoTree, _}
+import sigmastate._
 import sigmastate.lang.Terms.ValueOps
 
 object ErgoTreePredef {

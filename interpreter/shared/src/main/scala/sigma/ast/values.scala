@@ -11,7 +11,7 @@ import sigma.kiama.rewriting.Rewriter.count
 import sigma.util.CollectionUtil._
 import sigma.util.Extensions._
 import sigma.{AvlTree, Coll, Colls, Header, PreHeader, _}
-import sigmastate.{BoolToSigmaProp, _}
+import sigmastate._
 import sigmastate.crypto.CryptoConstants
 import sigmastate.eval._
 import sigmastate.exceptions.InterpreterException

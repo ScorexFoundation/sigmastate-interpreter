@@ -6,7 +6,7 @@ import sigma.Colls
 import sigma.ast.global.OptionValueOps
 import sigma.ast.{SBoolean, SBox, SInt, SLong, SOption}
 import sigma.ast.{BlockValue, IntConstant, LongConstant, ValDef, ValUse}
-import sigmastate.{ErgoTree, _}
+import sigmastate._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting}
 import sigmastate.interpreter.ContextExtension
