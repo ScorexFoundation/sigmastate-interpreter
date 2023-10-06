@@ -134,7 +134,7 @@ case class ErgoTree private[sigma](
   }
 
   /** Hexadecimal encoded string of ErgoTree.bytes. */
-  final def bytesHex: String = ErgoAlgos.encode(bytes)
+  final def bytesHex: String = Base16.encode(bytes)
 
   private var _complexity: Int = givenComplexity
 

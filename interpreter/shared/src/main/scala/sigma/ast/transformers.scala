@@ -238,14 +238,6 @@ object Fold extends ValueCompanion {
   override def opCode: OpCode = OpCodes.FoldCode
   override val costKind = PerItemCost(
     baseCost = JitCost(3), perChunkCost = JitCost(1), chunkSize = 10)
-  def sum[T <: SNumericType](input: Value[SCollection[T]], varId: Int)(implicit tT: T) =
-    Fold(input,
-      Constant(tT.upcast(0.toByte), tT),
-      FuncValue(Array((varId, STuple(tT, tT))),
-        Plus(
-          SelectField(ValUse(varId, STuple(tT, tT)), 1).asNumValue,
-          SelectField(ValUse(varId, STuple(tT, tT)), 2).asNumValue))
-    )
 }
 
 /** The element of the collection or default value.

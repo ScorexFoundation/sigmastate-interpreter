@@ -6,13 +6,13 @@ import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.Blake2b256
 import scorex.util._
 import sigma.Colls
+import sigma.ast.defs.ErgoBoxCandidateRType
 import sigma.data.Digest32Coll
 import sigma.util.safeNewArray
-import sigmastate._
 import sigmastate.eval.Extensions._
-import sigmastate.eval._
 import sigmastate.interpreter.ProverResult
 import sigma.serialization.{SigmaByteReader, SigmaByteWriter, SigmaSerializer}
+
 import scala.util.Try
 
 trait ErgoBoxReader {

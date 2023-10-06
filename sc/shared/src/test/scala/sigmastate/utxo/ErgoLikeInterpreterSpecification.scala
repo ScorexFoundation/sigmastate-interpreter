@@ -30,6 +30,15 @@ class ErgoLikeInterpreterSpecification extends CompilerTestingCommons
   implicit lazy val IR: TestingIRContext = new TestingIRContext
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
+  def sum[T <: SNumericType](input: Value[SCollection[T]], varId: Int)(implicit tT: T) =
+    Fold(input,
+      Constant(tT.upcast(0.toByte), tT),
+      FuncValue(Array((varId, STuple(tT, tT))),
+        Plus(
+          SelectField(ValUse(varId, STuple(tT, tT)), 1).asNumValue,
+          SelectField(ValUse(varId, STuple(tT, tT)), 2).asNumValue))
+    )
+
   property("scripts EQ/NEQ") {
     val prover1 = new ContextEnrichingTestProvingInterpreter
     val prover2 = new ContextEnrichingTestProvingInterpreter
@@ -248,7 +257,7 @@ class ErgoLikeInterpreterSpecification extends CompilerTestingCommons
         SigmaPropConstant(pubkey),
         BoolToSigmaProp(
           GT(
-            Fold.sum[SLong.type](MapCollection(Outputs,
+            sum[SLong.type](MapCollection(Outputs,
               FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))), 1),
             LongConstant(20))
         )

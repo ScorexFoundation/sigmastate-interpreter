@@ -1,9 +1,13 @@
 package sigma.ast
 
 import sigma.ast.SCollection.{SByteArray, SIntArray}
-import sigma.data.{CSigmaProp, TrivialProp}
+import sigma.data.{AvlTreeData, CSigmaProp, GeneralType, RType, SigmaBoolean, TrivialProp}
 import ErgoTree.HeaderType
+import org.ergoplatform.{ErgoBox, ErgoBoxCandidate}
 import sigmastate._
+
+import scala.annotation.nowarn
+import scala.reflect.classTag
 
 object defs {
   /** Force initialization of reflection. */
@@ -122,5 +126,19 @@ object defs {
   def GetVarIntArray(varId: Byte): GetVar[SCollection[SInt.type]] = GetVar(varId, SIntArray)
 
   implicit def boolToSigmaProp(b: BoolValue): SigmaPropValue = BoolToSigmaProp(b)
+
+  /** Shadow the implicit from sigma package so it doesn't interfere with the resolution
+    * of ClassTags below.
+    */
+  @nowarn private def rtypeToClassTag = ???
+
+  /** RType descriptors for predefined types used in AOTC-based interpreter. */
+  implicit val SigmaBooleanRType: RType[SigmaBoolean] = RType.fromClassTag(classTag[SigmaBoolean])
+
+  implicit val ErgoBoxRType: RType[ErgoBox] = RType.fromClassTag(classTag[ErgoBox])
+
+  implicit val ErgoBoxCandidateRType: RType[ErgoBoxCandidate] = RType.fromClassTag(classTag[ErgoBoxCandidate])
+
+  implicit val AvlTreeDataRType: RType[AvlTreeData] = GeneralType(classTag[AvlTreeData])
 
 }
