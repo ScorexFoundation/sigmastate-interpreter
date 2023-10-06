@@ -12,7 +12,7 @@ import sigma.data.{Nullable, RType, SigmaConstants}
 import sigma.reflection.RClass
 import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma._
-import sigmastate.SMethod.{MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
+import SMethod.{MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
 import sigmastate.eval._
 import sigmastate.interpreter._
 import sigmastate.lang.Terms._

@@ -16,13 +16,14 @@ import sigmastate.utxo._
 import sigma.ast._
 import sigma.ast.global.SValue
 import SCollectionMethods.{ExistsMethod, ForallMethod, MapMethod}
+import sigma.ast
 import sigmastate.{Exponentiate, InterpreterReflection, MultiplyGroup, Xor}
 
 /**
   * @param networkPrefix    network prefix to decode an ergo address from string (PK op)
   * @param builder          used to create ErgoTree nodes
   * @param lowerMethodCalls if true, then MethodCall nodes are lowered to ErgoTree nodes
-  *                         when [[sigmastate.SMethod.irInfo.irBuilder]] is defined. For
+  *                         when [[sigma.ast.SMethod.irInfo.irBuilder]] is defined. For
   *                         example, in the `coll.map(x => x+1)` code, the `map` method
   *                         call can be lowered to MapCollection node.
   *                         The lowering if preferable, because it is more compact (1 byte

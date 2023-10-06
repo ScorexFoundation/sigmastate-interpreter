@@ -8,7 +8,7 @@ import sigmastate.utils.SigmaByteWriter._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.ComplexityTable
 import debox.cfor
-import sigma.ast.{SType, STypeSubst, Value, ValueCompanion}
+import sigma.ast.{SMethod, SType, STypeSubst, Value, ValueCompanion}
 import sigma.serialization.CoreByteWriter.{ArgInfo, DataInfo}
 
 case class MethodCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value[SType]], STypeSubst) => Value[SType])

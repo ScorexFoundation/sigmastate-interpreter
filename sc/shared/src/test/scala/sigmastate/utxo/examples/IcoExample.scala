@@ -24,7 +24,6 @@ import sigmastate.interpreter.Interpreter
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.utxo.ComplexityTableStat
 
 import scala.util.Random
 
@@ -551,10 +550,6 @@ class IcoExample extends CompilerTestingCommons
     printDebug("withdrawal script cost: " + res.cost)
     printDebug("remove proof size: " + removalProof.length)
     printDebug("lookup proof size: " + lookupProof.length)
-  }
-
-  property("ComplexityTableStat") {
-    printDebug(ComplexityTableStat.complexityTableString)
   }
 
   /** This is the last executed test suite, so this method is executed after all tests.

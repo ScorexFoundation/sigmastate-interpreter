@@ -1,14 +1,13 @@
-package sigmastate
+package sigma.ast
 
 import debox.cfor
-import sigma.ast._
+import sigma.ast.SMethod.{InvokeDescBuilder, MethodCostFunc}
 import sigma.ast.global._
 import sigma.data.RType
 import sigma.reflection.{RClass, RMethod}
 import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma.validation.ValidationRules.CheckTypeWithMethods
 import sigma.{Coll, Evaluation}
-import sigmastate.SMethod.{InvokeDescBuilder, MethodCostFunc}
 import sigmastate.interpreter._
 import sigmastate.lang.SigmaBuilder
 import sigmastate.lang.Terms.{MethodCall, OperationId}
