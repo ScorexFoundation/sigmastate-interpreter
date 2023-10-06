@@ -3,7 +3,7 @@ package sigmastate.serialization
 import scorex.util.encode.ZigZagEncoder.encodeZigZagLong
 import sigma.ast.ByteArrayConstant.ByteArrayTypeCode
 import sigma.ast.global.{BigIntConstant, GroupElementConstant, LongConstant}
-import sigma.ast.{ByteArrayConstant, LongConstant, SLong}
+import sigma.ast.{ArithOp, ByteArrayConstant, Exponentiate, LongConstant, MultiplyGroup, SLong, Xor}
 import sigmastate._
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.ValueCodes.OpCode

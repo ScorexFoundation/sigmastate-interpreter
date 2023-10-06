@@ -1,12 +1,11 @@
 package sigmastate.serialization
 
-import sigma.ast.{BooleanConstant, Constant, IntConstant}
+import sigma.ast.{BooleanConstant, Constant, EQ, IntConstant, OR, SBoolean, SCollection, SCollectionType, SInt}
 import sigmastate._
 import sigmastate.serialization.OpCodes._
 import scorex.util.encode.ZigZagEncoder.encodeZigZagInt
 import sigma.Extensions.ArrayOps
 import sigma.ast.global.BooleanConstant
-import sigma.ast.{SBoolean, SCollection, SCollectionType, SInt}
 
 class OrSerializerSpecification extends TableSerializationSpecification {
 

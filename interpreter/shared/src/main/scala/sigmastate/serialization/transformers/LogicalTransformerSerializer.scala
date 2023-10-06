@@ -1,7 +1,7 @@
 package sigmastate.serialization.transformers
 
 import sigma.ast.global.SValue
-import sigma.ast.{SBoolean, SCollection}
+import sigma.ast.{LogicalTransformerCompanion, SBoolean, SCollection}
 import sigma.serialization.CoreByteWriter.DataInfo
 import sigma.ast.Value
 import sigmastate.lang.Terms._
@@ -9,7 +9,6 @@ import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.SigmaByteWriter._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.Transformer
-import sigmastate.LogicalTransformerCompanion
 
 case class LogicalTransformerSerializer[I <: SCollection[SBoolean.type], O <: SBoolean.type]
 (opDesc: LogicalTransformerCompanion,

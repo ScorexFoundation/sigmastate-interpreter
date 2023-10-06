@@ -21,7 +21,7 @@ import sigma.util.StringUtil.StringUtilExtensions
 import sigmastate.ErgoTree.ZeroHeader
 import sigma.ast.SType.AnyOps
 import sigma.ast.global.SValue
-import sigma.ast.{ByteArrayConstant, Constant, ConstantNode, IntConstant}
+import sigma.ast.{AtLeast, ByteArrayConstant, Constant, ConstantNode, IntConstant, SOption, SSigmaProp, SType, SigmaOr}
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.crypto.SigmaProtocolPrivateInput
 import sigmastate.eval.Extensions.SigmaBooleanOps
@@ -35,7 +35,6 @@ import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers._
 import sigmastate.utxo.{DeserializeContext, DeserializeRegister, GetVar, OptionGet}
-import sigma.ast.{SOption, SSigmaProp, SType}
 import sigma.validation.ValidationRules.CheckSerializableTypeCode
 import sigma.validation.{SigmaValidationSettings, ValidationException}
 import sigmastate.{ErgoTree, eval}
@@ -324,14 +323,14 @@ class SigmaDslTesting extends AnyPropSpec
         val prop = compile(env, code)(IR).asSigmaProp
 
         // Add additional oparations which are not yet implemented in ErgoScript compiler
-        val multisig = sigmastate.AtLeast(
+        val multisig = AtLeast(
           IntConstant(2),
           Array(
             pkAlice,
             DeserializeRegister(ErgoBox.R5, SSigmaProp),  // deserialize pkBob
             DeserializeContext(2, SSigmaProp)))           // deserialize pkCarol
         val header = ErgoTree.headerWithVersion(ZeroHeader, ergoTreeVersionInTests)
-        ErgoTree.withSegregation(header, sigmastate.SigmaOr(prop, multisig))
+        ErgoTree.withSegregation(header, SigmaOr(prop, multisig))
       }
 
       def ergoCtx(prover: FeatureProvingInterpreter, compiledTree: ErgoTree, expectedValue: B) = {

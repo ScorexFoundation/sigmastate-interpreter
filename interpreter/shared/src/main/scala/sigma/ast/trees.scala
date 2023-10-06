@@ -1,21 +1,20 @@
-package sigmastate
+package sigma.ast
 
 import debox.{cfor, Map => DMap}
+import scorex.crypto.hash.{Blake2b256, CryptographicHash32, Sha256}
+import sigma.ast.ArithOp.OperationImpl
+import sigma.ast.Operations._
+import sigma.ast.SCollection.{SByteArray, SIntArray}
+import sigma.ast.SOption.SIntOption
+import sigma.ast.global._
 import sigma.data.ExactIntegral._
 import sigma.data.ExactOrdering._
 import sigma.data.OverloadHack.Overloaded1
 import sigma.data.{CAND, COR, CTHRESHOLD, ExactIntegral, ExactOrdering, SigmaBoolean, SigmaConstants}
-import scorex.crypto.hash.{Blake2b256, CryptographicHash32, Sha256}
-import sigma.ast.SCollection
-import sigma.ast.SCollection.{SByteArray, SIntArray}
-import sigma.ast.SOption.SIntOption
-import sigma.{Coll, Colls, GroupElement, SigmaProp, VersionContext}
-import sigmastate.ArithOp.OperationImpl
-import sigma.ast.Operations._
-import sigma.ast._
 import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma.validation.SigmaValidationSettings
-import sigma.ast.global._
+import sigma.{Coll, Colls, GroupElement, SigmaProp, VersionContext}
+import sigmastate.DataValueComparer
 import sigmastate.eval.Extensions.EvalCollOps
 import sigmastate.eval.NumericOps.{BigIntIsExactIntegral, BigIntIsExactOrdering}
 import sigmastate.eval.SigmaDsl
@@ -676,7 +675,7 @@ object SubstConstants extends ValueCompanion {
   /** Transforms serialized bytes of ErgoTree with segregated constants by
     * replacing constants at given positions with new values. This operation
     * allow to use serialized scripts as pre-defined templates.
-    * See [[sigmastate.SubstConstants]] for details.
+    * See [[SubstConstants]] for details.
     *
     * @param scriptBytes serialized ErgoTree with ConstantSegregationFlag set to 1.
     * @param positions   zero based indexes in ErgoTree.constants array which
@@ -865,7 +864,7 @@ object ArithOp {
     }
   }
 
-  private[sigmastate] val operations: DMap[Byte, ArithOpCompanion] =
+  private[sigma] val operations: DMap[Byte, ArithOpCompanion] =
     DMap.fromIterable(Seq(Plus, Minus, Multiply, Division, Modulo, Min, Max).map(o => (o.opCode, o)))
 
   /** Represents implementation of numeric Arith operations for the given type argTpe. */
@@ -874,7 +873,7 @@ object ArithOp {
     val o = _o.asInstanceOf[ExactOrdering[Any]]
   }
 
-  private[sigmastate] val impls: DMap[SType.TypeCode, OperationImpl] =
+  private[sigma] val impls: DMap[SType.TypeCode, OperationImpl] =
     DMap.fromIterable(Seq(
       SByte   -> new OperationImpl(ByteIsExactIntegral,   ByteIsExactOrdering,   SByte),
       SShort  -> new OperationImpl(ShortIsExactIntegral,  ShortIsExactOrdering,  SShort),

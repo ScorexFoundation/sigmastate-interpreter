@@ -1,7 +1,7 @@
 package sigmastate.serialization
 
 import org.ergoplatform.validation.ValidationRules.{CheckDeserializedScriptIsSigmaProp, CheckHeaderSizeBit}
-import sigma.ast.Constant
+import sigma.ast.{Constant, SType, SubstConstants}
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
@@ -10,7 +10,6 @@ import sigma.util.safeNewArray
 import sigmastate.utxo.ComplexityTable
 import debox.cfor
 import sigma.VersionContext
-import sigma.ast.SType
 import sigma.serialization.{ReaderPositionLimitExceeded, SerializerException}
 import sigma.validation.{SigmaValidationSettings, ValidationException}
 import sigma.validation.ValidationRules.CheckPositionLimit
@@ -291,7 +290,7 @@ class ErgoTreeSerializer {
   /** Transforms serialized bytes of ErgoTree with segregated constants by
     * replacing constants at given positions with new values. This operation
     * allow to use serialized scripts as pre-defined templates.
-    * See [[sigmastate.SubstConstants]] for details.
+    * See [[SubstConstants]] for details.
     *
     * @param scriptBytes serialized ErgoTree with ConstantSegregationFlag set to 1.
     * @param positions   zero based indexes in ErgoTree.constants array which

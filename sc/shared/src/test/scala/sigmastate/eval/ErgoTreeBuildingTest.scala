@@ -2,11 +2,10 @@ package sigmastate.eval
 
 import org.ergoplatform.{Height, Inputs, Outputs, Self}
 import sigmastate._
-import sigma.ast.{BlockValue, FuncValue, IntConstant, LongConstant, SigmaPropConstant, ValDef, ValUse}
+import sigma.ast.{AND, BinAnd, BinOr, BinXor, BlockValue, BoolToSigmaProp, EQ, FuncValue, GE, GT, IntConstant, LE, LT, LongConstant, NEQ, SBox, SFunc, SInt, SLong, SSigmaProp, SType, SigmaAnd, SigmaOr, SigmaPropConstant, Upcast, ValDef, ValUse}
 import sigmastate.helpers.ContextEnrichingTestProvingInterpreter
 import sigmastate.interpreter.Interpreter._
 import scalan.BaseCtxTests
-import sigma.ast.{SBox, SFunc, SInt, SLong, SSigmaProp, SType}
 import sigmastate.lang.LangTests
 import sigmastate.lang.Terms.{Apply, ValueOps}
 import sigmastate.utxo._

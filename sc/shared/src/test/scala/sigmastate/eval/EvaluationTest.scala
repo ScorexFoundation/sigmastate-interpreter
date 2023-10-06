@@ -1,12 +1,11 @@
 package sigmastate.eval
 
 import org.ergoplatform.ErgoBox
-import sigma.ast.{ConcreteCollection, IntArrayConstant, IntConstant, SigmaPropConstant}
+import sigma.ast.{AND, ConcreteCollection, CreateProveDlog, DecodePoint, EQ, IntArrayConstant, IntConstant, SSigmaProp, SigmaPropConstant, SubstConstants}
 import sigmastate.helpers.ContextEnrichingTestProvingInterpreter
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
 import scalan.BaseCtxTests
-import sigma.ast.SSigmaProp
 import sigma.ast.global.{SigmaPropValue, SigmaPropValueOps}
 import sigma.data.ProveDlog
 import sigmastate.lang.LangTests

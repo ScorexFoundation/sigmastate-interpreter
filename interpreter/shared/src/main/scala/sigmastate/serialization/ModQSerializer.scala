@@ -1,7 +1,6 @@
 package sigmastate.serialization
 
-import sigma.ast.SType
-import sigmastate.ModQ
+import sigma.ast.{ModQ, SType}
 import sigma.ast.Value
 import sigmastate.lang.Terms._
 import sigmastate.utils.SigmaByteWriter._

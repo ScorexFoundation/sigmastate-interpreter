@@ -6,6 +6,7 @@ import org.ergoplatform.validation.ValidationRules
 import scorex.crypto.hash.{Blake2b256, Sha256}
 import scorex.utils.Longs
 import sigma.Extensions.ArrayOps
+import sigma.ast.{AtLeast, SubstConstants}
 import sigma.crypto.{EcPointType, Ecp}
 import sigma.data._
 import sigma.serialization.GroupElementSerializer

@@ -1,13 +1,12 @@
 package sigmastate.serialization
 
-import sigma.ast.SType
+import sigma.ast.{OneArgumentOperation, OneArgumentOperationCompanion, SType}
 import sigma.serialization.CoreByteWriter.DataInfo
 import sigma.ast.Value
 import sigma.ast.global.SValue
 import sigmastate.lang.Terms._
 import sigmastate.utils.SigmaByteWriter._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.{OneArgumentOperation, OneArgumentOperationCompanion}
 
 case class OneArgumentOperationSerializer[T <: SType](opDesc: OneArgumentOperationCompanion, cons: Value[T] => SValue)
   extends ValueSerializer[OneArgumentOperation[T, SType]] {

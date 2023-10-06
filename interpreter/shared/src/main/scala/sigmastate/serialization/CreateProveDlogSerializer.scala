@@ -1,8 +1,7 @@
 package sigmastate.serialization
 
-import sigma.ast.SGroupElement
+import sigma.ast.{CreateProveDlog, SGroupElement}
 import sigma.serialization.CoreByteWriter._
-import sigmastate.CreateProveDlog
 import sigma.ast.Value
 import sigma.ast.global._
 import sigmastate.lang.Terms.ValueOps

@@ -1,5 +1,6 @@
 package sigmastate.serialization
 
+import sigma.ast.ModQ
 import sigma.ast.global.BigIntConstant
 import sigmastate._
 

@@ -2,7 +2,7 @@ package sigmastate.eval
 
 import org.ergoplatform._
 import scalan.MutableLazy
-import sigma.SigmaException
+import sigma.{SigmaException, ast}
 import sigma.ast.TypeCodes.LastConstantCode
 import sigma.ast.Value.Typed
 import sigma.ast._
@@ -496,10 +496,10 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
       case Ident(n, _) =>
         env.getOrElse(n, !!!(s"Variable $n not found in environment $env"))
 
-      case sigmastate.Upcast(Constant(value, _), toTpe: SNumericType) =>
+      case ast.Upcast(Constant(value, _), toTpe: SNumericType) =>
         eval(mkConstant(toTpe.upcast(value.asInstanceOf[AnyVal]), toTpe))
 
-      case sigmastate.Downcast(Constant(value, _), toTpe: SNumericType) =>
+      case ast.Downcast(Constant(value, _), toTpe: SNumericType) =>
         eval(mkConstant(toTpe.downcast(value.asInstanceOf[AnyVal]), toTpe))
 
       // Rule: col.size --> SizeOf(col)
@@ -591,12 +591,12 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val vv = asRep[GroupElement](_vv)
         sigmaDslBuilder.proveDHTuple(gv, hv, uv, vv)
 
-      case sigmastate.Exponentiate(In(l), In(r)) =>
+      case Exponentiate(In(l), In(r)) =>
         val lV = asRep[GroupElement](l)
         val rV = asRep[BigInt](r)
         lV.exp(rV)
 
-      case sigmastate.MultiplyGroup(In(_l), In(_r)) =>
+      case MultiplyGroup(In(_l), In(_r)) =>
         val l = asRep[GroupElement](_l)
         val r = asRep[GroupElement](_r)
         l.multiply(r)
@@ -604,11 +604,11 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
       case GroupGenerator =>
         sigmaDslBuilder.groupGenerator
 
-      case sigmastate.ByteArrayToBigInt(In(arr)) =>
+      case ByteArrayToBigInt(In(arr)) =>
         val arrV = asRep[Coll[Byte]](arr)
         sigmaDslBuilder.byteArrayToBigInt(arrV)
 
-      case sigmastate.LongToByteArray(In(x)) =>
+      case LongToByteArray(In(x)) =>
         val xV = asRep[Long](x)
         sigmaDslBuilder.longToByteArray(xV)
 
@@ -914,11 +914,11 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val values = colBuilder.fromItems(vs: _*)(eAny)
         values
 
-      case sigmastate.Upcast(In(input), tpe) =>
+      case ast.Upcast(In(input), tpe) =>
         val elem = stypeToElem(tpe.asNumType)
         upcast(input)(elem)
 
-      case sigmastate.Downcast(In(input), tpe) =>
+      case ast.Downcast(In(input), tpe) =>
         val elem = stypeToElem(tpe.asNumType)
         downcast(input)(elem)
 

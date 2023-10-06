@@ -1,7 +1,7 @@
 package sigmastate.serialization
 
+import sigma.ast.LogicalNot
 import sigma.serialization.CoreByteWriter.DataInfo
-import sigmastate.LogicalNot
 import sigma.ast.Operations.LogicalNotInfo.inputArg
 import sigma.ast.global._
 import sigmastate.lang.Terms._

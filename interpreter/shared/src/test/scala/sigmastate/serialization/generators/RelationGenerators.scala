@@ -1,9 +1,8 @@
 package sigmastate.serialization.generators
 
 import org.scalacheck.{Arbitrary, Gen}
-import sigma.ast.SInt
+import sigma.ast.{If, SInt, TreeLookup}
 import sigma.ast.{FalseLeaf, TrueLeaf}
-import sigmastate.{If, TreeLookup}
 
 trait RelationGenerators {
   this: ObjectGenerators with ConcreteCollectionGenerators =>

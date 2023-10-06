@@ -3,14 +3,13 @@ package sigmastate.serialization
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.validation.ValidationRules.CheckDeserializedScriptIsSigmaProp
 import sigma.SigmaProp
-import sigma.ast.SInt
+import sigma.ast.{BigIntConstant, BoolToSigmaProp, ByteConstant, ConstantPlaceholder, EQ, IntConstant, SInt, ShortConstant}
 import sigma.ast.global.SigmaPropValue
 import sigma.data.CBigInt
 import sigma.serialization.{ReaderPositionLimitExceeded, SerializerException}
 import sigma.util.Extensions.SigmaPropOps
 import sigma.validation.ValidationException
 import sigmastate.ErgoTree.EmptyConstants
-import sigma.ast.{BigIntConstant, ByteConstant, ConstantPlaceholder, IntConstant, ShortConstant}
 import sigmastate.ErgoTree.HeaderType
 import sigmastate._
 import sigmastate.eval.Extensions.SigmaBooleanOps

@@ -1,9 +1,8 @@
 package sigmastate.serialization
 
-import sigma.ast._
+import sigma.ast.{BoolToSigmaProp, _}
 import sigma.ast.global._
 import sigma.serialization.CoreByteWriter.DataInfo
-import sigmastate.BoolToSigmaProp
 import sigmastate.lang.Terms._
 import sigmastate.utils.SigmaByteWriter._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}

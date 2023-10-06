@@ -1,7 +1,6 @@
 package sigmastate.interpreter
 
-import sigma.ast.{FixedCost, JitCost, PerItemCost, SMethod, SType, TypeBasedCost}
-import sigma.ast.{FixedCostValueCompanion, PerItemCostValueCompanion, ValueCompanion}
+import sigma.ast.{FixedCost, FixedCostValueCompanion, GT, JitCost, LE, PerItemCost, PerItemCostValueCompanion, SMethod, SType, TypeBasedCost, ValueCompanion}
 import sigmastate.lang.Terms.MethodCall
 
 /** An item in the cost accumulation trace of a [[sigma.ast.ErgoTree]] evaluation. */
@@ -35,7 +34,7 @@ object FixedCostItem {
   * @param opDesc   descriptor of the ErgoTree operation
   * @param costKind type based cost descriptor added to accumulator
   * @param tpe      concrete type on this the operation is executed
-  * @see [[sigmastate.LE]], [[sigmastate.GT]]
+  * @see [[LE]], [[GT]]
   */
 case class TypeBasedCostItem(
                                 opDesc: OperationDesc,

@@ -1,10 +1,10 @@
 package sigmastate.serialization
 
-import sigma.ast.SInt
+import sigma.ast.{EQ, SInt, SubstConstants}
 import sigma.ast.global.IntValue
 import sigma.ast.{ConcreteCollection, IntArrayConstant, IntConstant}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.{CrossVersionProps, EQ, SubstConstants}
+import sigmastate.CrossVersionProps
 
 class SubstConstantsSerializerSpecification extends SerializationSpecification
   with CrossVersionProps {
