@@ -2,7 +2,7 @@ package sigmastate.lang.syntax
 
 import fastparse.NoWhitespace._
 import fastparse._
-import sigma.ast.global.BooleanConstant
+import sigma.ast.defs.BooleanConstant
 import sigma.ast.{SBoolean, SInt, SLong, SString, SType, Value}
 import sigmastate.lang.syntax.Identifiers._
 import sigmastate.lang.{SigmaBuilder, SourceContext, StdSigmaBuilder}

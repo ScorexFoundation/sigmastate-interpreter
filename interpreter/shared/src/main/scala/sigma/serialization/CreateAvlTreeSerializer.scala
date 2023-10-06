@@ -5,7 +5,7 @@ import sigma.ast.SInt
 import sigma.ast.SOption.SIntOption
 import sigma.serialization.CoreByteWriter.DataInfo
 import sigma.ast._
-import sigma.ast.global._
+import sigma.ast.defs._
 import sigmastate.lang.Terms.ValueOps
 import SigmaByteWriter._
 

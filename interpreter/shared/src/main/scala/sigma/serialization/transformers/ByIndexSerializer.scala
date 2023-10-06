@@ -4,7 +4,7 @@ import sigma.ast.{ByIndex, Value}
 import sigmastate.lang.Terms._
 import sigma.serialization.{SigmaByteReader, SigmaByteWriter, ValueSerializer}
 import ValueSerializer._
-import sigma.ast.global.SValue
+import sigma.ast.defs.SValue
 import sigma.ast.Operations.ByIndexInfo._
 import sigma.serialization.SigmaByteWriter._
 import sigma.ast.{SCollection, SInt, SType}

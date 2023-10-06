@@ -14,9 +14,8 @@ import sigma.ast.SType.AnyOps
 import scorex.util.encode.Base16
 import sigma.ast.BoolArrayConstant.BoolArrayTypeCode
 import sigma.ast.ByteArrayConstant.ByteArrayTypeCode
-import sigma.ast.global.{BoolValue, SValue}
+import sigma.ast.defs.{BoolValue, SValue}
 import sigma.crypto.EcPointType
-import sigma.serialization.SerializerException
 import sigma.util.Extensions.{BigIntegerOps, EcpOps, SigmaBooleanOps}
 import sigmastate.lang.DeserializationSigmaBuilder
 

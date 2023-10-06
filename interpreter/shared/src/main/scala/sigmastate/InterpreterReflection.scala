@@ -6,7 +6,7 @@ import sigma.reflection.{ReflectionData, mkConstructor, mkMethod}
 import sigma.Coll
 import sigma.ast.SCollection.{SBooleanArray, SByteArray, SIntArray}
 import sigma.ast._
-import sigma.ast.global._
+import sigma.ast.defs._
 import sigma.data.{CAND, COR, CTHRESHOLD}
 import sigma.{AvlTree, SigmaDslBuilder}
 import SAvlTreeMethods.KeyValueColl

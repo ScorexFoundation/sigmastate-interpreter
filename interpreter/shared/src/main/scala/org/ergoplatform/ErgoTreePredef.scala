@@ -3,7 +3,7 @@ package org.ergoplatform
 import org.ergoplatform.settings.MonetarySettings
 import sigma.ast.SCollection.SByteArray
 import sigma.ast._
-import sigma.ast.global._
+import sigma.ast.defs._
 import sigma.data.ProveDlog
 import ErgoTree.{HeaderType, ZeroHeader}
 import sigmastate.crypto.CryptoConstants

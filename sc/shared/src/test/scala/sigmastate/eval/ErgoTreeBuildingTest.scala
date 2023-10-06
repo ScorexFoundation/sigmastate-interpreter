@@ -1,6 +1,5 @@
 package sigmastate.eval
 
-import org.ergoplatform.{Height, Inputs, Outputs, Self}
 import sigmastate._
 import sigma.ast._
 import sigmastate.helpers.ContextEnrichingTestProvingInterpreter

@@ -1,7 +1,7 @@
 package sigma.serialization.transformers
 
 import sigma.ast.{CreateProveDHTuple, SGroupElement}
-import sigma.ast.global.SigmaPropValue
+import sigma.ast.defs.SigmaPropValue
 import sigma.ast.Value
 import sigmastate.lang.Terms._
 import sigma.serialization._

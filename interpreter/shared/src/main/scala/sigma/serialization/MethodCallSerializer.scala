@@ -1,6 +1,6 @@
 package sigma.serialization
 
-import sigma.ast.global._
+import sigma.ast.defs._
 import sigmastate.lang.Terms.MethodCall
 import sigma.util.safeNewArray
 import SigmaByteWriter._

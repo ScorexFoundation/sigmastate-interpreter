@@ -4,14 +4,13 @@ import debox.cfor
 import sigma.Extensions.ArrayOps
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.TypeCodes.ConstantCode
-import sigma.ast.global._
+import sigma.ast.defs._
 import sigma.crypto.EcPointType
 import sigma.data.{CSigmaProp, Nullable, RType, SigmaBoolean}
 import sigma.kiama.rewriting.Rewriter.count
 import sigma.util.CollectionUtil._
 import sigma.util.Extensions._
 import sigma.{AvlTree, Coll, Colls, Header, PreHeader, _}
-import sigmastate._
 import sigmastate.crypto.CryptoConstants
 import sigmastate.eval._
 import sigmastate.exceptions.InterpreterException
@@ -1038,6 +1037,122 @@ object FuncValue extends FixedCostValueCompanion {
 
   def apply(argId: Int, tArg: SType, body: SValue): FuncValue =
     FuncValue(IndexedSeq((argId, tArg)), body)
+}
+
+/** When interpreted evaluates to a ByteArrayConstant built from Context.minerPubkey */
+case object MinerPubkey extends NotReadyValueByteArray with ValueCompanion {
+  override def opCode: OpCode = OpCodes.MinerPubkeyCode
+  /** Cost of calling Context.minerPubkey Scala method. */
+  override val costKind = FixedCost(JitCost(20))
+  override val opType = SFunc(SContext, SCollection.SByteArray)
+  override def companion = this
+  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+    addCost(this.costKind)
+    E.context.minerPubKey
+  }
+}
+
+/** When interpreted evaluates to a IntConstant built from Context.currentHeight */
+case object Height extends NotReadyValueInt with FixedCostValueCompanion {
+  override def companion = this
+  override def opCode: OpCode = OpCodes.HeightCode
+  /** Cost of: 1) Calling Context.HEIGHT Scala method. */
+  override val costKind = FixedCost(JitCost(26))
+  override val opType = SFunc(SContext, SInt)
+  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+    addCost(this.costKind)
+    E.context.HEIGHT
+  }
+}
+
+/** When interpreted evaluates to a collection of BoxConstant built from Context.boxesToSpend */
+case object Inputs extends LazyCollection[SBox.type] with FixedCostValueCompanion {
+  override def companion = this
+  override def opCode: OpCode = OpCodes.InputsCode
+  /** Cost of: 1) Calling Context.INPUTS Scala method. */
+  override val costKind = FixedCost(JitCost(10))
+  override def tpe = SCollection.SBoxArray
+  override val opType = SFunc(SContext, tpe)
+  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+    addCost(this.costKind)
+    E.context.INPUTS
+  }
+}
+
+/** When interpreted evaluates to a collection of BoxConstant built from Context.spendingTransaction.outputs */
+case object Outputs extends LazyCollection[SBox.type] with FixedCostValueCompanion {
+  override def companion = this
+  override def opCode: OpCode = OpCodes.OutputsCode
+  /** Cost of: 1) Calling Context.OUTPUTS Scala method. */
+  override val costKind = FixedCost(JitCost(10))
+  override def tpe = SCollection.SBoxArray
+  override val opType = SFunc(SContext, tpe)
+  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+    addCost(this.costKind)
+    E.context.OUTPUTS
+  }
+}
+
+/** When interpreted evaluates to a AvlTreeConstant built from Context.lastBlockUtxoRoot */
+case object LastBlockUtxoRootHash extends NotReadyValueAvlTree with ValueCompanion {
+  override def companion = this
+  override def opCode: OpCode = OpCodes.LastBlockUtxoRootHashCode
+
+  /** Cost of: 1) Calling Context.LastBlockUtxoRootHash Scala method. */
+  override val costKind = FixedCost(JitCost(15))
+
+  override val opType = SFunc(SContext, tpe)
+  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+    addCost(this.costKind)
+    E.context.LastBlockUtxoRootHash
+  }
+}
+
+/** When interpreted evaluates to a BoxConstant built from context.boxesToSpend(context.selfIndex) */
+case object Self extends NotReadyValueBox with FixedCostValueCompanion {
+  override def companion = this
+  override def opCode: OpCode = OpCodes.SelfCode
+  /** Cost of: 1) Calling Context.SELF Scala method. */
+  override val costKind = FixedCost(JitCost(10))
+  override val opType = SFunc(SContext, SBox)
+  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+    addCost(this.costKind)
+    E.context.SELF
+  }
+}
+
+/** When interpreted evaluates to the singleton instance of [[sigma.Context]].
+  * Corresponds to `CONTEXT` variable in ErgoScript which can be used like `CONTEXT.headers`.
+  */
+case object Context extends NotReadyValue[SContext.type] with ValueCompanion {
+  override def companion = this
+  override def opCode: OpCode = OpCodes.ContextCode
+
+  /** Cost of: 1) accessing global Context instance. */
+  override val costKind = FixedCost(JitCost(1))
+
+  override def tpe: SContext.type = SContext
+  override val opType: SFunc = SFunc(SUnit, SContext)
+  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+    addCost(this.costKind)
+    E.context
+  }
+}
+
+/** When interpreted evaluates to the singleton instance of [[sigma.SigmaDslBuilder]].
+  * Corresponds to `Global` variable in ErgoScript which can be used like `Global.groupGenerator`.
+  */
+case object Global extends NotReadyValue[SGlobal.type] with FixedCostValueCompanion {
+  override def companion = this
+  override def opCode: OpCode = OpCodes.GlobalCode
+  /** Cost of: 1) accessing Global instance. */
+  override val costKind = FixedCost(JitCost(5))
+  override def tpe: SGlobal.type = SGlobal
+  override val opType: SFunc = SFunc(SUnit, SGlobal)
+  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+    addCost(this.costKind)
+    CSigmaDslBuilder
+  }
 }
 
 

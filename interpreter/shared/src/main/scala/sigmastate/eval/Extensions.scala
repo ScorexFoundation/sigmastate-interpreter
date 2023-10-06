@@ -11,7 +11,7 @@ import sigma.data.{CAnyValue, Digest32Coll, Nullable, RType, SigmaBoolean}
 import sigma.{Coll, _}
 import sigmastate.Platform
 import sigma.ast.{SigmaPropIsProven, _}
-import sigma.ast.global._
+import sigma.ast.defs._
 import sigmastate.interpreter.Interpreter
 import sigmastate.lang.{CheckingSigmaBuilder, TransformingSigmaBuilder}
 import sigmastate.utils.Helpers

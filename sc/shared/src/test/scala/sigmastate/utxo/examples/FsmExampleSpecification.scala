@@ -9,7 +9,7 @@ import sigma.Colls
 import sigma.ast.SCollection.SByteArray
 import sigma.ast._
 import sigmastate._
-import sigma.ast.global._
+import sigma.ast.defs._
 import sigma.data.{AvlTreeData, AvlTreeFlags}
 import sigmastate.eval.Extensions.SigmaBooleanOps
 import sigmastate.eval._

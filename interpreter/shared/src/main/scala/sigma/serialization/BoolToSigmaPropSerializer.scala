@@ -1,7 +1,7 @@
 package sigma.serialization
 
 import sigma.ast._
-import sigma.ast.global._
+import sigma.ast.defs._
 import sigma.serialization.CoreByteWriter.DataInfo
 import sigmastate.lang.Terms._
 import SigmaByteWriter._

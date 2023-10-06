@@ -1,7 +1,7 @@
 package sigma.serialization
 
 import sigma.ast.SCollection.{SByteArray, SIntArray}
-import sigma.ast.global.SValue
+import sigma.ast.defs.SValue
 import sigma.ast.{SubstConstants, Value}
 import sigmastate.lang.Terms._
 import SigmaByteWriter._

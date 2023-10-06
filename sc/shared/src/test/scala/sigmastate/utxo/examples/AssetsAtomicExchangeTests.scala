@@ -1,6 +1,6 @@
 package sigmastate.utxo.examples
 
-import org.ergoplatform.{ErgoBox, Height, Outputs, Self}
+import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.R4
 import sigmastate.helpers.CompilerTestingCommons
 import org.ergoplatform.dsl.ContractSyntax.Token
@@ -8,7 +8,7 @@ import org.ergoplatform.dsl.TestContractSpec
 import scorex.crypto.hash.Blake2b256
 import sigma.ast.SCollection.SByteArray
 import sigma.ast._
-import sigma.ast.global._
+import sigma.ast.defs._
 import sigma.data.{CSigmaProp, Digest32Coll, TrivialProp}
 import sigma.ast.{BlockValue, ByteArrayConstant, LongConstant, ValDef, ValUse, Value}
 import sigmastate.eval.Extensions._

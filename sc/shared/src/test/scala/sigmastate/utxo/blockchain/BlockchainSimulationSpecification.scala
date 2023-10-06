@@ -1,7 +1,7 @@
 package sigmastate.utxo.blockchain
 
 import sigma.ast.TrueLeaf
-import sigma.ast.global.{GetVarBoolean, OptionValueOps}
+import sigma.ast.defs.{GetVarBoolean, OptionValueOps}
 import sigmastate.CompilerCrossVersionProps
 import sigmastate.helpers.ErgoLikeTestProvingInterpreter
 import sigmastate.interpreter.ContextExtension

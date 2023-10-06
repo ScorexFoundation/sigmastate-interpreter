@@ -4,7 +4,7 @@ import debox.cfor
 import org.scalameter.api.Bench
 import sigma.BenchmarkGens
 import sigma.ast.{ArithOp, EQ, IntConstant, SType}
-import sigma.ast.global.SValue
+import sigma.ast.defs.SValue
 import sigma.serialization.OpCodes.PlusCode
 
 object ErgoTreeBenchmarks extends Bench.LocalTime with BenchmarkGens { suite: Bench[Double] =>

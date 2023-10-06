@@ -3,7 +3,7 @@ package sigmastate.lang
 import org.ergoplatform._
 import sigma.ast.SCollection.{SBooleanArray, SByteArray}
 import sigma.ast._
-import sigma.ast.global.SValue
+import sigma.ast.defs.SValue
 import sigma.data.{Nullable, SigmaBoolean}
 import sigma.util.Extensions.Ensuring
 import sigmastate.exceptions._

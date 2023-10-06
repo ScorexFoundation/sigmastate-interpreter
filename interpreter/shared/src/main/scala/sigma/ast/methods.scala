@@ -7,7 +7,7 @@ import scorex.crypto.authds.avltree.batch.{Insert, Lookup, Remove, Update}
 import scorex.crypto.authds.{ADKey, ADValue}
 import sigma.ast.SCollection.{SBooleanArray, SBoxArray, SByteArray, SByteArray2, SHeaderArray}
 import sigma.ast.SType.TypeCode
-import sigma.ast.global.SValue
+import sigma.ast.defs.SValue
 import sigma.data.{Nullable, RType, SigmaConstants}
 import sigma.reflection.RClass
 import sigma.serialization.CoreByteWriter.ArgInfo

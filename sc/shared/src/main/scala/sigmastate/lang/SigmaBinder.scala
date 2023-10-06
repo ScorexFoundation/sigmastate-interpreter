@@ -6,8 +6,7 @@ import sigma.ast.NoType
 import sigma.data.Nullable
 import sigma.kiama.rewriting.CallbackRewriter
 import sigma.ast._
-import sigma.ast.global.SValue
-import sigmastate._
+import sigma.ast.defs.SValue
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
 import sigmastate.lang.Terms._

@@ -4,7 +4,7 @@ import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
 import scorex.util._
 import sigma.Colls
-import sigma.ast.global.{BooleanConstant, GetVarByteArray, OptionValueOps}
+import sigma.ast.defs.{BooleanConstant, GetVarByteArray, OptionValueOps}
 import sigma.ast._
 import sigma.data.AvlTreeData
 import sigmastate._

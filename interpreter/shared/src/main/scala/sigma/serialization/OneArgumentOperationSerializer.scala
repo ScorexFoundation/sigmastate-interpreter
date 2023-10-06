@@ -3,7 +3,7 @@ package sigma.serialization
 import sigma.ast.{OneArgumentOperation, OneArgumentOperationCompanion, SType}
 import sigma.serialization.CoreByteWriter.DataInfo
 import sigma.ast.Value
-import sigma.ast.global.SValue
+import sigma.ast.defs.SValue
 import sigmastate.lang.Terms._
 import SigmaByteWriter._
 

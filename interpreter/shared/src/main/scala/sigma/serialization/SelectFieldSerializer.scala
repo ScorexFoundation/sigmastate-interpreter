@@ -4,7 +4,7 @@ import sigma.ast.Operations.SelectFieldInfo
 import sigma.ast.{SelectField, Value}
 import sigmastate.lang.Terms._
 import SelectFieldInfo._
-import sigma.ast.global.SValue
+import sigma.ast.defs.SValue
 import sigma.ast.{STuple, SType}
 import sigma.serialization.CoreByteWriter.DataInfo
 import SigmaByteWriter._

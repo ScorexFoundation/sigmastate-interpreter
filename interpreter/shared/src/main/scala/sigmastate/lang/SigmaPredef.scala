@@ -8,7 +8,7 @@ import sigma.ast.SCollection.{SByteArray, SIntArray}
 import sigma.ast.SOption.SIntOption
 import sigma.ast.{SigmaPropConstant, _}
 import sigma.serialization.CoreByteWriter.ArgInfo
-import sigma.ast.global._
+import sigma.ast.defs._
 import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.exceptions.InvalidArguments

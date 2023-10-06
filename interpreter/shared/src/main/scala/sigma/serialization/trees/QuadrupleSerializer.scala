@@ -3,7 +3,7 @@ package sigma.serialization.trees
 import sigma.ast.SType
 import sigma.serialization.CoreByteWriter.DataInfo
 import sigma.ast._
-import sigma.ast.global.SValue
+import sigma.ast.defs.SValue
 import sigmastate.lang.Terms._
 import sigma.serialization.{SigmaByteReader, SigmaByteWriter, ValueSerializer}
 import sigma.serialization.SigmaByteWriter._

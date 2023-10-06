@@ -1,6 +1,5 @@
 package sigma.serialization
 
-import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules.CheckValidOpCode
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.TypeCodes.LastConstantCode

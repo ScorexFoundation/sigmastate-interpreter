@@ -4,7 +4,7 @@ import sigmastate.lang.SigmaCompiler
 import sigmastate.eval.IRContext
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import sigma.ast.SType
-import sigma.ast.global.SigmaPropValue
+import sigma.ast.defs.SigmaPropValue
 import sigma.ast.Value
 import sigmastate.lang.Terms.ValueOps
 

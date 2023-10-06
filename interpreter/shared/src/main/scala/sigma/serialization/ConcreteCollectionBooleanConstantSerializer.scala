@@ -1,7 +1,7 @@
 package sigma.serialization
 
 import sigma.ast._
-import sigma.ast.global._
+import sigma.ast.defs._
 import sigma.util.safeNewArray
 import debox.cfor
 import sigma.ast.{SBoolean, SCollection}

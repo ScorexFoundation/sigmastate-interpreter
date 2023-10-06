@@ -10,7 +10,7 @@ import sigma.serialization.GroupElementSerializer
 import sigma.{Coll, SigmaException, VersionContext}
 import sigma.ast.ErgoTree.{ZeroHeader, setVersionBits}
 import sigma.ast._
-import sigma.ast.global._
+import sigma.ast.defs._
 import sigmastate.crypto.DLogProtocol.ProveDlogProp
 import sigma.serialization._
 import scala.util.Try

@@ -1,6 +1,6 @@
 package sigma.serialization
 
-import org.ergoplatform.{ErgoBoxCandidate, Outputs}
+import org.ergoplatform.ErgoBoxCandidate
 import org.scalacheck.Gen
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert}
 import scorex.crypto.authds.{ADKey, ADValue}
@@ -8,13 +8,12 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.serialization.{Reader, VLQByteBufferReader}
 import sigma.ast.{SBoolean, SInt, SizeOf}
 import sigma.data.{AvlTreeData, AvlTreeFlags, CAND, SigmaBoolean}
-import sigma.serialization.{DeserializeCallDepthExceeded, InvalidTypePrefix, ReaderPositionLimitExceeded, SerializerException}
 import sigma.util.{BenchmarkUtil, safeNewArray}
 import sigma.validation.ValidationException
 import sigma.validation.ValidationRules.CheckPositionLimit
 import sigma.{Colls, Environment}
 import sigma.ast._
-import sigma.ast.global._
+import sigma.ast.defs._
 import sigmastate._
 import sigma.Extensions.ArrayOps
 import sigmastate.eval.Extensions.{EvalIterableOps, SigmaBooleanOps}

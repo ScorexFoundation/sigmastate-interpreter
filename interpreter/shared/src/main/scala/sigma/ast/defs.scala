@@ -5,7 +5,7 @@ import sigma.data.{CSigmaProp, TrivialProp}
 import ErgoTree.HeaderType
 import sigmastate._
 
-object global {
+object defs {
   /** Force initialization of reflection. */
   val reflection = InterpreterReflection
 

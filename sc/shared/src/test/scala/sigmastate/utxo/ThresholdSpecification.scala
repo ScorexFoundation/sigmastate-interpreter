@@ -1,7 +1,7 @@
 package sigmastate.utxo
 
 import sigma.ast._
-import sigma.ast.global._
+import sigma.ast.defs._
 import sigma.data.{AvlTreeData, CAND, COR, ProveDlog, TrivialProp}
 import sigmastate._
 import sigmastate.crypto.DLogProtocol.DLogProverInput

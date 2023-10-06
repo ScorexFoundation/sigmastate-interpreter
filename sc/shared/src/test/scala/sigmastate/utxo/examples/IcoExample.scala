@@ -15,7 +15,7 @@ import sigma.ast._
 import sigmastate._
 import sigmastate.crypto.CryptoConstants
 import sigma.Extensions.ArrayOps
-import sigma.ast.global.{CollectionConstant, SigmaPropValue}
+import sigma.ast.defs.{CollectionConstant, SigmaPropValue}
 import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter}

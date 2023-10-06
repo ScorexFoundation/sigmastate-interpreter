@@ -13,7 +13,7 @@ import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.util.encode.{Base58, Base64}
 import scorex.util.{ModifierId, bytesToId}
 import sigma.ast._
-import sigma.ast.global._
+import sigma.ast.defs._
 import sigmastate.crypto.CryptoConstants
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
@@ -24,7 +24,7 @@ import sigmastate._
 import sigma.Coll
 import sigma.Extensions.ArrayOps
 import sigma._
-import sigma.ast.global.SigmaPropValue
+import sigma.ast.defs.SigmaPropValue
 import sigma.crypto.EcPointType
 import sigma.util.Extensions.EcpOps
 import sigma.validation.{ChangedRule, DisabledRule, EnabledRule, ReplacedRule, RuleStatus}

@@ -3,7 +3,7 @@ package sigmastate.utxo.examples
 import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
 import sigma.Colls
-import sigma.ast.global.OptionValueOps
+import sigma.ast.defs.OptionValueOps
 import sigma.ast._
 import sigmastate._
 import sigmastate.helpers.TestingHelpers._

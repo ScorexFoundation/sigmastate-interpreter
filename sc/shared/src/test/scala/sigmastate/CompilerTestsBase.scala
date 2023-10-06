@@ -5,7 +5,7 @@ import sigmastate.lang.{CompilerResult, CompilerSettings, SigmaCompiler, Transfo
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigma.ast.{ErgoTree, SType, Value}
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
-import sigma.ast.global.{SValue, SigmaPropValue}
+import sigma.ast.defs.{SValue, SigmaPropValue}
 import sigma.serialization.ValueSerializer
 import sigmastate.eval.IRContext
 import sigmastate.lang.Terms.ValueOps

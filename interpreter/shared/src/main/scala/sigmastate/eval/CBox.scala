@@ -8,7 +8,7 @@ import sigma.ast.{SInt, STuple, SType}
 import sigma.data.{CAnyValue, RType, WrapperOf}
 import sigma.{AnyValue, Box, Coll, Colls}
 import sigma.ast.{ConstantNode, EvaluatedValue}
-import sigma.ast.global._
+import sigma.ast.defs._
 import sigmastate.eval.CBox.regs
 import sigmastate.eval.Extensions.toAnyValue
 

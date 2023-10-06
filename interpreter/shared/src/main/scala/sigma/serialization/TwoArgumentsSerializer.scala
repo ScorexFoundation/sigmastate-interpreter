@@ -1,7 +1,7 @@
 package sigma.serialization
 
 import sigma.ast.{SType, TwoArgumentOperationCompanion, TwoArgumentsOperation}
-import sigma.ast.global.SValue
+import sigma.ast.defs.SValue
 import sigma.serialization.CoreByteWriter.DataInfo
 import sigma.ast.Value
 import sigmastate.lang.Terms._

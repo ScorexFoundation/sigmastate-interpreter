@@ -4,7 +4,7 @@ import sigma.ast.{BooleanConstant, Constant, EQ, IntConstant, OR, SBoolean, SCol
 import sigma.serialization.OpCodes._
 import scorex.util.encode.ZigZagEncoder.encodeZigZagInt
 import sigma.Extensions.ArrayOps
-import sigma.ast.global.BooleanConstant
+import sigma.ast.defs.BooleanConstant
 
 class OrSerializerSpecification extends TableSerializationSpecification {
 

@@ -3,7 +3,7 @@ package sigmastate.utxo
 import sigma.ast.{GE, ModQ, SType}
 import sigma.data.CAnyValue
 import sigma.ast._
-import sigma.ast.global.{GetVarInt, OptionValueOps}
+import sigma.ast.defs.{GetVarInt, OptionValueOps}
 import sigmastate.helpers.CompilerTestingCommons
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms._

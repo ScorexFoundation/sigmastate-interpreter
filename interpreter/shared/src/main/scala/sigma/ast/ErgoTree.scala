@@ -5,7 +5,7 @@ import scorex.util.encode.Base16
 import sigma.VersionContext
 import sigma.ast.ErgoTree.{HeaderType, substConstants}
 import sigma.ast.SigmaPropConstant
-import sigma.ast.global._
+import sigma.ast.defs._
 import sigma.data.SigmaBoolean
 import sigma.kiama.rewriting.Rewriter.{everywherebu, strategy}
 import sigma.validation.ValidationException

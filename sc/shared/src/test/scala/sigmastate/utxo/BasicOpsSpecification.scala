@@ -8,7 +8,7 @@ import sigma.ast.SType.AnyOps
 import sigma.data.{AvlTreeData, CAnyValue}
 import sigma.util.StringUtil._
 import sigma.ast._
-import sigma.ast.global._
+import sigma.ast.defs._
 import sigmastate._
 import sigmastate.crypto.CryptoConstants
 import sigmastate.eval.InvalidType

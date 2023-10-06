@@ -1,13 +1,12 @@
 package sigmastate.lang
 
-import org.ergoplatform.{Height, Inputs, Outputs, Self}
 import org.ergoplatform.ErgoAddressEncoder._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import sigma.ast.{NoType, SBoolean, SBox, SCollection, SFunc, SInt, SLong, STuple}
 import sigma.ast._
-import sigma.ast.global.SValue
+import sigma.ast.defs.SValue
 import sigmastate._
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry

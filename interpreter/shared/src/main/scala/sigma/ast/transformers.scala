@@ -3,7 +3,7 @@ package sigma.ast
 import org.ergoplatform.ErgoBox.RegisterId
 import sigma.ast.Operations._
 import sigma.ast.SCollection.SByteArray
-import sigma.ast.global.SValue
+import sigma.ast.defs.SValue
 import sigma.data.RType
 import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma.{Box, Coll, Evaluation, SigmaProp}

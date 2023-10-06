@@ -10,7 +10,7 @@ import scorex.util.ModifierId
 import scorex.util.encode.Base16
 import sigma.Extensions.CollBytesOps
 import sigma.ast.SType
-import sigma.ast.global.GroupElementConstant
+import sigma.ast.defs.GroupElementConstant
 import sigma.data.Iso.{isoStringToArray, isoStringToColl}
 import sigma.data.{CBigInt, CGroupElement, Digest32Coll, Iso}
 import sigma.js.{AvlTree, GroupElement, Type, Value}

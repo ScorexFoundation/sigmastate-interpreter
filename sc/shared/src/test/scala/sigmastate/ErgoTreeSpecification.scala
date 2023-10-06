@@ -1,11 +1,11 @@
 package sigma
 
 import org.ergoplatform.settings.ErgoAlgos
-import org.ergoplatform.{ErgoAddressEncoder, ErgoBox, ErgoLikeContext, Self}
+import org.ergoplatform.{ErgoAddressEncoder, ErgoBox, ErgoLikeContext}
 import sigma.VersionContext._
 import sigma.ast.SCollection.SByteArray
 import sigma.ast._
-import sigma.ast.global.{SValue, SigmaPropValue, TrueSigmaProp}
+import sigma.ast.defs.{SValue, SigmaPropValue, TrueSigmaProp}
 import sigma.data.RType.asType
 import sigma.data.{Nullable, RType, TrivialProp}
 import sigma.validation.ValidationException

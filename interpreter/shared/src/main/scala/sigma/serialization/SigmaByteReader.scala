@@ -3,7 +3,7 @@ package sigma.serialization
 import debox.cfor
 import scorex.util.serialization.Reader
 import sigma.ast._
-import sigma.ast.global._
+import sigma.ast.defs._
 import sigma.util.safeNewArray
 
 /** Reader used in the concrete implementations of [[SigmaSerializer]].

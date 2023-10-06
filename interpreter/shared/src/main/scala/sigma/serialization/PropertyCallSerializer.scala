@@ -3,7 +3,7 @@ package sigma.serialization
 import sigma.ast.{ComplexityTable, EmptySubst, SType, STypeSubst}
 import sigma.serialization.CoreByteWriter.{ArgInfo, DataInfo}
 import sigma.ast._
-import sigma.ast.global.SValue
+import sigma.ast.defs.SValue
 import sigmastate.lang.Terms.{MethodCall, PropertyCall}
 import SigmaByteWriter._
 

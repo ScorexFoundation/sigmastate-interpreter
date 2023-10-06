@@ -6,7 +6,7 @@ import org.ergoplatform._
 import sigmastate.lang.Terms.ValueOps
 import sigma.serialization.OpCodes._
 import sigma.serialization.ConstantStore
-import sigma.ast.global._
+import sigma.ast.defs._
 import sigma.data.{ProveDHTuple, ProveDlog}
 
 import scala.collection.mutable.ArrayBuffer
@@ -157,7 +157,7 @@ trait TreeBuilding extends SigmaLibrary { IR: IRContext =>
     def recurse[T <: SType](s: Sym) = buildValue(ctx, mainG, env, s, defId, constantsProcessing).asValue[T]
     object In { def unapply(s: Sym): Option[SValue] = Some(buildValue(ctx, mainG, env, s, defId, constantsProcessing)) }
     s match {
-      case _ if s == ctx => org.ergoplatform.Context
+      case _ if s == ctx => sigma.ast.Context
       case _ if env.contains(s) =>
         val (id, tpe) = env(s)
         ValUse(id, tpe) // recursion base

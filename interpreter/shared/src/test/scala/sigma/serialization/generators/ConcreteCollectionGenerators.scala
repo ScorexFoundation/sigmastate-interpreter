@@ -1,7 +1,7 @@
 package sigma.serialization.generators
 
 import org.scalacheck.{Arbitrary, Gen}
-import sigma.ast.global.IntConstant
+import sigma.ast.defs.IntConstant
 import sigma.ast.{ConcreteCollection, SBoolean, SInt, SSigmaProp, SType, Value}
 
 trait ConcreteCollectionGenerators { self: ObjectGenerators =>

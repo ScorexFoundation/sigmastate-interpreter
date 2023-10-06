@@ -2,7 +2,7 @@ package sigma
 
 import sigma.Extensions.ArrayOps
 import sigma.ast.ErgoTree
-import sigma.ast.global.TrueSigmaProp
+import sigma.ast.defs.TrueSigmaProp
 import sigma.data.{AvlTreeData, RType}
 import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._

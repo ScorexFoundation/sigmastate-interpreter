@@ -6,7 +6,7 @@ import sigma.{SigmaException, ast}
 import sigma.ast.TypeCodes.LastConstantCode
 import sigma.ast.Value.Typed
 import sigma.ast._
-import sigma.ast.global.SValue
+import sigma.ast.defs.SValue
 import sigma.crypto.EcPointType
 import sigma.data.ExactIntegral.{ByteIsExactIntegral, IntIsExactIntegral, LongIsExactIntegral, ShortIsExactIntegral}
 import sigma.data.ExactOrdering.{ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering, ShortIsExactOrdering}
@@ -483,7 +483,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
           val resV = toRep(v)(e)
           resV
       }
-      case org.ergoplatform.Context => ctx
+      case sigma.ast.Context => ctx
       case Global => sigmaDslBuilder
       case Height => ctx.HEIGHT
       case Inputs => ctx.INPUTS

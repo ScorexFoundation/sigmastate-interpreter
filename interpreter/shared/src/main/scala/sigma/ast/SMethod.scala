@@ -2,7 +2,7 @@ package sigma.ast
 
 import debox.cfor
 import sigma.ast.SMethod.{InvokeDescBuilder, MethodCostFunc}
-import sigma.ast.global._
+import sigma.ast.defs._
 import sigma.data.RType
 import sigma.reflection.{RClass, RMethod}
 import sigma.serialization.CoreByteWriter.ArgInfo

@@ -6,7 +6,7 @@ import sigmastate.helpers.ContextEnrichingTestProvingInterpreter
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
 import scalan.BaseCtxTests
-import sigma.ast.global.{SigmaPropValue, SigmaPropValueOps}
+import sigma.ast.defs.{SigmaPropValue, SigmaPropValueOps}
 import sigma.data.ProveDlog
 import sigmastate.lang.LangTests
 import sigma.util.BenchmarkUtil._

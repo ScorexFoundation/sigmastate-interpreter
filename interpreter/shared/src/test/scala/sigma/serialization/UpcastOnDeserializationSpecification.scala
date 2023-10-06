@@ -1,8 +1,6 @@
 package sigma.serialization
 
-import org.ergoplatform.Outputs
-import sigma.ast.{ByIndex, SInt, SLong, Upcast}
-import sigma.ast.{ByteConstant, IntConstant, LongConstant}
+import sigma.ast._
 import sigmastate.lang.CheckingSigmaBuilder
 
 class UpcastOnDeserializationSpecification extends SerializationSpecification {

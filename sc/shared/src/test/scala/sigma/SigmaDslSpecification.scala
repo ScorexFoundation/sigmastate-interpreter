@@ -13,7 +13,7 @@ import scorex.util.ModifierId
 import sigma.Extensions.{ArrayOps, CollOps}
 import sigma.ast.SCollection._
 import sigma.ast._
-import sigma.ast.global._
+import sigma.ast.defs._
 import sigma.data.RType._
 import sigma.data._
 import sigma.util.Extensions.{BooleanOps, IntOps, LongOps}

@@ -1,6 +1,6 @@
 package sigma.serialization.transformers
 
-import sigma.ast.global.SValue
+import sigma.ast.defs.SValue
 import sigma.ast.{LogicalTransformerCompanion, SBoolean, SCollection, Transformer}
 import sigma.serialization.CoreByteWriter.DataInfo
 import sigma.ast.Value

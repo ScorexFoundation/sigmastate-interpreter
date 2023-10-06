@@ -19,7 +19,7 @@ import sigmastate.crypto.BigIntegers
 import sigma.Extensions.ArrayOps
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigma.Context
-import sigma.ast.global._
+import sigma.ast.defs._
 import sigma.crypto.CryptoFacade
 import sigma.data.{AvlTreeData, AvlTreeFlags}
 import sigmastate.utils.Helpers._

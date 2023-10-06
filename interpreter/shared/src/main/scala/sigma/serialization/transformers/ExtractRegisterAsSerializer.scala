@@ -2,7 +2,7 @@ package sigma.serialization.transformers
 
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
-import sigma.ast.global.SValue
+import sigma.ast.defs.SValue
 import sigma.ast.{ExtractRegisterAs, Value}
 import sigma.serialization.{SigmaByteReader, SigmaByteWriter, ValueSerializer}
 import sigma.serialization.SigmaByteWriter._

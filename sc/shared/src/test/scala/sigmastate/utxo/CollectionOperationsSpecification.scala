@@ -7,7 +7,7 @@ import sigmastate.helpers.TestingHelpers._
 import sigmastate.lang.Terms._
 import org.ergoplatform._
 import sigma.ast.SCollection._
-import sigma.ast.global._
+import sigma.ast.defs._
 import sigma.data.AvlTreeData
 import SCollectionMethods.{FlatMapMethod, IndexOfMethod, IndicesMethod, PatchMethod, UpdateManyMethod, UpdatedMethod}
 import sigma.ast

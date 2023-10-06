@@ -12,7 +12,7 @@ import sigma.data.{RType, SigmaBoolean}
 import sigma.validation.ValidationException
 import sigma.validation.ValidationRules.CheckSerializableTypeCode
 import sigma.ast.Constant
-import sigma.ast.global.{SValue, SigmaPropValue}
+import sigma.ast.defs.{SValue, SigmaPropValue}
 import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension.VarBinding
@@ -21,7 +21,7 @@ import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.interpreter._
 import sigmastate.lang.{CompilerSettings, SigmaCompiler, Terms}
 import sigma.serialization.SigmaSerializer
-import sigmastate.{CompilerTestsBase}
+import sigmastate.CompilerTestsBase
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag

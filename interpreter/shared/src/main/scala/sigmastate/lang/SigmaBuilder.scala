@@ -5,7 +5,7 @@ import org.ergoplatform.ErgoBox.RegisterId
 import sigma.ast.SCollection.{SByteArray, SIntArray}
 import sigma.ast.SOption.SIntOption
 import sigma.ast._
-import sigma.ast.global._
+import sigma.ast.defs._
 import sigma.data.Nullable
 import sigma.{AnyValue, Coll, Colls, Environment, Evaluation}
 import sigmastate._

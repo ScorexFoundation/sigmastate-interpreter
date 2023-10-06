@@ -1,6 +1,6 @@
 package sigmastate.lang.syntax
 
-import sigma.ast.global.SValue
+import sigma.ast.defs.SValue
 import sigma.ast._
 import sigmastate.lang.syntax
 

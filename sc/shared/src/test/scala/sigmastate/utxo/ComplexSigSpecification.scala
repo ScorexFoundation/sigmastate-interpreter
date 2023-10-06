@@ -1,9 +1,8 @@
 package sigmastate.utxo
 
-import org.ergoplatform.Height
 import org.scalacheck.Gen
 import sigma.data.{AvlTreeData, CAND, COR, CTHRESHOLD}
-import sigma.ast.{GT, IntConstant, SigmaAnd, SigmaOr}
+import sigma.ast.{GT, Height, IntConstant, SigmaAnd, SigmaOr}
 import sigmastate._
 import sigmastate.helpers._
 import sigmastate.lang.Terms._

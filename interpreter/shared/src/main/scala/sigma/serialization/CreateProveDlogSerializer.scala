@@ -3,7 +3,7 @@ package sigma.serialization
 import sigma.ast.{CreateProveDlog, SGroupElement}
 import sigma.serialization.CoreByteWriter._
 import sigma.ast.Value
-import sigma.ast.global._
+import sigma.ast.defs._
 import sigmastate.lang.Terms.ValueOps
 import SigmaByteWriter._
 

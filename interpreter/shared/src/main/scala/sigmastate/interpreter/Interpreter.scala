@@ -5,7 +5,7 @@ import org.ergoplatform.ErgoLikeContext
 import org.ergoplatform.validation.ValidationRules._
 import sigma.VersionContext
 import sigma.ast.SCollection.SByteArray
-import sigma.ast.global._
+import sigma.ast.defs._
 import sigma.ast._
 import sigma.data.{CAND, COR, CTHRESHOLD, ProveDHTuple, ProveDlog, SigmaBoolean, TrivialProp}
 import sigma.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}

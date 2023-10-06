@@ -11,7 +11,7 @@ import scorex.crypto.authds.ADKey
 import scorex.util._
 import sigma.Extensions.ArrayOps
 import sigma.ast._
-import sigma.ast.global.CollectionConstant
+import sigma.ast.defs.CollectionConstant
 import sigma.crypto.CryptoFacade
 import sigma.data.{Digest32Coll, ProveDlog}
 import sigmastate.eval.Extensions.EvalIterableOps

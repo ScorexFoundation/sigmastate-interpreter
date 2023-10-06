@@ -1,7 +1,7 @@
 package sigmastate.helpers
 
 import org.ergoplatform.settings.ErgoAlgos
-import org.ergoplatform.{ErgoBox, Outputs}
+import org.ergoplatform.ErgoBox
 import scorex.util.ModifierId
 import sigma.Extensions.ArrayOps
 import sigma.SigmaDslTesting

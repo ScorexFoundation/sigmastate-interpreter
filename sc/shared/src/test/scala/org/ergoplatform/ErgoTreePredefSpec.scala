@@ -9,7 +9,7 @@ import scorex.crypto.hash.Blake2b256
 import scorex.util.Random
 import sigma.Colls
 import sigma.ast._
-import sigma.ast.global.CollectionConstant
+import sigma.ast.defs.CollectionConstant
 import sigma.data.{AvlTreeData, Digest32Coll, ProveDlog, TrivialProp}
 import sigma.util.BenchmarkUtil.measure
 import sigmastate._
