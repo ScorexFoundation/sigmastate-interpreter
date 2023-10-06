@@ -1,7 +1,7 @@
 package sigmastate.interpreter
 
-import sigmastate.{CostKind, SMethod}
-import sigma.ast.ValueCompanion
+import sigmastate.SMethod
+import sigma.ast.{CostKind, ValueCompanion}
 
 /** Each costable operation is described in one of the following ways:
   * 1) using [[ValueCompanion]] - operation with separate node class

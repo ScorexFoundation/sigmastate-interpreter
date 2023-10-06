@@ -1,6 +1,7 @@
 package sigmastate.eval
 
 import debox.{sp, Buffer => DBuffer, Map => DMap}
+import sigma.ast.{FixedCost, JitCost}
 import sigma.ast.TypeCodes.LastConstantCode
 import sigma.ast.global._
 import sigma.util.Extensions.{ByteOps, DBufferOps}
@@ -9,7 +10,7 @@ import sigmastate.lang.Terms.{MethodCall, PropertyCall}
 import sigmastate.serialization.ValueCodes.OpCode
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.ValueSerializer.getSerializer
-import sigmastate.{FixedCost, JitCost, SMethod}
+import sigmastate.SMethod
 
 import scala.reflect.ClassTag
 

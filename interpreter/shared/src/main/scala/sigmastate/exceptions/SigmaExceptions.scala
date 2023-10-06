@@ -1,7 +1,7 @@
 package sigmastate.exceptions
 
 import sigma.SigmaException
-import sigmastate.JitCost
+import sigma.ast.JitCost
 
 /** Exception thrown by [[sigmastate.interpreter.Interpreter]].
   *

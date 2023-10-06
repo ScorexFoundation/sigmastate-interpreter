@@ -3,6 +3,7 @@ package sigmastate
 import debox.cfor
 import scorex.util.encode.Base16
 import sigma.Extensions.ArrayOps
+import sigma.ast.{FixedCost, JitCost, PerItemCost}
 import sigma.data.{CAND, COR, CTHRESHOLD, ProveDHTuple, ProveDlog, SigmaBoolean}
 import sigma.serialization.SerializerException
 import sigma.util.safeNewArray

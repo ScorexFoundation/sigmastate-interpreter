@@ -1,11 +1,11 @@
-package sigmastate
+package sigma.ast
 
 /** Represents cost estimation computed by JITC interpreter.
   * The JITC costs use 10x more accurate scale comparing to block cost values.
   *
   * @see toBlockCost
   */
-case class JitCost private[sigmastate](private[sigmastate] val value: Int) extends AnyVal {
+case class JitCost private[sigma](val value: Int) extends AnyVal {
   /** Adds two cost values. */
   def +(y: JitCost): JitCost =
     new JitCost(java7.compat.Math.addExact(value, y.value))

@@ -1,7 +1,7 @@
 package sigmastate.interpreter
 
 import org.ergoplatform.ErgoLikeContext
-import sigmastate.{ErgoTree, FixedCost, JitCost, PerItemCost, TypeBasedCost}
+import sigmastate.ErgoTree
 import sigma.ast._
 import sigma.ast.global._
 import sigmastate.eval.Profiler

@@ -1,6 +1,6 @@
 package sigmastate.interpreter
 
-import sigmastate.JitCost
+import sigma.ast.JitCost
 import sigmastate.exceptions.CostLimitException
 
 /** Encapsulate simple monotonic (add only) counter with reset. */

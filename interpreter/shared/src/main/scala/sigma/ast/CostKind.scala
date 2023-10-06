@@ -1,6 +1,6 @@
-package sigmastate
+package sigma.ast
 
-import sigma.ast.SType
+import sigmastate.{EQ, NEQ}
 
 import scala.runtime.Statics
 
