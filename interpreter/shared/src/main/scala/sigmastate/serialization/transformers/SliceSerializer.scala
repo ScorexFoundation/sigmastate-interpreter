@@ -12,7 +12,7 @@ import sigma.serialization.CoreByteWriter.DataInfo
 
 case class SliceSerializer(cons: (Value[SCollection[SType]], Value[SInt.type], Value[SInt.type]) => Value[SCollection[SType]])
   extends ValueSerializer[Slice[SType]] {
-  import sigmastate.Operations.SliceInfo._
+  import sigma.ast.Operations.SliceInfo._
   override def opDesc = Slice
   val thisInfo: DataInfo[SValue] = thisArg
   val fromInfo: DataInfo[SValue] = fromArg

@@ -10,7 +10,7 @@ import sigmastate.utxo.OptionGetOrElse
 
 case class OptionGetOrElseSerializer(cons: (Value[SOption[SType]], Value[SType]) => Value[SType])
   extends ValueSerializer[OptionGetOrElse[_ <: SType]] {
-  import sigmastate.Operations.OptionGetOrElseInfo._
+  import Operations.OptionGetOrElseInfo._
   override def opDesc = OptionGetOrElse
   val thisInfo: DataInfo[SValue] = thisArg
   val defaultInfo: DataInfo[SValue] = defaultArg

@@ -7,7 +7,7 @@ import sigmastate.utxo.GetVar
 
 case class GetVarSerializer(cons: (Byte, SType) => Value[SOption[SType]])
   extends ValueSerializer[GetVar[_ <: SType]] {
-  import sigmastate.Operations.GetVarInfo._
+  import Operations.GetVarInfo._
   override def opDesc = GetVar
   val typeInfo: DataInfo[SType] = ArgInfo("type", "expected type of context variable")
   val varIdInfo: DataInfo[Byte] = varIdArg

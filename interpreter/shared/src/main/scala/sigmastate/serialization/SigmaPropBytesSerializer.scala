@@ -9,7 +9,7 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.SigmaPropBytes
 
 object SigmaPropBytesSerializer extends ValueSerializer[SigmaPropBytes] {
-  import sigmastate.Operations.SigmaPropBytesInfo._
+  import sigma.ast.Operations.SigmaPropBytesInfo._
   override def opDesc = SigmaPropBytes
   val thisInfo: DataInfo[SValue] = thisArg
 

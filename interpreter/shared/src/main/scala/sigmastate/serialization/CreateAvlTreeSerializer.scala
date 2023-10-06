@@ -16,7 +16,7 @@ case class CreateAvlTreeSerializer(
   )
   extends ValueSerializer[CreateAvlTree]
 {
-  import sigmastate.Operations.CreateAvlTreeInfo._
+  import Operations.CreateAvlTreeInfo._
   override def opDesc = CreateAvlTree
   val operationFlagsInfo: DataInfo[SValue] = operationFlagsArg
   val digestInfo: DataInfo[SValue] = digestArg

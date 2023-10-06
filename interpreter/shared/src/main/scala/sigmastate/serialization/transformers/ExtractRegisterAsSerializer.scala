@@ -13,7 +13,7 @@ import sigma.serialization.CoreByteWriter.{ArgInfo, DataInfo}
 
 case class ExtractRegisterAsSerializer(cons: (Value[SBox.type], RegisterId, SOption[SType]) => Value[SType])
   extends ValueSerializer[ExtractRegisterAs[SType]] {
-  import sigmastate.Operations.ExtractRegisterAsInfo._
+  import sigma.ast.Operations.ExtractRegisterAsInfo._
   override def opDesc = ExtractRegisterAs
   val thisInfo: DataInfo[SValue] = thisArg
   val regIdInfo: DataInfo[Byte]  = regIdArg

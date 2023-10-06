@@ -11,7 +11,7 @@ import sigmastate.utils.SigmaByteWriter._
 
 case class CreateProveDlogSerializer(cons: Value[SGroupElement.type] => SigmaPropValue)
     extends ValueSerializer[CreateProveDlog] {
-  import sigmastate.Operations.CreateProveDlogInfo._
+  import sigma.ast.Operations.CreateProveDlogInfo._
 
   override def opDesc = CreateProveDlog
 

@@ -13,7 +13,7 @@ import sigma.serialization.CoreByteWriter.DataInfo
 case class FoldSerializer(cons: (Value[SCollection[SType]], Value[SType], Value[SFunc]) => Value[SType])
   extends ValueSerializer[Fold[SType, SType]] {
   override def opDesc = Fold
-  import sigmastate.Operations.FoldInfo._
+  import sigma.ast.Operations.FoldInfo._
   val thisInfo: DataInfo[SValue] = thisArg
   val zeroInfo: DataInfo[SValue] = zeroArg
   val opInfo: DataInfo[SValue] = opArg

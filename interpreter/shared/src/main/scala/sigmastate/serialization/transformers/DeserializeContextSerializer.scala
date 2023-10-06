@@ -6,7 +6,7 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.DeserializeContext
 import sigma.ast.SType
 import sigma.serialization.CoreByteWriter.{ArgInfo, DataInfo}
-import sigmastate.Operations.DeserializeContextInfo
+import Operations.DeserializeContextInfo
 
 case class DeserializeContextSerializer(cons: (Byte, SType) => Value[SType])
   extends ValueSerializer[DeserializeContext[SType]] {

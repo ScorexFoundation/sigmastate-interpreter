@@ -11,7 +11,7 @@ import sigma.serialization.CoreByteWriter.DataInfo
 import sigmastate.SubstConstants
 
 object SubstConstantsSerializer extends ValueSerializer[SubstConstants[SType]] {
-  import sigmastate.Operations.SubstConstantsInfo._
+  import sigma.ast.Operations.SubstConstantsInfo._
   override def opDesc = SubstConstants
   val scriptBytesInfo: DataInfo[SValue] = scriptBytesArg
   val positionsInfo: DataInfo[SValue] = positionsArg

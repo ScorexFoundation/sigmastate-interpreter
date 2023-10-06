@@ -9,7 +9,7 @@ import sigmastate.utils.SigmaByteWriter._
 
 case class ApplySerializer(cons: (Value[SType], IndexedSeq[Value[SType]]) => Value[SType])
   extends ValueSerializer[Apply] {
-  import sigmastate.Operations.ApplyInfo._
+  import sigma.ast.Operations.ApplyInfo._
   override def opDesc = Apply
   val funcInfo: DataInfo[SValue] = funcArg
   val argsInfo: DataInfo[Seq[SValue]] = argsArg

@@ -5,7 +5,7 @@ import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
 import ValueSerializer._
 import sigma.ast.global.SValue
-import sigmastate.Operations.ByIndexInfo._
+import sigma.ast.Operations.ByIndexInfo._
 import sigmastate.utils.SigmaByteWriter._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.ByIndex

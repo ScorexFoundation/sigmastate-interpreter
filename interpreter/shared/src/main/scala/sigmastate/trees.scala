@@ -11,7 +11,7 @@ import sigma.ast.SCollection.{SByteArray, SIntArray}
 import sigma.ast.SOption.SIntOption
 import sigma.{Coll, Colls, GroupElement, SigmaProp, VersionContext}
 import sigmastate.ArithOp.OperationImpl
-import sigmastate.Operations._
+import sigma.ast.Operations._
 import sigma.ast._
 import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma.validation.SigmaValidationSettings

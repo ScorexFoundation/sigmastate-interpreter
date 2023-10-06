@@ -9,7 +9,7 @@ import sigma.ast.SCollection.SByteArray
 import sigma.ast.global.SValue
 import sigma.data.RType
 import sigma.serialization.CoreByteWriter.ArgInfo
-import sigmastate.Operations._
+import Operations._
 import sigmastate.eval.SigmaDsl
 import sigmastate.exceptions.InterpreterException
 import sigmastate.interpreter.ErgoTreeEvaluator

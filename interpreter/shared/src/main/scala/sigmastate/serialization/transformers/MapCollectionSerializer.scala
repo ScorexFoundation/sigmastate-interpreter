@@ -12,7 +12,7 @@ import sigma.serialization.CoreByteWriter.DataInfo
 
 case class MapCollectionSerializer(cons: (Value[SCollection[SType]], Value[SFunc]) => Value[SType])
   extends ValueSerializer[MapCollection[SType, SType]] {
-  import sigmastate.Operations.MapCollectionInfo._
+  import sigma.ast.Operations.MapCollectionInfo._
   override def opDesc = MapCollection
   val thisInfo: DataInfo[SValue] = thisArg
   val fInfo: DataInfo[SValue] = fArg

@@ -9,7 +9,7 @@ import sigmastate.utils.SigmaByteWriter._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 case class BoolToSigmaPropSerializer(cons: BoolValue => SigmaPropValue) extends ValueSerializer[BoolToSigmaProp] {
-  import sigmastate.Operations.BoolToSigmaPropInfo._
+  import Operations.BoolToSigmaPropInfo._
   override def opDesc = BoolToSigmaProp
   val conditionInfo: DataInfo[SValue] = conditionArg
 

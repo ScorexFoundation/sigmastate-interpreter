@@ -1,6 +1,6 @@
 package sigmastate.serialization.transformers
 
-import sigmastate.Operations.AppendInfo
+import sigma.ast.Operations.AppendInfo
 import sigma.ast.Value
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer

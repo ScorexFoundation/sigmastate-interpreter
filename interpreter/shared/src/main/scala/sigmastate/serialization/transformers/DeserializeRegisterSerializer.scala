@@ -8,7 +8,7 @@ import ValueSerializer._
 import sigma.ast.SType
 import sigma.ast.global.SValue
 import sigma.serialization.CoreByteWriter.{ArgInfo, DataInfo}
-import sigmastate.Operations.DeserializeRegisterInfo._
+import sigma.ast.Operations.DeserializeRegisterInfo._
 import sigmastate.utils.SigmaByteWriter._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.DeserializeRegister
