@@ -592,7 +592,4 @@ object Interpreter {
     case x => throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean or SigmaProp but was $x")
   }
 
-  /** Helper method to throw errors from Interpreter. */
-  def error(msg: String) = throw new InterpreterException(msg)
-
 }

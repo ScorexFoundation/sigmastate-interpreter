@@ -759,7 +759,7 @@ case class Tuple(items: IndexedSeq[Value[SType]])
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     // in v5.0 version we support only tuples of 2 elements to be equivalent with v4.x
     if (items.length != 2)
-      Interpreter.error(s"Invalid tuple $this")
+      defs.error(s"Invalid tuple $this")
     val item0 = items(0)
     val x     = item0.evalTo[Any](env)
     Value.checkType(item0, x)
@@ -922,7 +922,7 @@ case class ValUse[T <: SType](valId: Int, tpe: T) extends NotReadyValue[T] {
 
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     addCost(ValUse.costKind)
-    val res = env.getOrElse(valId, error(s"cannot resolve $this"))
+    val res = env.getOrElse(valId, defs.error(s"cannot resolve $this"))
     Value.checkType(this, res)
     res
   }
@@ -1016,7 +1016,7 @@ case class FuncValue(
         res
       }
     } else {
-      Interpreter.error(s"Function must have 1 argument, but was: $this")
+      defs.error(s"Function must have 1 argument, but was: $this")
     }
   }
 }
@@ -1203,7 +1203,7 @@ case class Apply(
     } else {
       // zero or more than 1 argument functions are not supported in v4.x, v5.0
       // see `case Terms.Apply(f, Seq(x))` in RuntimeCosting which means other cases are not supported.
-      Interpreter.error(s"Function application must have 1 argument, but was: $this")
+      defs.error(s"Function application must have 1 argument, but was: $this")
     }
   }
 }

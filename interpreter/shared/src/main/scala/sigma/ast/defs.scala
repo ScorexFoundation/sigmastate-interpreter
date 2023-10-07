@@ -7,6 +7,7 @@ import org.ergoplatform.{ErgoBox, ErgoBoxCandidate}
 import sigma.kiama.rewriting.Rewriter.{everywherebu, rewrite, rule}
 import StdSigmaBuilder.mkUpcast
 import sigma.SigmaDataReflection
+import sigma.exceptions.InterpreterException
 
 import scala.annotation.nowarn
 import scala.reflect.classTag
@@ -211,4 +212,7 @@ object defs {
       }))(v).asValue[T]
     }
   }
+
+  /** Helper method to throw errors from Interpreter. */
+  def error(msg: String) = throw new InterpreterException(msg)
 }

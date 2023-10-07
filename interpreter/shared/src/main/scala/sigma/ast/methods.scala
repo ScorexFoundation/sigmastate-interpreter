@@ -1279,7 +1279,7 @@ case object SAvlTreeMethods extends MonoTypeMethods {
           case Some(v) => Some(Colls.fromArray(v))
           case _ => None
         }
-        case Failure(_) => Interpreter.error(s"Tree proof is incorrect $tree")
+        case Failure(_) => defs.error(s"Tree proof is incorrect $tree")
       }
     }
   }
@@ -1315,7 +1315,7 @@ case object SAvlTreeMethods extends MonoTypeMethods {
             case Some(v) => Some(Colls.fromArray(v))
             case _ => None
           }
-          case Failure(_) => Interpreter.error(s"Tree proof is incorrect $tree")
+          case Failure(_) => defs.error(s"Tree proof is incorrect $tree")
         }
       }
     }
@@ -1361,7 +1361,7 @@ case object SAvlTreeMethods extends MonoTypeMethods {
           // TODO v6.0: throwing exception is not consistent with update semantics
           //  however it preserves v4.0 semantics (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/908)
           if (insertRes.isFailure) {
-            Interpreter.error(s"Incorrect insert for $tree (key: $key, value: $value, digest: ${tree.digest}): ${insertRes.failed.get}}")
+            defs.error(s"Incorrect insert for $tree (key: $key, value: $value, digest: ${tree.digest}): ${insertRes.failed.get}}")
           }
           res = insertRes.isSuccess
         }
