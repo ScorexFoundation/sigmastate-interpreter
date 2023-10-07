@@ -5,7 +5,7 @@ import sigma.data.Nullable
 import sigma.ast.SCollection.{SByteArray, SIntArray}
 import sigma.ast._
 import sigma.ast.defs._
-import sigmastate.utils.Overloading.Overload1
+import sigma.utils.Overloading.Overload1
 import sigmastate.interpreter.{ErgoTreeEvaluator, Interpreter}
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigma.serialization.OpCodes

@@ -17,7 +17,7 @@ import sigma.eval.{CostDetails, TracedCost}
 import sigmastate.eval._
 import sigmastate.interpreter._
 import sigmastate.lang.Terms._
-import sigmastate.utils.Overloading.Overload1
+import sigma.utils.Overloading.Overload1
 import sigmastate.utils.SparseArrayContainer
 import sigmastate._
 
