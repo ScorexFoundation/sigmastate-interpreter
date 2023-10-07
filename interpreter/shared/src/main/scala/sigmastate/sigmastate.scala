@@ -1,9 +1,7 @@
-import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, ErgoLikeContext}
+import org.ergoplatform.ErgoLikeContext
 import sigma.ast._
-import sigma.data.{AvlTreeData, GeneralType, RType, SigmaBoolean}
-import sigmastate.lang.CheckingSigmaBuilder
+import sigma.data.RType
 
-import scala.annotation.nowarn
 import scala.reflect.classTag
 
 package object sigmastate {

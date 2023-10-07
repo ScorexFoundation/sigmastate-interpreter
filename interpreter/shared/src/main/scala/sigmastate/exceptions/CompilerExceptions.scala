@@ -1,7 +1,7 @@
 package sigmastate.exceptions
 
 import sigma.SigmaException
-import sigmastate.lang.SourceContext
+import sigma.ast.SourceContext
 
 /** Base class for exceptions thrown by the compiler.
   *

@@ -1,8 +1,7 @@
 package sigma.serialization
 
-import sigma.ast.SType
+import sigma.ast.{SType, SigmaBuilder}
 import sigma.ast._
-import sigmastate.lang.SigmaBuilder
 
 /** This works in tandem with DataSerializer, if you change one make sure to check the other.*/
 case class ConstantSerializer(builder: SigmaBuilder)

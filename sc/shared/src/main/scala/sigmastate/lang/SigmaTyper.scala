@@ -7,7 +7,7 @@ import sigma.ast.defs.SValue
 import sigma.data.{Nullable, SigmaBoolean}
 import sigma.util.Extensions.Ensuring
 import sigmastate.exceptions._
-import sigmastate.lang.SigmaPredef._
+import SigmaPredef._
 import sigma.ast.defs._
 import sigma.serialization.OpCodes
 

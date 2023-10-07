@@ -1,6 +1,6 @@
 package sigmastate.exceptions
 
-import sigmastate.lang.SourceContext
+import sigma.ast.SourceContext
 
 final class InvalidBinaryOperationParameters(message: String, source: Option[SourceContext] = None)
   extends TyperException(message, source)

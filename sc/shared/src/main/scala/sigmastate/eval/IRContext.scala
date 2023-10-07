@@ -1,7 +1,6 @@
 package sigmastate.eval
 
-import sigmastate.lang.TransformingSigmaBuilder
-
+import sigma.ast.TransformingSigmaBuilder
 import java.util.concurrent.locks.ReentrantLock
 import scala.util.Try
 

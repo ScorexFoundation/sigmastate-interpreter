@@ -8,7 +8,7 @@ import scalan.GraphIRReflection
 import sigma.ast.{Exponentiate, MultiplyGroup, SCollectionMethods, SGlobalMethods, SGroupElementMethods, Value, Xor}
 import sigmastate.eval.IRContext
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
+import sigma.ast.SigmaPredef.PredefinedFuncRegistry
 import sigma.ast.MethodCall
 import sigmastate.lang.syntax.ParserException
 import sigma.ast._

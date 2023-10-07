@@ -1,9 +1,9 @@
 package sigmastate
 
 import scala.util.DynamicVariable
-import sigmastate.lang.{CompilerResult, CompilerSettings, SigmaCompiler, TransformingSigmaBuilder}
+import sigmastate.lang.{CompilerResult, CompilerSettings, SigmaCompiler}
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigma.ast.{ErgoTree, SType, Value}
+import sigma.ast.{ErgoTree, SType, TransformingSigmaBuilder, Value}
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import sigma.ast.defs.{SValue, SigmaPropValue}
 import sigma.serialization.ValueSerializer

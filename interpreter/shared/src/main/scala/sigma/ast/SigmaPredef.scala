@@ -1,17 +1,16 @@
-package sigmastate.lang
+package sigma.ast
 
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress}
-import sigma.data.Nullable
 import scorex.util.encode.{Base16, Base58, Base64}
 import sigma.ast.SCollection.{SByteArray, SIntArray}
 import sigma.ast.SOption.SIntOption
-import sigma.ast.{SigmaPropConstant, _}
-import sigma.serialization.CoreByteWriter.ArgInfo
+import sigma.ast.SigmaPropConstant
 import sigma.ast.defs._
-import sigmastate.exceptions.InvalidArguments
+import sigma.data.Nullable
+import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma.serialization.ValueSerializer
-import sigma.ast.{Apply, Ident, Lambda, MethodCall, ZKProofBlock}
+import sigmastate.exceptions.InvalidArguments
 
 object SigmaPredef {
 
@@ -44,7 +43,7 @@ object SigmaPredef {
     import builder._
 
     /** Type variable used in the signatures of global functions below. */
-    import SType.{tT, tO, tR, tL, paramR, paramT, tK}
+    import SType.{paramR, paramT, tK, tL, tO, tR, tT}
 
     private val undefined: IrBuilderFunc =
       PartialFunction.empty[(SValue, Seq[SValue]), SValue]

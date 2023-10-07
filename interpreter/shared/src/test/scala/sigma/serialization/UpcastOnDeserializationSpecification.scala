@@ -1,7 +1,6 @@
 package sigma.serialization
 
 import sigma.ast._
-import sigmastate.lang.CheckingSigmaBuilder
 
 class UpcastOnDeserializationSpecification extends SerializationSpecification {
   import CheckingSigmaBuilder._

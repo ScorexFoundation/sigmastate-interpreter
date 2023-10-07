@@ -1,18 +1,17 @@
-package sigmastate.lang
+package sigma.ast
 
 import debox.cfor
 import org.ergoplatform.ErgoBox.RegisterId
+import sigma.ast.Constraints._
 import sigma.ast.SCollection.{SByteArray, SIntArray}
 import sigma.ast.SOption.SIntOption
-import sigma.ast._
 import sigma.ast.defs._
 import sigma.data.Nullable
+import sigma.serialization.OpCodes
+import sigma.serialization.ValueCodes.OpCode
 import sigma.{AnyValue, Coll, Colls, Environment, Evaluation}
 import sigmastate._
 import sigmastate.exceptions.ConstraintFailed
-import sigmastate.lang.Constraints._
-import sigma.serialization.OpCodes
-import sigma.serialization.ValueCodes.OpCode
 
 import scala.util.DynamicVariable
 

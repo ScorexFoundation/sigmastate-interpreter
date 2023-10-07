@@ -18,7 +18,7 @@ import sigmastate.interpreter.Interpreter.ReductionResult
 import sigmastate.interpreter.{ErgoTreeEvaluator, EvalSettings}
 import sigma.ast.defs._
 import sigma.exceptions.{CostLimitException, InterpreterException}
-import sigmastate.lang.{CompilerSettings, SourceContext}
+import sigmastate.lang.CompilerSettings
 import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.Plus
 import sigmastate.utils.Helpers.TryOps

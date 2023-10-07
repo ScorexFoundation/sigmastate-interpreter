@@ -1,6 +1,6 @@
 package sigmastate.exceptions
 
-import sigmastate.lang.SourceContext
+import sigma.ast.SourceContext
 
 final class InvalidArguments(message: String, source: Option[SourceContext] = None)
   extends BinderException(message, source)

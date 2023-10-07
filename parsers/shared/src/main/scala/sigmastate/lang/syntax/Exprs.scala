@@ -5,7 +5,7 @@ import ScalaWhitespace._
 import sigma.ast._
 import sigma.ast.defs.{SValue, ValueOps}
 import sigmastate.lang._
-import sigmastate.lang.SigmaPredef._
+import SigmaPredef._
 import sigmastate.lang.syntax.Basic._
 
 import scala.annotation.tailrec

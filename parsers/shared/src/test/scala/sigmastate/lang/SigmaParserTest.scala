@@ -10,7 +10,7 @@ import sigma.ast.SCollection.{SByteArray, SLongArray}
 import sigma.ast._
 import sigma.ast.defs.SValue
 import sigmastate._
-import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
+import SigmaPredef.PredefinedFuncRegistry
 import sigma.ast.defs._
 import sigmastate.lang.syntax.ParserException
 import sigma.serialization.OpCodes

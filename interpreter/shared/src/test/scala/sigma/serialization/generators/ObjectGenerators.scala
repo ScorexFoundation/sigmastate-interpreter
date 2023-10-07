@@ -18,7 +18,7 @@ import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigma.crypto.CryptoConstants.dlogGroup
 import sigmastate.interpreter.{ContextExtension, ProverResult}
-import sigmastate.lang.TransformingSigmaBuilder._
+import TransformingSigmaBuilder._
 import sigmastate._
 import sigma.Coll
 import sigma.Extensions.ArrayOps

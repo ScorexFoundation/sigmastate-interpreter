@@ -1,8 +1,7 @@
 package sigma.serialization
 
-import sigma.ast.SType
+import sigma.ast.{DeserializationSigmaBuilder, SType, SigmaBuilder}
 import sigma.ast.{Constant, IntConstant}
-import sigmastate.lang.{DeserializationSigmaBuilder, SigmaBuilder}
 
 class ConstantStoreSpecification extends SerializationSpecification {
 

@@ -6,7 +6,6 @@ import sigma.ast.TypeCodes.LastConstantCode
 import sigma.ast._
 import sigma.serialization.CoreByteWriter.DataInfo
 import sigma.util.Extensions.toUByte
-import sigmastate.lang.DeserializationSigmaBuilder
 import sigma.serialization.ValueCodes.OpCode
 import sigma.serialization.transformers._
 import sigma.serialization.trees.{QuadrupleSerializer, Relation2Serializer}

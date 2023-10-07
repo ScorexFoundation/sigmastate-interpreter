@@ -7,13 +7,12 @@ import io.circe.syntax.EncoderOps
 import org.ergoplatform.sdk.utils.SerializationUtils.{parseString, serializeString}
 import org.ergoplatform.sdk.utils.Zero
 import sigma.Evaluation
-import sigma.ast.SType
+import sigma.ast.{DeserializationSigmaBuilder, SType, StdSigmaBuilder}
 import sigma.serialization.{SerializerException, SigmaByteReader, SigmaByteWriter}
 import sigma.util.safeNewArray
 import sigma.ast.ErgoTree.{ZeroHeader, headerWithVersion, setConstantSegregation}
 import sigma.ast._
 import sigma.ast.defs.SigmaPropValue
-import sigmastate.lang.{DeserializationSigmaBuilder, StdSigmaBuilder}
 import sigma.serialization._
 import java.util.Objects
 import scala.collection.mutable

@@ -1,7 +1,6 @@
 package sigma.serialization
 
-import sigma.ast.{Constant, ConstantNode, ConstantPlaceholder}
-import sigmastate.lang.SigmaBuilder
+import sigma.ast.{Constant, ConstantNode, ConstantPlaceholder, SigmaBuilder}
 import debox.Buffer
 import sigma.ast.SType
 

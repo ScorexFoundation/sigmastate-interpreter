@@ -10,10 +10,9 @@ import sigma.ast.SType.AnyOps
 import sigma.data.{CAnyValue, Digest32Coll, Nullable, RType, SigmaBoolean}
 import sigma.{Coll, _}
 import sigmastate.Platform
-import sigma.ast.{SigmaPropIsProven, _}
+import sigma.ast.{CheckingSigmaBuilder, SigmaPropIsProven, TransformingSigmaBuilder, _}
 import sigma.ast.defs._
 import sigmastate.interpreter.Interpreter
-import sigmastate.lang.{CheckingSigmaBuilder, TransformingSigmaBuilder}
 import sigmastate.utils.Helpers
 import java.math.BigInteger
 import scala.util.{Failure, Success}

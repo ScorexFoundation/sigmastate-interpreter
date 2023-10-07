@@ -3,9 +3,8 @@ package sigmastate
 import org.ergoplatform.ErgoBox
 import sigma.data.{AvlTreeData, Nullable, SigmaBoolean}
 import sigma.{Evaluation, VersionContext}
-import sigma.ast.{Constant, FalseLeaf, TrueLeaf}
+import sigma.ast.{Constant, FalseLeaf, SigmaBuilder, TrueLeaf}
 import sigmastate.eval.SigmaDsl
-import sigmastate.lang.SigmaBuilder
 import sigma.Coll
 import sigma.ast._
 import sigma.{AnyValue, AvlTree, GroupElement, SigmaProp}
@@ -17,7 +16,7 @@ object Platform {
     * Uses scalan.Nullable instead of scala.Option to avoid allocation on consensus hot path.
     * This method is part of consensus and is used in [[SubstConstants]] operation.
     */
-  private [sigmastate] def liftToConstant(obj: Any, builder: SigmaBuilder): Nullable[Constant[SType]] = {
+  def liftToConstant(obj: Any, builder: SigmaBuilder): Nullable[Constant[SType]] = {
     import builder._
     obj match {
       case arr: Array[Boolean] => Nullable(mkCollectionConstant[SBoolean.type](arr, SBoolean))

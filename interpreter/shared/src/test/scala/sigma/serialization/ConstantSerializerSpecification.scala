@@ -5,7 +5,7 @@ import org.ergoplatform._
 import org.scalacheck.Arbitrary._
 import sigma.data.{RType, SigmaBoolean, TupleColl}
 import sigma.ast.SCollection.SByteArray
-import sigma.ast.{BigIntConstant, ByteArrayConstant, Constant, FalseLeaf, GroupGenerator, LongConstant, TrueLeaf}
+import sigma.ast.{BigIntConstant, ByteArrayConstant, Constant, DeserializationSigmaBuilder, FalseLeaf, GroupGenerator, LongConstant, TrueLeaf}
 import sigmastate.eval._
 import sigma.Extensions.ArrayOps
 import sigma.ast._
@@ -17,8 +17,6 @@ import sigma.ast.ByteArrayConstant.ByteArrayTypeCode
 import sigma.ast.defs.{BoolValue, SValue}
 import sigma.crypto.EcPointType
 import sigma.util.Extensions.{BigIntegerOps, EcpOps, SigmaBooleanOps}
-import sigmastate.lang.DeserializationSigmaBuilder
-
 import scala.annotation.nowarn
 
 class ConstantSerializerSpecification extends TableSerializationSpecification {

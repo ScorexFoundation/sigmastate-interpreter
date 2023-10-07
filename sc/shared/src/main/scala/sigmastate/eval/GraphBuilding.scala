@@ -15,7 +15,6 @@ import sigma.util.Extensions.ByteOps
 import sigmastate.exceptions.GraphBuildingException
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigma.ast.{Ident, Select, Val}
-import sigmastate.lang.SourceContext
 import sigma.serialization.OpCodes
 
 import scala.collection.mutable.ArrayBuffer
@@ -44,7 +43,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
   import WOption._
 
   /** Should be specified in the final cake */
-  val builder: sigmastate.lang.SigmaBuilder
+  val builder: SigmaBuilder
   import builder._
 
 

@@ -8,7 +8,7 @@ import sigma.kiama.rewriting.CallbackRewriter
 import sigma.ast._
 import sigma.ast.defs.SValue
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
+import SigmaPredef.PredefinedFuncRegistry
 import sigma.ast.defs._
 import sigmastate.exceptions.{BinderException, InvalidArguments}
 

@@ -1,4 +1,4 @@
-package sigmastate.lang
+package sigma.ast
 
 import fastparse.Parsed.Failure
 

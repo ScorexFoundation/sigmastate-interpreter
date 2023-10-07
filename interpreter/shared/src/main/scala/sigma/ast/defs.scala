@@ -6,8 +6,7 @@ import ErgoTree.HeaderType
 import org.ergoplatform.{ErgoBox, ErgoBoxCandidate}
 import sigma.kiama.rewriting.Rewriter.{everywherebu, rewrite, rule}
 import sigmastate._
-import sigmastate.lang.SourceContext
-import sigmastate.lang.StdSigmaBuilder.mkUpcast
+import StdSigmaBuilder.mkUpcast
 
 import scala.annotation.nowarn
 import scala.reflect.classTag

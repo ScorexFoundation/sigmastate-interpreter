@@ -15,7 +15,7 @@ import sigmastate._
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.exceptions.TyperException
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.SigmaPredef._
+import SigmaPredef._
 import sigmastate.lang.syntax.ParserException
 import sigma.serialization.ErgoTreeSerializer
 import sigma.serialization.generators.ObjectGenerators

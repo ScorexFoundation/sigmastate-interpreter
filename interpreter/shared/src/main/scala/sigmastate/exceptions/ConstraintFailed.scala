@@ -1,6 +1,6 @@
 package sigmastate.exceptions
 
-import sigmastate.lang.SourceContext
+import sigma.ast.SourceContext
 
 final class ConstraintFailed(message: String, source: Option[SourceContext] = None)
   extends BuilderException(message, source)
