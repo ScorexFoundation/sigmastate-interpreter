@@ -1,7 +1,6 @@
 package sigma.serialization
 
 import sigma.ast._
-import sigmastate.lang.Terms.MethodCall
 
 class MethodCallSerializerSpecification extends SerializationSpecification {
 

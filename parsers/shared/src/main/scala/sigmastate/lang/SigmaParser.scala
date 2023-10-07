@@ -4,7 +4,6 @@ import fastparse.internal.Logger
 import sigma.ast._
 import sigma.data.Nullable
 import sigma.ast.defs._
-import sigmastate.lang.Terms.Ident
 import sigmastate.lang.syntax.Basic._
 import sigmastate.lang.syntax.{Core, Exprs}
 

@@ -9,7 +9,7 @@ import sigmastate._
 import sigmastate.exceptions.{GraphBuildingException, InvalidArguments, TyperException}
 import sigmastate.helpers.CompilerTestingCommons
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.Terms.{Apply, MethodCall, ZKProofBlock}
+import sigma.ast.{Apply, MethodCall, ZKProofBlock}
 import sigma.serialization.ValueSerializer
 import sigma.serialization.generators.ObjectGenerators
 import scala.annotation.unused

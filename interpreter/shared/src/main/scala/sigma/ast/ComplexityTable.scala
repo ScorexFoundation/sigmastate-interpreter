@@ -1,7 +1,6 @@
 package sigma.ast
 
 import sigma.serialization.ValueCodes.OpCode
-import sigmastate.lang.Terms.Apply
 
 object ComplexityTable {
 

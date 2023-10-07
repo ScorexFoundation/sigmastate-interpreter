@@ -7,7 +7,7 @@ import sigmastate.interpreter.Interpreter._
 import scalan.BaseCtxTests
 import sigma.ast.defs.ValueOps
 import sigmastate.lang.LangTests
-import sigmastate.lang.Terms.Apply
+import sigma.ast.Apply
 
 class ErgoTreeBuildingTest extends BaseCtxTests
     with LangTests with ExampleContracts with ErgoScriptTestkit {

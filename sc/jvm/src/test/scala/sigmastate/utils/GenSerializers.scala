@@ -3,7 +3,7 @@ package sigmastate.utils
 import sigma.util.Extensions.ByteOps
 import sigma.util.FileUtil
 import sigma.util.PrintExtensions._
-import sigmastate.lang.Terms.{MethodCall, PropertyCall}
+import sigma.ast.{MethodCall, PropertyCall}
 import sigma.serialization.ValueSerializer._
 
 /** Generate contents of ErgoTree serializer format specification.

@@ -6,7 +6,7 @@ import sigma.ast.TypeCodes.LastConstantCode
 import sigma.ast.defs._
 import sigma.util.Extensions.{ByteOps, DBufferOps}
 import sigmastate.interpreter.{CostItem, FixedCostItem, SeqCostItem, TypeBasedCostItem}
-import sigmastate.lang.Terms.{MethodCall, PropertyCall}
+import sigma.ast.{MethodCall, PropertyCall}
 import sigma.serialization.ValueCodes.OpCode
 import sigma.serialization.ValueSerializer
 import sigma.serialization.ValueSerializer.getSerializer

@@ -18,7 +18,6 @@ import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}
 import sigmastate.interpreter.Interpreter.ReductionResult
 import sigmastate.interpreter.{ErgoTreeEvaluator, EvalSettings}
 import sigma.ast.defs._
-import sigmastate.lang.Terms._
 import sigmastate.lang.{CompilerSettings, SourceContext}
 import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.Plus

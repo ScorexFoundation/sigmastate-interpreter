@@ -9,7 +9,7 @@ import sigma.ast._
 import sigma.data.{AvlTreeData, AvlTreeFlags, CollType, Digest32Coll}
 import ErgoTree.HeaderType
 import sigmastate.eval._
-import sigmastate.lang.Terms.MethodCall
+import sigma.ast.MethodCall
 import sigma.serialization.OpCodes
 import sigmastate.utils.Helpers
 import java.math.BigInteger

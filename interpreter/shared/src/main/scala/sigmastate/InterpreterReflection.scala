@@ -14,7 +14,7 @@ import sigmastate.crypto.VerifierMessage.Challenge
 import sigmastate.crypto.GF2_192_Poly
 import sigmastate.interpreter.ErgoTreeEvaluator
 import sigma.serialization.ValueCodes.OpCode
-import sigmastate.lang.Terms._
+import sigma.ast._
 
 /** Reflection metadata for `interpreter` module.
   * For each class of this module that needs reflection metadata,

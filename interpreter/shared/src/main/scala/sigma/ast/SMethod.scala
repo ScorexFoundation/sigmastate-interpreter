@@ -11,7 +11,6 @@ import sigma.validation.ValidationRules.CheckTypeWithMethods
 import sigma.{Coll, Evaluation}
 import sigmastate.interpreter._
 import sigmastate.lang.SigmaBuilder
-import sigmastate.lang.Terms.MethodCall
 
 import scala.collection.compat.immutable.ArraySeq
 import scala.reflect.ClassTag

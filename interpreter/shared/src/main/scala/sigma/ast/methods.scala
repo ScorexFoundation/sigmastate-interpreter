@@ -19,7 +19,6 @@ import sigmastate.interpreter._
 import sigma.utils.Overloading.Overload1
 import sigma.utils.SparseArrayContainer
 import sigmastate._
-import sigmastate.lang.Terms.{MethodCall, PropertyCall}
 
 import scala.language.implicitConversions
 import scala.util.{Failure, Success}

@@ -13,7 +13,7 @@ import sigma.ast
 import sigmastate.eval.Extensions.SigmaBooleanOps
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigma.serialization.OpCodes._
-import sigmastate.lang.Terms.MethodCall
+import sigma.ast.MethodCall
 import sigmastate.utils.Helpers._
 
 class CollectionOperationsSpecification extends CompilerTestingCommons

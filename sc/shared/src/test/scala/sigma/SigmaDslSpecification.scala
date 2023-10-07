@@ -26,7 +26,7 @@ import sigmastate.eval.OrderingOps._
 import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter._
-import sigmastate.lang.Terms.{Apply, MethodCall, PropertyCall}
+import sigma.ast.{Apply, MethodCall, PropertyCall}
 import sigma.serialization.ValueCodes.OpCode
 import sigmastate.utils.Extensions._
 import sigmastate.utils.Helpers

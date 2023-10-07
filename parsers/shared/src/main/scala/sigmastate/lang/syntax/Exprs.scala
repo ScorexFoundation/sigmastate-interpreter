@@ -4,7 +4,6 @@ import fastparse._
 import ScalaWhitespace._
 import sigma.ast._
 import sigma.ast.defs.{SValue, ValueOps}
-import sigmastate.lang.Terms.{Ident, Val}
 import sigmastate.lang._
 import sigmastate.lang.SigmaPredef._
 import sigmastate.lang.syntax.Basic._
@@ -198,7 +197,7 @@ trait Exprs extends Core with Types {
         case STypeApply("", targs) => mkApplyTypes(acc, targs)
         case arg: SValue => acc match {
           case Ident(name, _) if name == ZKProofFunc.name => arg match {
-            case Terms.Block(_, body) =>
+            case Block(_, body) =>
               mkApply(mkIdent(ZKProofFunc.name, ZKProofFunc.declaration.tpe), Array(body))
             case nonBlock =>
               error(s"expected block parameter for ZKProof, got $nonBlock", nonBlock.sourceContext)

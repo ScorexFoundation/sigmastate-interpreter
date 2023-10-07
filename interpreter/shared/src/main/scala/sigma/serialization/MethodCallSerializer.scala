@@ -1,7 +1,7 @@
 package sigma.serialization
 
 import sigma.ast.defs._
-import sigmastate.lang.Terms.MethodCall
+import sigma.ast.MethodCall
 import sigma.util.safeNewArray
 import SigmaByteWriter._
 import debox.cfor

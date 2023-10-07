@@ -19,7 +19,7 @@ import sigmastate.lang.SigmaPredef._
 import sigmastate.lang.syntax.ParserException
 import sigma.serialization.ErgoTreeSerializer
 import sigma.serialization.generators.ObjectGenerators
-import sigmastate.lang.Terms.Select
+import sigma.ast.Select
 
 class SigmaTyperTest extends AnyPropSpec
   with ScalaCheckPropertyChecks with Matchers with LangTests with ObjectGenerators {

@@ -14,8 +14,8 @@ import sigma.data.{ExactIntegral, ExactNumeric, ExactOrdering, Lazy, Nullable}
 import sigma.util.Extensions.ByteOps
 import sigmastate.exceptions.GraphBuildingException
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.Terms.{Ident, Select, Val}
-import sigmastate.lang.{SourceContext, Terms}
+import sigma.ast.{Ident, Select, Val}
+import sigmastate.lang.SourceContext
 import sigma.serialization.OpCodes
 
 import scala.collection.mutable.ArrayBuffer
@@ -547,7 +547,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         else
           eval(mkUpcast(numValue, tRes))
 
-      case Terms.Apply(col, Seq(index)) if col.tpe.isCollection =>
+      case sigma.ast.Apply(col, Seq(index)) if col.tpe.isCollection =>
         eval(mkByIndex(col.asCollection[SType], index.asValue[SInt.type], None))
 
       case GetVar(id, optTpe) =>
@@ -557,7 +557,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
       case ValUse(valId, _) =>
         env.getOrElse(valId, !!!(s"ValUse $valId not found in environment $env"))
 
-      case Terms.Block(binds, res) =>
+      case Block(binds, res) =>
         var curEnv = env
         for (v @ Val(n, _, b) <- binds) {
           if (curEnv.contains(n))
@@ -704,7 +704,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val pV = asRep[Any => Boolean](eval(p))
         inputV.filter(pV)
 
-      case Terms.Apply(f, Seq(x)) if f.tpe.isFunc =>
+      case sigma.ast.Apply(f, Seq(x)) if f.tpe.isFunc =>
         val fV = asRep[Any => Coll[Any]](eval(f))
         val xV = asRep[Any](eval(x))
         Apply(fV, xV, mayInline = false)
@@ -885,14 +885,14 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val y = eval(rel.right)
         binop.apply(x, asRep[t#WrappedType](y))
 
-      case Terms.Lambda(_, Seq((n, argTpe)), _, Some(body)) =>
+      case sigma.ast.Lambda(_, Seq((n, argTpe)), _, Some(body)) =>
         val eArg = stypeToElem(argTpe).asInstanceOf[Elem[Any]]
         val f = fun(removeIsProven({ x: Ref[Any] =>
           buildNode(ctx, env + (n -> x), body)
         }))(Lazy(eArg))
         f
 
-      case Terms.Lambda(_, Seq((accN, accTpe), (n, tpe)), _, Some(body)) =>
+      case sigma.ast.Lambda(_, Seq((accN, accTpe), (n, tpe)), _, Some(body)) =>
         (stypeToElem(accTpe), stypeToElem(tpe)) match { case (eAcc: Elem[s], eA: Elem[a]) =>
           val eArg = pairElement(eAcc, eA)
           val f = fun { x: Ref[(s, a)] =>
@@ -935,7 +935,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         sigmaDslBuilder.decodePoint(bytes)
 
       // fallback rule for MethodCall, should be the last case in the list
-      case Terms.MethodCall(obj, method, args, _) =>
+      case sigma.ast.MethodCall(obj, method, args, _) =>
         val objV = eval(obj)
         val argsV = args.map(eval)
         (objV, method.objType) match {

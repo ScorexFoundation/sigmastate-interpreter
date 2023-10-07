@@ -10,7 +10,7 @@ import sigma.data.{CSigmaProp, Nullable, RType, SigmaBoolean}
 import sigma.kiama.rewriting.Rewriter.count
 import sigma.util.CollectionUtil._
 import sigma.util.Extensions._
-import sigma.{AvlTree, Coll, Colls, Header, PreHeader, _}
+import sigma._
 import sigmastate.eval._
 import sigmastate.exceptions.InterpreterException
 import sigmastate.interpreter.ErgoTreeEvaluator._
@@ -19,6 +19,7 @@ import sigmastate.lang.SourceContext
 import sigma.serialization.OpCodes._
 import sigma.serialization.ValueCodes.OpCode
 import sigma.serialization._
+import sigma.utils.Overloading.Overload1
 
 import java.math.BigInteger
 import java.util.{Arrays, Objects}
@@ -1035,6 +1036,360 @@ object FuncValue extends FixedCostValueCompanion {
 
   def apply(argId: Int, tArg: SType, body: SValue): FuncValue =
     FuncValue(IndexedSeq((argId, tArg)), body)
+}
+
+/** Frontend representation of a block of Val definitions.
+  * { val x = ...; val y = ... }
+  * This node is not part of ErgoTree and hence have Undefined opCode. */
+case class Block(bindings: Seq[Val], result: SValue) extends Value[SType] {
+  override def companion = Block
+
+  override def tpe: SType = result.tpe
+
+  /** This is not used as operation, but rather to form a program structure */
+  override def opType: SFunc = Value.notSupportedError(this, "opType")
+}
+
+object Block extends ValueCompanion {
+  override def opCode: OpCode = OpCodes.Undefined
+
+  override def costKind: CostKind = Value.notSupportedError(this, "costKind")
+
+  def apply(let: Val, result: SValue)(implicit o1: Overload1): Block =
+    Block(Seq(let), result)
+}
+
+/** IR node to represent explicit Zero Knowledge scope in ErgoTree.
+  * Compiler checks Zero Knowledge properties and issue error message is case of violations.
+  * ZK-scoping is optional, it can be used when the user want to ensure Zero Knowledge of
+  * specific set of operations.
+  * Usually it will require simple restructuring of the code to make the scope body explicit.
+  * Invariants checked by the compiler:
+  *  - single ZKProof in ErgoTree in a root position
+  *  - no boolean operations in the body, because otherwise the result may be disclosed
+  *  - all the operations are over SigmaProp values
+  *
+  * For motivation and details see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/236
+  * */
+case class ZKProofBlock(body: SigmaPropValue) extends BoolValue {
+  override def companion = ZKProofBlock
+
+  override def tpe = SBoolean
+
+  override def opType: SFunc = ZKProofBlock.OpType
+}
+
+object ZKProofBlock extends ValueCompanion {
+  override def opCode: OpCode = OpCodes.Undefined
+
+  override def costKind: CostKind = Value.notSupportedError(this, "costKind")
+
+  val OpType = SFunc(SSigmaProp, SBoolean)
+}
+
+trait Val extends Value[SType] {
+  val name     : String
+  val givenType: SType
+  val body     : SValue
+}
+
+object Val {
+  def apply(name: String, body: SValue): Val = ValNode(name, NoType, body)
+
+  def apply(
+      name: String,
+      givenType: SType,
+      body: SValue): Val = ValNode(name, givenType, body)
+
+  def unapply(v: SValue): Option[(String, SType, SValue)] = v match {
+    case ValNode(name, givenType, body) => Some((name, givenType, body))
+    case _ => None
+  }
+}
+
+case class ValNode(
+    name: String,
+    givenType: SType,
+    body: SValue) extends Val {
+  override def companion = ValNode
+
+  override def tpe: SType = givenType ?: body.tpe
+
+  /** This is not used as operation, but rather to form a program structure */
+  override def opType: SFunc = Value.notSupportedError(this, "opType")
+}
+
+object ValNode extends ValueCompanion {
+  override def opCode: OpCode = OpCodes.Undefined
+
+  override def costKind: CostKind = Value.notSupportedError(this, "costKind")
+}
+
+/** Frontend node to select a field from an object. Should be transformed to SelectField */
+case class Select(
+    obj: Value[SType],
+    field: String,
+    resType: Option[SType] = None) extends Value[SType] {
+  override def companion = Select
+
+  override val tpe: SType = resType.getOrElse(obj.tpe match {
+    case p: SProduct =>
+      MethodsContainer.getMethod(p, field) match {
+        case Some(m) => m.stype
+        case None => NoType
+      }
+    case _ => NoType
+  })
+
+  override def opType: SFunc = SFunc(obj.tpe, tpe)
+}
+
+object Select extends ValueCompanion {
+  override def opCode: OpCode = OpCodes.Undefined
+
+  override def costKind: CostKind = Value.notSupportedError(this, "costKind")
+}
+
+/** Frontend node to represent variable names parsed in a source code.
+  * Should be resolved during compilation to lambda argument, Val definition or
+  * compilation environment value. */
+case class Ident(name: String, tpe: SType = NoType) extends Value[SType] {
+  override def companion = Ident
+
+  override def opType: SFunc = SFunc(ArraySeq.empty, tpe)
+}
+
+object Ident extends ValueCompanion {
+  override def opCode: OpCode = OpCodes.Undefined
+
+  override def costKind: CostKind = Value.notSupportedError(this, "costKind")
+
+  def apply(name: String): Ident = Ident(name, NoType)
+}
+
+// TODO refactor: move to sigma.ast
+
+/** ErgoTree node which represents application of function `func` to the given arguments.
+  *
+  * @param func expression which evaluates to a function
+  * @param args arguments of the function application
+  */
+case class Apply(
+    func: Value[SType],
+    args: IndexedSeq[Value[SType]]) extends Value[SType] {
+  override def companion = Apply
+
+  override lazy val tpe   : SType = func.tpe match {
+    case SFunc(_, r, _) => r
+    case tColl: SCollectionType[_] => tColl.elemType
+    case _ => NoType
+  }
+
+  override lazy val opType: SFunc = {
+    val nArgs    = args.length
+    val argTypes = new Array[SType](nArgs + 1)
+    argTypes(0) = func.tpe
+    cfor(0)(_ < nArgs, _ + 1) { i =>
+      argTypes(i + 1) = args(i).tpe
+    }
+    SFunc(argTypes, tpe)
+  }
+
+  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+    addCost(Apply.costKind)
+    if (args.length == 1) {
+      val fV   = func.evalTo[Any => Any](env)
+      val argV = args(0).evalTo[Any](env)
+      fV(argV)
+    } else {
+      // zero or more than 1 argument functions are not supported in v4.x, v5.0
+      // see `case Terms.Apply(f, Seq(x))` in RuntimeCosting which means other cases are not supported.
+      Interpreter.error(s"Function application must have 1 argument, but was: $this")
+    }
+  }
+}
+
+object Apply extends FixedCostValueCompanion {
+  override def opCode: OpCode = OpCodes.FuncApplyCode
+
+  /** Cost of: 1) switch on the number of args 2) Scala method call 3) add args to env
+    * Old cost: lambdaInvoke == 30 */
+  override val costKind = FixedCost(JitCost(30))
+}
+
+/** Apply types for type parameters of input value. */
+case class ApplyTypes(
+    input: Value[SType],
+    tpeArgs: Seq[SType]) extends Value[SType] { node =>
+  override def companion = ApplyTypes
+
+  override lazy val tpe: SType = input.tpe match {
+    case funcType: SFunc =>
+      val subst = funcType.tpeParams.map(_.ident).zip(tpeArgs).toMap
+      applySubst(input.tpe, subst)
+    case _ => input.tpe
+  }
+
+  /** This is not used as operation, but rather to form a program structure */
+  override def opType: SFunc = Value.notSupportedError(this, "opType")
+}
+
+object ApplyTypes extends ValueCompanion {
+  override def opCode: OpCode = OpCodes.Undefined
+
+  override def costKind: CostKind = Value.notSupportedError(this, "costKind")
+}
+
+/** Frontend node to represent potential method call in a source code.
+  * Should be resolved during compilation to MethodCall.
+  * Cannot be serialized to ErgoTree. */
+case class MethodCallLike(
+    obj: Value[SType],
+    name: String,
+    args: IndexedSeq[Value[SType]],
+    tpe: SType = NoType) extends Value[SType] {
+  override def companion = MethodCallLike
+
+  override def opType: SFunc = SFunc(obj.tpe +: args.map(_.tpe), tpe)
+}
+
+object MethodCallLike extends ValueCompanion {
+  override def opCode: OpCode = OpCodes.Undefined
+
+  override def costKind: CostKind = Value.notSupportedError(this, "costKind")
+}
+
+/** Represents in ErgoTree an invocation of method of the object `obj` with arguments `args`.
+  * The SMethod instances in STypeCompanions may have type STypeIdent in methods types,
+  * but valid ErgoTree should have SMethod instances specialized for specific types of
+  * obj and args using `specializeFor`.
+  * This means, if we save typeId, methodId, and we save all the arguments,
+  * we can restore the specialized SMethod instance.
+  * This work by induction, if we assume all arguments are monomorphic,
+  * then we can make MethodCall monomorphic.
+  * Thus, all ErgoTree instances are monomorphic by construction.
+  *
+  * @param obj       object on which method will be invoked
+  * @param method    method to be invoked
+  * @param args      arguments passed to the method on invocation
+  * @param typeSubst a map of concrete type for each generic type parameter
+  */
+case class MethodCall(
+    obj: Value[SType],
+    method: SMethod,
+    args: IndexedSeq[Value[SType]],
+    typeSubst: Map[STypeVar, SType]) extends Value[SType] {
+  override def companion = if (args.isEmpty) PropertyCall else MethodCall
+
+  override def opType: SFunc = SFunc(obj.tpe +: args.map(_.tpe), tpe)
+
+  override val tpe: SType = method.stype match {
+    case f: SFunc => f.tRange.withSubstTypes(typeSubst)
+    case t => t.withSubstTypes(typeSubst)
+  }
+
+  /** @hotspot don't beautify this code */
+  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+    val objV = obj.evalTo[Any](env)
+    addCost(MethodCall.costKind) // MethodCall overhead
+    method.costKind match {
+      case fixed: FixedCost =>
+        val extra    = method.extraDescriptors
+        val extraLen = extra.length
+        val len      = args.length
+        val argsBuf  = new Array[Any](len + extraLen)
+        cfor(0)(_ < len, _ + 1) { i =>
+          argsBuf(i) = args(i).evalTo[Any](env)
+        }
+        cfor(0)(_ < extraLen, _ + 1) { i =>
+          argsBuf(len + i) = extra(i)
+        }
+        var res: Any = null
+        E.addFixedCost(fixed, method.opDesc) {
+          res = method.invokeFixed(objV, argsBuf)
+        }
+        res
+      case _ =>
+        val len     = args.length
+        val argsBuf = new Array[Any](len + 3)
+        argsBuf(0) = this
+        argsBuf(1) = objV
+        cfor(0)(_ < len, _ + 1) { i =>
+          argsBuf(i + 2) = args(i).evalTo[Any](env)
+        }
+        argsBuf(argsBuf.length - 1) = E
+        val evalMethod = method.genericMethod.evalMethod
+        evalMethod.invoke(method.objType, argsBuf.asInstanceOf[Array[AnyRef]]: _*)
+    }
+  }
+}
+
+object MethodCall extends FixedCostValueCompanion {
+  override def opCode: OpCode = OpCodes.MethodCallCode
+
+  /** Cost of: 1) packing args into Array 2) RMethod.invoke */
+  override val costKind = FixedCost(JitCost(4))
+
+  /** Helper constructor which allows to cast the resulting node to the specified
+    * [[sigma.ast.Value]] type `T`.
+    *
+    * @see [[sigmastate.lang.Terms.MethodCall]]
+    */
+  def typed[T <: SValue](
+      obj: Value[SType],
+      method: SMethod,
+      args: IndexedSeq[Value[SType]],
+      typeSubst: Map[STypeVar, SType]): T = {
+    MethodCall(obj, method, args, typeSubst).asInstanceOf[T]
+  }
+}
+
+object PropertyCall extends FixedCostValueCompanion {
+  override def opCode: OpCode = OpCodes.PropertyCallCode
+
+  /** Cost of: 1) packing args into Array 2) RMethod.invoke */
+  override val costKind = FixedCost(JitCost(4))
+}
+
+/** Frontend implementation of lambdas. Should be transformed to FuncValue. */
+case class Lambda(
+    tpeParams: Seq[STypeParam],
+    args: IndexedSeq[(String, SType)],
+    givenResType: SType,
+    body: Option[Value[SType]]) extends Value[SFunc] {
+  require(!(tpeParams.nonEmpty && body.nonEmpty), s"Generic function definitions are not supported, but found $this")
+
+  override def companion = Lambda
+
+  override lazy val tpe: SFunc = {
+    val sRange = givenResType ?: body.fold(NoType: SType)(_.tpe)
+    SFunc(args.map(_._2), sRange, tpeParams)
+  }
+
+  /** This is not used as operation, but rather to form a program structure */
+  override def opType: SFunc = SFunc(Vector(), tpe)
+}
+
+object Lambda extends ValueCompanion {
+  override def opCode: OpCode = OpCodes.Undefined
+
+  override def costKind: CostKind = Value.notSupportedError(this, "costKind")
+
+  def apply(
+      args: IndexedSeq[(String, SType)],
+      resTpe: SType,
+      body: Value[SType]): Lambda =
+    Lambda(Nil, args, resTpe, Some(body))
+
+  def apply(
+      args: IndexedSeq[(String, SType)],
+      resTpe: SType,
+      body: Option[Value[SType]]): Lambda =
+    Lambda(Nil, args, resTpe, body)
+
+  def apply(
+      args: IndexedSeq[(String, SType)],
+      body: Value[SType]): Lambda = Lambda(Nil, args, NoType, Some(body))
 }
 
 /** When interpreted evaluates to a ByteArrayConstant built from Context.minerPubkey */

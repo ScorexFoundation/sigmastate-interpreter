@@ -14,7 +14,6 @@ import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
 import sigma.ast.defs._
 import sigmastate.lang.syntax.ParserException
 import sigma.serialization.OpCodes
-import sigmastate.lang.Terms.{Apply, ApplyTypes, Block, Ident, Lambda, MethodCallLike, Select, Val}
 
 class SigmaParserTest extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers with LangTests {
   import StdSigmaBuilder._

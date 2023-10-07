@@ -2,8 +2,6 @@ package sigmastate.lang
 
 import fastparse._
 import ScalaWhitespace._
-import sigmastate._
-import sigmastate.lang.Terms.Ident
 import sigmastate.lang.syntax.Core
 import syntax.Basic.error
 import sigma.ast._

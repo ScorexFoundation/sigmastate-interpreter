@@ -11,7 +11,7 @@ import sigma.util.Extensions.BigIntegerOps
 import sigmastate.eval._
 import sigmastate.helpers.NegativeTesting
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.Terms.{Ident, MethodCallLike}
+import sigma.ast.{Ident, MethodCallLike}
 
 import java.math.BigInteger
 

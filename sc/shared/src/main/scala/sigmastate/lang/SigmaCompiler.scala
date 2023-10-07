@@ -9,7 +9,7 @@ import sigma.ast.{Exponentiate, MultiplyGroup, SCollectionMethods, SGlobalMethod
 import sigmastate.eval.IRContext
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
-import sigmastate.lang.Terms.MethodCall
+import sigma.ast.MethodCall
 import sigmastate.lang.syntax.ParserException
 import sigma.ast._
 import sigma.ast.defs.SValue

@@ -9,7 +9,7 @@ import sigma.util.Extensions.ByteOps
 import sigma.util.PrintExtensions._
 import sigmastate.lang.SigmaPredef.{PredefinedFunc, PredefinedFuncRegistry}
 import sigmastate.lang.StdSigmaBuilder
-import sigmastate.lang.Terms.{MethodCall, PropertyCall}
+import sigma.ast.{MethodCall, PropertyCall}
 import sigma.serialization.ValueCodes.OpCode
 import sigma.serialization.ValueSerializer
 

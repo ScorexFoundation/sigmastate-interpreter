@@ -18,7 +18,7 @@ import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultEvalSettings
 import sigmastate.interpreter.EvalSettings
 import sigmastate.interpreter.Interpreter._
-import sigmastate.lang.Terms.Apply
+import sigma.ast.Apply
 import sigmastate.utils.Helpers._
 
 import java.math.BigInteger

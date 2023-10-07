@@ -20,7 +20,7 @@ import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultProfiler
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.interpreter._
-import sigmastate.lang.{CompilerSettings, SigmaCompiler, Terms}
+import sigmastate.lang.{CompilerSettings, SigmaCompiler}
 import sigma.serialization.SigmaSerializer
 import sigmastate.CompilerTestsBase
 
@@ -166,7 +166,7 @@ trait CompilerTestingCommons extends TestingCommons
       }
       (res.value, costDetails)
     }
-    val Terms.Apply(funcVal, _) = expr.asInstanceOf[SValue]
+    val sigma.ast.Apply(funcVal, _) = expr.asInstanceOf[SValue]
     CompiledFunc(funcScript, bindings, funcVal, expr, f)
   }
 

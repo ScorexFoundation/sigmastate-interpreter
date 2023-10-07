@@ -11,7 +11,7 @@ import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma.ast.defs._
 import sigmastate.exceptions.InvalidArguments
 import sigma.serialization.ValueSerializer
-import sigmastate.lang.Terms.{Apply, Ident, Lambda, MethodCall, ZKProofBlock}
+import sigma.ast.{Apply, Ident, Lambda, MethodCall, ZKProofBlock}
 
 object SigmaPredef {
 
