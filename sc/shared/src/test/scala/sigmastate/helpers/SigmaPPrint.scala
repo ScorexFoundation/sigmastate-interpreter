@@ -13,7 +13,7 @@ import sigma.{Coll, GroupElement}
 import sigma.ast.{ConstantNode, FuncValue, ValueCompanion}
 import sigmastate._
 import sigmastate.crypto.GF2_192_Poly
-import sigmastate.interpreter.{CompanionDesc, FixedCostItem, MethodDesc}
+import sigmastate.interpreter.{CompanionDesc, MethodDesc}
 import sigma.ast.MethodCall
 import java.math.BigInteger
 import scala.collection.compat.immutable.ArraySeq

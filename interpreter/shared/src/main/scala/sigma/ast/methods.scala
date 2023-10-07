@@ -8,7 +8,7 @@ import scorex.crypto.authds.{ADKey, ADValue}
 import sigma.ast.SCollection.{SBooleanArray, SBoxArray, SByteArray, SByteArray2, SHeaderArray}
 import sigma.ast.SType.TypeCode
 import sigma.ast.defs.{SValue, ValueOps}
-import sigma.data.{Nullable, RType, SigmaConstants}
+import sigma.data.{DataValueComparer, Nullable, RType, SigmaConstants}
 import sigma.reflection.RClass
 import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma._

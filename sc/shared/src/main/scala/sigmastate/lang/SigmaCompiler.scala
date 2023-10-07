@@ -14,7 +14,7 @@ import sigmastate.lang.syntax.ParserException
 import sigma.ast._
 import sigma.ast.defs.SValue
 import SCollectionMethods.{ExistsMethod, ForallMethod, MapMethod}
-import sigmastate.InterpreterReflection
+import sigma.InterpreterReflection
 
 /**
   * @param networkPrefix    network prefix to decode an ergo address from string (PK op)

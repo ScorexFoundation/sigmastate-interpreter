@@ -1,11 +1,10 @@
 package sigmastate.eval
 
 import debox.{sp, Buffer => DBuffer, Map => DMap}
-import sigma.ast.{FixedCost, JitCost, SMethod}
+import sigma.ast.{CostItem, FixedCost, FixedCostItem, JitCost, SMethod, SeqCostItem, TypeBasedCostItem}
 import sigma.ast.TypeCodes.LastConstantCode
 import sigma.ast.defs._
 import sigma.util.Extensions.{ByteOps, DBufferOps}
-import sigmastate.interpreter.{CostItem, FixedCostItem, SeqCostItem, TypeBasedCostItem}
 import sigma.ast.{MethodCall, PropertyCall}
 import sigma.serialization.ValueCodes.OpCode
 import sigma.serialization.ValueSerializer

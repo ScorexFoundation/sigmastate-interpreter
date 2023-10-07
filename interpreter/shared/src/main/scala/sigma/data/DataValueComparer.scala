@@ -1,10 +1,9 @@
-package sigmastate
+package sigma.data
 
 import debox.{cfor, sp}
 import sigma._
 import sigma.ast.{FixedCost, JitCost, PerItemCost}
 import sigma.crypto.EcPointType
-import sigma.data._
 import sigmastate.eval.SigmaDsl
 import sigmastate.interpreter.{ErgoTreeEvaluator, NamedDesc, OperationCostInfo}
 

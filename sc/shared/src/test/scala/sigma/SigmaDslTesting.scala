@@ -352,8 +352,8 @@ class SigmaDslTesting extends AnyPropSpec
             )
 
             // We add ctx as it's own variable with id = 1
-            val ctxVar = eval.Extensions.toAnyValue[sigma.Context](ctx)(sigma.ContextRType)
-            val carolVar = eval.Extensions.toAnyValue[Coll[Byte]](pkCarolBytes.toColl)(RType[Coll[Byte]])
+            val ctxVar = sigmastate.eval.Extensions.toAnyValue[sigma.Context](ctx)(sigma.ContextRType)
+            val carolVar = sigmastate.eval.Extensions.toAnyValue[Coll[Byte]](pkCarolBytes.toColl)(RType[Coll[Byte]])
             val newCtx = ctx
                 .withUpdatedVars(1 -> ctxVar, 2 -> carolVar)
                 .copy(

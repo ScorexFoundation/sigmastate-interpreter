@@ -1,8 +1,8 @@
-package sigmastate.interpreter
+package sigma.ast
 
-import sigma.ast.{FixedCost, FixedCostValueCompanion, GT, JitCost, LE, PerItemCost, PerItemCostValueCompanion, SMethod, SType, TypeBasedCost, ValueCompanion}
+import sigma.ast
 import sigma.eval.CostDetails
-import sigma.ast.MethodCall
+import sigmastate.interpreter.{MethodDesc, OperationDesc}
 
 /** An item in the cost accumulation trace of a [[sigma.ast.ErgoTree]] evaluation. */
 abstract class CostItem {
@@ -22,7 +22,7 @@ case class FixedCostItem(opDesc: OperationDesc, costKind: FixedCost) extends Cos
 }
 object FixedCostItem {
   def apply(companion: FixedCostValueCompanion): FixedCostItem = {
-    FixedCostItem(companion.opDesc, companion.costKind)
+    ast.FixedCostItem(companion.opDesc, companion.costKind)
   }
   def apply(method: SMethod, costKind: FixedCost): FixedCostItem = {
     FixedCostItem(MethodDesc(method), costKind)
@@ -56,7 +56,7 @@ case class TypeBasedCostItem(
 }
 object TypeBasedCostItem {
   def apply(companion: ValueCompanion, tpe: SType): TypeBasedCostItem = {
-    TypeBasedCostItem(companion.opDesc, companion.costKind.asInstanceOf[TypeBasedCost], tpe)
+    ast.TypeBasedCostItem(companion.opDesc, companion.costKind.asInstanceOf[TypeBasedCost], tpe)
   }
 }
 
@@ -77,7 +77,7 @@ case class SeqCostItem(opDesc: OperationDesc, costKind: PerItemCost, nItems: Int
 }
 object SeqCostItem {
   def apply(companion: PerItemCostValueCompanion, nItems: Int): SeqCostItem =
-    SeqCostItem(companion.opDesc, companion.costKind, nItems)
+    ast.SeqCostItem(companion.opDesc, companion.costKind, nItems)
 }
 
 /** An item in the cost accumulation trace of a [[sigma.ast.ErgoTree]] evaluation.

@@ -6,12 +6,11 @@ import sigma.ast.defs._
 import sigmastate.eval.Profiler
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.interpreter.Interpreter.ReductionResult
-import sigma.{Context, SigmaProp}
+import sigma.{Context, SigmaProp, VersionContext, ast}
 import sigma.util.Extensions._
 import sigmastate.interpreter.EvalSettings._
 import supertagged.TaggedType
 import debox.{Buffer => DBuffer}
-import sigma.VersionContext
 import sigma.ast.SType
 import sigma.data.SigmaBoolean
 
@@ -180,7 +179,7 @@ class ErgoTreeEvaluator(
   final def addCost(costKind: FixedCost, opDesc: OperationDesc): Unit = {
     coster.add(costKind.cost)
     if (settings.costTracingEnabled) {
-      costTrace += FixedCostItem(opDesc, costKind)
+      costTrace += ast.FixedCostItem(opDesc, costKind)
     }
   }
 
@@ -201,12 +200,12 @@ class ErgoTreeEvaluator(
                              tpe: SType, opDesc: OperationDesc)(block: () => R): R = {
     var costItem: TypeBasedCostItem = null
     if (settings.costTracingEnabled) {
-      costItem = TypeBasedCostItem(opDesc, costKind, tpe)
+      costItem = ast.TypeBasedCostItem(opDesc, costKind, tpe)
       costTrace += costItem
     }
     if (settings.isMeasureOperationTime) {
       if (costItem == null) {
-        costItem = TypeBasedCostItem(opDesc, costKind, tpe)
+        costItem = ast.TypeBasedCostItem(opDesc, costKind, tpe)
       }
       val start = System.nanoTime()
       val cost = costKind.costFunc(tpe) // should be measured as part of the operation
@@ -232,12 +231,12 @@ class ErgoTreeEvaluator(
   final def addFixedCost(costKind: FixedCost, opDesc: OperationDesc)(block: => Unit): Unit = {
     var costItem: FixedCostItem = null
     if (settings.costTracingEnabled) {
-      costItem = FixedCostItem(opDesc, costKind)
+      costItem = ast.FixedCostItem(opDesc, costKind)
       costTrace += costItem
     }
     if (settings.isMeasureOperationTime) {
       if (costItem == null) {
-        costItem = FixedCostItem(opDesc, costKind)
+        costItem = ast.FixedCostItem(opDesc, costKind)
       }
       val start = System.nanoTime()
       coster.add(costKind.cost)
@@ -266,7 +265,7 @@ class ErgoTreeEvaluator(
   final def addSeqCostNoOp(costKind: PerItemCost, nItems: Int, opDesc: OperationDesc): Unit = {
     var costItem: SeqCostItem = null
     if (settings.costTracingEnabled) {
-      costItem = SeqCostItem(opDesc, costKind, nItems)
+      costItem = ast.SeqCostItem(opDesc, costKind, nItems)
       costTrace += costItem
     }
     val cost = costKind.cost(nItems)
@@ -286,12 +285,12 @@ class ErgoTreeEvaluator(
   final def addSeqCost[R](costKind: PerItemCost, nItems: Int, opDesc: OperationDesc)(block: () => R): R = {
     var costItem: SeqCostItem = null
     if (settings.costTracingEnabled) {
-      costItem = SeqCostItem(opDesc, costKind, nItems)
+      costItem = ast.SeqCostItem(opDesc, costKind, nItems)
       costTrace += costItem
     }
     if (settings.isMeasureOperationTime) {
       if (costItem == null) {
-        costItem = SeqCostItem(opDesc, costKind, nItems)
+        costItem = ast.SeqCostItem(opDesc, costKind, nItems)
       }
       val start = System.nanoTime()
       val cost = costKind.cost(nItems) // should be measured as part of the operation
@@ -339,7 +338,7 @@ class ErgoTreeEvaluator(
       coster.add(cost)
       val end = System.nanoTime()
 
-      costItem = SeqCostItem(opDesc, costKind, nItems)
+      costItem = ast.SeqCostItem(opDesc, costKind, nItems)
       profiler.addCostItem(costItem, end - start)
     } else {
       nItems = block()
@@ -348,7 +347,7 @@ class ErgoTreeEvaluator(
     }
     if (settings.costTracingEnabled) {
       if (costItem == null)
-        costItem = SeqCostItem(opDesc, costKind, nItems)
+        costItem = ast.SeqCostItem(opDesc, costKind, nItems)
       costTrace += costItem
     }
   }

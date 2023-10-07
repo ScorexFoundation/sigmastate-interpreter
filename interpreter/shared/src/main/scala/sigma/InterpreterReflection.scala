@@ -1,20 +1,18 @@
-package sigmastate
+package sigma
 
 import org.ergoplatform.ErgoBox.RegisterId
-import sigma.reflection.ReflectionData.registerClassEntry
-import sigma.reflection.{ReflectionData, mkConstructor, mkMethod}
-import sigma.Coll
+import sigma.ast.SAvlTreeMethods.KeyValueColl
 import sigma.ast.SCollection.{SBooleanArray, SByteArray, SIntArray}
 import sigma.ast._
 import sigma.ast.defs._
 import sigma.data.{CAND, COR, CTHRESHOLD}
-import sigma.{AvlTree, SigmaDslBuilder}
-import SAvlTreeMethods.KeyValueColl
-import sigmastate.crypto.VerifierMessage.Challenge
-import sigmastate.crypto.GF2_192_Poly
-import sigmastate.interpreter.ErgoTreeEvaluator
+import sigma.reflection.ReflectionData.registerClassEntry
+import sigma.reflection.{ReflectionData, mkConstructor, mkMethod}
 import sigma.serialization.ValueCodes.OpCode
-import sigma.ast._
+import sigmastate.crypto.GF2_192_Poly
+import sigmastate.crypto.VerifierMessage.Challenge
+import sigmastate.interpreter.ErgoTreeEvaluator
+import sigmastate.{CAndUncheckedNode, CAndUnproven, COrUncheckedNode, COrUnproven, CThresholdUncheckedNode, CThresholdUnproven, NodePosition, ProofTree, UncheckedSigmaTree}
 
 /** Reflection metadata for `interpreter` module.
   * For each class of this module that needs reflection metadata,

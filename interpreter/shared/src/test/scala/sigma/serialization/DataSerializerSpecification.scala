@@ -3,7 +3,7 @@ package sigma.serialization
 import java.math.BigInteger
 import org.ergoplatform.ErgoBox
 import org.scalacheck.Arbitrary._
-import sigma.data.{RType, SigmaBoolean, TupleColl}
+import sigma.data.{DataValueComparer, RType, SigmaBoolean, TupleColl}
 import sigma.ast.SCollection.SByteArray
 import sigmastate._
 import sigmastate.eval._

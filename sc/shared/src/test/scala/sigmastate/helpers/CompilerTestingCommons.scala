@@ -6,12 +6,11 @@ import org.scalacheck.Arbitrary.arbByte
 import org.scalacheck.Gen
 import sigma.util.BenchmarkUtil
 import scalan.TestContexts
-import sigma.ast.{ErgoTree, JitCost, SOption, SType}
+import sigma.ast.{Constant, CostItem, ErgoTree, JitCost, SOption, SType}
 import sigma.{Colls, Evaluation, TestUtils}
 import sigma.data.{RType, SigmaBoolean}
 import sigma.validation.ValidationException
 import sigma.validation.ValidationRules.CheckSerializableTypeCode
-import sigma.ast.Constant
 import sigma.ast.defs.{SValue, SigmaPropValue}
 import sigma.eval.{CostDetails, GivenCost, TracedCost}
 import sigmastate.eval._
