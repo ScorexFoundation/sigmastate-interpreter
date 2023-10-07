@@ -8,13 +8,13 @@ import sigma.ast.ErgoTree.{HeaderType, ZeroHeader, setConstantSegregation, setVe
 import sigma.ast._
 import sigma.{Box, SigmaDslTesting}
 import sigmastate.eval._
-import sigmastate.exceptions.InterpreterException
 import sigmastate.helpers.TestingHelpers.createBox
 import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultEvalSettings
 import sigmastate.interpreter.EvalSettings.EvaluationMode
 import sigmastate.interpreter._
 import sigma.ast.defs.ValueOps
+import sigma.exceptions.InterpreterException
 import sigmastate.utils.Helpers._
 
 /** Specification to verify that the interpreter behaves according to docs/aot-jit-switch.md.

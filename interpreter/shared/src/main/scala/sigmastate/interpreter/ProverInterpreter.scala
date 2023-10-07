@@ -12,12 +12,12 @@ import sigmastate.crypto.DLogProtocol._
 import sigmastate.crypto.VerifierMessage.Challenge
 import sigmastate.crypto._
 import sigmastate.crypto.{GF2_192, GF2_192_Poly}
-import sigmastate.exceptions.InterpreterException
 import sigmastate.utils.Helpers
 import sigma.Coll
 import sigma.Extensions.ArrayOps
 import sigma.crypto.CryptoConstants
 import sigma.data.{CAND, COR, CTHRESHOLD, ProveDHTuple, ProveDlog, SigmaBoolean}
+import sigma.exceptions.InterpreterException
 import sigma.serialization.SigSerializer
 
 import java.math.BigInteger

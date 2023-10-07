@@ -11,8 +11,8 @@ import sigma.kiama.rewriting.Rewriter.count
 import sigma.util.CollectionUtil._
 import sigma.util.Extensions._
 import sigma._
+import sigma.exceptions.InterpreterException
 import sigmastate.eval._
-import sigmastate.exceptions.InterpreterException
 import sigmastate.interpreter.ErgoTreeEvaluator._
 import sigmastate.interpreter.{CompanionDesc, ErgoTreeEvaluator, Interpreter, NamedDesc}
 import sigmastate.lang.SourceContext

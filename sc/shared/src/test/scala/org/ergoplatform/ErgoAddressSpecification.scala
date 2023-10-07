@@ -11,7 +11,6 @@ import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers._
 import sigmastate.interpreter.ContextExtension.VarBinding
 import sigma.crypto.CryptoConstants.dlogGroup
-import sigmastate.exceptions.CostLimitException
 import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}
 import sigma.ast.defs.ValueOps
@@ -24,6 +23,7 @@ import sigma.ast.ErgoTree.{ZeroHeader, setConstantSegregation}
 
 import sigma.ast.SType
 import sigma.data.ProveDlog
+import sigma.exceptions.CostLimitException
 import sigma.serialization.GroupElementSerializer
 import sigma.validation.ValidationException
 import sigma.validation.ValidationRules.CheckTypeCode

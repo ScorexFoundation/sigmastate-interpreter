@@ -1,13 +1,10 @@
 package sigmastate
 
 import org.ergoplatform.ErgoBox
-import sigma.{Coll, _}
-import sigma.crypto.EcPointType
-import sigma.data.{AvlTreeData, RType, SigmaBoolean}
-import sigmastate.exceptions.CostLimitException
-import supertagged.TaggedType
+import sigma._
+import sigma.data.{AvlTreeData, SigmaBoolean}
+import sigma.exceptions.CostLimitException
 
-import java.math.BigInteger
 import scala.language.implicitConversions
 
 package object eval {

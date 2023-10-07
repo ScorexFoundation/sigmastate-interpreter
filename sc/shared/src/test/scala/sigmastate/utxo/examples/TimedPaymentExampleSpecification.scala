@@ -4,11 +4,11 @@ import org.ergoplatform._
 import sigma.ast.{ErgoTree, IntConstant}
 import sigma.data.AvlTreeData
 import sigmastate._
-import sigmastate.exceptions.InterpreterException
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigma.ast.defs._
+import sigma.exceptions.InterpreterException
 
 class TimedPaymentExampleSpecification extends CompilerTestingCommons
   with CompilerCrossVersionProps {

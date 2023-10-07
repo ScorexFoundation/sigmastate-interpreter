@@ -13,11 +13,11 @@ import sigma.validation.ValidationRules.CheckTypeCode
 import ErgoTree.HeaderType
 import SCollectionMethods.checkValidFlatmap
 import sigmastate.eval.{CBox, Profiler}
-import sigmastate.exceptions.{CostLimitException, InterpreterException}
 import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}
 import sigmastate.interpreter.Interpreter.ReductionResult
 import sigmastate.interpreter.{ErgoTreeEvaluator, EvalSettings}
 import sigma.ast.defs._
+import sigma.exceptions.{CostLimitException, InterpreterException}
 import sigmastate.lang.{CompilerSettings, SourceContext}
 import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.Plus

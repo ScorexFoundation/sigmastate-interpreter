@@ -19,10 +19,10 @@ import sigmastate._
 import sigmastate.crypto.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
 import sigmastate.crypto._
 import sigmastate.eval.{Profiler, SigmaDsl, addCostChecked}
-import sigmastate.exceptions.{CostLimitException, InterpreterException}
 import sigmastate.interpreter.ErgoTreeEvaluator.fixedCostOp
 import sigmastate.interpreter.Interpreter._
 import sigma.ast.defs.ValueOps
+import sigma.exceptions.{CostLimitException, InterpreterException}
 import sigmastate.utils.Helpers._
 
 import scala.util.{Success, Try}

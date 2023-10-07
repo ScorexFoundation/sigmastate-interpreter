@@ -1,22 +1,16 @@
 package org.ergoplatform
 
-import sigma.ast._
-import sigmastate._
-import sigmastate.eval.Extensions._
-import sigmastate.eval._
-import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
-import sigmastate.interpreter.{ContextExtension, ErgoTreeEvaluator, Interpreter, InterpreterContext}
-import sigmastate.exceptions.InterpreterException
-import sigma.serialization.OpCodes
-import sigma.Coll
-import sigma.{AnyValue, Header, PreHeader}
 import debox.cfor
 import sigma.Extensions.ArrayOps
-import sigma.ast.{SBox, SCollection, SContext, SFunc, SGlobal, SInt, SType, SUnit}
 import sigma.ast.SType.{AnyOps, TypeCode}
+import sigma.ast._
 import sigma.data.{AvlTreeData, CAvlTree, SigmaConstants}
+import sigma.exceptions.InterpreterException
 import sigma.validation.SigmaValidationSettings
-import sigma.serialization.ValueCodes.OpCode
+import sigma.{AnyValue, Coll, Header, PreHeader}
+import sigmastate.eval.Extensions._
+import sigmastate.eval._
+import sigmastate.interpreter.{ContextExtension, Interpreter, InterpreterContext}
 
 /** Represents a script evaluation context to be passed to a prover and a verifier to execute and
   * validate guarding proposition of input boxes of a transaction.
