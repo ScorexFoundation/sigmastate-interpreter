@@ -10,7 +10,7 @@ import sigma.ast.defs.SValue
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import SigmaPredef.PredefinedFuncRegistry
 import sigma.ast.defs._
-import sigmastate.exceptions.{BinderException, InvalidArguments}
+import sigma.exceptions.{BinderException, InvalidArguments}
 
 object SrcCtxCallbackRewriter extends CallbackRewriter {
   override def rewriting[T](oldTerm: T, newTerm: T): T = (oldTerm, newTerm) match {

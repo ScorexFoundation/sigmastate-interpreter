@@ -3,7 +3,7 @@ package sigma.serialization
 import debox.cfor
 import scorex.util.encode.Base16
 import sigma.Extensions.ArrayOps
-import sigma.ast.{FixedCost, JitCost, PerItemCost}
+import sigma.ast.{FixedCost, JitCost, NamedDesc, OperationCostInfo, PerItemCost}
 import sigma.crypto.{BigIntegers, CryptoConstants}
 import sigma.data.{CAND, COR, CTHRESHOLD, ProveDHTuple, ProveDlog, SigmaBoolean}
 import sigma.util.safeNewArray
@@ -12,7 +12,7 @@ import sigmastate.crypto.DLogProtocol.SecondDLogProverMessage
 import sigmastate.crypto.VerifierMessage.Challenge
 import sigmastate.crypto.{GF2_192_Poly, SecondDHTupleProverMessage}
 import sigmastate.interpreter.ErgoTreeEvaluator.{fixedCostOp, perItemCostOp}
-import sigmastate.interpreter.{ErgoTreeEvaluator, NamedDesc, OperationCostInfo}
+import sigmastate.interpreter.ErgoTreeEvaluator
 import sigmastate.utils.Helpers
 
 /** Contains implementation of signature (aka proof) serialization.

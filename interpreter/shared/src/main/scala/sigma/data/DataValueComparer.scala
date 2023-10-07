@@ -2,10 +2,10 @@ package sigma.data
 
 import debox.{cfor, sp}
 import sigma._
-import sigma.ast.{FixedCost, JitCost, PerItemCost}
+import sigma.ast.{FixedCost, JitCost, NamedDesc, OperationCostInfo, PerItemCost}
 import sigma.crypto.EcPointType
 import sigmastate.eval.SigmaDsl
-import sigmastate.interpreter.{ErgoTreeEvaluator, NamedDesc, OperationCostInfo}
+import sigmastate.interpreter.ErgoTreeEvaluator
 
 /** Implementation of data equality for two arbitrary ErgoTree data types.
   * @see [[DataValueComparer.equalDataValues]]

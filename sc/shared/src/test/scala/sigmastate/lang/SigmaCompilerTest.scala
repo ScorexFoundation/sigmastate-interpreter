@@ -6,10 +6,10 @@ import scorex.util.encode.Base58
 import sigma.ast.{ByIndex, ExtractAmount, GetVar, _}
 import sigma.ast.defs._
 import sigmastate._
-import sigmastate.exceptions.{GraphBuildingException, InvalidArguments, TyperException}
 import sigmastate.helpers.CompilerTestingCommons
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigma.ast.{Apply, MethodCall, ZKProofBlock}
+import sigma.exceptions.{GraphBuildingException, InvalidArguments, TyperException}
 import sigma.serialization.ValueSerializer
 import sigma.serialization.generators.ObjectGenerators
 import scala.annotation.unused

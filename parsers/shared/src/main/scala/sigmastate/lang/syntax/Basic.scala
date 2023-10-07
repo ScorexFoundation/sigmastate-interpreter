@@ -5,7 +5,7 @@ import NoWhitespace._
 import fastparse.CharPredicates._
 import sigma.ast.SourceContext
 import sigma.data.Nullable
-import sigmastate.exceptions.CompilerException
+import sigma.exceptions.CompilerException
 
 /** Basic lexical parsers for ErgoScript. */
 object Basic {

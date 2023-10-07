@@ -1,4 +1,4 @@
-package sigmastate.exceptions
+package sigma.exceptions
 
 import sigma.SigmaException
 import sigma.ast.SourceContext

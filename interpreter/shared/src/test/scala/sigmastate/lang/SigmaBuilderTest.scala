@@ -9,10 +9,9 @@ import sigma.ast._
 import sigmastate._
 import sigma.Extensions.ArrayOps
 import sigmastate.eval.{CBox, SigmaDsl}
-import sigmastate.exceptions.ConstraintFailed
 import sigma.serialization.OpCodes
 import sigma.SigmaTestingData
-
+import sigma.exceptions.ConstraintFailed
 import java.math.BigInteger
 
 class SigmaBuilderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers

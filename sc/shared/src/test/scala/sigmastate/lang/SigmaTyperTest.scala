@@ -13,13 +13,13 @@ import sigma.crypto.CryptoConstants
 import sigma.data.ProveDlog
 import sigmastate._
 import sigmastate.crypto.DLogProtocol.DLogProverInput
-import sigmastate.exceptions.TyperException
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import SigmaPredef._
 import sigmastate.lang.syntax.ParserException
 import sigma.serialization.ErgoTreeSerializer
 import sigma.serialization.generators.ObjectGenerators
 import sigma.ast.Select
+import sigma.exceptions.TyperException
 
 class SigmaTyperTest extends AnyPropSpec
   with ScalaCheckPropertyChecks with Matchers with LangTests with ObjectGenerators {

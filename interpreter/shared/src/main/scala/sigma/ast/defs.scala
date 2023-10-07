@@ -5,16 +5,15 @@ import sigma.data.{AvlTreeData, CSigmaProp, GeneralType, Nullable, RType, SigmaB
 import ErgoTree.HeaderType
 import org.ergoplatform.{ErgoBox, ErgoBoxCandidate}
 import sigma.kiama.rewriting.Rewriter.{everywherebu, rewrite, rule}
-import sigmastate._
 import StdSigmaBuilder.mkUpcast
-import sigma.InterpreterReflection
+import sigma.SigmaDataReflection
 
 import scala.annotation.nowarn
 import scala.reflect.classTag
 
 object defs {
   /** Force initialization of reflection. */
-  val reflection = InterpreterReflection
+  val reflection = SigmaDataReflection
 
   type SValue = Value[SType]
 

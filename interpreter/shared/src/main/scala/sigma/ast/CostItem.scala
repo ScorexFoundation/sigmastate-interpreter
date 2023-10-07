@@ -2,7 +2,6 @@ package sigma.ast
 
 import sigma.ast
 import sigma.eval.CostDetails
-import sigmastate.interpreter.{MethodDesc, OperationDesc}
 
 /** An item in the cost accumulation trace of a [[sigma.ast.ErgoTree]] evaluation. */
 abstract class CostItem {

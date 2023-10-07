@@ -3,12 +3,12 @@ package sigmastate
 import debox.cfor
 import sigma.data.{CAND, COR, CTHRESHOLD, ProveDHTuple, ProveDlog, SigmaBoolean, SigmaLeaf}
 import sigma.ast.ErgoTree.ZeroHeader
-import sigma.ast.{ErgoTree, FixedCost, JitCost, SigmaPropConstant}
+import sigma.ast.{ErgoTree, FixedCost, JitCost, NamedDesc, OperationCostInfo, SigmaPropConstant}
 import sigmastate.crypto.DLogProtocol.FirstDLogProverMessage
 import sigmastate.crypto.VerifierMessage.Challenge
 import sigmastate.crypto.{FirstDHTupleProverMessage, FirstProverMessage, GF2_192_Poly}
 import sigmastate.interpreter.ErgoTreeEvaluator.fixedCostOp
-import sigmastate.interpreter.{ErgoTreeEvaluator, NamedDesc, OperationCostInfo}
+import sigmastate.interpreter.ErgoTreeEvaluator
 import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigma.serialization.{SigmaByteWriter, SigmaSerializer}
 import java.math.BigInteger

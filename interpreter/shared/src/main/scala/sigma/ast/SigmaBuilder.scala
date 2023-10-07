@@ -7,12 +7,11 @@ import sigma.ast.SCollection.{SByteArray, SIntArray}
 import sigma.ast.SOption.SIntOption
 import sigma.ast.defs._
 import sigma.data.Nullable
+import sigma.exceptions.ConstraintFailed
 import sigma.serialization.OpCodes
 import sigma.serialization.ValueCodes.OpCode
 import sigma.{AnyValue, Coll, Colls, Environment, Evaluation}
 import sigmastate._
-import sigmastate.exceptions.ConstraintFailed
-
 import scala.util.DynamicVariable
 
 /** Abstract interface of ErgoTree node builders.

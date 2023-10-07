@@ -3,7 +3,7 @@ package sigma.ast
 import scala.runtime.Statics
 
 /** Cost descriptor of a single operation, usually associated with
-  * [[sigmastate.interpreter.OperationDesc]].
+  * [[OperationDesc]].
   */
 sealed abstract class CostKind
 

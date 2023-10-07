@@ -12,9 +12,9 @@ import sigma.data.ExactIntegral.{ByteIsExactIntegral, IntIsExactIntegral, LongIs
 import sigma.data.ExactOrdering.{ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering, ShortIsExactOrdering}
 import sigma.data.{ExactIntegral, ExactNumeric, ExactOrdering, Lazy, Nullable}
 import sigma.util.Extensions.ByteOps
-import sigmastate.exceptions.GraphBuildingException
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigma.ast.{Ident, Select, Val}
+import sigma.exceptions.GraphBuildingException
 import sigma.serialization.OpCodes
 
 import scala.collection.mutable.ArrayBuffer

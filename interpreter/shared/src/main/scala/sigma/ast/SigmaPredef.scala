@@ -8,9 +8,9 @@ import sigma.ast.SOption.SIntOption
 import sigma.ast.SigmaPropConstant
 import sigma.ast.defs._
 import sigma.data.Nullable
+import sigma.exceptions.InvalidArguments
 import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma.serialization.ValueSerializer
-import sigmastate.exceptions.InvalidArguments
 
 object SigmaPredef {
 
