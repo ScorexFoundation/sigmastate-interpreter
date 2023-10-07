@@ -8,7 +8,7 @@ import sigma.ast.defs.{CollectionConstant, GetVarByteArray, OptionValueOps}
 import sigmastate._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.helpers._
-import sigmastate.lang.Terms._
+import sigma.ast.defs._
 
 class AtomicSwapExampleSpecification extends CompilerTestingCommons with CompilerCrossVersionProps {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext

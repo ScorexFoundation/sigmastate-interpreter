@@ -20,7 +20,7 @@ import sigma.util.Extensions._
 import sigma.util.StringUtil.StringUtilExtensions
 import sigma.ast.ErgoTree.ZeroHeader
 import sigma.ast.SType.AnyOps
-import sigma.ast.defs.SValue
+import sigma.ast.defs.{SValue, ValueOps}
 import sigma.ast._
 import sigma.eval.CostDetails
 import sigmastate.crypto.DLogProtocol.DLogProverInput
@@ -31,7 +31,7 @@ import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaPPrint}
 import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
 import sigmastate.interpreter._
-import sigmastate.lang.Terms.{Apply, ValueOps}
+import sigmastate.lang.Terms.Apply
 import sigma.serialization.ValueSerializer
 import sigma.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers._

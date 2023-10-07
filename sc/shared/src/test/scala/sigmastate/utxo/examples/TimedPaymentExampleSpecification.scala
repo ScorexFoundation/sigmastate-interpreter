@@ -8,7 +8,7 @@ import sigmastate.exceptions.InterpreterException
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
-import sigmastate.lang.Terms._
+import sigma.ast.defs._
 
 class TimedPaymentExampleSpecification extends CompilerTestingCommons
   with CompilerCrossVersionProps {

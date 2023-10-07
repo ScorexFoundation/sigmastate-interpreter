@@ -8,13 +8,13 @@ import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import sigma.ast.SCollection.{SByteArray, SLongArray}
 import sigma.ast._
-import sigma.ast._
 import sigma.ast.defs.SValue
 import sigmastate._
 import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
-import sigmastate.lang.Terms._
+import sigma.ast.defs._
 import sigmastate.lang.syntax.ParserException
 import sigma.serialization.OpCodes
+import sigmastate.lang.Terms.{Apply, ApplyTypes, Block, Ident, Lambda, MethodCallLike, Select, Val}
 
 class SigmaParserTest extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers with LangTests {
   import StdSigmaBuilder._

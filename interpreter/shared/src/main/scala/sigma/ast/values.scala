@@ -16,7 +16,6 @@ import sigmastate.exceptions.InterpreterException
 import sigmastate.interpreter.ErgoTreeEvaluator._
 import sigmastate.interpreter.{CompanionDesc, ErgoTreeEvaluator, Interpreter, NamedDesc}
 import sigmastate.lang.SourceContext
-import sigmastate.lang.Terms._
 import sigma.serialization.OpCodes._
 import sigma.serialization.ValueCodes.OpCode
 import sigma.serialization._

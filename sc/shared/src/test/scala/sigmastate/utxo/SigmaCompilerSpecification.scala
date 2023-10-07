@@ -6,7 +6,7 @@ import sigma.ast._
 import sigma.ast.defs.{GetVarInt, OptionValueOps}
 import sigmastate.helpers.CompilerTestingCommons
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.Terms._
+import sigma.ast.defs._
 
 /**
   * Specification for compile function

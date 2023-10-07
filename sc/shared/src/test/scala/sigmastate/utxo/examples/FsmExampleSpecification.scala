@@ -13,7 +13,6 @@ import sigma.ast.defs._
 import sigma.data.{AvlTreeData, AvlTreeFlags}
 import sigmastate.eval.Extensions.SigmaBooleanOps
 import sigmastate.eval._
-import sigmastate.lang.Terms._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}

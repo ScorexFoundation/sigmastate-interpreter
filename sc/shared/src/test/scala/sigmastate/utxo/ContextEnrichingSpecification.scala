@@ -5,7 +5,6 @@ import scorex.crypto.hash.Blake2b256
 import sigma.ast._
 import sigma.ast.defs._
 import sigmastate._
-import sigmastate.lang.Terms._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, CompilerTestingCommons}
 import sigma.Coll
 

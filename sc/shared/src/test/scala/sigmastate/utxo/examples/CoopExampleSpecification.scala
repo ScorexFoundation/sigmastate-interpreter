@@ -10,7 +10,7 @@ import sigma.ast.{BooleanConstant, ByteArrayConstant, ErgoTree}
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
-import sigmastate.lang.Terms._
+import sigma.ast.defs._
 import sigmastate.{CompilerCrossVersionProps}
 
 class CoopExampleSpecification extends CompilerTestingCommons

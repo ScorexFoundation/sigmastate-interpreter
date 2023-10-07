@@ -21,7 +21,7 @@ import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.interpreter.Interpreter
-import sigmastate.lang.Terms._
+import sigma.ast.defs._
 import sigma.serialization.ErgoTreeSerializer
 import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
 

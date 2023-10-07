@@ -1,10 +1,9 @@
 package sigma.serialization
 
 import sigma.ast.{SType, TwoArgumentOperationCompanion, TwoArgumentsOperation}
-import sigma.ast.defs.SValue
 import sigma.serialization.CoreByteWriter.DataInfo
 import sigma.ast.Value
-import sigmastate.lang.Terms._
+import sigma.ast.defs._
 import SigmaByteWriter._
 
 case class TwoArgumentsSerializer[LIV <: SType, RIV <: SType, OV <: Value[SType]]

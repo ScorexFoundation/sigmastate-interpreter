@@ -11,7 +11,7 @@ import sigma.validation.ValidationRules.CheckTypeWithMethods
 import sigma.{Coll, Evaluation}
 import sigmastate.interpreter._
 import sigmastate.lang.SigmaBuilder
-import sigmastate.lang.Terms.{MethodCall, OperationId}
+import sigmastate.lang.Terms.MethodCall
 
 import scala.collection.compat.immutable.ArraySeq
 import scala.reflect.ClassTag
@@ -162,11 +162,6 @@ case class SMethod(
 
   /** Name of a language operation represented by this method. */
   def opName = objType.getClass.getSimpleName + "." + name
-
-  /** Returns [[OperationId]] for AOT costing. */
-  def opId: OperationId = {
-    OperationId(opName, stype)
-  }
 
   /** Specializes this instance by creating a new [[SMethod]] instance where signature
     * is specialized with respect to the given object and args types. It is used in

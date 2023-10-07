@@ -3,7 +3,7 @@ package sigma.serialization
 import sigma.Evaluation
 import sigma.ast.defs.{IntConstant, OptionValueOps}
 import sigma.ast._
-import sigmastate.lang.Terms._
+import sigma.ast.defs._
 import scala.util.Random
 
 class ConcreteCollectionSerializerSpecification extends TableSerializationSpecification {

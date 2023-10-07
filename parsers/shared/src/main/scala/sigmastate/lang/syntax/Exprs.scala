@@ -3,8 +3,8 @@ package sigmastate.lang.syntax
 import fastparse._
 import ScalaWhitespace._
 import sigma.ast._
-import sigma.ast.defs.SValue
-import sigmastate.lang.Terms.{Ident, Val, ValueOps}
+import sigma.ast.defs.{SValue, ValueOps}
+import sigmastate.lang.Terms.{Ident, Val}
 import sigmastate.lang._
 import sigmastate.lang.SigmaPredef._
 import sigmastate.lang.syntax.Basic._

@@ -9,7 +9,6 @@ import ErgoTree.{HeaderType, ZeroHeader}
 import sigma.crypto.CryptoConstants
 import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate._
-import sigmastate.lang.Terms.ValueOps
 
 object ErgoTreePredef {
   /** Create ErgoTree with `false` proposition, which is never true.

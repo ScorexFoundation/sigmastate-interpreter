@@ -3,7 +3,7 @@ package sigma.serialization.transformers
 import sigma.ast.defs.SigmaPropValue
 import sigma.ast.{AtLeast, SCollection, SInt, SSigmaProp, Value}
 import sigma.ast.Operations.AtLeastInfo
-import sigmastate.lang.Terms._
+import sigma.ast.defs._
 import sigma.serialization.{SigmaByteReader, SigmaByteWriter, ValueSerializer}
 import sigma.serialization.SigmaByteWriter._
 

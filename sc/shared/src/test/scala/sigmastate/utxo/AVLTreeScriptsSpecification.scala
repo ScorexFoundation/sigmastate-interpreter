@@ -16,7 +16,7 @@ import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingIn
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.interpreter.ProverResult
-import sigmastate.lang.Terms._
+import sigma.ast.defs._
 import sigma.Coll
 import sigma.ast.SAvlTree
 import sigma.ast.defs.{GetVarByteArray, OptionValueOps}

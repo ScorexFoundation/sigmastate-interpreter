@@ -3,7 +3,7 @@ package sigmastate.eval
 
 import sigma.ast._
 import org.ergoplatform._
-import sigmastate.lang.Terms.ValueOps
+import sigma.ast.defs.ValueOps
 import sigma.serialization.OpCodes._
 import sigma.serialization.ConstantStore
 import sigma.ast.defs._

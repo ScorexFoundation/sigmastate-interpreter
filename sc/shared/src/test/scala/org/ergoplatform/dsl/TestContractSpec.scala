@@ -17,7 +17,7 @@ import sigma.ast.EvaluatedValue
 import sigmastate.eval.IRContext
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
-import sigmastate.lang.Terms.ValueOps
+import sigma.ast.defs.ValueOps
 import sigma.{AnyValue, Evaluation, SigmaProp}
 import ErgoTree.ZeroHeader
 

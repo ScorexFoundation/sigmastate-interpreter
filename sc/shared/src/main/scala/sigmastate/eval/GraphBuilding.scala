@@ -6,7 +6,7 @@ import sigma.{SigmaException, ast}
 import sigma.ast.TypeCodes.LastConstantCode
 import sigma.ast.Value.Typed
 import sigma.ast._
-import sigma.ast.defs.SValue
+import sigma.ast.defs.{SValue, ValueOps}
 import sigma.crypto.EcPointType
 import sigma.data.ExactIntegral.{ByteIsExactIntegral, IntIsExactIntegral, LongIsExactIntegral, ShortIsExactIntegral}
 import sigma.data.ExactOrdering.{ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering, ShortIsExactOrdering}
@@ -14,7 +14,7 @@ import sigma.data.{ExactIntegral, ExactNumeric, ExactOrdering, Lazy, Nullable}
 import sigma.util.Extensions.ByteOps
 import sigmastate.exceptions.GraphBuildingException
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.Terms.{Ident, Select, Val, ValueOps}
+import sigmastate.lang.Terms.{Ident, Select, Val}
 import sigmastate.lang.{SourceContext, Terms}
 import sigma.serialization.OpCodes
 

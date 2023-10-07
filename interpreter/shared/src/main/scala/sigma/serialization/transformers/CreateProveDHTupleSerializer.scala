@@ -3,7 +3,7 @@ package sigma.serialization.transformers
 import sigma.ast.{CreateProveDHTuple, SGroupElement}
 import sigma.ast.defs.SigmaPropValue
 import sigma.ast.Value
-import sigmastate.lang.Terms._
+import sigma.ast.defs._
 import sigma.serialization._
 import SigmaByteWriter._
 

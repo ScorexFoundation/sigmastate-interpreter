@@ -1,8 +1,7 @@
 package sigma.ast
 
-import org.ergoplatform._
-import sigmastate.lang.Terms._
 import sigma.serialization.ValueCodes.OpCode
+import sigmastate.lang.Terms.Apply
 
 object ComplexityTable {
 

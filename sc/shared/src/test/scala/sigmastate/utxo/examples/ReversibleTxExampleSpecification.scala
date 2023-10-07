@@ -9,7 +9,7 @@ import sigmastate._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
-import sigmastate.lang.Terms._
+import sigma.ast.defs._
 
 
 class ReversibleTxExampleSpecification extends CompilerTestingCommons

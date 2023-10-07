@@ -4,7 +4,6 @@ import sigma.ast.LogicalNot
 import sigma.serialization.CoreByteWriter.DataInfo
 import sigma.ast.Operations.LogicalNotInfo.inputArg
 import sigma.ast.defs._
-import sigmastate.lang.Terms._
 import SigmaByteWriter._
 
 case class LogicalNotSerializer(cons: BoolValue => BoolValue)

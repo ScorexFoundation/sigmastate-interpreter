@@ -3,7 +3,6 @@ package sigma.serialization
 import sigma.ast._
 import sigma.ast.defs._
 import sigma.serialization.CoreByteWriter.DataInfo
-import sigmastate.lang.Terms._
 import SigmaByteWriter._
 
 case class BoolToSigmaPropSerializer(cons: BoolValue => SigmaPropValue) extends ValueSerializer[BoolToSigmaProp] {

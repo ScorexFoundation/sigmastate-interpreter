@@ -1,9 +1,8 @@
 package sigma.serialization
 
 import sigma.ast.SCollection.{SByteArray, SIntArray}
-import sigma.ast.defs.SValue
 import sigma.ast.{SubstConstants, Value}
-import sigmastate.lang.Terms._
+import sigma.ast.defs._
 import SigmaByteWriter._
 import sigma.ast.{SCollection, SType}
 import sigma.serialization.CoreByteWriter.DataInfo

@@ -2,8 +2,7 @@ package sigma.serialization
 
 import sigma.ast.{SType, SigmaPropBytes, Value}
 import sigma.serialization.CoreByteWriter.DataInfo
-import sigma.ast.defs.SValue
-import sigmastate.lang.Terms._
+import sigma.ast.defs._
 import SigmaByteWriter._
 
 object SigmaPropBytesSerializer extends ValueSerializer[SigmaPropBytes] {

@@ -1,9 +1,8 @@
 package sigma.serialization
 
-import sigma.ast.defs.SValue
 import sigma.ast._
 import sigma.serialization.CoreByteWriter.DataInfo
-import sigmastate.lang.Terms._
+import sigma.ast.defs._
 import SigmaByteWriter._
 
 case class OptionGetOrElseSerializer(cons: (Value[SOption[SType]], Value[SType]) => Value[SType])

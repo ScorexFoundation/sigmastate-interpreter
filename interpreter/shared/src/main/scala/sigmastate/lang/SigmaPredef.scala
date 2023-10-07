@@ -9,10 +9,9 @@ import sigma.ast.SOption.SIntOption
 import sigma.ast.{SigmaPropConstant, _}
 import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma.ast.defs._
-import sigmastate._
-import sigmastate.lang.Terms._
 import sigmastate.exceptions.InvalidArguments
 import sigma.serialization.ValueSerializer
+import sigmastate.lang.Terms.{Apply, Ident, Lambda, MethodCall, ZKProofBlock}
 
 object SigmaPredef {
 

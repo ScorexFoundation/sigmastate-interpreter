@@ -6,7 +6,7 @@ import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import sigma.ast.SType
 import sigma.ast.defs.SigmaPropValue
 import sigma.ast.Value
-import sigmastate.lang.Terms.ValueOps
+import sigma.ast.defs.ValueOps
 
 object ErgoScriptPredef {
   import sigmastate.interpreter.Interpreter._

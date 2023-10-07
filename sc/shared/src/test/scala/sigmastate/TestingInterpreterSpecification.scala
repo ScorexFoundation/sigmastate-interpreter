@@ -6,7 +6,7 @@ import sigma.ast._
 import sigma.ast.defs._
 import sigmastate.interpreter._
 import Interpreter._
-import sigmastate.lang.Terms._
+import sigma.ast.defs._
 import org.ergoplatform._
 import org.scalatest.BeforeAndAfterAll
 import scorex.util.encode.Base58

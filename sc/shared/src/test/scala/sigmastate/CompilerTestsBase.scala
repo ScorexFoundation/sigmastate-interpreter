@@ -8,7 +8,7 @@ import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import sigma.ast.defs.{SValue, SigmaPropValue}
 import sigma.serialization.ValueSerializer
 import sigmastate.eval.IRContext
-import sigmastate.lang.Terms.ValueOps
+import sigma.ast.defs.ValueOps
 
 trait CompilerTestsBase extends TestsBase {
   protected val _lowerMethodCalls = new DynamicVariable[Boolean](true)

@@ -19,7 +19,7 @@ import sigmastate.helpers._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}
-import sigmastate.lang.Terms._
+import sigma.ast.defs._
 import sigma.serialization.{SerializationSpecification, ValueSerializer}
 import sigmastate.utils.Helpers._
 

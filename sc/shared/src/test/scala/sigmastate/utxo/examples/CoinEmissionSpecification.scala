@@ -10,7 +10,7 @@ import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.lang.Terms._
+import sigma.ast.defs._
 import sigmastate.utxo.blockchain.BlockchainSimulationTestingCommons._
 
 /**

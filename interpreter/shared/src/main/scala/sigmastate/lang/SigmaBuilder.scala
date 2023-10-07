@@ -11,9 +11,9 @@ import sigma.{AnyValue, Coll, Colls, Environment, Evaluation}
 import sigmastate._
 import sigmastate.exceptions.ConstraintFailed
 import sigmastate.lang.Constraints._
-import sigmastate.lang.Terms._
 import sigma.serialization.OpCodes
 import sigma.serialization.ValueCodes.OpCode
+import sigmastate.lang.Terms._
 
 import scala.util.DynamicVariable
 

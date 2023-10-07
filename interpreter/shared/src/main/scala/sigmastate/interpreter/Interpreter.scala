@@ -22,7 +22,7 @@ import sigmastate.eval.{Profiler, SigmaDsl, addCostChecked}
 import sigmastate.exceptions.{CostLimitException, InterpreterException}
 import sigmastate.interpreter.ErgoTreeEvaluator.fixedCostOp
 import sigmastate.interpreter.Interpreter._
-import sigmastate.lang.Terms.ValueOps
+import sigma.ast.defs.ValueOps
 import sigmastate.utils.Helpers._
 
 import scala.util.{Success, Try}

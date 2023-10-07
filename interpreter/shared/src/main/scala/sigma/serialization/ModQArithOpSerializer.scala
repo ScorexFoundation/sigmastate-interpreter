@@ -1,10 +1,9 @@
 package sigma.serialization
 
 import sigma.ast.{ModQArithOp, ModQArithOpCompanion, SType}
-import sigma.ast.defs.{BigIntValue, SValue}
+import sigma.ast.defs.{BigIntValue, SValue, ValueOps}
 import sigma.serialization.CoreByteWriter.DataInfo
 import sigma.ast.Value
-import sigmastate.lang.Terms._
 import SigmaByteWriter._
 
 // TODO v6.0: make sure it is covered with tests (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/327)

@@ -4,16 +4,16 @@ import sigma.ast._
 import sigmastate._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
-import sigmastate.lang.Terms._
+import sigma.ast.defs._
 import org.ergoplatform._
 import sigma.ast.SCollection._
-import sigma.ast.defs._
 import sigma.data.AvlTreeData
 import SCollectionMethods.{FlatMapMethod, IndexOfMethod, IndicesMethod, PatchMethod, UpdateManyMethod, UpdatedMethod}
 import sigma.ast
 import sigmastate.eval.Extensions.SigmaBooleanOps
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigma.serialization.OpCodes._
+import sigmastate.lang.Terms.MethodCall
 import sigmastate.utils.Helpers._
 
 class CollectionOperationsSpecification extends CompilerTestingCommons

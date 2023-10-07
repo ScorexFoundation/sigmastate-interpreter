@@ -12,7 +12,7 @@ import sigma.ast.defs._
 import sigma.data.{CSigmaProp, Digest32Coll, TrivialProp}
 import sigma.ast.{BlockValue, ByteArrayConstant, LongConstant, ValDef, ValUse, Value}
 import sigmastate.eval.Extensions._
-import sigmastate.lang.Terms.ValueOps
+import sigma.ast.defs.ValueOps
 
 /** An example of an atomic ergo <=> asset exchange.
   * Let's assume that Alice is willing to buy 60 assets of type "token1" for 100 ergo coins, and Bob

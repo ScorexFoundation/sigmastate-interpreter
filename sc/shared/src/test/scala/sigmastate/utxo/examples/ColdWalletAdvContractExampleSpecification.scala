@@ -8,7 +8,7 @@ import sigma.ast.{ErgoTree, IntConstant, LongConstant}
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
-import sigmastate.lang.Terms._
+import sigma.ast.defs._
 
 
 class ColdWalletAdvContractExampleSpecification extends CompilerTestingCommons

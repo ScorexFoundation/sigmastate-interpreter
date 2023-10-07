@@ -1,7 +1,7 @@
 package sigma.serialization
 
 import sigma.ast.{SType, SigmaPropIsProven, Value}
-import sigmastate.lang.Terms._
+import sigma.ast.defs._
 
 object SigmaPropIsProvenSerializer extends ValueSerializer[SigmaPropIsProven] {
   override def opDesc = SigmaPropIsProven

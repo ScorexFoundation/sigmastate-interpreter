@@ -4,7 +4,7 @@ import sigma.ast.{CreateProveDlog, SGroupElement}
 import sigma.serialization.CoreByteWriter._
 import sigma.ast.Value
 import sigma.ast.defs._
-import sigmastate.lang.Terms.ValueOps
+import sigma.ast.defs.ValueOps
 import SigmaByteWriter._
 
 case class CreateProveDlogSerializer(cons: Value[SGroupElement.type] => SigmaPropValue)

@@ -7,7 +7,7 @@ import scorex.crypto.authds.avltree.batch.{Insert, Lookup, Remove, Update}
 import scorex.crypto.authds.{ADKey, ADValue}
 import sigma.ast.SCollection.{SBooleanArray, SBoxArray, SByteArray, SByteArray2, SHeaderArray}
 import sigma.ast.SType.TypeCode
-import sigma.ast.defs.SValue
+import sigma.ast.defs.{SValue, ValueOps}
 import sigma.data.{Nullable, RType, SigmaConstants}
 import sigma.reflection.RClass
 import sigma.serialization.CoreByteWriter.ArgInfo
@@ -16,10 +16,10 @@ import SMethod.{MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
 import sigma.eval.{CostDetails, TracedCost}
 import sigmastate.eval._
 import sigmastate.interpreter._
-import sigmastate.lang.Terms._
 import sigma.utils.Overloading.Overload1
 import sigma.utils.SparseArrayContainer
 import sigmastate._
+import sigmastate.lang.Terms.{MethodCall, PropertyCall}
 
 import scala.language.implicitConversions
 import scala.util.{Failure, Success}

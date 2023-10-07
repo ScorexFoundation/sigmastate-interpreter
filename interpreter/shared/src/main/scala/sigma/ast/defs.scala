@@ -1,10 +1,13 @@
 package sigma.ast
 
 import sigma.ast.SCollection.{SByteArray, SIntArray}
-import sigma.data.{AvlTreeData, CSigmaProp, GeneralType, RType, SigmaBoolean, TrivialProp}
+import sigma.data.{AvlTreeData, CSigmaProp, GeneralType, Nullable, RType, SigmaBoolean, TrivialProp}
 import ErgoTree.HeaderType
 import org.ergoplatform.{ErgoBox, ErgoBoxCandidate}
+import sigma.kiama.rewriting.Rewriter.{everywherebu, rewrite, rule}
 import sigmastate._
+import sigmastate.lang.SourceContext
+import sigmastate.lang.StdSigmaBuilder.mkUpcast
 
 import scala.annotation.nowarn
 import scala.reflect.classTag
@@ -141,4 +144,72 @@ object defs {
 
   implicit val AvlTreeDataRType: RType[AvlTreeData] = GeneralType(classTag[AvlTreeData])
 
+  implicit class ValueOps(val v: Value[SType]) extends AnyVal {
+    def asValue[T <: SType]: Value[T] = v.asInstanceOf[Value[T]]
+
+    def asNumValue: Value[SNumericType] = v.asInstanceOf[Value[SNumericType]]
+
+    def asBoolValue: Value[SBoolean.type] = v.asInstanceOf[Value[SBoolean.type]]
+
+    def asByteValue: Value[SByte.type] = v.asInstanceOf[Value[SByte.type]]
+
+    def asIntValue: Value[SInt.type] = v.asInstanceOf[Value[SInt.type]]
+
+    def asBigInt: Value[SBigInt.type] = v.asInstanceOf[Value[SBigInt.type]]
+
+    def asBox: Value[SBox.type] = v.asInstanceOf[Value[SBox.type]]
+
+    def asGroupElement: Value[SGroupElement.type] = v.asInstanceOf[Value[SGroupElement.type]]
+
+    def asSigmaProp: Value[SSigmaProp.type] = v.asInstanceOf[Value[SSigmaProp.type]]
+
+    def asByteArray: Value[SByteArray] = v.asInstanceOf[Value[SByteArray]]
+
+    def asIntArray: Value[SIntArray] = v.asInstanceOf[Value[SIntArray]]
+
+    def asCollection[T <: SType]: Value[SCollection[T]] = v.asInstanceOf[Value[SCollection[T]]]
+
+    def asOption[T <: SType]: Value[SOption[T]] = v.asInstanceOf[Value[SOption[T]]]
+
+    def asTuple: Value[STuple] = v.asInstanceOf[Value[STuple]]
+
+    def asFunc: Value[SFunc] = v.asInstanceOf[Value[SFunc]]
+
+    def upcastTo[T <: SNumericType](targetType: T): Value[T] = {
+      assert(v.tpe.isInstanceOf[SNumericType],
+        s"Cannot upcast value of type ${v.tpe} to $targetType: only numeric types can be upcasted.")
+      val tV = v.asValue[SNumericType]
+      assert(targetType.max(tV.tpe) == targetType,
+        s"Invalid upcast from $tV to $targetType: target type should be larger than source type.")
+      if (targetType == tV.tpe) v.asValue[T]
+      else
+        mkUpcast(tV, targetType).withSrcCtx(v.sourceContext)
+    }
+
+    def withSrcCtx[T <: SType](sourceContext: Nullable[SourceContext]): Value[T] = {
+      v.sourceContext = sourceContext
+      v.asValue[T]
+    }
+
+    /**
+      * Set source context only if it's empty
+      */
+    def withEnsuredSrcCtx[T <: SType](sourceContext: Nullable[SourceContext]): Value[T] = {
+      if (v.sourceContext.isEmpty) v.sourceContext = sourceContext
+      v.asValue[T]
+    }
+
+    /**
+      * Set source context to all nodes missing source context in the given tree.
+      *
+      * @param srcCtx source context to set
+      * @return AST where all nodes with missing source context are set to the given srcCtx
+      */
+    def withPropagatedSrcCtx[T <: SType](srcCtx: Nullable[SourceContext]): Value[T] = {
+      rewrite(everywherebu(rule[Any] {
+        case node: SValue if node != null && node.sourceContext.isEmpty =>
+          node.withSrcCtx(srcCtx)
+      }))(v).asValue[T]
+    }
+  }
 }

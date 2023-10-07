@@ -8,7 +8,7 @@ import sigmastate._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension
-import sigmastate.lang.Terms._
+import sigma.ast.defs._
 
 class DemurrageExampleSpecification extends CompilerTestingCommons
   with CompilerCrossVersionProps {

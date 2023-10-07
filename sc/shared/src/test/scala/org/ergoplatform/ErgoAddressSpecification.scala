@@ -14,7 +14,7 @@ import sigma.crypto.CryptoConstants.dlogGroup
 import sigmastate.exceptions.CostLimitException
 import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}
-import sigmastate.lang.Terms.ValueOps
+import sigma.ast.defs.ValueOps
 import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigma.serialization.ValueSerializer
 import sigmastate.utils.Helpers._

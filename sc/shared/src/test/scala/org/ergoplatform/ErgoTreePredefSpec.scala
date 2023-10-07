@@ -18,7 +18,7 @@ import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingIn
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.interpreter.{ContextExtension, ProverResult}
-import sigmastate.lang.Terms.ValueOps
+import sigma.ast.defs.ValueOps
 import sigma.serialization.ValueSerializer
 import sigmastate.utils.Helpers._
 

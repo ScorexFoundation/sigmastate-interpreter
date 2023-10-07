@@ -2,7 +2,7 @@ package sigma.serialization.transformers
 
 import sigma.ast.defs.SValue
 import sigma.ast.{Fold, Value}
-import sigmastate.lang.Terms._
+import sigma.ast.defs._
 import sigma.serialization.{SigmaByteReader, SigmaByteWriter, ValueSerializer}
 import sigma.serialization.SigmaByteWriter._
 import sigma.ast.{SCollection, SFunc, SType}

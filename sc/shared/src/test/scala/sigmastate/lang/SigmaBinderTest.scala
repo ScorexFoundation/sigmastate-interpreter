@@ -10,6 +10,7 @@ import sigma.ast.defs.SValue
 import sigmastate._
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
+import sigma.ast.defs._
 import sigmastate.lang.Terms._
 import sigmastate.exceptions.BinderException
 import sigmastate.eval._

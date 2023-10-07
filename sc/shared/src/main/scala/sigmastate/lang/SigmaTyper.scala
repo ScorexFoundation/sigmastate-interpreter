@@ -8,8 +8,10 @@ import sigma.data.{Nullable, SigmaBoolean}
 import sigma.util.Extensions.Ensuring
 import sigmastate.exceptions._
 import sigmastate.lang.SigmaPredef._
+import sigma.ast.defs._
 import sigmastate.lang.Terms._
 import sigma.serialization.OpCodes
+import sigmastate.lang.Terms.{Block, Val}
 
 import scala.collection.mutable.ArrayBuffer
 

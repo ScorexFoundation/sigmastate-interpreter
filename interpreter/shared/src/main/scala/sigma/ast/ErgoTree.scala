@@ -10,7 +10,7 @@ import sigma.data.SigmaBoolean
 import sigma.kiama.rewriting.Rewriter.{everywherebu, strategy}
 import sigma.validation.ValidationException
 import sigmastate.eval.Extensions.SigmaBooleanOps
-import sigmastate.lang.Terms.ValueOps
+import sigma.ast.defs.ValueOps
 import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigma.serialization.{ConstantStore, ErgoTreeSerializer, SigmaSerializer, ValueSerializer}
 import supertagged.TaggedType

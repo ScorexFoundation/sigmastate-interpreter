@@ -18,7 +18,7 @@ import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoL
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.interpreter.{ContextExtension, ErgoTreeEvaluator, ProverResult}
-import sigmastate.lang.Terms._
+import sigma.ast.defs._
 import sigma.serialization.SigmaSerializer.startReader
 import sigma.serialization._
 import sigma.serialization.ValueCodes.OpCode

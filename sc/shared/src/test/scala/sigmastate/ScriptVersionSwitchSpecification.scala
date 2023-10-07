@@ -14,7 +14,7 @@ import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultEvalSettings
 import sigmastate.interpreter.EvalSettings.EvaluationMode
 import sigmastate.interpreter._
-import sigmastate.lang.Terms.ValueOps
+import sigma.ast.defs.ValueOps
 import sigmastate.utils.Helpers._
 
 /** Specification to verify that the interpreter behaves according to docs/aot-jit-switch.md.

@@ -16,10 +16,10 @@ import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.exceptions.TyperException
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef._
-import sigmastate.lang.Terms._
 import sigmastate.lang.syntax.ParserException
 import sigma.serialization.ErgoTreeSerializer
 import sigma.serialization.generators.ObjectGenerators
+import sigmastate.lang.Terms.Select
 
 class SigmaTyperTest extends AnyPropSpec
   with ScalaCheckPropertyChecks with Matchers with LangTests with ObjectGenerators {

@@ -10,7 +10,7 @@ import sigmastate._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.Interpreter._
-import sigmastate.lang.Terms._
+import sigma.ast.defs._
 
 class RPSGameExampleSpecification extends CompilerTestingCommons
   with CompilerCrossVersionProps {
