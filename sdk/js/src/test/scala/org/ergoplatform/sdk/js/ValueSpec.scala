@@ -6,7 +6,7 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import scorex.util.encode.Base16
 import sigma.ast.SType
 import sigma.ast._
-import sigmastate.crypto.CryptoConstants.dlogGroup
+import sigma.crypto.CryptoConstants.dlogGroup
 import sigma.crypto.CryptoFacade
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigma.serialization.ConstantSerializer

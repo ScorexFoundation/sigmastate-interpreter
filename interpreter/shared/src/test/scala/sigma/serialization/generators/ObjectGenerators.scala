@@ -14,10 +14,9 @@ import scorex.util.encode.{Base58, Base64}
 import scorex.util.{ModifierId, bytesToId}
 import sigma.ast._
 import sigma.ast.defs._
-import sigmastate.crypto.CryptoConstants
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
-import sigmastate.crypto.CryptoConstants.dlogGroup
+import sigma.crypto.CryptoConstants.dlogGroup
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.lang.TransformingSigmaBuilder._
 import sigmastate._
@@ -25,7 +24,7 @@ import sigma.Coll
 import sigma.Extensions.ArrayOps
 import sigma._
 import sigma.ast.defs.SigmaPropValue
-import sigma.crypto.EcPointType
+import sigma.crypto.{CryptoConstants, EcPointType}
 import sigma.util.Extensions.EcpOps
 import sigma.validation.{ChangedRule, DisabledRule, EnabledRule, ReplacedRule, RuleStatus}
 import sigma.validation.ValidationRules.FirstRuleId

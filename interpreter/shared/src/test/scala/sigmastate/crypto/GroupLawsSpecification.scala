@@ -4,7 +4,7 @@ import java.math.BigInteger
 import org.scalacheck.Gen
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import sigma.crypto.{CryptoFacade, EcPointType, Ecp}
+import sigma.crypto.{CryptoConstants, CryptoFacade, EcPointType, Ecp}
 import sigmastate.TestsBase
 import sigmastate.utils.Helpers
 

@@ -5,13 +5,12 @@ import sigma.Extensions.ArrayOps
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.TypeCodes.ConstantCode
 import sigma.ast.defs._
-import sigma.crypto.EcPointType
+import sigma.crypto.{CryptoConstants, EcPointType}
 import sigma.data.{CSigmaProp, Nullable, RType, SigmaBoolean}
 import sigma.kiama.rewriting.Rewriter.count
 import sigma.util.CollectionUtil._
 import sigma.util.Extensions._
 import sigma.{AvlTree, Coll, Colls, Header, PreHeader, _}
-import sigmastate.crypto.CryptoConstants
 import sigmastate.eval._
 import sigmastate.exceptions.InterpreterException
 import sigmastate.interpreter.ErgoTreeEvaluator._

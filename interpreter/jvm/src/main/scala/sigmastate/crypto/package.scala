@@ -1,6 +1,6 @@
 package sigmastate
 
-import sigma.crypto.CryptoContextJvm
+import sigma.crypto.{BcDlogGroup, CryptoContextJvm}
 import sigma.crypto.Platform.Curve
 
 package object crypto {

@@ -16,6 +16,7 @@ import sigmastate.exceptions.InterpreterException
 import sigmastate.utils.Helpers
 import sigma.Coll
 import sigma.Extensions.ArrayOps
+import sigma.crypto.CryptoConstants
 import sigma.data.{CAND, COR, CTHRESHOLD, ProveDHTuple, ProveDlog, SigmaBoolean}
 import sigma.serialization.SigSerializer
 
@@ -28,7 +29,7 @@ import scala.util.Try
   */
 trait ProverInterpreter extends Interpreter with ProverUtils {
 
-  import CryptoConstants.secureRandomBytes
+  import sigma.crypto.CryptoConstants.secureRandomBytes
   import Interpreter._
 
   override type ProofT = UncheckedTree

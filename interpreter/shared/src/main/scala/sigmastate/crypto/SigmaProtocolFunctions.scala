@@ -1,6 +1,6 @@
 package sigmastate.crypto
 
-import sigmastate.crypto.CryptoConstants.dlogGroup
+import sigma.crypto.CryptoConstants.dlogGroup
 import sigmastate.crypto.VerifierMessage.Challenge
 import sigma.Coll
 import sigma.data.SigmaLeaf

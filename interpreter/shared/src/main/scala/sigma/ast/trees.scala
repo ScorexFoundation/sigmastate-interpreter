@@ -10,7 +10,7 @@ import sigma.ast.defs._
 import sigma.data.ExactIntegral._
 import sigma.data.ExactOrdering._
 import sigma.data.OverloadHack.Overloaded1
-import sigma.data.{CAND, COR, CTHRESHOLD, ExactIntegral, ExactOrdering, SigmaBoolean, SigmaConstants}
+import sigma.data._
 import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma.validation.SigmaValidationSettings
 import sigma.{Coll, Colls, GroupElement, SigmaProp, VersionContext}
@@ -23,6 +23,7 @@ import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigma.serialization.OpCodes._
 import sigma.serialization.ValueCodes.OpCode
 import sigma.serialization._
+
 import scala.collection.mutable
 
 /** Embedding of Boolean values to SigmaProp values. As an example, this operation allows boolean experesions
@@ -37,7 +38,7 @@ case class BoolToSigmaProp(value: BoolValue) extends SigmaPropValue {
     val v = value.evalTo[Any](env)
     addCost(BoolToSigmaProp.costKind)
     if (VersionContext.current.isJitActivated) {
-      SigmaDsl.sigmaProp(v.asInstanceOf[Boolean])
+      CSigmaProp(v.asInstanceOf[Boolean])
     } else {
       // before v5.0 is activated we follow the old v4.x semantics to handle cases
       // when the value is not a boolean. There are historical transactions with such
@@ -45,7 +46,7 @@ case class BoolToSigmaProp(value: BoolValue) extends SigmaPropValue {
       v match {
         case sp: SigmaProp => sp
         case _ =>
-          SigmaDsl.sigmaProp(v.asInstanceOf[Boolean])
+          CSigmaProp(v.asInstanceOf[Boolean])
       }
     }
   }
@@ -65,7 +66,7 @@ case class CreateProveDlog(value: Value[SGroupElement.type]) extends SigmaPropVa
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     val v = value.evalTo[GroupElement](env)
     addCost(CreateProveDlog.costKind)
-    SigmaDsl.proveDlog(v)
+    CSigmaProp.withProveDlog(v)
   }
 }
 object CreateProveDlog extends FixedCostValueCompanion {
@@ -106,7 +107,7 @@ case class CreateProveDHTuple(gv: Value[SGroupElement.type],
     val u = uv.evalTo[GroupElement](env)
     val v = vv.evalTo[GroupElement](env)
     addCost(CreateProveDHTuple.costKind)
-    SigmaDsl.proveDHTuple(g, h, u, v)
+    CSigmaProp.withProveDHTuple(g, h, u, v)
   }
 }
 object CreateProveDHTuple extends FixedCostValueCompanion {

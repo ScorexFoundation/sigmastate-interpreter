@@ -13,9 +13,9 @@ import sigma.ast.SByte
 import sigma.data.{AvlTreeData, AvlTreeFlags, Digest32Coll}
 import sigma.ast._
 import sigmastate._
-import sigmastate.crypto.CryptoConstants
 import sigma.Extensions.ArrayOps
 import sigma.ast.defs.{CollectionConstant, SigmaPropValue}
+import sigma.crypto.CryptoConstants
 import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter}

@@ -1,6 +1,4 @@
-package sigmastate.crypto
-
-import sigma.crypto.Ecp
+package sigma.crypto
 
 import java.math.BigInteger
 

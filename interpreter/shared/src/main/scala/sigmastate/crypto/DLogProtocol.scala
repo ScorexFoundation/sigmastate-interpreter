@@ -2,11 +2,10 @@ package sigmastate.crypto
 
 import scorex.util.encode.Base16
 import sigma.SigmaProp
-import sigma.crypto.EcPointType
+import sigma.crypto.{BigIntegers, EcPointType}
 import sigma.data.ProveDlog
 import sigma.serialization.GroupElementSerializer
-import sigmastate._
-import sigmastate.crypto.CryptoConstants.dlogGroup
+import sigma.crypto.CryptoConstants.dlogGroup
 import sigmastate.crypto.VerifierMessage.Challenge
 import sigmastate.eval._
 
@@ -30,7 +29,7 @@ object DLogProtocol {
   case class DLogProverInput(w: BigInteger)
     extends SigmaProtocolPrivateInput[ProveDlog] {
 
-    import CryptoConstants.dlogGroup
+    import sigma.crypto.CryptoConstants.dlogGroup
 
     override lazy val publicImage: ProveDlog = {
       val g = dlogGroup.generator
@@ -40,7 +39,7 @@ object DLogProtocol {
 
   object DLogProverInput {
 
-    import CryptoConstants.dlogGroup
+    import sigma.crypto.CryptoConstants.dlogGroup
 
     /** Create random secret in a range 0..q-1, where q - an order of DLog group. */
     def random(): DLogProverInput = {
@@ -65,10 +64,10 @@ object DLogProtocol {
 
 
   object DLogInteractiveProver extends SigmaProtocolProver {
-    import CryptoConstants.secureRandom
+    import sigma.crypto.CryptoConstants.secureRandom
 
     def firstMessage(): (BigInteger, FirstDLogProverMessage) = {
-      import CryptoConstants.dlogGroup
+      import sigma.crypto.CryptoConstants.dlogGroup
 
       val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)
       val r = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, secureRandom)

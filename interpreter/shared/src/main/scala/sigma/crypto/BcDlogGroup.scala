@@ -1,10 +1,7 @@
-package sigmastate.crypto
+package sigma.crypto
 
-import java.math.BigInteger
-import sigmastate.crypto.BigIntegers
 import debox.cfor
-import sigma.crypto.{CryptoContext, CryptoFacade}
-
+import java.math.BigInteger
 import scala.collection.mutable
 
 

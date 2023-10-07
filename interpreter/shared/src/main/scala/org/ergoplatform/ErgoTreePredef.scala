@@ -6,7 +6,7 @@ import sigma.ast._
 import sigma.ast.defs._
 import sigma.data.ProveDlog
 import ErgoTree.{HeaderType, ZeroHeader}
-import sigmastate.crypto.CryptoConstants
+import sigma.crypto.CryptoConstants
 import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate._
 import sigmastate.lang.Terms.ValueOps

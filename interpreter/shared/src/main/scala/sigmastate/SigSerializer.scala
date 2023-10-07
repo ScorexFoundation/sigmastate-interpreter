@@ -4,12 +4,13 @@ import debox.cfor
 import scorex.util.encode.Base16
 import sigma.Extensions.ArrayOps
 import sigma.ast.{FixedCost, JitCost, PerItemCost}
+import sigma.crypto.{BigIntegers, CryptoConstants}
 import sigma.data.{CAND, COR, CTHRESHOLD, ProveDHTuple, ProveDlog, SigmaBoolean}
 import sigma.util.safeNewArray
 import sigmastate.{CAndUncheckedNode, COrUncheckedNode, CThresholdUncheckedNode, NoProof, UncheckedDiffieHellmanTuple, UncheckedSchnorr, UncheckedSigmaTree, UncheckedTree}
 import sigmastate.crypto.DLogProtocol.SecondDLogProverMessage
 import sigmastate.crypto.VerifierMessage.Challenge
-import sigmastate.crypto.{BigIntegers, CryptoConstants, GF2_192_Poly, SecondDHTupleProverMessage}
+import sigmastate.crypto.{GF2_192_Poly, SecondDHTupleProverMessage}
 import sigmastate.interpreter.ErgoTreeEvaluator.{fixedCostOp, perItemCostOp}
 import sigmastate.interpreter.{ErgoTreeEvaluator, NamedDesc, OperationCostInfo}
 import sigmastate.utils.Helpers

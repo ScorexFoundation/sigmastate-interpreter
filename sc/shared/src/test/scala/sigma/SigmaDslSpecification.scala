@@ -19,6 +19,7 @@ import sigma.data._
 import sigma.util.Extensions.{BooleanOps, IntOps, LongOps}
 import sigma.{VersionContext, data, _}
 import ErgoTree.{HeaderType, ZeroHeader}
+import sigma.eval.{CostDetails, TracedCost}
 import sigmastate._
 import sigmastate.eval.Extensions.{AvlTreeOps, ByteExt, IntExt, LongExt, ShortExt}
 import sigmastate.eval.OrderingOps._

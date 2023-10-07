@@ -2,10 +2,11 @@ package sigmastate.utxo
 
 import org.ergoplatform.ErgoLikeInterpreter
 import scorex.crypto.hash.Blake2b256
+import sigma.crypto.SecP256K1Group
 import sigma.data.{CAND, COR, CTHRESHOLD, SigmaBoolean, TrivialProp}
 import sigmastate._
 import sigmastate.crypto.DLogProtocol.FirstDLogProverMessage
-import sigmastate.crypto.{FirstDHTupleProverMessage, SecP256K1Group}
+import sigmastate.crypto.FirstDHTupleProverMessage
 import sigmastate.exceptions.InterpreterException
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, TestingCommons}
 import sigmastate.interpreter.{HintsBag, ProverInterpreter}

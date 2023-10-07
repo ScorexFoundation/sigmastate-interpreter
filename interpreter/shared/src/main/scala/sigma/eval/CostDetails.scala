@@ -1,7 +1,9 @@
-package sigmastate.interpreter
+package sigma.eval
 
 import debox.cfor
 import sigma.ast.JitCost
+import sigmastate.interpreter.CostItem
+
 import scala.collection.compat.immutable.ArraySeq
 
 /** Abstract representation of cost results obtained during evaluation. */

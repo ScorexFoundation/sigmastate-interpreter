@@ -8,7 +8,8 @@ import sigma.util.Extensions.EcpOps
 import sigmastate.CompilerCrossVersionProps
 import sigma.ast.{ErgoTree, GroupElementConstant}
 import sigma.ast.defs.GroupElementConstant
-import sigmastate.crypto.{CryptoConstants, DiffieHellmanTupleProverInput}
+import sigma.crypto.CryptoConstants
+import sigmastate.crypto.DiffieHellmanTupleProverInput
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._

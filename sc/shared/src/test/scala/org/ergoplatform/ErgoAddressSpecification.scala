@@ -10,7 +10,7 @@ import sigmastate.eval.InvalidType
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers._
 import sigmastate.interpreter.ContextExtension.VarBinding
-import sigmastate.crypto.CryptoConstants.dlogGroup
+import sigma.crypto.CryptoConstants.dlogGroup
 import sigmastate.exceptions.CostLimitException
 import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}
@@ -18,7 +18,7 @@ import sigmastate.lang.Terms.ValueOps
 import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigma.serialization.ValueSerializer
 import sigmastate.utils.Helpers._
-import sigmastate.{CompilerCrossVersionProps}
+import sigmastate.CompilerCrossVersionProps
 import sigma.SigmaDslTesting
 import sigma.ast.ErgoTree.{ZeroHeader, setConstantSegregation}
 

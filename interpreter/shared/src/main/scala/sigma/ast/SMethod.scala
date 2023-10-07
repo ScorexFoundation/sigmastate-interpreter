@@ -4,6 +4,7 @@ import debox.cfor
 import sigma.ast.SMethod.{InvokeDescBuilder, MethodCostFunc}
 import sigma.ast.defs._
 import sigma.data.RType
+import sigma.eval.{CostDetails, GivenCost, TracedCost}
 import sigma.reflection.{RClass, RMethod}
 import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma.validation.ValidationRules.CheckTypeWithMethods

@@ -1,7 +1,6 @@
 package sigma.serialization
 
-import sigmastate.crypto.CryptoConstants
-import sigma.crypto.CryptoFacade
+import sigma.crypto.{CryptoConstants, CryptoFacade}
 import sigma.util.Extensions.{EcpOps, GroupElementOps}
 
 class GroupElementSerializerSpecification extends SerializationSpecification {

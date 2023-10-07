@@ -13,6 +13,7 @@ import sigma.validation.ValidationException
 import sigma.validation.ValidationRules.CheckSerializableTypeCode
 import sigma.ast.Constant
 import sigma.ast.defs.{SValue, SigmaPropValue}
+import sigma.eval.{CostDetails, GivenCost, TracedCost}
 import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension.VarBinding

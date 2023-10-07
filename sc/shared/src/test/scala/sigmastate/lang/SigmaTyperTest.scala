@@ -9,9 +9,9 @@ import sigma.Colls
 import sigma.ast.SCollection._
 import sigma.ast._
 import sigma.ast.defs.{SValue, SigmaPropValue, SigmaPropValueOps}
+import sigma.crypto.CryptoConstants
 import sigma.data.ProveDlog
 import sigmastate._
-import sigmastate.crypto.CryptoConstants
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.exceptions.TyperException
 import sigmastate.interpreter.Interpreter.ScriptEnv

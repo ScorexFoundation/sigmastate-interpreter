@@ -13,6 +13,7 @@ import sigma.reflection.RClass
 import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma._
 import SMethod.{MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
+import sigma.eval.{CostDetails, TracedCost}
 import sigmastate.eval._
 import sigmastate.interpreter._
 import sigmastate.lang.Terms._

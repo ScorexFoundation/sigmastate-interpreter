@@ -1,6 +1,7 @@
 package sigmastate.interpreter
 
 import sigma.ast.{FixedCost, FixedCostValueCompanion, GT, JitCost, LE, PerItemCost, PerItemCostValueCompanion, SMethod, SType, TypeBasedCost, ValueCompanion}
+import sigma.eval.CostDetails
 import sigmastate.lang.Terms.MethodCall
 
 /** An item in the cost accumulation trace of a [[sigma.ast.ErgoTree]] evaluation. */

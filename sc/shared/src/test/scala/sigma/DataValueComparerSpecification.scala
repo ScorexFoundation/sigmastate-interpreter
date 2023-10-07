@@ -6,8 +6,9 @@ import sigma.util.BenchmarkUtil
 import sigmastate.DataValueComparer
 import sigmastate.eval.{Profiler, SigmaDsl}
 import sigmastate.helpers.SigmaPPrint
-import sigmastate.interpreter.{CostAccumulator, ErgoTreeEvaluator, EvalSettings, TracedCost}
+import sigmastate.interpreter.{CostAccumulator, ErgoTreeEvaluator, EvalSettings}
 import sigma.ast.{ErgoTree, JitCost}
+import sigma.eval.TracedCost
 import scala.util.{Success, Try}
 
 class DataValueComparerSpecification extends SigmaDslTesting

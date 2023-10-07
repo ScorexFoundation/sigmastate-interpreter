@@ -1,9 +1,8 @@
 package sigma.serialization
 
 import org.ergoplatform.ErgoBox
-import sigma._
 import sigma.ast._
-import sigmastate.eval.SigmaDsl
+import sigmastate.eval.CBox
 
 /** This works in tandem with ConstantSerializer, if you change one make sure to check the other.*/
 object DataSerializer extends CoreDataSerializer {
@@ -14,8 +13,8 @@ object DataSerializer extends CoreDataSerializer {
     */
   override def serialize[T <: SType](v: T#WrappedType, tpe: T, w: CoreByteWriter): Unit = tpe match {
     case SBox =>
-      val b = v.asInstanceOf[Box]
-      ErgoBox.sigmaSerializer.serialize(SigmaDsl.toErgoBox(b), w.asInstanceOf[SigmaByteWriter])
+      val b = v.asInstanceOf[CBox]
+      ErgoBox.sigmaSerializer.serialize(b.ebox, w.asInstanceOf[SigmaByteWriter])
     case _ =>
       super.serialize(v, tpe, w)
   }
@@ -30,7 +29,7 @@ object DataSerializer extends CoreDataSerializer {
       case SBox =>
         val depth = r.level
         r.level = depth + 1
-        val res = SigmaDsl.Box(ErgoBox.sigmaSerializer.parse(r.asInstanceOf[SigmaByteReader]))
+        val res = CBox(ErgoBox.sigmaSerializer.parse(r.asInstanceOf[SigmaByteReader]))
         r.level = r.level - 1
         res
       case t =>

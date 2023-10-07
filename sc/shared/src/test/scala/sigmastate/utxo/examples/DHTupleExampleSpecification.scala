@@ -7,7 +7,8 @@ import sigma.data.{AvlTreeData, ProveDHTuple, ProveDlog}
 import sigma.util.Extensions.EcpOps
 import sigmastate.CompilerCrossVersionProps
 import sigma.ast.GroupElementConstant
-import sigmastate.crypto.{CryptoConstants, DiffieHellmanTupleProverInput}
+import sigma.crypto.CryptoConstants
+import sigmastate.crypto.DiffieHellmanTupleProverInput
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._

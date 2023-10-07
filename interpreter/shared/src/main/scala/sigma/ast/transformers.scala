@@ -4,16 +4,13 @@ import org.ergoplatform.ErgoBox.RegisterId
 import sigma.ast.Operations._
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.defs.SValue
-import sigma.data.RType
+import sigma.data.{CSigmaProp, RType}
 import sigma.serialization.CoreByteWriter.ArgInfo
-import sigma.{Box, Coll, Evaluation, SigmaProp}
-import sigmastate._
-import sigmastate.eval.SigmaDsl
-import sigmastate.interpreter.ErgoTreeEvaluator
-import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv, error}
-import sigmastate.lang.Terms._
 import sigma.serialization.OpCodes
 import sigma.serialization.ValueCodes.OpCode
+import sigma.{Box, Coll, Evaluation}
+import sigmastate.interpreter.ErgoTreeEvaluator
+import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv, error}
 
 // TODO refactor: remove this trait as it doesn't have semantic meaning
 
@@ -326,8 +323,8 @@ case class SigmaPropBytes(input: Value[SSigmaProp.type])
   override def tpe = SByteArray
   override val opType = SFunc(input.tpe, tpe)
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
-    val inputV = input.evalTo[SigmaProp](env)
-    val numNodes = SigmaDsl.toSigmaBoolean(inputV).size
+    val inputV = input.evalTo[CSigmaProp](env)
+    val numNodes = inputV.wrappedValue.size
     addSeqCost(SigmaPropBytes.costKind, numNodes) { () =>
       inputV.propBytes
     }
