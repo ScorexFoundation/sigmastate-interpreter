@@ -1,7 +1,6 @@
-package sigmastate.utils
+package sigma.utils
 
-import sigma.ast.SType
-import sigma.ast.Value
+import sigma.ast.{SType, Value}
 import sigma.serialization.ValueSerializer
 
 import scala.reflect.ClassTag

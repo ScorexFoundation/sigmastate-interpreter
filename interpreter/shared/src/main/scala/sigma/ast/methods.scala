@@ -18,7 +18,7 @@ import sigmastate.eval._
 import sigmastate.interpreter._
 import sigmastate.lang.Terms._
 import sigma.utils.Overloading.Overload1
-import sigmastate.utils.SparseArrayContainer
+import sigma.utils.SparseArrayContainer
 import sigmastate._
 
 import scala.language.implicitConversions
