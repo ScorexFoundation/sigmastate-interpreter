@@ -5,8 +5,7 @@ import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import sigma.{Coll, CollGens}
 import org.ergoplatform.sdk.Extensions.{CollBuilderOps, CollOps, GenIterableOps, PairCollOps}
-import sigma.data.RType
-import sigmastate.eval.CSigmaDslBuilder
+import sigma.data.{CSigmaDslBuilder, RType}
 
 class ExtensionsSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers with CollGens {
   def Coll[T](items: T*)(implicit cT: RType[T]) =

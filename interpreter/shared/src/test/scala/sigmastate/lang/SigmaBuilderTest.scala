@@ -3,12 +3,12 @@ package sigmastate.lang
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import sigma.data.{CAnyValue, CAvlTree, Nullable, RType}
+import sigma.data.{CAnyValue, CAvlTree, CBox, Nullable, RType}
 import sigma.{Environment, VersionContext}
 import sigma.ast._
 import sigmastate._
 import sigma.Extensions.ArrayOps
-import sigmastate.eval.{CBox, SigmaDsl}
+import sigmastate.eval.{SigmaDsl}
 import sigma.serialization.OpCodes
 import sigma.SigmaTestingData
 import sigma.exceptions.ConstraintFailed

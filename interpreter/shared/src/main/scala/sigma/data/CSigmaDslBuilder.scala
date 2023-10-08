@@ -1,4 +1,4 @@
-package sigmastate.eval
+package sigma.data
 
 import debox.cfor
 import org.ergoplatform.ErgoBox
@@ -7,7 +7,6 @@ import scorex.crypto.hash.{Blake2b256, Sha256}
 import scorex.utils.Longs
 import sigma.ast.{AtLeast, SubstConstants}
 import sigma.crypto.{CryptoConstants, EcPointType, Ecp}
-import sigma.data.{AvlTreeData, AvlTreeFlags, CAND, CAvlTree, CBigInt, CGroupElement, COR, CSigmaProp, ProveDHTuple, ProveDlog, SigmaBoolean, TrivialProp}
 import sigma.serialization.{GroupElementSerializer, SigmaSerializer}
 import sigma.util.Extensions.BigIntegerOps
 import sigma.validation.SigmaValidationSettings

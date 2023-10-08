@@ -1,16 +1,15 @@
-package sigmastate.eval
+package sigma.data
 
 import org.ergoplatform.ErgoBox
 import scorex.utils.Ints
 import sigma.Evaluation.stypeToRType
 import sigma.ast.SCollection.SByteArray
-import sigma.ast.{SInt, STuple, SType}
-import sigma.data.{CAnyValue, RType, WrapperOf}
-import sigma.{AnyValue, Box, Coll, Colls}
-import sigma.ast.{ConstantNode, EvaluatedValue}
 import sigma.ast.defs._
-import sigmastate.eval.CBox.regs
+import sigma.ast.{ConstantNode, EvaluatedValue, SInt, STuple, SType}
+import sigma.data.CBox.regs
+import sigma.{AnyValue, Box, Coll, Colls}
 import sigmastate.eval.Extensions.toAnyValue
+import sigmastate.eval.InvalidType
 
 import java.util.Arrays
 

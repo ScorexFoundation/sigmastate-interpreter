@@ -13,7 +13,7 @@ import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import scalan.Platform.threadSleepOrNoOp
 import sigma.Extensions.ArrayOps
-import sigma.data.{CollType, OptionType, PairType, ProveDlog, RType, SigmaLeaf}
+import sigma.data.{CBox, CollType, OptionType, PairType, ProveDlog, RType, SigmaLeaf}
 import sigma.util.BenchmarkUtil
 import sigma.util.CollectionUtil._
 import sigma.util.Extensions._
@@ -26,7 +26,7 @@ import sigma.eval.CostDetails
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.crypto.SigmaProtocolPrivateInput
 import sigmastate.eval.Extensions.SigmaBooleanOps
-import sigmastate.eval.{CBox, CContext, CompiletimeIRContext, IRContext, SigmaDsl}
+import sigmastate.eval.{CContext, CompiletimeIRContext, IRContext, SigmaDsl}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaPPrint}
 import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}

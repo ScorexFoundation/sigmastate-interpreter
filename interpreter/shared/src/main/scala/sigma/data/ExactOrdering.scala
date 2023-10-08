@@ -1,6 +1,6 @@
 package sigma.data
 
-import scala.math.Numeric.{ByteIsIntegral, LongIsIntegral, ShortIsIntegral, IntIsIntegral}
+import scala.math.Numeric.{ByteIsIntegral, IntIsIntegral, LongIsIntegral, ShortIsIntegral}
 
 /** Ordering operations to be used with other Exact traits.
   * All methods are implemented by delegating to the corresponding Ordering instance from

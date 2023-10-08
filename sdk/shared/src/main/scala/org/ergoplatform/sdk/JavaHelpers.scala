@@ -15,13 +15,12 @@ import sigma.ast.{ErgoTree, SType}
 import sigma.ast.defs.SValue
 import sigma.crypto.{CryptoFacade, EcPointType}
 import sigma.data.ExactIntegral.LongIsExactIntegral
-import sigma.data.{Digest32Coll, Iso, ProveDHTuple, ProveDlog, RType, SigmaBoolean, SigmaConstants}
+import sigma.data.{CSigmaDslBuilder, Digest32Coll, Iso, ProveDHTuple, ProveDlog, RType, SigmaBoolean, SigmaConstants}
 import sigma.serialization.GroupElementSerializer
 import sigma.util.StringUtil.StringUtilExtensions
 import sigma.{AnyValue, AvlTree, Coll, Colls, Evaluation, GroupElement, Header}
 import sigma.ast.{Constant, EvaluatedValue, SigmaPropConstant}
 import sigmastate.crypto.DiffieHellmanTupleProverInput
-import sigmastate.eval.CSigmaDslBuilder
 import sigma.serialization.{ErgoTreeSerializer, SigmaSerializer, ValueSerializer}
 import sigmastate.utils.Helpers._  // required for Scala 2.11
 

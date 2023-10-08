@@ -4,7 +4,7 @@ import org.ergoplatform.ErgoLikeContext.Height
 import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules
 import sigma.crypto.CryptoConstants
-import sigma.data.AvlTreeData
+import sigma.data.{AvlTreeData, CSigmaDslBuilder}
 import sigma.serialization.GroupElementSerializer
 import sigma.util.Extensions.EcpOps
 import sigma.validation.SigmaValidationSettings

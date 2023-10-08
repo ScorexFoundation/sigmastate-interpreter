@@ -6,7 +6,7 @@ import sigma.ast.SCollection.SByteArray
 import sigma.ast.defs.{SValue, ValueOps}
 import sigma.ast._
 import sigma.crypto.CryptoConstants
-import sigma.data.{CAnyValue, ProveDHTuple, ProveDlog, SigmaBoolean}
+import sigma.data.{CAnyValue, CSigmaDslBuilder, ProveDHTuple, ProveDlog, SigmaBoolean}
 import sigma.util.Extensions.BigIntegerOps
 import sigmastate.eval._
 import sigmastate.helpers.NegativeTesting

@@ -10,7 +10,7 @@ import sigma.ast.defs.{SValue, ValueOps}
 import sigma.crypto.EcPointType
 import sigma.data.ExactIntegral.{ByteIsExactIntegral, IntIsExactIntegral, LongIsExactIntegral, ShortIsExactIntegral}
 import sigma.data.ExactOrdering.{ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering, ShortIsExactOrdering}
-import sigma.data.{ExactIntegral, ExactNumeric, ExactOrdering, Lazy, Nullable}
+import sigma.data.{CSigmaDslBuilder, ExactIntegral, ExactNumeric, ExactOrdering, Lazy, Nullable}
 import sigma.util.Extensions.ByteOps
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigma.ast.{Ident, Select, Val}

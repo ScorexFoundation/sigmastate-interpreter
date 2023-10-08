@@ -2,7 +2,7 @@ package sigma.serialization
 
 import org.ergoplatform.ErgoBox
 import sigma.ast._
-import sigmastate.eval.CBox
+import sigma.data.CBox
 
 /** This works in tandem with ConstantSerializer, if you change one make sure to check the other.*/
 object DataSerializer extends CoreDataSerializer {

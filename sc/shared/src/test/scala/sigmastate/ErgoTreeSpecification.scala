@@ -7,12 +7,12 @@ import sigma.ast.SCollection.SByteArray
 import sigma.ast._
 import sigma.ast.defs.{SValue, SigmaPropValue, TrueSigmaProp}
 import sigma.data.RType.asType
-import sigma.data.{Nullable, RType, TrivialProp}
+import sigma.data.{CBox, Nullable, RType, TrivialProp}
 import sigma.validation.ValidationException
 import sigma.validation.ValidationRules.CheckTypeCode
 import ErgoTree.HeaderType
 import SCollectionMethods.checkValidFlatmap
-import sigmastate.eval.{CBox, Profiler}
+import sigmastate.eval.Profiler
 import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}
 import sigmastate.interpreter.Interpreter.ReductionResult
 import sigmastate.interpreter.{ErgoTreeEvaluator, EvalSettings}
@@ -687,7 +687,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
     )
 
     def createCtx: ErgoLikeContext = ErgoLikeContextTesting
-        .dummy(CBox(fakeSelf), VersionContext.current.activatedVersion)
+        .dummy(fakeSelf, VersionContext.current.activatedVersion)
         .withErgoTreeVersion(tree.version)
 
     VersionContext.withVersions(activatedVersion = 1, tree.version) {

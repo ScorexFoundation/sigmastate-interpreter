@@ -2,7 +2,7 @@ package sigmastate
 
 import org.ergoplatform.ErgoBox
 import sigma._
-import sigma.data.{AvlTreeData, SigmaBoolean}
+import sigma.data.{AvlTreeData, CSigmaDslBuilder, SigmaBoolean}
 import sigma.exceptions.CostLimitException
 
 import scala.language.implicitConversions

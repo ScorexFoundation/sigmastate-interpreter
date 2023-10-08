@@ -12,7 +12,7 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ModifierId
 import sigma.ast._
 import sigma.Extensions.ArrayOps
-import sigmastate.eval.{CBox, CHeader, CPreHeader, CSigmaDslBuilder, SigmaDsl}
+import sigmastate.eval.{CHeader, CPreHeader, SigmaDsl}
 import sigmastate.helpers.TestingCommons
 import sigma.serialization.ErgoTreeSerializer
 import sigma.serialization.generators.ObjectGenerators

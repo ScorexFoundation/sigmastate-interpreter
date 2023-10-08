@@ -3,7 +3,7 @@ package sigmastate.eval
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import sigma.crypto.SecP256K1Group
-import sigma.data.TrivialProp
+import sigma.data.{CSigmaDslBuilder, TrivialProp}
 import sigma.util.Extensions.SigmaBooleanOps
 
 import java.math.BigInteger

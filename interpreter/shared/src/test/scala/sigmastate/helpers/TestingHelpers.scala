@@ -4,7 +4,7 @@ import org.ergoplatform.ErgoBox.{AdditionalRegisters, Token, allZerosModifierId}
 import org.ergoplatform._
 import scorex.util.ModifierId
 import sigma.ast.ErgoTree
-import sigma.data.{AvlTreeData, CollOverArray, PairOfCols}
+import sigma.data.{AvlTreeData, CSigmaDslBuilder, CollOverArray, PairOfCols}
 import sigma.validation.SigmaValidationSettings
 import sigma.{Coll, Header, PreHeader}
 import sigmastate.eval._

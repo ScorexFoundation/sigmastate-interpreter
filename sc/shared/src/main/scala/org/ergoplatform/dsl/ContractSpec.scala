@@ -2,10 +2,10 @@ package org.ergoplatform.dsl
 
 import org.ergoplatform.ErgoBox.{BoxId, NonMandatoryRegisterId, TokenId}
 import sigmastate.interpreter.{CostedProverResult, ProverResult}
-import sigma.data.RType
+import sigma.data.{CSigmaDslBuilder, RType}
 import org.ergoplatform.{ErgoBox, ErgoLikeContext}
 import sigma.{AnyValue, Coll, SigmaDslBuilder, SigmaProp}
-import sigmastate.eval.{CSigmaDslBuilder, IRContext}
+import sigmastate.eval.IRContext
 
 import scala.util.Try
 import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition, Token}

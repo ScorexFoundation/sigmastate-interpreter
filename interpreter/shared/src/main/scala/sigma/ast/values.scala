@@ -6,7 +6,7 @@ import sigma.ast.SCollection.SByteArray
 import sigma.ast.TypeCodes.ConstantCode
 import sigma.ast.defs._
 import sigma.crypto.{CryptoConstants, EcPointType}
-import sigma.data.{CSigmaProp, Nullable, RType, SigmaBoolean}
+import sigma.data.{CSigmaDslBuilder, CSigmaProp, Nullable, RType, SigmaBoolean}
 import sigma.kiama.rewriting.Rewriter.count
 import sigma.util.CollectionUtil._
 import sigma.util.Extensions._

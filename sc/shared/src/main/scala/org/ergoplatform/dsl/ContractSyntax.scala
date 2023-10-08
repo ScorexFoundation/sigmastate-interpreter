@@ -2,10 +2,9 @@ package org.ergoplatform.dsl
 
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.TokenId
-import sigma.data.{AvlTreeData, RType, SigmaBoolean}
+import sigma.data.{AvlTreeData, CSigmaDslBuilder, RType, SigmaBoolean}
 import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition}
 import org.ergoplatform.sdk.JavaHelpers.collRType
-import sigmastate.eval.CSigmaDslBuilder
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigma._
 import sigma.ast.{SType, defs}
