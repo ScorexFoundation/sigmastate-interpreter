@@ -11,7 +11,7 @@ import sigma.validation.SigmaValidationSettings
 import sigma.{Box, Coll, Colls, Header, PreHeader}
 import sigmastate.eval._
 import sigmastate.interpreter.ContextExtension
-import sigmastate.interpreter.ErgoTreeEvaluator.DefaultEvalSettings
+import sigmastate.interpreter.CErgoTreeEvaluator.DefaultEvalSettings
 import sigma.serialization.SigmaSerializer
 
 object ErgoLikeContextTesting {

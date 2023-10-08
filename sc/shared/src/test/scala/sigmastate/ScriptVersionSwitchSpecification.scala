@@ -10,7 +10,7 @@ import sigma.{Box, SigmaDslTesting}
 import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers.createBox
 import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter}
-import sigmastate.interpreter.ErgoTreeEvaluator.DefaultEvalSettings
+import sigmastate.interpreter.CErgoTreeEvaluator.DefaultEvalSettings
 import sigmastate.interpreter.EvalSettings.EvaluationMode
 import sigmastate.interpreter._
 import sigma.ast.defs.ValueOps
@@ -26,7 +26,7 @@ import sigmastate.utils.Helpers._
 class ScriptVersionSwitchSpecification extends SigmaDslTesting {
   override implicit val generatorDrivenConfig: PropertyCheckConfiguration = PropertyCheckConfiguration(minSuccessful = 30)
   override implicit val evalSettings: EvalSettings =
-    ErgoTreeEvaluator.DefaultEvalSettings.copy(
+    CErgoTreeEvaluator.DefaultEvalSettings.copy(
       costTracingEnabled = true  // should always be enabled in tests (and false by default)
     )
 

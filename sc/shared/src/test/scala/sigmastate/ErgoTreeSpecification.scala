@@ -15,7 +15,7 @@ import SCollectionMethods.checkValidFlatmap
 import sigmastate.eval.Profiler
 import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}
 import sigmastate.interpreter.Interpreter.ReductionResult
-import sigmastate.interpreter.{ErgoTreeEvaluator, EvalSettings}
+import sigmastate.interpreter.{CErgoTreeEvaluator, EvalSettings}
 import sigma.ast.defs._
 import sigma.exceptions.{CostLimitException, InterpreterException}
 import sigmastate.lang.CompilerSettings
@@ -609,7 +609,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
   }
 
   property("checkValidFlatmap") {
-    implicit val E = ErgoTreeEvaluator.forProfiling(new Profiler, evalSettings)
+    implicit val E = CErgoTreeEvaluator.forProfiling(new Profiler, evalSettings)
     def mkLambda(t: SType, mkBody: SValue => SValue) = {
       MethodCall(
         ValUse(1, SCollectionType(t)),
@@ -692,14 +692,14 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
 
     VersionContext.withVersions(activatedVersion = 1, tree.version) {
       // v4.x behavior
-      val res = ErgoTreeEvaluator.evalToCrypto(createCtx, tree, evalSettings)
+      val res = CErgoTreeEvaluator.evalToCrypto(createCtx, tree, evalSettings)
       res shouldBe ReductionResult(TrivialProp(true), 3)
     }
 
     VersionContext.withVersions(activatedVersion = 2, tree.version) {
       // v5.0 behavior
       assertExceptionThrown(
-        ErgoTreeEvaluator.evalToCrypto(createCtx, tree, evalSettings),
+        CErgoTreeEvaluator.evalToCrypto(createCtx, tree, evalSettings),
         exceptionLike[ClassCastException]()
       )
     }

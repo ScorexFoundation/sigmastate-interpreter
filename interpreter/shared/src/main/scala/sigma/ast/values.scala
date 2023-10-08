@@ -17,8 +17,8 @@ import sigma.serialization._
 import sigma.util.CollectionUtil._
 import sigma.util.Extensions._
 import sigma.utils.Overloading.Overload1
-import sigmastate.interpreter.ErgoTreeEvaluator
-import sigmastate.interpreter.ErgoTreeEvaluator._
+import sigmastate.interpreter.CErgoTreeEvaluator
+import sigmastate.interpreter.CErgoTreeEvaluator._
 
 import java.math.BigInteger
 import java.util.{Arrays, Objects}
@@ -97,7 +97,7 @@ abstract class Value[+S <: SType] extends SigmaNode {
     * @param env immutable map, which binds variables (given by ids) to the values
     * @return the data value which is the result of evaluation
     */
-  protected def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any =
+  protected def eval(env: DataEnv)(implicit E: CErgoTreeEvaluator): Any =
     sys.error(s"Should be overriden in ${this.getClass}: $this")
 
   /** Evaluates this node to the value of the given expected type.
@@ -109,7 +109,7 @@ abstract class Value[+S <: SType] extends SigmaNode {
     * @return the data value which is the result of evaluation
     */
   @inline
-  final def evalTo[T](env: DataEnv)(implicit E: ErgoTreeEvaluator): T = {
+  final def evalTo[T](env: DataEnv)(implicit E: CErgoTreeEvaluator): T = {
     if (E.settings.isMeasureOperationTime) E.profiler.onBeforeNode(this)
     val v = eval(env)
     if (E.settings.isMeasureOperationTime) E.profiler.onAfterNode(this)
@@ -120,7 +120,7 @@ abstract class Value[+S <: SType] extends SigmaNode {
     * node.
     */
   @inline
-  final def addCost(costKind: FixedCost)(implicit E: ErgoTreeEvaluator): Unit = {
+  final def addCost(costKind: FixedCost)(implicit E: CErgoTreeEvaluator): Unit = {
     E.addCost(costKind, this.companion.opDesc)
   }
 
@@ -130,7 +130,7 @@ abstract class Value[+S <: SType] extends SigmaNode {
   @inline
   final def addCost[R](costKind: TypeBasedCost, tpe: SType)
       (block: () => R)
-      (implicit E: ErgoTreeEvaluator): R = {
+      (implicit E: CErgoTreeEvaluator): R = {
     E.addTypeBasedCost(costKind, tpe, this.companion.opDesc)(block)
   }
 
@@ -143,7 +143,7 @@ abstract class Value[+S <: SType] extends SigmaNode {
     */
   @inline
   final def addSeqCostNoOp(costKind: PerItemCost, nItems: Int)
-      (implicit E: ErgoTreeEvaluator): Unit = {
+      (implicit E: CErgoTreeEvaluator): Unit = {
     E.addSeqCostNoOp(costKind, nItems, this.companion.opDesc)
   }
 
@@ -158,7 +158,7 @@ abstract class Value[+S <: SType] extends SigmaNode {
     */
   @inline
   final def addSeqCost[R](costKind: PerItemCost, nItems: Int)
-      (block: () => R)(implicit E: ErgoTreeEvaluator): R = {
+      (block: () => R)(implicit E: CErgoTreeEvaluator): R = {
     E.addSeqCost(costKind, nItems, this.companion.opDesc)(block)
   }
 }
@@ -328,7 +328,7 @@ case class ConstantNode[S <: SType](value: S#WrappedType, tpe: S) extends Consta
 
   override def opName: String = s"Const"
 
-  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+  protected final override def eval(env: DataEnv)(implicit E: CErgoTreeEvaluator): Any = {
     addCost(Constant.costKind)
     value
   }
@@ -385,7 +385,7 @@ case class ConstantPlaceholder[S <: SType](
 
   override def companion: ValueCompanion = ConstantPlaceholder
 
-  override protected def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+  override protected def eval(env: DataEnv)(implicit E: CErgoTreeEvaluator): Any = {
     val c = E.constants(id)
     addCost(ConstantPlaceholder.costKind)
     val res = c.value
@@ -681,7 +681,7 @@ case object GroupGenerator extends EvaluatedValue[SGroupElement.type] with Value
 
   override def companion = this
 
-  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+  protected final override def eval(env: DataEnv)(implicit E: CErgoTreeEvaluator): Any = {
     addCost(costKind)
     SigmaDsl.groupGenerator
   }
@@ -756,7 +756,7 @@ case class Tuple(items: IndexedSeq[Value[SType]])
     Colls.fromArray(xs.toArray)
   }
 
-  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+  protected final override def eval(env: DataEnv)(implicit E: CErgoTreeEvaluator): Any = {
     // in v5.0 version we support only tuples of 2 elements to be equivalent with v4.x
     if (items.length != 2)
       defs.error(s"Invalid tuple $this")
@@ -819,7 +819,7 @@ case class ConcreteCollection[V <: SType](items: Seq[Value[V]], elementType: V)
     Colls.fromArray(xs.toArray(tElement.classTag))
   }
 
-  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+  protected final override def eval(env: DataEnv)(implicit E: CErgoTreeEvaluator): Any = {
     val len = items.length
     addCost(ConcreteCollection.costKind)
     val is = Array.ofDim[V#WrappedType](len)(tElement.classTag)
@@ -920,7 +920,7 @@ case class ValUse[T <: SType](valId: Int, tpe: T) extends NotReadyValue[T] {
   /** This is not used as operation, but rather to form a program structure */
   def opType: SFunc = Value.notSupportedError(this, "opType")
 
-  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+  protected final override def eval(env: DataEnv)(implicit E: CErgoTreeEvaluator): Any = {
     addCost(ValUse.costKind)
     val res = env.getOrElse(valId, defs.error(s"cannot resolve $this"))
     Value.checkType(this, res)
@@ -952,7 +952,7 @@ case class BlockValue(
   /** This is not used as operation, but rather to form a program structure */
   def opType: SFunc = Value.notSupportedError(this, "opType")
 
-  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+  protected final override def eval(env: DataEnv)(implicit E: CErgoTreeEvaluator): Any = {
     var curEnv = env
     val len    = items.length
     addSeqCostNoOp(BlockValue.costKind, len)
@@ -1001,7 +1001,7 @@ case class FuncValue(
   /** This is not used as operation, but rather to form a program structure */
   override def opType: SFunc = SFunc(ArraySeq.empty, tpe)
 
-  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+  protected final override def eval(env: DataEnv)(implicit E: CErgoTreeEvaluator): Any = {
     addCost(FuncValue.costKind)
     if (args.length == 1) {
       val arg0 = args(0)
@@ -1194,7 +1194,7 @@ case class Apply(
     SFunc(argTypes, tpe)
   }
 
-  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+  protected final override def eval(env: DataEnv)(implicit E: CErgoTreeEvaluator): Any = {
     addCost(Apply.costKind)
     if (args.length == 1) {
       val fV   = func.evalTo[Any => Any](env)
@@ -1288,7 +1288,7 @@ case class MethodCall(
   }
 
   /** @hotspot don't beautify this code */
-  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+  protected final override def eval(env: DataEnv)(implicit E: CErgoTreeEvaluator): Any = {
     val objV = obj.evalTo[Any](env)
     addCost(MethodCall.costKind) // MethodCall overhead
     method.costKind match {
@@ -1398,7 +1398,7 @@ case object MinerPubkey extends NotReadyValueByteArray with ValueCompanion {
   override val costKind = FixedCost(JitCost(20))
   override val opType = SFunc(SContext, SCollection.SByteArray)
   override def companion = this
-  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+  protected final override def eval(env: DataEnv)(implicit E: CErgoTreeEvaluator): Any = {
     addCost(this.costKind)
     E.context.minerPubKey
   }
@@ -1411,7 +1411,7 @@ case object Height extends NotReadyValueInt with FixedCostValueCompanion {
   /** Cost of: 1) Calling Context.HEIGHT Scala method. */
   override val costKind = FixedCost(JitCost(26))
   override val opType = SFunc(SContext, SInt)
-  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+  protected final override def eval(env: DataEnv)(implicit E: CErgoTreeEvaluator): Any = {
     addCost(this.costKind)
     E.context.HEIGHT
   }
@@ -1425,7 +1425,7 @@ case object Inputs extends LazyCollection[SBox.type] with FixedCostValueCompanio
   override val costKind = FixedCost(JitCost(10))
   override def tpe = SCollection.SBoxArray
   override val opType = SFunc(SContext, tpe)
-  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+  protected final override def eval(env: DataEnv)(implicit E: CErgoTreeEvaluator): Any = {
     addCost(this.costKind)
     E.context.INPUTS
   }
@@ -1439,7 +1439,7 @@ case object Outputs extends LazyCollection[SBox.type] with FixedCostValueCompani
   override val costKind = FixedCost(JitCost(10))
   override def tpe = SCollection.SBoxArray
   override val opType = SFunc(SContext, tpe)
-  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+  protected final override def eval(env: DataEnv)(implicit E: CErgoTreeEvaluator): Any = {
     addCost(this.costKind)
     E.context.OUTPUTS
   }
@@ -1454,7 +1454,7 @@ case object LastBlockUtxoRootHash extends NotReadyValueAvlTree with ValueCompani
   override val costKind = FixedCost(JitCost(15))
 
   override val opType = SFunc(SContext, tpe)
-  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+  protected final override def eval(env: DataEnv)(implicit E: CErgoTreeEvaluator): Any = {
     addCost(this.costKind)
     E.context.LastBlockUtxoRootHash
   }
@@ -1467,7 +1467,7 @@ case object Self extends NotReadyValueBox with FixedCostValueCompanion {
   /** Cost of: 1) Calling Context.SELF Scala method. */
   override val costKind = FixedCost(JitCost(10))
   override val opType = SFunc(SContext, SBox)
-  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+  protected final override def eval(env: DataEnv)(implicit E: CErgoTreeEvaluator): Any = {
     addCost(this.costKind)
     E.context.SELF
   }
@@ -1485,7 +1485,7 @@ case object Context extends NotReadyValue[SContext.type] with ValueCompanion {
 
   override def tpe: SContext.type = SContext
   override val opType: SFunc = SFunc(SUnit, SContext)
-  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+  protected final override def eval(env: DataEnv)(implicit E: CErgoTreeEvaluator): Any = {
     addCost(this.costKind)
     E.context
   }
@@ -1501,7 +1501,7 @@ case object Global extends NotReadyValue[SGlobal.type] with FixedCostValueCompan
   override val costKind = FixedCost(JitCost(5))
   override def tpe: SGlobal.type = SGlobal
   override val opType: SFunc = SFunc(SUnit, SGlobal)
-  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+  protected final override def eval(env: DataEnv)(implicit E: CErgoTreeEvaluator): Any = {
     addCost(this.costKind)
     CSigmaDslBuilder
   }

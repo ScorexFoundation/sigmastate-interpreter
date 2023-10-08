@@ -12,7 +12,7 @@ import sigma.data.AvlTreeData
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting}
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.interpreter.{ContextExtension, ErgoTreeEvaluator}
+import sigmastate.interpreter.{ContextExtension, CErgoTreeEvaluator}
 import sigma.ast.defs.ValueOps
 import sigmastate.lang.{CompilerResult, CompilerSettings, LangTests, SigmaCompiler}
 import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
@@ -169,11 +169,11 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
           }
 
           // check calc
-          val (res, _) = ErgoTreeEvaluator.eval(
+          val (res, _) = CErgoTreeEvaluator.eval(
             context = ectx,
             constants = ergoTree.constants,
             exp = ergoTree.toProposition(replaceConstants = false),
-            evalSettings = ErgoTreeEvaluator.DefaultEvalSettings
+            evalSettings = CErgoTreeEvaluator.DefaultEvalSettings
           )
           checkExpected(res, expectedResult.calc,
             "Calc evaluation:\n value = %s,\n expectedResult.calc: %s\n")

@@ -11,8 +11,8 @@ import sigmastate.{CAndUncheckedNode, COrUncheckedNode, CThresholdUncheckedNode,
 import sigmastate.crypto.DLogProtocol.SecondDLogProverMessage
 import sigmastate.crypto.VerifierMessage.Challenge
 import sigmastate.crypto.{GF2_192_Poly, SecondDHTupleProverMessage}
-import sigmastate.interpreter.ErgoTreeEvaluator.{fixedCostOp, perItemCostOp}
-import sigmastate.interpreter.ErgoTreeEvaluator
+import sigmastate.interpreter.CErgoTreeEvaluator.{fixedCostOp, perItemCostOp}
+import sigmastate.interpreter.CErgoTreeEvaluator
 import sigmastate.utils.Helpers
 
 /** Contains implementation of signature (aka proof) serialization.
@@ -119,7 +119,7 @@ class SigSerializer {
     *              the execution.
     * @return An instance of [[UncheckedTree]] i.e. either [[NoProof]] or [[UncheckedSigmaTree]]
     */
-  def parseAndComputeChallenges(exp: SigmaBoolean, proof: Array[Byte])(implicit E: ErgoTreeEvaluator): UncheckedTree = {
+  def parseAndComputeChallenges(exp: SigmaBoolean, proof: Array[Byte])(implicit E: CErgoTreeEvaluator): UncheckedTree = {
     if (proof.isEmpty)
       NoProof
     else {
@@ -181,7 +181,7 @@ class SigSerializer {
   def parseAndComputeChallenges(
         exp: SigmaBoolean,
         r: SigmaByteReader,
-        challengeOpt: Challenge = null)(implicit E: ErgoTreeEvaluator): UncheckedSigmaTree = {
+        challengeOpt: Challenge = null)(implicit E: CErgoTreeEvaluator): UncheckedSigmaTree = {
     // Verifier Step 2: Let e_0 be the challenge in the node here (e_0 is called "challenge" in the code)
     val challenge = if (challengeOpt == null) {
       Challenge @@ readBytesChecked(r, hashSize,

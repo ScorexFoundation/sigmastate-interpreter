@@ -4,7 +4,7 @@ import org.ergoplatform.ErgoLikeContext
 import sigma.ast._
 import sigma.ast.defs._
 import sigmastate.eval.Profiler
-import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
+import sigmastate.interpreter.CErgoTreeEvaluator.DataEnv
 import sigmastate.interpreter.Interpreter.ReductionResult
 import sigma.{Context, SigmaProp, VersionContext, ast}
 import sigma.util.Extensions._
@@ -19,19 +19,20 @@ import scala.util.DynamicVariable
 
 /** Configuration parameters of the evaluation run. */
 case class EvalSettings(
-  /** Used together with [[ErgoTreeEvaluator.profiler]] to measure individual operations timings. */
+  /** Used together with [[CErgoTreeEvaluator.profiler]] to measure individual operations timings. */
   isMeasureOperationTime: Boolean,
-  /** Used together with [[ErgoTreeEvaluator.profiler]] to measure script timings. */
+  /** Used together with [[CErgoTreeEvaluator.profiler]] to measure script timings. */
   isMeasureScriptTime: Boolean,
-  /** Used by [[ErgoTreeEvaluator]] to conditionally perform debug mode operations. */
+  /** Used by [[CErgoTreeEvaluator]] to conditionally perform debug mode operations. */
   isDebug: Boolean = false,
-  /** Used by [[ErgoTreeEvaluator]] to conditionally emit log messages. */
+  /** Used by [[CErgoTreeEvaluator]] to conditionally emit log messages. */
   isLogEnabled: Boolean = false,
-  /** Used by [[ErgoTreeEvaluator]] to conditionally build a trace of added costs.
+  /** Used by [[CErgoTreeEvaluator]] to conditionally build a trace of added costs.
+ *
     * @see Value.addCost
     */
   costTracingEnabled: Boolean = false,
-  /** Profiler which, when defined, should be used in [[ErgoTreeEvaluator]] constructor. */
+  /** Profiler which, when defined, should be used in [[CErgoTreeEvaluator]] constructor. */
   profilerOpt: Option[Profiler] = None,
   /** Should be set to true, if evaluation is performed as part of test suite.
     * In such a case, additional operations may be performed (such as sanity checks). */
@@ -123,7 +124,7 @@ case class JitEvalResult[A](value: A, cost: JitCost)
   * @param profiler  Performs operations profiling and time measurements (if enabled in settings).
   * @param settings  Settings to be used during evaluation.
   */
-class ErgoTreeEvaluator(
+class CErgoTreeEvaluator(
   val context: Context,
   val constants: Seq[Constant[SType]],
   protected val coster: CostAccumulator,
@@ -133,7 +134,7 @@ class ErgoTreeEvaluator(
   /** Evaluates the given expression in the given data environment. */
   def eval(env: DataEnv, exp: SValue): Any = {
     VersionContext.checkVersions(context.activatedScriptVersion, context.currentErgoTreeVersion)
-    ErgoTreeEvaluator.currentEvaluator.withValue(this) {
+    CErgoTreeEvaluator.currentEvaluator.withValue(this) {
       exp.evalTo[Any](env)(this)
     }
   }
@@ -358,7 +359,7 @@ class ErgoTreeEvaluator(
   }
 }
 
-object ErgoTreeEvaluator {
+object CErgoTreeEvaluator {
   /** Immutable data environment used to assign data values to graph nodes. */
   type DataEnv = Map[Int, Any]
 
@@ -380,26 +381,27 @@ object ErgoTreeEvaluator {
 
   /** Evaluator currently is being executed on the current thread.
     * This variable is set in a single place, specifically in the `eval` method of
-    * [[ErgoTreeEvaluator]].
+    * [[CErgoTreeEvaluator]].
+ *
     * @see getCurrentEvaluator
     */
-  private[sigmastate] val currentEvaluator = new DynamicVariable[ErgoTreeEvaluator](null)
+  private[sigmastate] val currentEvaluator = new DynamicVariable[CErgoTreeEvaluator](null)
 
   /** Returns a current evaluator for the current thread. */
-  def getCurrentEvaluator: ErgoTreeEvaluator = currentEvaluator.value
+  def getCurrentEvaluator: CErgoTreeEvaluator = currentEvaluator.value
 
-  /** Creates a new [[ErgoTreeEvaluator]] instance with the given profiler and settings.
+  /** Creates a new [[CErgoTreeEvaluator]] instance with the given profiler and settings.
     * The returned evaluator can be used to initialize the `currentEvaluator` variable.
     * As a result, cost-aware operations (code blocks) can be implemented, even when those
     * operations don't involve ErgoTree evaluation.
     * As an example, see methods in [[sigmastate.SigSerializer]] and
     * [[sigmastate.FiatShamirTree]] where cost-aware code blocks are used.
     */
-  def forProfiling(profiler: Profiler, evalSettings: EvalSettings): ErgoTreeEvaluator = {
+  def forProfiling(profiler: Profiler, evalSettings: EvalSettings): CErgoTreeEvaluator = {
     val acc = new CostAccumulator(
       initialCost = JitCost(0),
       costLimit = Some(JitCost.fromBlockCost(evalSettings.scriptCostLimitInEvaluator)))
-    new ErgoTreeEvaluator(
+    new CErgoTreeEvaluator(
       context = null,
       constants = ArraySeq.empty,
       acc, profiler, evalSettings.copy(profilerOpt = Some(profiler)))
@@ -408,7 +410,7 @@ object ErgoTreeEvaluator {
   /** Executes [[FixedCost]] code `block` and use the given evaluator `E` to perform
     * profiling and cost tracing.
     * This helper method allows implementation of cost-aware code blocks by using
-    * thread-local instance of [[ErgoTreeEvaluator]].
+    * thread-local instance of [[CErgoTreeEvaluator]].
     * If the `currentEvaluator` [[DynamicVariable]] is not initialized (equals to null),
     * then the block is executed with minimal overhead.
     *
@@ -422,7 +424,7 @@ object ErgoTreeEvaluator {
     * Note, `null` is used instead of Option to avoid allocations.
     */
   def fixedCostOp[R <: AnyRef](costInfo: OperationCostInfo[FixedCost])
-                              (block: => R)(implicit E: ErgoTreeEvaluator): R = {
+                              (block: => R)(implicit E: CErgoTreeEvaluator): R = {
     if (E != null) {
       var res: R = null.asInstanceOf[R]
       E.addFixedCost(costInfo) {
@@ -436,7 +438,7 @@ object ErgoTreeEvaluator {
   /** Executes [[PerItemCost]] code `block` and use the given evaluator `E` to perform
     * profiling and cost tracing.
     * This helper method allows implementation of cost-aware code blocks by using
-    * thread-local instance of [[ErgoTreeEvaluator]].
+    * thread-local instance of [[CErgoTreeEvaluator]].
     * If the `currentEvaluator` [[DynamicVariable]] is not initialized (equals to null),
     * then the block is executed with minimal overhead.
     *
@@ -451,7 +453,7 @@ object ErgoTreeEvaluator {
     * Note, `null` is used instead of Option to avoid allocations.
     */
   def perItemCostOp[R](costInfo: OperationCostInfo[PerItemCost], nItems: Int)
-                      (block: () => R)(implicit E: ErgoTreeEvaluator): R = {
+                      (block: () => R)(implicit E: CErgoTreeEvaluator): R = {
     if (E != null) {
       E.addSeqCost(costInfo, nItems)(block)
     } else
@@ -516,9 +518,9 @@ object ErgoTreeEvaluator {
            constants: Seq[Constant[SType]],
            exp: SValue,
            evalSettings: EvalSettings): (Any, Int) = {
-    val evaluator = new ErgoTreeEvaluator(
+    val evaluator = new CErgoTreeEvaluator(
       sigmaContext, constants, costAccumulator, DefaultProfiler, evalSettings)
-    val res = evaluator.eval(Map(), exp)
+    val res       = evaluator.eval(Map(), exp)
     val cost = costAccumulator.totalCost.toBlockCost // scale to block cost
     (res, cost)
   }

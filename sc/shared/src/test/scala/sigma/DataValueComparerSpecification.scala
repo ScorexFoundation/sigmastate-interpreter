@@ -5,7 +5,7 @@ import sigma.data.{CSigmaProp, DataValueComparer, RType, TrivialProp}
 import sigma.util.BenchmarkUtil
 import sigmastate.eval.Profiler
 import sigmastate.helpers.SigmaPPrint
-import sigmastate.interpreter.{CostAccumulator, ErgoTreeEvaluator, EvalSettings}
+import sigmastate.interpreter.{CostAccumulator, CErgoTreeEvaluator, EvalSettings}
 import sigma.ast.{ErgoTree, JitCost}
 import sigma.eval.{SigmaDsl, TracedCost}
 
@@ -17,7 +17,7 @@ class DataValueComparerSpecification extends SigmaDslTesting
   implicit override val generatorDrivenConfig = PropertyCheckConfiguration(minSuccessful = 30)
 
   implicit override val evalSettings: EvalSettings =
-    ErgoTreeEvaluator.DefaultEvalSettings.copy(
+    CErgoTreeEvaluator.DefaultEvalSettings.copy(
     isMeasureOperationTime = true,
     isMeasureScriptTime = true,
     isLogEnabled = false, // don't commit the `true` value (CI log is too high)
@@ -32,11 +32,11 @@ class DataValueComparerSpecification extends SigmaDslTesting
 
   import TestData._
 
-  def createEvaluator(settings: EvalSettings, profiler: Profiler): ErgoTreeEvaluator = {
+  def createEvaluator(settings: EvalSettings, profiler: Profiler): CErgoTreeEvaluator = {
     val accumulator = new CostAccumulator(
       initialCost = JitCost(0),
       costLimit = Some(JitCost.fromBlockCost(settings.scriptCostLimitInEvaluator)))
-    val evaluator = new ErgoTreeEvaluator(
+    val evaluator = new CErgoTreeEvaluator(
       context = null,
       constants = ErgoTree.EmptyConstants,
       coster = accumulator, profiler, settings)

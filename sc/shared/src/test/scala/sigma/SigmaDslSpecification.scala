@@ -80,7 +80,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   implicit override val generatorDrivenConfig = PropertyCheckConfiguration(minSuccessful = 30)
 
-  val evalSettingsInTests = ErgoTreeEvaluator.DefaultEvalSettings.copy(
+  val evalSettingsInTests = CErgoTreeEvaluator.DefaultEvalSettings.copy(
     isMeasureOperationTime = true,
     isMeasureScriptTime = true,
     isLogEnabled = false, // don't commit the `true` value (travis log is too high)
@@ -91,7 +91,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       */
     costTracingEnabled = true,
 
-    profilerOpt = Some(ErgoTreeEvaluator.DefaultProfiler),
+    profilerOpt = Some(CErgoTreeEvaluator.DefaultProfiler),
     isTestRun = true
   )
 
@@ -9173,7 +9173,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("blake2b256 benchmark: to estimate timeout") {
     val cases = (1 to 10).map { i =>
-      val block = Colls.fromArray(Array.fill(ErgoTreeEvaluator.DataBlockSize * i)(0.toByte))
+      val block = Colls.fromArray(Array.fill(CErgoTreeEvaluator.DataBlockSize * i)(0.toByte))
       block
     }
     benchmarkCases(cases,
@@ -10024,7 +10024,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   override protected def afterAll(): Unit = {
-    printDebug(ErgoTreeEvaluator.DefaultProfiler.generateReport)
+    printDebug(CErgoTreeEvaluator.DefaultProfiler.generateReport)
     printDebug("==========================================================")
     printDebug(Interpreter.verifySignatureProfiler.generateReport)
     printDebug("==========================================================")

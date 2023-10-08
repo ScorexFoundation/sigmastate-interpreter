@@ -15,8 +15,8 @@ import sigma.Extensions.ArrayOps
 import sigma.crypto.EcPointType
 import sigma.eval.SigmaDsl
 import sigma.util.Extensions.{BigIntegerOps, EcpOps, SigmaBooleanOps}
-import sigmastate.interpreter.{CostAccumulator, ErgoTreeEvaluator}
-import sigmastate.interpreter.ErgoTreeEvaluator.DefaultProfiler
+import sigmastate.interpreter.{CostAccumulator, CErgoTreeEvaluator}
+import sigmastate.interpreter.CErgoTreeEvaluator.DefaultProfiler
 import sigmastate.utils.Helpers
 
 import scala.annotation.nowarn
@@ -32,11 +32,11 @@ class DataSerializerSpecification extends SerializationSpecification {
     val res = DataSerializer.deserialize(tpe, r)
     res shouldBe obj
 
-    val es = ErgoTreeEvaluator.DefaultEvalSettings
+    val es = CErgoTreeEvaluator.DefaultEvalSettings
     val accumulator = new CostAccumulator(
       initialCost = JitCost(0),
       costLimit = Some(JitCost.fromBlockCost(es.scriptCostLimitInEvaluator)))
-    val evaluator = new ErgoTreeEvaluator(
+    val evaluator = new CErgoTreeEvaluator(
       context = null,
       constants = ErgoTree.EmptyConstants,
       coster = accumulator, DefaultProfiler, es)
