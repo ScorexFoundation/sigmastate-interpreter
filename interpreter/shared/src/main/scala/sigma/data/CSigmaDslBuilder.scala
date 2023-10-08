@@ -7,11 +7,11 @@ import scorex.crypto.hash.{Blake2b256, Sha256}
 import scorex.utils.Longs
 import sigma.ast.{AtLeast, SubstConstants}
 import sigma.crypto.{CryptoConstants, EcPointType, Ecp}
+import sigma.eval.Extensions.EvalCollOps
 import sigma.serialization.{GroupElementSerializer, SigmaSerializer}
 import sigma.util.Extensions.BigIntegerOps
 import sigma.validation.SigmaValidationSettings
 import sigma.{AvlTree, BigInt, Box, Coll, CollBuilder, GroupElement, SigmaDslBuilder, SigmaProp, VersionContext}
-import sigmastate.eval.Extensions.EvalCollOps
 
 import java.math.BigInteger
 

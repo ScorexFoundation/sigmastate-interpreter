@@ -16,8 +16,9 @@ import sigma.ast._
 import sigma.ast.defs._
 import sigmastate._
 import sigma.Extensions.ArrayOps
+import sigma.eval.Extensions.SigmaBooleanOps
 import sigma.eval.SigmaDsl
-import sigmastate.eval.Extensions.{EvalIterableOps, SigmaBooleanOps}
+import sigmastate.eval.Extensions.EvalIterableOps
 import sigmastate.eval._
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}

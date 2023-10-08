@@ -19,6 +19,7 @@ import sigma.SigmaDslTesting
 import sigma.Extensions._
 import sigma.ast.defs.{ErgoBoxCandidateRType, TrueSigmaProp}
 import sigma.data.{CSigmaProp, Digest32Coll, TrivialProp}
+import sigma.eval.Extensions.EvalCollOps
 
 class ErgoLikeTransactionSpec extends SigmaDslTesting {
 

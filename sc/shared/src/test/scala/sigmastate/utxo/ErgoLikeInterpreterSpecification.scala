@@ -14,12 +14,11 @@ import sigma.util.Extensions.EcpOps
 import sigma.validation.ValidationException
 import sigmastate.eval._
 import sigmastate.interpreter.Interpreter._
-import sigmastate.eval.Extensions.SigmaBooleanOps
 import sigmastate.helpers._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}
-import sigma.ast.defs._
+import sigma.eval.Extensions.SigmaBooleanOps
 import sigma.serialization.{SerializationSpecification, ValueSerializer}
 import sigmastate.utils.Helpers._
 

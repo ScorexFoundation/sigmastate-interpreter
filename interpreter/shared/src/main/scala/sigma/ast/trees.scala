@@ -14,8 +14,8 @@ import sigma.data._
 import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma.validation.SigmaValidationSettings
 import sigma.{Coll, Colls, GroupElement, SigmaProp, VersionContext}
-import sigmastate.eval.Extensions.EvalCollOps
 import NumericOps.{BigIntIsExactIntegral, BigIntIsExactOrdering}
+import sigma.eval.Extensions.EvalCollOps
 import sigma.eval.SigmaDsl
 import sigmastate.interpreter.ErgoTreeEvaluator
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv

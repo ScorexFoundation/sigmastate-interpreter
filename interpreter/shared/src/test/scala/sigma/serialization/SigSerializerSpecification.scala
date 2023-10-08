@@ -6,12 +6,12 @@ import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.Assertion
 import sigma.Extensions.ArrayOps
 import sigma.data.{AvlTreeData, CAND, COR, CTHRESHOLD, ProveDHTuple, ProveDlog, SigmaBoolean, TrivialProp}
+import sigma.eval.Extensions.SigmaBooleanOps
 import sigmastate._
 import sigmastate.crypto.DLogProtocol.SecondDLogProverMessage
 import sigmastate.crypto.VerifierMessage.Challenge
 import sigmastate.crypto.SecondDHTupleProverMessage
 import sigmastate.crypto.GF2_192_Poly
-import sigmastate.eval.Extensions.SigmaBooleanOps
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTransactionTesting, TestingCommons}
 import sigmastate.interpreter.Interpreter
 import sigma.serialization.generators.ObjectGenerators

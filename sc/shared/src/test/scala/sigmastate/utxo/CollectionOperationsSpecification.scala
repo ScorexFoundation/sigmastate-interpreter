@@ -10,10 +10,10 @@ import sigma.ast.SCollection._
 import sigma.data.AvlTreeData
 import SCollectionMethods.{FlatMapMethod, IndexOfMethod, IndicesMethod, PatchMethod, UpdateManyMethod, UpdatedMethod}
 import sigma.ast
-import sigmastate.eval.Extensions.SigmaBooleanOps
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigma.serialization.OpCodes._
 import sigma.ast.MethodCall
+import sigma.eval.Extensions.SigmaBooleanOps
 import sigmastate.utils.Helpers._
 
 class CollectionOperationsSpecification extends CompilerTestingCommons

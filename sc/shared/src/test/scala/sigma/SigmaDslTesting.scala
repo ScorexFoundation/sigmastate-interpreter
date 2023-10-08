@@ -25,19 +25,18 @@ import sigma.ast._
 import sigma.eval.{CostDetails, SigmaDsl}
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.crypto.SigmaProtocolPrivateInput
-import sigmastate.eval.Extensions.SigmaBooleanOps
 import sigmastate.eval.{CContext, CompiletimeIRContext, IRContext}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaPPrint}
 import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
 import sigmastate.interpreter._
 import sigma.ast.Apply
+import sigma.eval.Extensions.SigmaBooleanOps
 import sigma.serialization.ValueSerializer
 import sigma.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers._
 import sigma.validation.ValidationRules.CheckSerializableTypeCode
 import sigma.validation.{SigmaValidationSettings, ValidationException}
-import sigmastate.eval
 
 import scala.collection.mutable
 import scala.reflect.ClassTag
@@ -352,8 +351,8 @@ class SigmaDslTesting extends AnyPropSpec
             )
 
             // We add ctx as it's own variable with id = 1
-            val ctxVar = sigmastate.eval.Extensions.toAnyValue[sigma.Context](ctx)(sigma.ContextRType)
-            val carolVar = sigmastate.eval.Extensions.toAnyValue[Coll[Byte]](pkCarolBytes.toColl)(RType[Coll[Byte]])
+            val ctxVar = sigma.eval.Extensions.toAnyValue[sigma.Context](ctx)(sigma.ContextRType)
+            val carolVar = sigma.eval.Extensions.toAnyValue[Coll[Byte]](pkCarolBytes.toColl)(RType[Coll[Byte]])
             val newCtx = ctx
                 .withUpdatedVars(1 -> ctxVar, 2 -> carolVar)
                 .copy(

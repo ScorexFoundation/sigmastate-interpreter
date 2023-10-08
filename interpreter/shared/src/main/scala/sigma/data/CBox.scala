@@ -7,9 +7,10 @@ import sigma.ast.SCollection.SByteArray
 import sigma.ast.defs._
 import sigma.ast.{ConstantNode, EvaluatedValue, SInt, STuple, SType}
 import sigma.data.CBox.regs
+import sigma.eval.Extensions.toAnyValue
 import sigma.exceptions.InvalidType
 import sigma.{AnyValue, Box, Coll, Colls}
-import sigmastate.eval.Extensions.toAnyValue
+
 import java.util.Arrays
 
 /** A default implementation of [[Box]] interface.

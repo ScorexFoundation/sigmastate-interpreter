@@ -1,7 +1,7 @@
 package sigma.data
 
 import sigma._
-import sigmastate.eval.Extensions._
+import sigma.eval.Extensions.IntExt
 
 import scala.math.{Integral, Ordering}
 

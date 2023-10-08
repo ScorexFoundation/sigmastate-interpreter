@@ -12,8 +12,7 @@ import sigma.data.{RType, SigmaBoolean}
 import sigma.validation.ValidationException
 import sigma.validation.ValidationRules.CheckSerializableTypeCode
 import sigma.ast.defs.{SValue, SigmaPropValue}
-import sigma.eval.{CostDetails, GivenCost, TracedCost}
-import sigmastate.eval._
+import sigma.eval.{CostDetails, Extensions, GivenCost, TracedCost}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultProfiler
@@ -22,6 +21,7 @@ import sigmastate.interpreter._
 import sigmastate.lang.{CompilerSettings, SigmaCompiler}
 import sigma.serialization.SigmaSerializer
 import sigmastate.CompilerTestsBase
+import sigmastate.eval.{CContext, IRContext}
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag

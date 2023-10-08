@@ -7,35 +7,13 @@ import scorex.crypto.authds.avltree.batch.{Insert, Lookup, Remove, Update}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.util.encode.Base16
 import sigma.ast.SType.AnyOps
-import sigma.data.{CAnyValue, CBox, CSigmaDslBuilder, Digest32Coll, Nullable, RType, SigmaBoolean}
-import sigma.{Coll, _}
-import sigmastate.Platform
-import sigma.ast.{CheckingSigmaBuilder, SigmaPropIsProven, TransformingSigmaBuilder, _}
-import sigma.ast.defs._
-import sigmastate.utils.Helpers
+import sigma.ast._
+import sigma.data.{CBox, Digest32Coll, RType}
+import sigma._
 
-import java.math.BigInteger
 import scala.util.{Failure, Success}
 
 object Extensions {
-
-  implicit class ByteExt(val b: Byte) extends AnyVal {
-    @inline def toBigInt: BigInt = CSigmaDslBuilder.BigInt(BigInteger.valueOf(b.toLong))
-  }
-
-  implicit class ShortExt(val b: Short) extends AnyVal {
-    @inline def toBigInt: BigInt = CSigmaDslBuilder.BigInt(BigInteger.valueOf(b.toLong))
-  }
-
-  implicit class IntExt(val x: Int) extends AnyVal {
-    /** Convert this value to BigInt. */
-    @inline def toBigInt: BigInt = CSigmaDslBuilder.BigInt(BigInteger.valueOf(x.toLong))
-  }
-
-  implicit class LongExt(val x: Long) extends AnyVal {
-    /** Convert this value to BigInt. */
-    @inline def toBigInt: BigInt = CSigmaDslBuilder.BigInt(BigInteger.valueOf(x))
-  }
 
   /** Extension methods for `Array[Byte]` not available for generic `Array[T]`. */
   implicit class ArrayByteOps(val arr: Array[Byte]) extends AnyVal {
@@ -49,48 +27,11 @@ object Extensions {
     @inline def toColl: Coll[T] = Colls.fromArray[T](seq.toArray(RType[T].classTag))
   }
 
-  implicit class EvalCollOps[T](val coll: Coll[T]) extends AnyVal {
-    /** Helper type synonym. */
-    type ElemTpe = SType { type WrappedType = T}
-
-    /** Wraps the collection into ConstantNode using collection's element type. */
-    def toConstant: Constant[SCollection[ElemTpe]] = {
-      val elemTpe = Evaluation.rtypeToSType(coll.tItem).asInstanceOf[ElemTpe]
-      ConstantNode[SCollection[ElemTpe]](coll, SCollectionType(elemTpe))
-    }
-
-    /** Transforms this collection into array of constants.
-      *
-      * This method have exactly the same semantics on JS and JVM IF `coll.tItem`
-      * precisely describes the type of elements in `call`. (Which is the case for all
-      * collections created by ErgoTree interpreter).
-      *
-      * However, if it is not the case, then JVM and JS will have different semantics for Byte and Short.
-      *
-      * The JVM version preserves v5.0 consensus protocol semantics.
-      * The JS version is a reasonable approximation of the JVM version.
-      */
-    def toArrayOfConstants: Array[Constant[SType]] = {
-      val constants = coll.toArray.map { v =>
-        // see ScalaDoc for ensureTypeCarringValue
-        val valToLift = Helpers.ensureTypeCarringValue(v, coll.tItem.asInstanceOf[RType[Any]])
-        // call platform-specific method to transform the value to a Constant
-        Platform.liftToConstant(valToLift, TransformingSigmaBuilder) match {
-          case Nullable(c) => c
-          case _ => sys.error(s"Cannot liftToConstant($valToLift)")
-        }
-      }
-      constants
-    }
-  }
-
   implicit class DslDataOps[A](data: A)(implicit tA: RType[A]) {
     def toTreeData: Constant[SType] = {
       CheckingSigmaBuilder.mkConstant(data.asWrappedType, Evaluation.rtypeToSType(tA))
     }
   }
-
-  def toAnyValue[A:RType](x: A) = new CAnyValue(x, RType[A].asInstanceOf[RType[Any]])
 
   implicit class ErgoBoxOps(val ebox: ErgoBox) extends AnyVal {
     def toTestBox: Box = {
@@ -102,12 +43,6 @@ object Extensions {
       */
       CBox(ebox)
     }
-  }
-
-  implicit class SigmaBooleanOps(val sb: SigmaBoolean) extends AnyVal {
-    def toSigmaPropValue: SigmaPropValue = SigmaPropConstant(sb)
-
-    def isProven: Value[SBoolean.type] = SigmaPropIsProven(SigmaPropConstant(sb))
   }
 
   implicit class AvlTreeOps(val tree: AvlTree) extends AnyVal {

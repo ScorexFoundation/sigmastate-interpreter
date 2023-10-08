@@ -3,10 +3,10 @@ package sigmastate.utxo
 import sigma.ast._
 import sigma.ast.defs._
 import sigma.data.{AvlTreeData, CAND, COR, ProveDlog, TrivialProp}
+import sigma.eval.Extensions.SigmaBooleanOps
 import sigma.exceptions.GraphBuildingException
 import sigmastate._
 import sigmastate.crypto.DLogProtocol.DLogProverInput
-import sigmastate.eval.Extensions.SigmaBooleanOps
 import sigmastate.helpers._
 
 class ThresholdSpecification extends CompilerTestingCommons

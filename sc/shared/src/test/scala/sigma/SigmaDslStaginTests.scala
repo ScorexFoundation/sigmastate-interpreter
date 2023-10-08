@@ -3,7 +3,7 @@ package sigma
 import org.scalatest.BeforeAndAfterAll
 import scalan.{BaseCtxTests, BaseLiftableTests}
 import sigma.data.TrivialProp
-import sigmastate.eval.Extensions._
+import sigma.eval.Extensions.toAnyValue
 import sigmastate.eval._
 
 import scala.language.reflectiveCalls
