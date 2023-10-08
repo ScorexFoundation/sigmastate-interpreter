@@ -27,6 +27,7 @@ import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter._
 import sigma.ast.{Apply, MethodCall, PropertyCall}
+import sigma.exceptions.InvalidType
 import sigma.serialization.ValueCodes.OpCode
 import sigmastate.utils.Extensions._
 import sigmastate.utils.Helpers

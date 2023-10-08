@@ -6,7 +6,6 @@ import scorex.crypto.hash.Blake2b256
 import scorex.util.encode.Base58
 import sigma.ast.{ByteArrayConstant, Constant, ErgoTree, IntConstant, SigmaAnd, UnparsedErgoTree}
 import sigmastate.crypto.DLogProtocol.DLogProverInput
-import sigmastate.eval.InvalidType
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers._
 import sigmastate.interpreter.ContextExtension.VarBinding
@@ -23,7 +22,7 @@ import sigma.ast.ErgoTree.{ZeroHeader, setConstantSegregation}
 
 import sigma.ast.SType
 import sigma.data.ProveDlog
-import sigma.exceptions.CostLimitException
+import sigma.exceptions.{CostLimitException, InvalidType}
 import sigma.serialization.GroupElementSerializer
 import sigma.validation.ValidationException
 import sigma.validation.ValidationRules.CheckTypeCode

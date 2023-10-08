@@ -4,6 +4,7 @@ import debox.cfor
 import sigma.Extensions.ArrayOps
 import sigma._
 import sigma.data._
+import sigma.exceptions.InvalidType
 
 import scala.annotation.unused
 import scala.reflect.ClassTag

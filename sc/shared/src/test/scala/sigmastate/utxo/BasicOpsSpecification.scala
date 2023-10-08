@@ -11,7 +11,6 @@ import sigma.ast._
 import sigma.ast.defs._
 import sigma.crypto.CryptoConstants
 import sigmastate._
-import sigmastate.eval.InvalidType
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.ContextExtension.VarBinding
@@ -19,6 +18,7 @@ import sigmastate.interpreter.ErgoTreeEvaluator.DefaultEvalSettings
 import sigmastate.interpreter.EvalSettings
 import sigmastate.interpreter.Interpreter._
 import sigma.ast.Apply
+import sigma.exceptions.InvalidType
 import sigmastate.utils.Helpers._
 
 import java.math.BigInteger
