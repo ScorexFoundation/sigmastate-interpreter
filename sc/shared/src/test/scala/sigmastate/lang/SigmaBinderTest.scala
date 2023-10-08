@@ -11,8 +11,8 @@ import sigmastate._
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import SigmaPredef.PredefinedFuncRegistry
 import sigma.ast.defs._
+import sigma.eval.SigmaDsl
 import sigma.exceptions.BinderException
-import sigmastate.eval._
 
 class SigmaBinderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers with LangTests {
   import StdSigmaBuilder._

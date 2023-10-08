@@ -8,10 +8,11 @@ import sigma.{Environment, VersionContext}
 import sigma.ast._
 import sigmastate._
 import sigma.Extensions.ArrayOps
-import sigmastate.eval.{SigmaDsl}
 import sigma.serialization.OpCodes
 import sigma.SigmaTestingData
+import sigma.eval.SigmaDsl
 import sigma.exceptions.ConstraintFailed
+
 import java.math.BigInteger
 
 class SigmaBuilderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers

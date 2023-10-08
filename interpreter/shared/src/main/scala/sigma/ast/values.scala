@@ -2,23 +2,23 @@ package sigma.ast
 
 import debox.cfor
 import sigma.Extensions.ArrayOps
+import sigma._
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.TypeCodes.ConstantCode
 import sigma.ast.defs._
 import sigma.crypto.{CryptoConstants, EcPointType}
 import sigma.data.{CSigmaDslBuilder, CSigmaProp, Nullable, RType, SigmaBoolean}
-import sigma.kiama.rewriting.Rewriter.count
-import sigma.util.CollectionUtil._
-import sigma.util.Extensions._
-import sigma._
+import sigma.eval.SigmaDsl
 import sigma.exceptions.InterpreterException
-import sigmastate.eval._
-import sigmastate.interpreter.ErgoTreeEvaluator._
-import sigmastate.interpreter.{ErgoTreeEvaluator, Interpreter}
+import sigma.kiama.rewriting.Rewriter.count
 import sigma.serialization.OpCodes._
 import sigma.serialization.ValueCodes.OpCode
 import sigma.serialization._
+import sigma.util.CollectionUtil._
+import sigma.util.Extensions._
 import sigma.utils.Overloading.Overload1
+import sigmastate.interpreter.ErgoTreeEvaluator
+import sigmastate.interpreter.ErgoTreeEvaluator._
 
 import java.math.BigInteger
 import java.util.{Arrays, Objects}

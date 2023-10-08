@@ -6,8 +6,8 @@ import sigma.crypto.{BigIntegers, EcPointType}
 import sigma.data.ProveDlog
 import sigma.serialization.GroupElementSerializer
 import sigma.crypto.CryptoConstants.dlogGroup
+import sigma.eval.SigmaDsl
 import sigmastate.crypto.VerifierMessage.Challenge
-import sigmastate.eval._
 
 import java.math.BigInteger
 

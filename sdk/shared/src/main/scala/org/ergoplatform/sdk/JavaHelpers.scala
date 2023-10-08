@@ -333,7 +333,7 @@ object JavaHelpers {
 
   def BoxRType: RType[sigma.Box] = sigma.BoxRType
 
-  def SigmaDsl: CSigmaDslBuilder = sigmastate.eval.SigmaDsl
+  def SigmaDsl: CSigmaDslBuilder = sigma.eval.SigmaDsl
 
   def collFrom(arr: Array[Byte]): Coll[Byte] = {
     Colls.fromArray(arr)

@@ -12,7 +12,7 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ModifierId
 import sigma.ast._
 import sigma.Extensions.ArrayOps
-import sigmastate.eval.{CHeader, CPreHeader, SigmaDsl}
+import sigmastate.eval.{CHeader, CPreHeader}
 import sigmastate.helpers.TestingCommons
 import sigma.serialization.ErgoTreeSerializer
 import sigma.serialization.generators.ObjectGenerators
@@ -20,6 +20,7 @@ import sigmastate.utils.Helpers
 import sigma.ast.{SBoolean, SSigmaProp}
 import sigma.crypto.EcPointType
 import ErgoTree.HeaderType
+import sigma.eval.SigmaDsl
 
 import java.math.BigInteger
 import scala.reflect.ClassTag

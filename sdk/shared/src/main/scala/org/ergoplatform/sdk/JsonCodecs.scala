@@ -16,6 +16,7 @@ import sigma.data.{AvlTreeData, AvlTreeFlags, CBigInt, Digest32Coll, WrapperOf}
 import sigma.validation.SigmaValidationSettings
 import sigma.{AnyValue, Coll, Colls, Header, PreHeader, SigmaException}
 import sigma.ast.EvaluatedValue
+import sigma.eval.SigmaDsl
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigmastate.interpreter.{ContextExtension, ProverResult}

@@ -17,6 +17,7 @@ import debox.cfor
 import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
 import sigma.ast._
+import sigma.eval.SigmaDsl
 import sigma.serialization.SerializerException
 import sigma.serialization.{DataSerializer, SigmaSerializer}
 import sigma.serialization.ErgoTreeSerializer

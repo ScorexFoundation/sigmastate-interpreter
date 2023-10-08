@@ -3,11 +3,12 @@ package sigma
 import org.scalatest.BeforeAndAfterAll
 import sigma.data.{CSigmaProp, DataValueComparer, RType, TrivialProp}
 import sigma.util.BenchmarkUtil
-import sigmastate.eval.{Profiler, SigmaDsl}
+import sigmastate.eval.Profiler
 import sigmastate.helpers.SigmaPPrint
 import sigmastate.interpreter.{CostAccumulator, ErgoTreeEvaluator, EvalSettings}
 import sigma.ast.{ErgoTree, JitCost}
-import sigma.eval.TracedCost
+import sigma.eval.{SigmaDsl, TracedCost}
+
 import scala.util.{Success, Try}
 
 class DataValueComparerSpecification extends SigmaDslTesting

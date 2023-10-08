@@ -22,11 +22,11 @@ import sigma.ast.ErgoTree.ZeroHeader
 import sigma.ast.SType.AnyOps
 import sigma.ast.defs.{SValue, ValueOps}
 import sigma.ast._
-import sigma.eval.CostDetails
+import sigma.eval.{CostDetails, SigmaDsl}
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.crypto.SigmaProtocolPrivateInput
 import sigmastate.eval.Extensions.SigmaBooleanOps
-import sigmastate.eval.{CContext, CompiletimeIRContext, IRContext, SigmaDsl}
+import sigmastate.eval.{CContext, CompiletimeIRContext, IRContext}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaPPrint}
 import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}

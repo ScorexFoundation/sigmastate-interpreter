@@ -21,6 +21,7 @@ import sigma.Coll
 import sigma.ast.SAvlTree
 import sigma.ast.defs.{GetVarByteArray, OptionValueOps}
 import sigma.data.{AvlTreeData, AvlTreeFlags, CSigmaProp, TrivialProp}
+import sigma.eval.SigmaDsl
 import sigma.{AvlTree, Context}
 import sigmastate.eval.Extensions.AvlTreeOps
 

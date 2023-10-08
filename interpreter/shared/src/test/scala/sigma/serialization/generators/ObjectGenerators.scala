@@ -29,6 +29,7 @@ import sigma.util.Extensions.EcpOps
 import sigma.validation.{ChangedRule, DisabledRule, EnabledRule, ReplacedRule, RuleStatus}
 import sigma.validation.ValidationRules.FirstRuleId
 import ErgoTree.ZeroHeader
+import sigma.eval.SigmaDsl
 
 import java.math.BigInteger
 import scala.collection.compat.immutable.ArraySeq

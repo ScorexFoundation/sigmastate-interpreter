@@ -13,6 +13,7 @@ import sigma.ast._
 import org.scalacheck.Gen
 import sigma.Extensions.ArrayOps
 import sigma.crypto.EcPointType
+import sigma.eval.SigmaDsl
 import sigma.util.Extensions.{BigIntegerOps, EcpOps, SigmaBooleanOps}
 import sigmastate.interpreter.{CostAccumulator, ErgoTreeEvaluator}
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultProfiler

@@ -4,7 +4,7 @@ import org.ergoplatform.ErgoBox
 import sigma.data.{AvlTreeData, Nullable, SigmaBoolean}
 import sigma.{Evaluation, VersionContext}
 import sigma.ast.{Constant, FalseLeaf, SigmaBuilder, TrueLeaf}
-import sigmastate.eval.SigmaDsl
+import sigma.eval.SigmaDsl
 import sigma.Coll
 import sigma.ast._
 import sigma.{AvlTree, GroupElement, SigmaProp}

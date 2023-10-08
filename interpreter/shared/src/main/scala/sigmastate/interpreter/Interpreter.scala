@@ -18,10 +18,11 @@ import sigmastate.FiatShamirTree._
 import sigmastate._
 import sigmastate.crypto.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
 import sigmastate.crypto._
-import sigmastate.eval.{Profiler, SigmaDsl, addCostChecked}
+import sigmastate.eval.{Profiler, addCostChecked}
 import sigmastate.interpreter.ErgoTreeEvaluator.fixedCostOp
 import sigmastate.interpreter.Interpreter._
 import sigma.ast.defs.ValueOps
+import sigma.eval.SigmaDsl
 import sigma.exceptions.{CostLimitException, InterpreterException}
 import sigmastate.utils.Helpers._
 

@@ -12,7 +12,7 @@ import sigma.crypto.EcPointType
 import sigma.serialization.SerializerException
 import sigma.util.Extensions.{BigIntegerOps, EcpOps, SigmaBooleanOps}
 import sigma.Extensions.ArrayOps
-import sigmastate.eval._
+import sigma.eval.SigmaDsl
 import sigma.{AvlTree, Box, Colls, Evaluation}
 import sigma.serialization.SerializationSpecification
 

@@ -14,7 +14,7 @@ import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingIn
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
 import sigma.ast.defs._
-import sigmastate.eval._
+import sigma.eval.SigmaDsl
 
 class MixExampleSpecification extends CompilerTestingCommons
   with CompilerCrossVersionProps {

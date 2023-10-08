@@ -5,7 +5,7 @@ import sigma.crypto.{BigIntegers, CryptoConstants, EcPointType}
 import sigma.data.ProveDHTuple
 import sigma.serialization.GroupElementSerializer
 import sigmastate.crypto.VerifierMessage.Challenge
-import sigmastate.eval.SigmaDsl
+import sigma.eval.SigmaDsl
 
 import java.math.BigInteger
 

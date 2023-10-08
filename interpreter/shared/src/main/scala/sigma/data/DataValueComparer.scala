@@ -4,7 +4,7 @@ import debox.{cfor, sp}
 import sigma._
 import sigma.ast.{FixedCost, JitCost, NamedDesc, OperationCostInfo, PerItemCost}
 import sigma.crypto.EcPointType
-import sigmastate.eval.SigmaDsl
+import sigma.eval.SigmaDsl
 import sigmastate.interpreter.ErgoTreeEvaluator
 
 /** Implementation of data equality for two arbitrary ErgoTree data types.

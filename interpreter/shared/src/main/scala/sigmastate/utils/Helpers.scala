@@ -7,7 +7,7 @@ import sigma.data.{CAnyValue, OverloadHack, RType}
 import scorex.utils.Ints
 import sigma.crypto.EcPointType
 import sigma.{Coll, Colls, Environment, GroupElement}
-import sigmastate.eval.SigmaDsl
+import sigma.eval.SigmaDsl
 
 import java.util
 import java.util.concurrent.locks.Lock

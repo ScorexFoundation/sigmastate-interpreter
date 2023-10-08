@@ -16,12 +16,14 @@ import sigma.ast._
 import sigma.ast.defs._
 import sigmastate._
 import sigma.Extensions.ArrayOps
+import sigma.eval.SigmaDsl
 import sigmastate.eval.Extensions.{EvalIterableOps, SigmaBooleanOps}
 import sigmastate.eval._
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}
 import sigma.serialization.OpCodes._
 import sigmastate.utils.Helpers._
+
 import java.nio.ByteBuffer
 import scala.collection.immutable.Seq
 import scala.collection.mutable

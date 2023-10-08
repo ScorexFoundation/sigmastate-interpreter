@@ -14,9 +14,9 @@ import sigma.ast.defs.{GetVarByteArray, OptionValueOps}
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigma.ast.defs._
+import sigma.eval.SigmaDsl
 import sigmastate.interpreter.Interpreter._
 import sigma.serialization.ValueSerializer
-import sigmastate.eval._
 
 import scala.util.Random
 
