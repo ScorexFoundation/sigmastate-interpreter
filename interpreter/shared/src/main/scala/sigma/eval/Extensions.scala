@@ -5,7 +5,6 @@ import sigma.data.{CAnyValue, CSigmaDslBuilder, Nullable, RType, SigmaBoolean}
 import sigma.{BigInt, Coll, Evaluation}
 import sigma.ast.{Constant, ConstantNode, SBoolean, SCollection, SCollectionType, SType, SigmaPropConstant, SigmaPropIsProven, TransformingSigmaBuilder, Value}
 import sigmastate.Platform
-import sigmastate.utils.Helpers
 
 import java.math.BigInteger
 
@@ -54,7 +53,7 @@ object Extensions {
     def toArrayOfConstants: Array[Constant[SType]] = {
       val constants = coll.toArray.map { v =>
         // see ScalaDoc for ensureTypeCarringValue
-        val valToLift = Helpers.ensureTypeCarringValue(v, coll.tItem.asInstanceOf[RType[Any]])
+        val valToLift = ensureTypeCarringValue(v, coll.tItem.asInstanceOf[RType[Any]])
         // call platform-specific method to transform the value to a Constant
         Platform.liftToConstant(valToLift, TransformingSigmaBuilder) match {
           case Nullable(c) => c
