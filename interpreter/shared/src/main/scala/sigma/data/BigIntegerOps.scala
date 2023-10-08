@@ -1,10 +1,9 @@
-package sigmastate.eval
+package sigma.data
 
-import sigma.data.{CBigInt, CSigmaDslBuilder, ExactIntegral, ExactOrderingImpl}
-
-import scala.math.{Integral, Ordering}
 import sigma._
 import sigmastate.eval.Extensions._
+
+import scala.math.{Integral, Ordering}
 
 object OrderingOps {
   def apply[T](implicit ord: Ordering[T]) = ord

@@ -22,7 +22,7 @@ import ErgoTree.{HeaderType, ZeroHeader}
 import sigma.eval.{CostDetails, TracedCost}
 import sigmastate._
 import sigmastate.eval.Extensions.{AvlTreeOps, ByteExt, IntExt, LongExt, ShortExt}
-import sigmastate.eval.OrderingOps._
+import OrderingOps._
 import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter._

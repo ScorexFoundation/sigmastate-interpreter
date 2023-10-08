@@ -337,7 +337,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
       FuncIsLiftable(la, lb)
   }).asInstanceOf[Liftable[_,WT]]
 
-  import NumericOps._
+  import sigma.data.NumericOps._
   private lazy val elemToExactNumericMap = Map[Elem[_], ExactNumeric[_]](
     (ByteElement, ByteIsExactIntegral),
     (ShortElement, ShortIsExactIntegral),
