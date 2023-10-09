@@ -4,7 +4,6 @@ import org.ergoplatform.ErgoLikeContext
 import sigma.ast._
 import sigma.ast.defs._
 import sigmastate.eval.Profiler
-import sigmastate.interpreter.CErgoTreeEvaluator.DataEnv
 import sigmastate.interpreter.Interpreter.ReductionResult
 import sigma.{Context, SigmaProp, VersionContext, ast}
 import sigma.util.Extensions._
@@ -13,6 +12,8 @@ import supertagged.TaggedType
 import debox.{Buffer => DBuffer}
 import sigma.ast.SType
 import sigma.data.SigmaBoolean
+import sigma.eval.ErgoTreeEvaluator
+import sigma.eval.ErgoTreeEvaluator.DataEnv
 
 import scala.collection.compat.immutable.ArraySeq
 import scala.util.DynamicVariable
@@ -129,7 +130,7 @@ class CErgoTreeEvaluator(
   val constants: Seq[Constant[SType]],
   protected val coster: CostAccumulator,
   val profiler: Profiler,
-  val settings: EvalSettings) {
+  val settings: EvalSettings) extends ErgoTreeEvaluator {
 
   /** Evaluates the given expression in the given data environment. */
   def eval(env: DataEnv, exp: SValue): Any = {
@@ -360,8 +361,6 @@ class CErgoTreeEvaluator(
 }
 
 object CErgoTreeEvaluator {
-  /** Immutable data environment used to assign data values to graph nodes. */
-  type DataEnv = Map[Int, Any]
 
   /** Size of data block in bytes. Used in JIT cost calculations.
     * @see [[NEQ]],

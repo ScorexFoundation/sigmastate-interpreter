@@ -5,10 +5,10 @@ import sigma.ast.SAvlTreeMethods.KeyValueColl
 import sigma.ast.SCollection.{SBooleanArray, SByteArray, SIntArray}
 import sigma.ast._
 import sigma.ast.defs._
+import sigma.eval.ErgoTreeEvaluator
 import sigma.reflection.ReflectionData.registerClassEntry
 import sigma.reflection.{ReflectionData, mkConstructor, mkMethod}
 import sigma.serialization.ValueCodes.OpCode
-import sigmastate.interpreter.CErgoTreeEvaluator
 
 /** Reflection metadata for `interpreter` module.
   * For each class of this module that needs reflection metadata,
@@ -216,41 +216,41 @@ object SigmaDataReflection {
   { val clazz = SAvlTreeMethods.getClass
     registerClassEntry(clazz,
       methods = Map(
-        mkMethod(clazz, "update_eval", Array[Class[_]](classOf[MethodCall], classOf[AvlTree], classOf[Coll[_]], classOf[Coll[_]], classOf[CErgoTreeEvaluator])) { (obj, args) =>
+        mkMethod(clazz, "update_eval", Array[Class[_]](classOf[MethodCall], classOf[AvlTree], classOf[Coll[_]], classOf[Coll[_]], classOf[ErgoTreeEvaluator])) { (obj, args) =>
           obj.asInstanceOf[SAvlTreeMethods.type].update_eval(args(0).asInstanceOf[MethodCall],
             args(1).asInstanceOf[AvlTree],
             args(2).asInstanceOf[KeyValueColl],
-            args(3).asInstanceOf[Coll[Byte]])(args(4).asInstanceOf[CErgoTreeEvaluator])
+            args(3).asInstanceOf[Coll[Byte]])(args(4).asInstanceOf[ErgoTreeEvaluator])
         },
-        mkMethod(clazz, "contains_eval", Array[Class[_]](classOf[MethodCall], classOf[AvlTree], classOf[Coll[_]], classOf[Coll[_]], classOf[CErgoTreeEvaluator])) { (obj, args) =>
+        mkMethod(clazz, "contains_eval", Array[Class[_]](classOf[MethodCall], classOf[AvlTree], classOf[Coll[_]], classOf[Coll[_]], classOf[ErgoTreeEvaluator])) { (obj, args) =>
           obj.asInstanceOf[SAvlTreeMethods.type].contains_eval(args(0).asInstanceOf[MethodCall],
             args(1).asInstanceOf[AvlTree],
             args(2).asInstanceOf[Coll[Byte]],
-            args(3).asInstanceOf[Coll[Byte]])(args(4).asInstanceOf[CErgoTreeEvaluator])
+            args(3).asInstanceOf[Coll[Byte]])(args(4).asInstanceOf[ErgoTreeEvaluator])
         },
-        mkMethod(clazz, "get_eval", Array[Class[_]](classOf[MethodCall], classOf[AvlTree], classOf[Coll[_]], classOf[Coll[_]], classOf[CErgoTreeEvaluator])) { (obj, args) =>
+        mkMethod(clazz, "get_eval", Array[Class[_]](classOf[MethodCall], classOf[AvlTree], classOf[Coll[_]], classOf[Coll[_]], classOf[ErgoTreeEvaluator])) { (obj, args) =>
           obj.asInstanceOf[SAvlTreeMethods.type].get_eval(args(0).asInstanceOf[MethodCall],
             args(1).asInstanceOf[AvlTree],
             args(2).asInstanceOf[Coll[Byte]],
-            args(3).asInstanceOf[Coll[Byte]])(args(4).asInstanceOf[CErgoTreeEvaluator])
+            args(3).asInstanceOf[Coll[Byte]])(args(4).asInstanceOf[ErgoTreeEvaluator])
         },
-        mkMethod(clazz, "getMany_eval", Array[Class[_]](classOf[MethodCall], classOf[AvlTree], classOf[Coll[_]], classOf[Coll[_]], classOf[CErgoTreeEvaluator])) { (obj, args) =>
+        mkMethod(clazz, "getMany_eval", Array[Class[_]](classOf[MethodCall], classOf[AvlTree], classOf[Coll[_]], classOf[Coll[_]], classOf[ErgoTreeEvaluator])) { (obj, args) =>
           obj.asInstanceOf[SAvlTreeMethods.type].getMany_eval(args(0).asInstanceOf[MethodCall],
             args(1).asInstanceOf[AvlTree],
             args(2).asInstanceOf[Coll[Coll[Byte]]],
-            args(3).asInstanceOf[Coll[Byte]])(args(4).asInstanceOf[CErgoTreeEvaluator])
+            args(3).asInstanceOf[Coll[Byte]])(args(4).asInstanceOf[ErgoTreeEvaluator])
         },
-        mkMethod(clazz, "remove_eval", Array[Class[_]](classOf[MethodCall], classOf[AvlTree], classOf[Coll[_]], classOf[Coll[_]], classOf[CErgoTreeEvaluator])) { (obj, args) =>
+        mkMethod(clazz, "remove_eval", Array[Class[_]](classOf[MethodCall], classOf[AvlTree], classOf[Coll[_]], classOf[Coll[_]], classOf[ErgoTreeEvaluator])) { (obj, args) =>
           obj.asInstanceOf[SAvlTreeMethods.type].remove_eval(args(0).asInstanceOf[MethodCall],
             args(1).asInstanceOf[AvlTree],
             args(2).asInstanceOf[Coll[Coll[Byte]]],
-            args(3).asInstanceOf[Coll[Byte]])(args(4).asInstanceOf[CErgoTreeEvaluator])
+            args(3).asInstanceOf[Coll[Byte]])(args(4).asInstanceOf[ErgoTreeEvaluator])
         },
-        mkMethod(clazz, "insert_eval", Array[Class[_]](classOf[MethodCall], classOf[AvlTree], classOf[Coll[_]], classOf[Coll[_]], classOf[CErgoTreeEvaluator])) { (obj, args) =>
+        mkMethod(clazz, "insert_eval", Array[Class[_]](classOf[MethodCall], classOf[AvlTree], classOf[Coll[_]], classOf[Coll[_]], classOf[ErgoTreeEvaluator])) { (obj, args) =>
           obj.asInstanceOf[SAvlTreeMethods.type].insert_eval(args(0).asInstanceOf[MethodCall],
             args(1).asInstanceOf[AvlTree],
             args(2).asInstanceOf[KeyValueColl],
-            args(3).asInstanceOf[Coll[Byte]])(args(4).asInstanceOf[CErgoTreeEvaluator])
+            args(3).asInstanceOf[Coll[Byte]])(args(4).asInstanceOf[ErgoTreeEvaluator])
         }
       )
     )
@@ -259,52 +259,52 @@ object SigmaDataReflection {
   { val clazz = SCollectionMethods.getClass
     registerClassEntry(clazz,
       methods = Map(
-        mkMethod(clazz, "zip_eval", Array[Class[_]](classOf[MethodCall], classOf[Coll[_]], classOf[Coll[_]], classOf[CErgoTreeEvaluator])) { (obj, args) =>
+        mkMethod(clazz, "zip_eval", Array[Class[_]](classOf[MethodCall], classOf[Coll[_]], classOf[Coll[_]], classOf[ErgoTreeEvaluator])) { (obj, args) =>
           obj.asInstanceOf[SCollectionMethods.type].zip_eval(args(0).asInstanceOf[MethodCall],
             args(1).asInstanceOf[Coll[Any]],
-            args(2).asInstanceOf[Coll[Any]])(args(3).asInstanceOf[CErgoTreeEvaluator])
+            args(2).asInstanceOf[Coll[Any]])(args(3).asInstanceOf[ErgoTreeEvaluator])
         },
-        mkMethod(clazz, "getOrElse_eval", Array[Class[_]](classOf[MethodCall], classOf[Coll[_]], classOf[Int], classOf[java.lang.Object], classOf[CErgoTreeEvaluator])) { (obj, args) =>
+        mkMethod(clazz, "getOrElse_eval", Array[Class[_]](classOf[MethodCall], classOf[Coll[_]], classOf[Int], classOf[java.lang.Object], classOf[ErgoTreeEvaluator])) { (obj, args) =>
           obj.asInstanceOf[SCollectionMethods.type].getOrElse_eval(args(0).asInstanceOf[MethodCall],
             args(1).asInstanceOf[Coll[Any]],
             args(2).asInstanceOf[Int],
-            args(3).asInstanceOf[Any])(args(4).asInstanceOf[CErgoTreeEvaluator])
+            args(3).asInstanceOf[Any])(args(4).asInstanceOf[ErgoTreeEvaluator])
         },
-        mkMethod(clazz, "patch_eval", Array[Class[_]](classOf[MethodCall], classOf[Coll[_]], classOf[Int], classOf[Coll[_]], classOf[Int], classOf[CErgoTreeEvaluator])) { (obj, args) =>
+        mkMethod(clazz, "patch_eval", Array[Class[_]](classOf[MethodCall], classOf[Coll[_]], classOf[Int], classOf[Coll[_]], classOf[Int], classOf[ErgoTreeEvaluator])) { (obj, args) =>
           obj.asInstanceOf[SCollectionMethods.type].patch_eval(args(0).asInstanceOf[MethodCall],
             args(1).asInstanceOf[Coll[Any]],
             args(2).asInstanceOf[Int],
             args(3).asInstanceOf[Coll[Any]],
-            args(4).asInstanceOf[Int])(args(5).asInstanceOf[CErgoTreeEvaluator])
+            args(4).asInstanceOf[Int])(args(5).asInstanceOf[ErgoTreeEvaluator])
         },
-        mkMethod(clazz, "map_eval", Array[Class[_]](classOf[MethodCall], classOf[Coll[_]], classOf[Function1[_,_]], classOf[CErgoTreeEvaluator])) { (obj, args) =>
+        mkMethod(clazz, "map_eval", Array[Class[_]](classOf[MethodCall], classOf[Coll[_]], classOf[Function1[_,_]], classOf[ErgoTreeEvaluator])) { (obj, args) =>
           obj.asInstanceOf[SCollectionMethods.type].map_eval(args(0).asInstanceOf[MethodCall],
             args(1).asInstanceOf[Coll[Any]],
-            args(2).asInstanceOf[Any => Any])(args(3).asInstanceOf[CErgoTreeEvaluator])
+            args(2).asInstanceOf[Any => Any])(args(3).asInstanceOf[ErgoTreeEvaluator])
         },
-        mkMethod(clazz, "updated_eval", Array[Class[_]](classOf[MethodCall], classOf[Coll[_]], classOf[Int], classOf[java.lang.Object], classOf[CErgoTreeEvaluator])) { (obj, args) =>
+        mkMethod(clazz, "updated_eval", Array[Class[_]](classOf[MethodCall], classOf[Coll[_]], classOf[Int], classOf[java.lang.Object], classOf[ErgoTreeEvaluator])) { (obj, args) =>
           obj.asInstanceOf[SCollectionMethods.type].updated_eval(args(0).asInstanceOf[MethodCall],
             args(1).asInstanceOf[Coll[Any]],
             args(2).asInstanceOf[Int],
-            args(3))(args(4).asInstanceOf[CErgoTreeEvaluator])
+            args(3))(args(4).asInstanceOf[ErgoTreeEvaluator])
         },
-        mkMethod(clazz, "indexOf_eval", Array[Class[_]](classOf[MethodCall], classOf[Coll[_]], classOf[java.lang.Object], classOf[Int], classOf[CErgoTreeEvaluator])) { (obj, args) =>
+        mkMethod(clazz, "indexOf_eval", Array[Class[_]](classOf[MethodCall], classOf[Coll[_]], classOf[java.lang.Object], classOf[Int], classOf[ErgoTreeEvaluator])) { (obj, args) =>
           obj.asInstanceOf[SCollectionMethods.type].indexOf_eval(args(0).asInstanceOf[MethodCall],
-            args(1).asInstanceOf[Coll[Any]], args(2), args(3).asInstanceOf[Int])(args(4).asInstanceOf[CErgoTreeEvaluator])
+            args(1).asInstanceOf[Coll[Any]], args(2), args(3).asInstanceOf[Int])(args(4).asInstanceOf[ErgoTreeEvaluator])
         },
-        mkMethod(clazz, "updateMany_eval", Array[Class[_]](classOf[MethodCall], classOf[Coll[_]], classOf[Coll[_]], classOf[Coll[_]], classOf[CErgoTreeEvaluator])) { (obj, args) =>
+        mkMethod(clazz, "updateMany_eval", Array[Class[_]](classOf[MethodCall], classOf[Coll[_]], classOf[Coll[_]], classOf[Coll[_]], classOf[ErgoTreeEvaluator])) { (obj, args) =>
           obj.asInstanceOf[SCollectionMethods.type].updateMany_eval(args(0).asInstanceOf[MethodCall],
             args(1).asInstanceOf[Coll[Any]],
             args(2).asInstanceOf[Coll[Int]],
-            args(3).asInstanceOf[Coll[Any]])(args(4).asInstanceOf[CErgoTreeEvaluator])
+            args(3).asInstanceOf[Coll[Any]])(args(4).asInstanceOf[ErgoTreeEvaluator])
         },
-        mkMethod(clazz, "indices_eval", Array[Class[_]](classOf[MethodCall], classOf[Coll[_]], classOf[CErgoTreeEvaluator])) { (obj, args) =>
+        mkMethod(clazz, "indices_eval", Array[Class[_]](classOf[MethodCall], classOf[Coll[_]], classOf[ErgoTreeEvaluator])) { (obj, args) =>
           obj.asInstanceOf[SCollectionMethods.type].indices_eval(args(0).asInstanceOf[MethodCall],
-            args(1).asInstanceOf[Coll[Any]])(args(2).asInstanceOf[CErgoTreeEvaluator])
+            args(1).asInstanceOf[Coll[Any]])(args(2).asInstanceOf[ErgoTreeEvaluator])
         },
-        mkMethod(clazz, "flatMap_eval", Array[Class[_]](classOf[MethodCall], classOf[Coll[_]], classOf[Function1[_,_]], classOf[CErgoTreeEvaluator])) { (obj, args) =>
+        mkMethod(clazz, "flatMap_eval", Array[Class[_]](classOf[MethodCall], classOf[Coll[_]], classOf[Function1[_,_]], classOf[ErgoTreeEvaluator])) { (obj, args) =>
           obj.asInstanceOf[SCollectionMethods.type].flatMap_eval(args(0).asInstanceOf[MethodCall],
-            args(1).asInstanceOf[Coll[Any]], args(2).asInstanceOf[Any => Coll[Any]])(args(3).asInstanceOf[CErgoTreeEvaluator])
+            args(1).asInstanceOf[Coll[Any]], args(2).asInstanceOf[Any => Coll[Any]])(args(3).asInstanceOf[ErgoTreeEvaluator])
         }
       )
     )
@@ -313,11 +313,11 @@ object SigmaDataReflection {
   { val clazz = SGlobalMethods.getClass
     registerClassEntry(clazz,
       methods = Map(
-        mkMethod(clazz, "xor_eval", Array[Class[_]](classOf[MethodCall], classOf[SigmaDslBuilder], classOf[Coll[_]], classOf[Coll[_]], classOf[CErgoTreeEvaluator])) { (obj, args) =>
+        mkMethod(clazz, "xor_eval", Array[Class[_]](classOf[MethodCall], classOf[SigmaDslBuilder], classOf[Coll[_]], classOf[Coll[_]], classOf[ErgoTreeEvaluator])) { (obj, args) =>
           obj.asInstanceOf[SGlobalMethods.type].xor_eval(args(0).asInstanceOf[MethodCall],
             args(1).asInstanceOf[SigmaDslBuilder],
             args(2).asInstanceOf[Coll[Byte]],
-            args(3).asInstanceOf[Coll[Byte]])(args(4).asInstanceOf[CErgoTreeEvaluator])
+            args(3).asInstanceOf[Coll[Byte]])(args(4).asInstanceOf[ErgoTreeEvaluator])
         }
       )
     )

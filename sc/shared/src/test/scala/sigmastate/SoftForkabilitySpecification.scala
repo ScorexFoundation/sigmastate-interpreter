@@ -14,10 +14,11 @@ import sigma.validation.{ChangedRule, ReplacedRule, SigmaValidationSettings, Val
 import ErgoTree.{EmptyConstants, HeaderType, ZeroHeader, setSizeBit}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
-import sigmastate.interpreter.CErgoTreeEvaluator.DataEnv
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.interpreter.{ContextExtension, CErgoTreeEvaluator, ProverResult}
+import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigma.ast.defs._
+import sigma.eval.ErgoTreeEvaluator
+import sigma.eval.ErgoTreeEvaluator.DataEnv
 import sigma.exceptions.InterpreterException
 import sigma.serialization.SigmaSerializer.startReader
 import sigma.serialization._
@@ -113,7 +114,7 @@ class SoftForkabilitySpecification extends SigmaTestingData
     override val opCode: OpCode = Height2Code // use reserved code
     override val opType = SFunc(SContext, SInt)
     override val costKind = Height.costKind
-    protected final override def eval(env: DataEnv)(implicit E: CErgoTreeEvaluator): Any = {
+    protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
       addCost(this.costKind)
       E.context.HEIGHT
     }

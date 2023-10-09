@@ -4,8 +4,7 @@ import debox.{cfor, sp}
 import sigma._
 import sigma.ast.{FixedCost, JitCost, NamedDesc, OperationCostInfo, PerItemCost}
 import sigma.crypto.EcPointType
-import sigma.eval.SigmaDsl
-import sigmastate.interpreter.CErgoTreeEvaluator
+import sigma.eval.{ErgoTreeEvaluator, SigmaDsl}
 
 /** Implementation of data equality for two arbitrary ErgoTree data types.
   * @see [[DataValueComparer.equalDataValues]]
@@ -158,7 +157,7 @@ object DataValueComparer {
     */
   private def equalCOA_Prim[@sp(Boolean, Byte, Short, Int, Long) A]
                    (c1: COA[A], c2: COA[A], costInfo: OperationCostInfo[PerItemCost])
-                   (implicit E: CErgoTreeEvaluator): Boolean = {
+                   (implicit E: ErgoTreeEvaluator): Boolean = {
     var okEqual = true
     E.addSeqCost(costInfo.costKind, costInfo.opDesc) { () =>
       // this loop is bounded because MaxArrayLength limit is enforced
@@ -180,7 +179,7 @@ object DataValueComparer {
     * comparison, which have significant performace overhead.
     * For this reason, this method is used as a fallback case.
     */
-  def equalColls[A](c1: Coll[A], c2: Coll[A])(implicit E: CErgoTreeEvaluator): Boolean = {
+  def equalColls[A](c1: Coll[A], c2: Coll[A])(implicit E: ErgoTreeEvaluator): Boolean = {
     var okEqual = true
     E.addSeqCost(CostKind_EQ_Coll, OpDesc_EQ_Coll) { () =>
       // this loop is bounded because MaxArrayLength limit is enforced
@@ -198,7 +197,7 @@ object DataValueComparer {
   /** Compares two collections by dispatching to the most efficient implementation
     * depending on the actual type A.
     * */
-  def equalColls_Dispatch[A](coll1: Coll[A], coll2: Coll[A])(implicit E: CErgoTreeEvaluator): Boolean = {
+  def equalColls_Dispatch[A](coll1: Coll[A], coll2: Coll[A])(implicit E: ErgoTreeEvaluator): Boolean = {
     coll1.tItem match {
       case BooleanType =>
         equalCOA_Prim(
@@ -239,7 +238,7 @@ object DataValueComparer {
 
   /** Compare equality of two sequences of SigmaBoolean trees. */
   def equalSigmaBooleans(xs: Seq[SigmaBoolean], ys: Seq[SigmaBoolean])
-                        (implicit E: CErgoTreeEvaluator): Boolean = {
+                        (implicit E: ErgoTreeEvaluator): Boolean = {
     val len = xs.length
     if (len != ys.length) return false
     var okEqual = true
@@ -251,7 +250,7 @@ object DataValueComparer {
 
   /** Compare equality of two SigmaBoolean trees. */
   def equalSigmaBoolean(l: SigmaBoolean, r: SigmaBoolean)
-                        (implicit E: CErgoTreeEvaluator): Boolean = {
+                        (implicit E: ErgoTreeEvaluator): Boolean = {
     E.addCost(MatchType) // once for every node of the SigmaBoolean tree
     l match {
       case ProveDlog(x) => r match {
@@ -276,13 +275,13 @@ object DataValueComparer {
         val sb2 = r.asInstanceOf[CTHRESHOLD]
         k == sb2.k && equalSigmaBooleans(children, sb2.children)
       case _ =>
-        CErgoTreeEvaluator.error(
+        sys.error(
           s"Cannot compare SigmaBoolean values $l and $r: unknown type")
     }
   }
 
   /** Returns true if the given GroupElement is equal to the given object. */
-  def equalGroupElement(ge1: GroupElement, r: Any)(implicit E: CErgoTreeEvaluator): Boolean = {
+  def equalGroupElement(ge1: GroupElement, r: Any)(implicit E: ErgoTreeEvaluator): Boolean = {
     var okEqual = true
     E.addFixedCost(EQ_GroupElement) {
       okEqual = ge1 == r
@@ -291,7 +290,7 @@ object DataValueComparer {
   }
 
   /** Returns true if the given EcPointType is equal to the given object. */
-  def equalECPoint(p1: EcPointType, r: Any)(implicit E: CErgoTreeEvaluator): Boolean = {
+  def equalECPoint(p1: EcPointType, r: Any)(implicit E: ErgoTreeEvaluator): Boolean = {
     var okEqual = true
     E.addFixedCost(EQ_GroupElement) {
       okEqual = p1 == r
@@ -307,7 +306,7 @@ object DataValueComparer {
     * always finishes at least as fast as the costLimit prescribes.
     * No limit is structural depth is necessary.
     */
-  def equalDataValues(l: Any, r: Any)(implicit E: CErgoTreeEvaluator): Boolean = {
+  def equalDataValues(l: Any, r: Any)(implicit E: ErgoTreeEvaluator): Boolean = {
     var okEqual: Boolean = false
     l match {
       case _: java.lang.Number | _: Boolean => /** case 1 (see [[EQ_Prim]]) */
@@ -405,7 +404,7 @@ object DataValueComparer {
         okEqual = r.isInstanceOf[Unit]
 
       case _ =>
-        CErgoTreeEvaluator.error(s"Cannot compare $l and $r: unknown type")
+        sys.error(s"Cannot compare $l and $r: unknown type")
     }
     okEqual
   }

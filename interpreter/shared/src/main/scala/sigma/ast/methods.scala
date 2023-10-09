@@ -13,12 +13,10 @@ import sigma.reflection.RClass
 import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma._
 import SMethod.{MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
-import sigma.eval.{CostDetails, TracedCost}
+import sigma.eval.{CostDetails, ErgoTreeEvaluator, TracedCost}
 import sigmastate.eval._
-import sigmastate.interpreter._
 import sigma.utils.Overloading.Overload1
 import sigma.utils.SparseArrayContainer
-import sigmastate._
 
 import scala.language.implicitConversions
 import scala.util.{Failure, Success}
@@ -181,7 +179,7 @@ object SNumericTypeMethods extends MethodsContainer {
     * It is called as part of MethodCall.eval method. */
   val costOfNumericCast: MethodCostFunc = new MethodCostFunc {
     override def apply(
-        E: CErgoTreeEvaluator,
+        E: ErgoTreeEvaluator,
         mc: MethodCall,
         obj: Any,
         args: Array[Any]): CostDetails = {
@@ -556,7 +554,7 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
     * Called via reflection based on naming convention.
     * @see SMethod.evalMethod
     */
-  def getOrElse_eval[A](mc: MethodCall, xs: Coll[A], i: Int, default: A)(implicit E: CErgoTreeEvaluator): A = {
+  def getOrElse_eval[A](mc: MethodCall, xs: Coll[A], i: Int, default: A)(implicit E: ErgoTreeEvaluator): A = {
     E.addCost(ByIndex.costKind, mc.method.opDesc)
     // the following lines should be semantically the same as in ByIndex.eval
     Value.checkType(mc.args.last.tpe, default)
@@ -579,7 +577,7 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
     * Called via reflection based on naming convention.
     * @see SMethod.evalMethod
     */
-  def map_eval[A,B](mc: MethodCall, xs: Coll[A], f: A => B)(implicit E: CErgoTreeEvaluator): Coll[B] = {
+  def map_eval[A,B](mc: MethodCall, xs: Coll[A], f: A => B)(implicit E: ErgoTreeEvaluator): Coll[B] = {
     val tpeB = mc.tpe.asInstanceOf[SCollection[SType]].elemType
     val tB = Evaluation.stypeToRType(tpeB).asInstanceOf[RType[B]]
     E.addSeqCostNoOp(MapCollection.costKind, xs.length, mc.method.opDesc)
@@ -684,7 +682,7 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
     * @see SMethod.evalMethod
     */
   def indices_eval[A, B](mc: MethodCall, xs: Coll[A])
-                        (implicit E: CErgoTreeEvaluator): Coll[Int] = {
+                        (implicit E: ErgoTreeEvaluator): Coll[Int] = {
     val m = mc.method
     E.addSeqCost(m.costKind.asInstanceOf[PerItemCost], xs.length, m.opDesc) { () =>
       xs.indices
@@ -739,7 +737,7 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
     * @return true if the body is allowed
     */
   def isValidPropertyAccess(varId: Int, expr: SValue)
-                           (implicit E: CErgoTreeEvaluator): Boolean = {
+                           (implicit E: ErgoTreeEvaluator): Boolean = {
     var found = false
     // NOTE: the cost depends on the position of the pattern since
     // we are checking until the first matching pattern found.
@@ -767,7 +765,7 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
   /** Recognizer of `flatMap` method calls with valid lambdas. */
   object IsSingleArgMethodCall {
     def unapply(mc:MethodCall)
-               (implicit E: CErgoTreeEvaluator): Nullable[(Int, SValue)] = {
+               (implicit E: ErgoTreeEvaluator): Nullable[(Int, SValue)] = {
       var res: Nullable[(Int, SValue)] = Nullable.None
       E.addFixedCost(MatchSingleArgMethodCall_Info) {
         res = mc match {
@@ -783,7 +781,7 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
   }
 
   /** Checks that the given [[MethodCall]] operation is valid flatMap. */
-  def checkValidFlatmap(mc: MethodCall)(implicit E: CErgoTreeEvaluator) = {
+  def checkValidFlatmap(mc: MethodCall)(implicit E: ErgoTreeEvaluator) = {
     mc match {
       case IsSingleArgMethodCall(varId, lambdaBody)
             if isValidPropertyAccess(varId, lambdaBody) =>
@@ -794,7 +792,7 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
   }
 
   def throwInvalidFlatmap(mc: MethodCall) = {
-    CErgoTreeEvaluator.error(
+    sys.error(
       s"Unsupported lambda in flatMap: allowed usage `xs.flatMap(x => x.property)`: $mc")
   }
 
@@ -803,7 +801,7 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
     * @see SMethod.evalMethod
     */
   def flatMap_eval[A, B](mc: MethodCall, xs: Coll[A], f: A => Coll[B])
-                        (implicit E: CErgoTreeEvaluator): Coll[B] = {
+                        (implicit E: ErgoTreeEvaluator): Coll[B] = {
     val m = mc.method
     var res: Coll[B] = null
     E.addSeqCost(m.costKind.asInstanceOf[PerItemCost], m.opDesc) { () =>
@@ -827,7 +825,7 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
     * @see SMethod.evalMethod
     */
   def patch_eval[A](mc: MethodCall, xs: Coll[A], from: Int, patch: Coll[A], replaced: Int)
-                   (implicit E: CErgoTreeEvaluator): Coll[A] = {
+                   (implicit E: ErgoTreeEvaluator): Coll[A] = {
     val m = mc.method
     val nItems = xs.length + patch.length
     E.addSeqCost(m.costKind.asInstanceOf[PerItemCost], nItems, m.opDesc) { () =>
@@ -847,7 +845,7 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
     * @see SMethod.evalMethod
     */
   def updated_eval[A](mc: MethodCall, coll: Coll[A], index: Int, elem: A)
-                     (implicit E: CErgoTreeEvaluator): Coll[A] = {
+                     (implicit E: ErgoTreeEvaluator): Coll[A] = {
     val m = mc.method
     val costKind = m.costKind.asInstanceOf[PerItemCost]
     E.addSeqCost(costKind, coll.length, m.opDesc) { () =>
@@ -865,7 +863,7 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
     * @see SMethod.evalMethod
     */
   def updateMany_eval[A](mc: MethodCall, coll: Coll[A], indexes: Coll[Int], values: Coll[A])
-                        (implicit E: CErgoTreeEvaluator): Coll[A] = {
+                        (implicit E: ErgoTreeEvaluator): Coll[A] = {
     val costKind = mc.method.costKind.asInstanceOf[PerItemCost]
     E.addSeqCost(costKind, coll.length, mc.method.opDesc) { () =>
       coll.updateMany(indexes, values)
@@ -883,7 +881,7 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
     * @see SMethod.evalMethod
     */
   def indexOf_eval[A](mc: MethodCall, xs: Coll[A], elem: A, from: Int)
-                     (implicit E: CErgoTreeEvaluator): Int = {
+                     (implicit E: ErgoTreeEvaluator): Int = {
     val costKind = mc.method.costKind.asInstanceOf[PerItemCost]
     var res: Int = -1
     E.addSeqCost(costKind, mc.method.opDesc) { () =>
@@ -918,7 +916,7 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
     * @see SMethod.evalMethod
     */
   def zip_eval[A, B](mc: MethodCall, xs: Coll[A], ys: Coll[B])
-                    (implicit E: CErgoTreeEvaluator): Coll[(A,B)] = {
+                    (implicit E: ErgoTreeEvaluator): Coll[(A,B)] = {
     val m = mc.method
     E.addSeqCost(m.costKind.asInstanceOf[PerItemCost], xs.length, m.opDesc) { () =>
       xs.zip(ys)
@@ -1216,7 +1214,7 @@ case object SAvlTreeMethods extends MonoTypeMethods {
     NamedDesc("RemoveAvlTree"))
 
   /** Creates [[AvlTreeVerifier]] for the given tree and proof. */
-  def createVerifier(tree: AvlTree, proof: Coll[Byte])(implicit E: CErgoTreeEvaluator) = {
+  def createVerifier(tree: AvlTree, proof: Coll[Byte])(implicit E: ErgoTreeEvaluator) = {
     // the cost of tree reconstruction from proof is O(proof.length)
     E.addSeqCost(CreateAvlVerifier_Info, proof.length) { () =>
       AvlTreeVerifier(tree, proof)
@@ -1228,7 +1226,7 @@ case object SAvlTreeMethods extends MonoTypeMethods {
     * @see SMethod.evalMethod
     */
   def contains_eval(mc: MethodCall, tree: AvlTree, key: Coll[Byte], proof: Coll[Byte])
-                   (implicit E: CErgoTreeEvaluator): Boolean = {
+                   (implicit E: ErgoTreeEvaluator): Boolean = {
     val bv = createVerifier(tree, proof)
     val nItems = bv.treeHeight
 
@@ -1268,7 +1266,7 @@ case object SAvlTreeMethods extends MonoTypeMethods {
     * @see SMethod.evalMethod
     */
   def get_eval(mc: MethodCall, tree: AvlTree, key: Coll[Byte], proof: Coll[Byte])
-              (implicit E: CErgoTreeEvaluator): Option[Coll[Byte]] = {
+              (implicit E: ErgoTreeEvaluator): Option[Coll[Byte]] = {
     val bv = createVerifier(tree, proof)
     val nItems = bv.treeHeight
 
@@ -1304,7 +1302,7 @@ case object SAvlTreeMethods extends MonoTypeMethods {
     * @see SMethod.evalMethod
     */
   def getMany_eval(mc: MethodCall, tree: AvlTree, keys: Coll[Coll[Byte]], proof: Coll[Byte])
-                  (implicit E: CErgoTreeEvaluator): Coll[Option[Coll[Byte]]] = {
+                  (implicit E: ErgoTreeEvaluator): Coll[Option[Coll[Byte]]] = {
     val bv = createVerifier(tree, proof)
     val nItems = bv.treeHeight
     keys.map { key =>
@@ -1343,7 +1341,7 @@ case object SAvlTreeMethods extends MonoTypeMethods {
     * @see SMethod.evalMethod
     */
   def insert_eval(mc: MethodCall, tree: AvlTree, entries: KeyValueColl, proof: Coll[Byte])
-                 (implicit E: CErgoTreeEvaluator): Option[AvlTree] = {
+                 (implicit E: ErgoTreeEvaluator): Option[AvlTree] = {
     E.addCost(isInsertAllowed_Info)
     if (!tree.isInsertAllowed) {
       None
@@ -1399,7 +1397,7 @@ case object SAvlTreeMethods extends MonoTypeMethods {
     */
   def update_eval(mc: MethodCall, tree: AvlTree,
                   operations: KeyValueColl, proof: Coll[Byte])
-                 (implicit E: CErgoTreeEvaluator): Option[AvlTree] = {
+                 (implicit E: ErgoTreeEvaluator): Option[AvlTree] = {
     E.addCost(isUpdateAllowed_Info)
     if (!tree.isUpdateAllowed) {
       None
@@ -1451,7 +1449,7 @@ case object SAvlTreeMethods extends MonoTypeMethods {
     */
   def remove_eval(mc: MethodCall, tree: AvlTree,
                   operations: Coll[Coll[Byte]], proof: Coll[Byte])
-                 (implicit E: CErgoTreeEvaluator): Option[AvlTree] = {
+                 (implicit E: ErgoTreeEvaluator): Option[AvlTree] = {
     E.addCost(isRemoveAllowed_Info)
     if (!tree.isRemoveAllowed) {
       None
@@ -1619,7 +1617,7 @@ case object SGlobalMethods extends MonoTypeMethods {
     * @see SMethod.evalMethod, Xor.eval, Xor.xorWithCosting
     */
   def xor_eval(mc: MethodCall, G: SigmaDslBuilder, ls: Coll[Byte], rs: Coll[Byte])
-              (implicit E: CErgoTreeEvaluator): Coll[Byte] = {
+              (implicit E: ErgoTreeEvaluator): Coll[Byte] = {
     Xor.xorWithCosting(ls, rs)
   }
 

@@ -4,7 +4,7 @@ import debox.cfor
 import sigma.ast.SMethod.{InvokeDescBuilder, MethodCostFunc}
 import sigma.ast.defs._
 import sigma.data.RType
-import sigma.eval.{CostDetails, GivenCost, TracedCost}
+import sigma.eval.{CostDetails, ErgoTreeEvaluator, GivenCost, TracedCost}
 import sigma.reflection.{RClass, RMethod}
 import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma.validation.ValidationRules.CheckTypeWithMethods
@@ -106,7 +106,7 @@ case class SMethod(
 
   /** Invoke this method on the given object with the arguments.
     * This is used for methods with FixedCost costKind. */
-  def invokeFixed(obj: Any, args: Array[Any])(implicit E: CErgoTreeEvaluator): Any = {
+  def invokeFixed(obj: Any, args: Array[Any])(implicit E: ErgoTreeEvaluator): Any = {
     javaMethod.invoke(obj, args.asInstanceOf[Array[AnyRef]]:_*)
   }
 
@@ -135,7 +135,7 @@ case class SMethod(
           Evaluation.stypeToRType(t).classTag.runtimeClass
       }
     }
-    paramTypes(paramTypes.length - 1) = classOf[CErgoTreeEvaluator]
+    paramTypes(paramTypes.length - 1) = classOf[ErgoTreeEvaluator]
 
     val methodName = name + "_eval"
     val m = try {
@@ -211,18 +211,18 @@ object SMethod {
     * the `mc` node with the given `obj` as method receiver and `args` as method
     * arguments.
     */
-  abstract class MethodCostFunc extends Function4[CErgoTreeEvaluator, MethodCall, Any, Array[Any], CostDetails] {
+  abstract class MethodCostFunc extends Function4[ErgoTreeEvaluator, MethodCall, Any, Array[Any], CostDetails] {
     /**
       * The function returns an estimated cost of evaluation BEFORE actual evaluation of
       * the method. For this reason [[MethodCostFunc]] is not used for higher-order
       * operations like `Coll.map`, `Coll.filter` etc.
       */
-    def apply(E: CErgoTreeEvaluator, mc: MethodCall, obj: Any, args: Array[Any]): CostDetails
+    def apply(E: ErgoTreeEvaluator, mc: MethodCall, obj: Any, args: Array[Any]): CostDetails
   }
 
   /** Returns a cost function which always returs the given cost. */
   def givenCost(costKind: FixedCost): MethodCostFunc = new MethodCostFunc {
-    override def apply(E: CErgoTreeEvaluator,
+    override def apply(E: ErgoTreeEvaluator,
         mc: MethodCall,
         obj: Any, args: Array[Any]): CostDetails = {
       if (E.settings.costTracingEnabled)
@@ -235,7 +235,7 @@ object SMethod {
   /** Returns a cost function which expects `obj` to be of `Coll[T]` type and
     * uses its length to compute SeqCostItem  */
   def perItemCost(costKind: PerItemCost): MethodCostFunc = new MethodCostFunc {
-    override def apply(E: CErgoTreeEvaluator,
+    override def apply(E: ErgoTreeEvaluator,
         mc: MethodCall,
         obj: Any, args: Array[Any]): CostDetails = obj match {
       case coll: Coll[a] =>
@@ -246,7 +246,7 @@ object SMethod {
         else
           GivenCost(costKind.cost(coll.length))
       case _ =>
-        CErgoTreeEvaluator.error(
+        sys.error(
           s"Invalid object $obj of method call $mc: Coll type is expected")
     }
   }
