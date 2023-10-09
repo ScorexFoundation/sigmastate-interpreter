@@ -461,7 +461,7 @@ class SigmaDslTesting extends AnyPropSpec
   }
 
   /** A number of times the newF function in each test feature is repeated.
-    * In combination with [[sigmastate.eval.Profiler]] it allows to collect more accurate
+    * In combination with [[sigmastate.eval.CProfiler]] it allows to collect more accurate
     * timings for all operations.
     * @see SigmaDslSpecification */
   def nBenchmarkIters: Int = 0

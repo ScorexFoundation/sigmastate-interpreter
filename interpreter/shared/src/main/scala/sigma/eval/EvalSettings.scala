@@ -1,31 +1,30 @@
 package sigma.eval
 
 import sigma.eval.EvalSettings.EvaluationMode
-import sigmastate.eval.Profiler
-import sigmastate.interpreter.{CErgoTreeEvaluator, Interpreter}
+import sigmastate.interpreter.Interpreter
 import supertagged.TaggedType
 
 /** Configuration parameters of the evaluation run. */
 case class EvalSettings(
-    /** Used together with [[CErgoTreeEvaluator.profiler]] to measure individual operations timings. */
+    /** Used together with [[ErgoTreeEvaluator.profiler]] to measure individual operations timings. */
     isMeasureOperationTime: Boolean,
 
-    /** Used together with [[CErgoTreeEvaluator.profiler]] to measure script timings. */
+    /** Used together with [[ErgoTreeEvaluator.profiler]] to measure script timings. */
     isMeasureScriptTime: Boolean,
 
-    /** Used by [[CErgoTreeEvaluator]] to conditionally perform debug mode operations. */
+    /** Used by [[ErgoTreeEvaluator]] to conditionally perform debug mode operations. */
     isDebug: Boolean = false,
 
-    /** Used by [[CErgoTreeEvaluator]] to conditionally emit log messages. */
+    /** Used by [[ErgoTreeEvaluator]] to conditionally emit log messages. */
     isLogEnabled: Boolean = false,
 
-    /** Used by [[CErgoTreeEvaluator]] to conditionally build a trace of added costs.
+    /** Used by [[ErgoTreeEvaluator]] to conditionally build a trace of added costs.
       *
       * @see Value.addCost
       */
     costTracingEnabled: Boolean = false,
 
-    /** Profiler which, when defined, should be used in [[CErgoTreeEvaluator]] constructor. */
+    /** Profiler which, when defined, should be used in [[ErgoTreeEvaluator]] constructor. */
     profilerOpt: Option[Profiler] = None,
 
     /** Should be set to true, if evaluation is performed as part of test suite.

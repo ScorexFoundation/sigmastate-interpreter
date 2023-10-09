@@ -18,7 +18,7 @@ import sigmastate.FiatShamirTree._
 import sigmastate._
 import sigmastate.crypto.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
 import sigmastate.crypto._
-import sigmastate.eval.{Profiler, addCostChecked}
+import sigmastate.eval.{CProfiler, addCostChecked}
 import sigmastate.interpreter.CErgoTreeEvaluator.fixedCostOp
 import sigmastate.interpreter.Interpreter._
 import sigma.ast.defs.ValueOps
@@ -585,7 +585,7 @@ object Interpreter {
   /** An instance of profiler used to measure cost parameters of verifySignature
     * operations.
     */
-  val verifySignatureProfiler = new Profiler
+  val verifySignatureProfiler = new CProfiler
 
   private def toValidScriptTypeJITC(exp: SValue): SigmaPropValue = exp match {
     case v: Value[SBoolean.type]@unchecked if v.tpe == SBoolean => v.toSigmaProp

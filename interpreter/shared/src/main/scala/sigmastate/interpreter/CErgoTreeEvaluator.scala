@@ -3,14 +3,14 @@ package sigmastate.interpreter
 import org.ergoplatform.ErgoLikeContext
 import sigma.ast._
 import sigma.ast.defs._
-import sigmastate.eval.Profiler
+import sigmastate.eval.CProfiler
 import sigmastate.interpreter.Interpreter.ReductionResult
 import sigma.{Context, SigmaProp, VersionContext, ast}
 import sigma.util.Extensions._
 import debox.{Buffer => DBuffer}
 import sigma.ast.SType
 import sigma.data.SigmaBoolean
-import sigma.eval.{ErgoTreeEvaluator, EvalSettings}
+import sigma.eval.{ErgoTreeEvaluator, EvalSettings, Profiler}
 import sigma.eval.ErgoTreeEvaluator.DataEnv
 
 import scala.collection.compat.immutable.ArraySeq
@@ -301,7 +301,7 @@ object CErgoTreeEvaluator {
   val EmptyDataEnv: DataEnv = Map.empty
 
   /** A profiler which is used by default if [[EvalSettings.isMeasureOperationTime]] is enabled. */
-  val DefaultProfiler = new Profiler
+  val DefaultProfiler = new CProfiler
 
   /** Default global [[EvalSettings]] instance. */
   val DefaultEvalSettings = EvalSettings(
@@ -326,7 +326,7 @@ object CErgoTreeEvaluator {
     * As an example, see methods in [[sigmastate.SigSerializer]] and
     * [[sigmastate.FiatShamirTree]] where cost-aware code blocks are used.
     */
-  def forProfiling(profiler: Profiler, evalSettings: EvalSettings): CErgoTreeEvaluator = {
+  def forProfiling(profiler: CProfiler, evalSettings: EvalSettings): CErgoTreeEvaluator = {
     val acc = new CostAccumulator(
       initialCost = JitCost(0),
       costLimit = Some(JitCost.fromBlockCost(evalSettings.scriptCostLimitInEvaluator)))

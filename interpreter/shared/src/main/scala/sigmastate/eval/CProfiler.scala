@@ -6,9 +6,11 @@ import sigma.ast.TypeCodes.LastConstantCode
 import sigma.ast.defs._
 import sigma.util.Extensions.{ByteOps, DBufferOps}
 import sigma.ast.{MethodCall, PropertyCall}
+import sigma.eval.Profiler
 import sigma.serialization.ValueCodes.OpCode
 import sigma.serialization.ValueSerializer
 import sigma.serialization.ValueSerializer.getSerializer
+
 import scala.reflect.ClassTag
 
 /** Holds a series of profile measurements associated with a key.
@@ -102,7 +104,7 @@ class StatCollection[@sp(Int) K, @sp(Long, Double) V]
 }
 
 /** A simple profiler to measure average execution times of ErgoTree operations. */
-class Profiler {
+class CProfiler extends Profiler {
 
   // NOTE: this class is mutable so better to keep it private
   private class OpStat(

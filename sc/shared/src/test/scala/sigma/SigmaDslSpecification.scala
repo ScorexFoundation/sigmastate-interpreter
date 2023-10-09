@@ -95,7 +95,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     isTestRun = true
   )
 
-  def warmupSettings(p: Profiler) = evalSettingsInTests.copy(
+  def warmupSettings(p: CProfiler) = evalSettingsInTests.copy(
     isLogEnabled = false,
     printTestVectors = false,
     profilerOpt = Some(p)

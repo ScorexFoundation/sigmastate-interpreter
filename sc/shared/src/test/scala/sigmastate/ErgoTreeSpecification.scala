@@ -12,7 +12,7 @@ import sigma.validation.ValidationException
 import sigma.validation.ValidationRules.CheckTypeCode
 import ErgoTree.HeaderType
 import SCollectionMethods.checkValidFlatmap
-import sigmastate.eval.Profiler
+import sigmastate.eval.CProfiler
 import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}
 import sigmastate.interpreter.Interpreter.ReductionResult
 import sigmastate.interpreter.CErgoTreeEvaluator
@@ -610,7 +610,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
   }
 
   property("checkValidFlatmap") {
-    implicit val E = CErgoTreeEvaluator.forProfiling(new Profiler, evalSettings)
+    implicit val E = CErgoTreeEvaluator.forProfiling(new CProfiler, evalSettings)
     def mkLambda(t: SType, mkBody: SValue => SValue) = {
       MethodCall(
         ValUse(1, SCollectionType(t)),

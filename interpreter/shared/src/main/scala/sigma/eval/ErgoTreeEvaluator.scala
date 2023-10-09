@@ -2,7 +2,6 @@ package sigma.eval
 
 import sigma.Context
 import sigma.ast.{Constant, FixedCost, OperationCostInfo, OperationDesc, PerItemCost, SType, TypeBasedCost}
-import sigmastate.eval.Profiler
 
 abstract class ErgoTreeEvaluator {
   def addSeqCost[R](costKind: PerItemCost, nItems: Int, opDesc: OperationDesc)(block: () => R): R
