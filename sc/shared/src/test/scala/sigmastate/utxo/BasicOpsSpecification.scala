@@ -15,9 +15,9 @@ import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.interpreter.CErgoTreeEvaluator.DefaultEvalSettings
-import sigmastate.interpreter.EvalSettings
 import sigmastate.interpreter.Interpreter._
 import sigma.ast.Apply
+import sigma.eval.EvalSettings
 import sigma.exceptions.InvalidType
 import sigmastate.utils.Helpers._
 

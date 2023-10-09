@@ -1,8 +1,8 @@
 package sigmastate.helpers
 
 import org.ergoplatform._
+import sigma.eval.EvalSettings
 import sigmastate.interpreter.CErgoTreeEvaluator.DefaultEvalSettings
-import sigmastate.interpreter.EvalSettings
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 
 import scala.util.{Failure, Success}

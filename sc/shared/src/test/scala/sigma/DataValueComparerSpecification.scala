@@ -5,9 +5,9 @@ import sigma.data.{CSigmaProp, DataValueComparer, RType, TrivialProp}
 import sigma.util.BenchmarkUtil
 import sigmastate.eval.Profiler
 import sigmastate.helpers.SigmaPPrint
-import sigmastate.interpreter.{CostAccumulator, CErgoTreeEvaluator, EvalSettings}
+import sigmastate.interpreter.{CostAccumulator, CErgoTreeEvaluator}
 import sigma.ast.{ErgoTree, JitCost}
-import sigma.eval.{SigmaDsl, TracedCost}
+import sigma.eval.{EvalSettings, SigmaDsl, TracedCost}
 
 import scala.util.{Success, Try}
 

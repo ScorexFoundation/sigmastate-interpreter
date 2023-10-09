@@ -15,8 +15,9 @@ import SCollectionMethods.checkValidFlatmap
 import sigmastate.eval.Profiler
 import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}
 import sigmastate.interpreter.Interpreter.ReductionResult
-import sigmastate.interpreter.{CErgoTreeEvaluator, EvalSettings}
+import sigmastate.interpreter.CErgoTreeEvaluator
 import sigma.ast.defs._
+import sigma.eval.EvalSettings
 import sigma.exceptions.{CostLimitException, InterpreterException}
 import sigmastate.lang.CompilerSettings
 import sigma.serialization.ErgoTreeSerializer.DefaultSerializer

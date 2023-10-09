@@ -12,7 +12,7 @@ import sigma.data.{RType, SigmaBoolean}
 import sigma.validation.ValidationException
 import sigma.validation.ValidationRules.CheckSerializableTypeCode
 import sigma.ast.defs.{SValue, SigmaPropValue}
-import sigma.eval.{CostDetails, Extensions, GivenCost, TracedCost}
+import sigma.eval.{CostDetails, EvalSettings, Extensions, GivenCost, TracedCost}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.interpreter.CErgoTreeEvaluator.DefaultProfiler

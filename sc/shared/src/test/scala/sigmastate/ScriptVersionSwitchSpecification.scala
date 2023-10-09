@@ -11,10 +11,11 @@ import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers.createBox
 import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.CErgoTreeEvaluator.DefaultEvalSettings
-import sigmastate.interpreter.EvalSettings.EvaluationMode
+import sigma.eval.EvalSettings.EvaluationMode
 import sigmastate.interpreter._
 import sigma.ast.defs.ValueOps
 import sigma.data.CBox
+import sigma.eval.EvalSettings
 import sigma.exceptions.InterpreterException
 import sigmastate.utils.Helpers._
 

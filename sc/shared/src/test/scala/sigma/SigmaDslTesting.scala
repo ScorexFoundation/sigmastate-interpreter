@@ -22,7 +22,7 @@ import sigma.ast.ErgoTree.ZeroHeader
 import sigma.ast.SType.AnyOps
 import sigma.ast.defs.{SValue, ValueOps}
 import sigma.ast._
-import sigma.eval.{CostDetails, SigmaDsl}
+import sigma.eval.{CostDetails, EvalSettings, SigmaDsl}
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.crypto.SigmaProtocolPrivateInput
 import sigmastate.eval.{CContext, CompiletimeIRContext, IRContext}
