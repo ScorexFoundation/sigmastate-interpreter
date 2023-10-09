@@ -1213,11 +1213,11 @@ case object SAvlTreeMethods extends MonoTypeMethods {
     PerItemCost(baseCost = JitCost(100), perChunkCost = JitCost(15), chunkSize = 1),
     NamedDesc("RemoveAvlTree"))
 
-  /** Creates [[CAvlTreeVerifier]] for the given tree and proof. */
+  /** Creates [[sigma.eval.AvlTreeVerifier]] for the given tree and proof. */
   def createVerifier(tree: AvlTree, proof: Coll[Byte])(implicit E: ErgoTreeEvaluator) = {
     // the cost of tree reconstruction from proof is O(proof.length)
     E.addSeqCost(CreateAvlVerifier_Info, proof.length) { () =>
-      CAvlTreeVerifier(tree, proof)
+      E.createTreeVerifier(tree, proof)
     }
   }
 
@@ -1233,7 +1233,7 @@ case object SAvlTreeMethods extends MonoTypeMethods {
     var res = false
     // the cost of tree lookup is O(bv.treeHeight)
     E.addSeqCost(LookupAvlTree_Info, nItems) { () =>
-      res = bv.performOneOperation(Lookup(ADKey @@ key.toArray)) match {
+      res = bv.performLookup(ADKey @@ key.toArray) match {
         case Success(r) => r match {
           case Some(_) => true
           case _ => false
@@ -1272,7 +1272,7 @@ case object SAvlTreeMethods extends MonoTypeMethods {
 
     // the cost of tree lookup is O(bv.treeHeight)
     E.addSeqCost(LookupAvlTree_Info, nItems) { () =>
-      bv.performOneOperation(Lookup(ADKey @@ key.toArray)) match {
+      bv.performLookup(ADKey @@ key.toArray) match {
         case Success(r) => r match {
           case Some(v) => Some(Colls.fromArray(v))
           case _ => None
@@ -1308,7 +1308,7 @@ case object SAvlTreeMethods extends MonoTypeMethods {
     keys.map { key =>
       // the cost of tree lookup is O(bv.treeHeight)
       E.addSeqCost(LookupAvlTree_Info, nItems) { () =>
-        bv.performOneOperation(Lookup(ADKey @@ key.toArray)) match {
+        bv.performLookup(ADKey @@ key.toArray) match {
           case Success(r) => r match {
             case Some(v) => Some(Colls.fromArray(v))
             case _ => None
@@ -1354,8 +1354,7 @@ case object SAvlTreeMethods extends MonoTypeMethods {
         var res = true
         // the cost of tree lookup is O(bv.treeHeight)
         E.addSeqCost(InsertIntoAvlTree_Info, nItems) { () =>
-          val insert = Insert(ADKey @@ key.toArray, ADValue @@ value.toArray)
-          val insertRes = bv.performOneOperation(insert)
+          val insertRes = bv.performInsert(key.toArray, value.toArray)
           // TODO v6.0: throwing exception is not consistent with update semantics
           //  however it preserves v4.0 semantics (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/908)
           if (insertRes.isFailure) {
@@ -1411,8 +1410,7 @@ case object SAvlTreeMethods extends MonoTypeMethods {
         var res = true
         // the cost of tree update is O(bv.treeHeight)
         E.addSeqCost(UpdateAvlTree_Info, nItems) { () =>
-          val op = Update(ADKey @@ key.toArray, ADValue @@ value.toArray)
-          val updateRes = bv.performOneOperation(op)
+          val updateRes = bv.performUpdate(key.toArray, value.toArray)
           res = updateRes.isSuccess
         }
         res
@@ -1461,7 +1459,7 @@ case object SAvlTreeMethods extends MonoTypeMethods {
       cfor(0)(_ < operations.length, _ + 1) { i =>
         E.addSeqCost(RemoveAvlTree_Info, nItems) { () =>
           val key = operations(i).toArray
-          bv.performOneOperation(Remove(ADKey @@ key))
+          bv.performRemove(key)
         }
       }
 

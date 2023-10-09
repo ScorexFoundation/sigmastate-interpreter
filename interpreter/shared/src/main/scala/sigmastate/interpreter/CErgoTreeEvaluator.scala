@@ -3,14 +3,14 @@ package sigmastate.interpreter
 import org.ergoplatform.ErgoLikeContext
 import sigma.ast._
 import sigma.ast.defs._
-import sigmastate.eval.CProfiler
+import sigmastate.eval.{CAvlTreeVerifier, CProfiler}
 import sigmastate.interpreter.Interpreter.ReductionResult
-import sigma.{Context, SigmaProp, VersionContext, ast}
+import sigma.{AvlTree, Coll, Context, SigmaProp, VersionContext, ast}
 import sigma.util.Extensions._
 import debox.{Buffer => DBuffer}
 import sigma.ast.SType
 import sigma.data.SigmaBoolean
-import sigma.eval.{ErgoTreeEvaluator, EvalSettings, Profiler}
+import sigma.eval.{AvlTreeVerifier, ErgoTreeEvaluator, EvalSettings, Profiler}
 import sigma.eval.ErgoTreeEvaluator.DataEnv
 
 import scala.collection.compat.immutable.ArraySeq
@@ -61,6 +61,9 @@ class CErgoTreeEvaluator(
   protected val coster: CostAccumulator,
   val profiler: Profiler,
   val settings: EvalSettings) extends ErgoTreeEvaluator {
+
+  override def createTreeVerifier(tree: AvlTree, proof: Coll[Byte]): AvlTreeVerifier =
+    CAvlTreeVerifier(tree, proof)
 
   /** Evaluates the given expression in the given data environment. */
   def eval(env: DataEnv, exp: SValue): Any = {

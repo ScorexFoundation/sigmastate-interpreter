@@ -1,10 +1,13 @@
 package sigmastate.eval
 
-import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
-import scorex.crypto.authds.{ADDigest, SerializedAdProof}
+import scorex.crypto.authds.avltree.batch.{BatchAVLVerifier, Insert, Lookup, Remove, Update}
+import scorex.crypto.authds.{ADDigest, ADKey, ADValue, SerializedAdProof}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigma.data.CAvlTree
+import sigma.eval.AvlTreeVerifier
 import sigma.{AvlTree, Coll}
+
+import scala.util.Try
 
 /** Implements operations of AVL tree verifier based on
   * [[scorex.crypto.authds.avltree.batch.BatchAVLVerifier]].
@@ -17,8 +20,20 @@ class CAvlTreeVerifier private(
     override val keyLength: Int,
     override val valueLengthOpt: Option[Int])
     extends BatchAVLVerifier[Digest32, Blake2b256.type](
-      startingDigest, proof, keyLength, valueLengthOpt) {
+      startingDigest, proof, keyLength, valueLengthOpt) with AvlTreeVerifier {
   def treeHeight: Int = rootNodeHeight
+
+  override def performLookup(key: Array[Byte]): Try[Option[Array[Byte]]] =
+    performOneOperation(Lookup(ADKey @@ key))
+
+  override def performInsert(key: Array[Byte], value: Array[Byte]): Try[Option[Array[Byte]]] =
+    performOneOperation(Insert(ADKey @@ key, ADValue @@ value))
+
+  override def performUpdate(key: Array[Byte], value: Array[Byte]): Try[Option[Array[Byte]]] =
+    performOneOperation(Update(ADKey @@ key, ADValue @@ value))
+
+  override def performRemove(key: Array[Byte]): Try[Option[Array[Byte]]] =
+    performOneOperation(Remove(ADKey @@ key))
 
   /** Override default logging which outputs stack trace to the console. */
   override protected def logError(t: Throwable): Unit = {}

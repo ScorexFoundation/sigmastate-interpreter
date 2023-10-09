@@ -1,6 +1,6 @@
 package sigma.eval
 
-import sigma.Context
+import sigma.{AvlTree, Coll, Context}
 import sigma.ast.{Constant, FixedCost, OperationCostInfo, OperationDesc, PerItemCost, SType, TypeBasedCost}
 
 abstract class ErgoTreeEvaluator {
@@ -20,6 +20,7 @@ abstract class ErgoTreeEvaluator {
   def profiler: Profiler
   def constants: Seq[Constant[SType]]
   def context: Context
+  def createTreeVerifier(tree: AvlTree, proof: Coll[Byte]): AvlTreeVerifier
 }
 
 object ErgoTreeEvaluator {
