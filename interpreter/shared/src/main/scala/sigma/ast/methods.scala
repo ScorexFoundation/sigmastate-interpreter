@@ -1213,11 +1213,11 @@ case object SAvlTreeMethods extends MonoTypeMethods {
     PerItemCost(baseCost = JitCost(100), perChunkCost = JitCost(15), chunkSize = 1),
     NamedDesc("RemoveAvlTree"))
 
-  /** Creates [[AvlTreeVerifier]] for the given tree and proof. */
+  /** Creates [[CAvlTreeVerifier]] for the given tree and proof. */
   def createVerifier(tree: AvlTree, proof: Coll[Byte])(implicit E: ErgoTreeEvaluator) = {
     // the cost of tree reconstruction from proof is O(proof.length)
     E.addSeqCost(CreateAvlVerifier_Info, proof.length) { () =>
-      AvlTreeVerifier(tree, proof)
+      CAvlTreeVerifier(tree, proof)
     }
   }
 

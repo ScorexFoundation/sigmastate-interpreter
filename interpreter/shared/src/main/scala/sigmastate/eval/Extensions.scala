@@ -49,7 +49,7 @@ object Extensions {
 
     def contains(key: Coll[Byte], proof: Coll[Byte]): Boolean = {
       val keyBytes = key.toArray
-      val bv       = AvlTreeVerifier(tree, proof)
+      val bv       = CAvlTreeVerifier(tree, proof)
       bv.performOneOperation(Lookup(ADKey @@ keyBytes)) match {
         case Success(r) => r match {
           case Some(_) => true
@@ -61,7 +61,7 @@ object Extensions {
 
     def get(key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]] = {
       val keyBytes = key.toArray
-      val bv       = AvlTreeVerifier(tree, proof)
+      val bv       = CAvlTreeVerifier(tree, proof)
       bv.performOneOperation(Lookup(ADKey @@ keyBytes)) match {
         case Success(r) => r match {
           case Some(v) => Some(Colls.fromArray(v))
@@ -74,7 +74,7 @@ object Extensions {
     def getMany(
         keys: Coll[Coll[Byte]],
         proof: Coll[Byte]): Coll[Option[Coll[Byte]]] = {
-      val bv = AvlTreeVerifier(tree, proof)
+      val bv = CAvlTreeVerifier(tree, proof)
       keys.map { key =>
         bv.performOneOperation(Lookup(ADKey @@ key.toArray)) match {
           case Success(r) => r match {
@@ -92,7 +92,7 @@ object Extensions {
       if (!tree.isInsertAllowed) {
         None
       } else {
-        val bv = AvlTreeVerifier(tree, proof)
+        val bv = CAvlTreeVerifier(tree, proof)
         entries.forall { case (key, value) =>
           val insertRes = bv.performOneOperation(Insert(ADKey @@ key.toArray, ADValue @@ value.toArray))
           if (insertRes.isFailure) {
@@ -113,7 +113,7 @@ object Extensions {
       if (!tree.isUpdateAllowed) {
         None
       } else {
-        val bv = AvlTreeVerifier(tree, proof)
+        val bv = CAvlTreeVerifier(tree, proof)
         operations.forall { case (key, value) =>
           bv.performOneOperation(Update(ADKey @@ key.toArray, ADValue @@ value.toArray)).isSuccess
         }
@@ -128,7 +128,7 @@ object Extensions {
       if (!tree.isRemoveAllowed) {
         None
       } else {
-        val bv = AvlTreeVerifier(tree, proof)
+        val bv = CAvlTreeVerifier(tree, proof)
         cfor(0)(_ < operations.length, _ + 1) { i =>
           val key = operations(i).toArray
           bv.performOneOperation(Remove(ADKey @@ key))

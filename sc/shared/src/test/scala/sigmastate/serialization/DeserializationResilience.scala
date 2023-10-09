@@ -420,7 +420,7 @@ class DeserializationResilience extends DeserializationResilienceTesting {
     val v = k
     avlProver.performOneOperation(Insert(ADKey @@@ k, ADValue @@@ v))
     val proof = avlProver.generateProof()
-    val verifier = AvlTreeVerifier(tree, Colls.fromArray(proof))
+    val verifier = CAvlTreeVerifier(tree, Colls.fromArray(proof))
     verifier.performOneOperation(Insert(ADKey @@@ k, ADValue @@@ v)).isFailure shouldBe true
     // NOTE, even though performOneOperation fails, some AvlTree$ methods used in Interpreter
     // (remove_eval, update_eval, contains_eval) won't throw, while others will.

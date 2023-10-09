@@ -11,7 +11,7 @@ import sigma.{AvlTree, Coll}
   *
   * @see BatchAVLVerifier
   */
-class AvlTreeVerifier private(
+class CAvlTreeVerifier private(
     startingDigest: ADDigest,
     proof: SerializedAdProof,
     override val keyLength: Int,
@@ -24,18 +24,18 @@ class AvlTreeVerifier private(
   override protected def logError(t: Throwable): Unit = {}
 }
 
-object AvlTreeVerifier {
-  /** Create an instance of [[AvlTreeVerifier]] for the given tree and proof.
+object CAvlTreeVerifier {
+  /** Create an instance of [[CAvlTreeVerifier]] for the given tree and proof.
     * Both tree and proof are immutable.
     *
     * @param tree  represents a tree state to verify
     * @param proof proof of tree operations leading to the state digest in the tree
     * @return a new verifier instance
     */
-  def apply(tree: AvlTree, proof: Coll[Byte]): AvlTreeVerifier = {
+  def apply(tree: AvlTree, proof: Coll[Byte]): CAvlTreeVerifier = {
     val treeData = tree.asInstanceOf[CAvlTree].treeData
     val adProof  = SerializedAdProof @@ proof.toArray
-    val bv       = new AvlTreeVerifier(
+    val bv       = new CAvlTreeVerifier(
       ADDigest @@ treeData.digest.toArray, adProof, treeData.keyLength, treeData.valueLengthOpt)
     bv
   }
