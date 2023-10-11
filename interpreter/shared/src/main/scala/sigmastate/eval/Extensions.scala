@@ -23,10 +23,6 @@ object Extensions {
     @inline def toHex: String = Base16.encode(arr)
   }
 
-  implicit class EvalIterableOps[T: RType](seq: Iterable[T]) {
-    @inline def toColl: Coll[T] = Colls.fromArray[T](seq.toArray(RType[T].classTag))
-  }
-
   implicit class DslDataOps[A](data: A)(implicit tA: RType[A]) {
     def toTreeData: Constant[SType] = {
       CheckingSigmaBuilder.mkConstant(data.asWrappedType, Evaluation.rtypeToSType(tA))

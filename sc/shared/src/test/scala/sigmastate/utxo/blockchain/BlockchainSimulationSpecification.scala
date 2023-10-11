@@ -4,7 +4,7 @@ import sigma.ast.TrueLeaf
 import sigma.ast.defs.{GetVarBoolean, OptionValueOps}
 import sigmastate.CompilerCrossVersionProps
 import sigmastate.helpers.ErgoLikeTestProvingInterpreter
-import sigmastate.interpreter.ContextExtension
+import sigma.interpreter.ContextExtension
 import sigmastate.utxo.blockchain.BlockchainSimulationTestingCommons._
 
 

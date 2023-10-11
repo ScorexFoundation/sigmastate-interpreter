@@ -17,8 +17,8 @@ import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigma.ast.defs.ValueOps
+import sigma.interpreter.{ContextExtension, ProverResult}
 import sigma.serialization.ValueSerializer
 import sigmastate.utils.Helpers._
 

@@ -15,13 +15,13 @@ import sigma.Extensions.ArrayOps
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
-import sigmastate.interpreter.ProverResult
 import sigma.ast.defs._
 import sigma.Coll
 import sigma.ast.SAvlTree
 import sigma.ast.defs.{GetVarByteArray, OptionValueOps}
 import sigma.data.{AvlTreeData, AvlTreeFlags, CSigmaProp, TrivialProp}
 import sigma.eval.SigmaDsl
+import sigma.interpreter.ProverResult
 import sigma.{AvlTree, Context}
 import sigmastate.eval.Extensions.AvlTreeOps
 

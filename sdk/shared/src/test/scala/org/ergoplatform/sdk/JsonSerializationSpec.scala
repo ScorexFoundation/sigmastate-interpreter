@@ -14,7 +14,7 @@ import sigma.data.{AvlTreeData, Digest32Coll, ProveDlog}
 import sigma.{Coll, Header, PreHeader}
 import sigma.ast._
 import sigma.crypto.CryptoConstants
-import sigmastate.interpreter.{ContextExtension, ProverResult}
+import sigma.interpreter.{ContextExtension, ProverResult}
 import sigma.serialization.SerializationSpecification
 import sigmastate.utils.Helpers.DecoderResultOps  // required for Scala 2.11
 

@@ -16,9 +16,9 @@ import sigmastate.eval._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.helpers._
 import sigmastate.helpers.TestingHelpers._
-import sigmastate.interpreter.ContextExtension.VarBinding
-import sigmastate.interpreter.{ContextExtension, CostedProverResult}
+import sigma.interpreter.ContextExtension.VarBinding
 import sigma.eval.Extensions.SigmaBooleanOps
+import sigma.interpreter.{ContextExtension, CostedProverResult}
 import sigma.serialization.{SerializationSpecification, ValueSerializer}
 import sigmastate.utils.Helpers._
 

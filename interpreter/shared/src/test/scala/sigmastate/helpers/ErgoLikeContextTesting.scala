@@ -5,12 +5,12 @@ import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules
 import sigma.crypto.CryptoConstants
 import sigma.data.{AvlTreeData, CSigmaDslBuilder}
+import sigma.interpreter.ContextExtension
 import sigma.serialization.GroupElementSerializer
 import sigma.util.Extensions.EcpOps
 import sigma.validation.SigmaValidationSettings
 import sigma.{Box, Coll, Colls, Header, PreHeader}
 import sigmastate.eval._
-import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.CErgoTreeEvaluator.DefaultEvalSettings
 import sigma.serialization.SigmaSerializer
 

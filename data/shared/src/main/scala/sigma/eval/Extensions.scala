@@ -2,8 +2,9 @@ package sigma.eval
 
 import sigma.ast.defs.SigmaPropValue
 import sigma.data.{CAnyValue, CSigmaDslBuilder, Nullable, RType, SigmaBoolean}
-import sigma.{BigInt, Coll, Evaluation, Platform}
+import sigma.{BigInt, Coll, Colls, Evaluation, Platform}
 import sigma.ast.{Constant, ConstantNode, SBoolean, SCollection, SCollectionType, SType, SigmaPropConstant, SigmaPropIsProven, TransformingSigmaBuilder, Value}
+
 import java.math.BigInteger
 
 object Extensions {
@@ -66,5 +67,9 @@ object Extensions {
     def toSigmaPropValue: SigmaPropValue = SigmaPropConstant(sb)
 
     def isProven: Value[SBoolean.type] = SigmaPropIsProven(SigmaPropConstant(sb))
+  }
+
+  implicit class EvalIterableOps[T: RType](seq: Iterable[T]) {
+    @inline def toColl: Coll[T] = Colls.fromArray[T](seq.toArray(RType[T].classTag))
   }
 }

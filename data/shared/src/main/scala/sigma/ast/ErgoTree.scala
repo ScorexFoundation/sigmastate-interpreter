@@ -1,6 +1,5 @@
 package sigma.ast
 
-import org.ergoplatform.settings.ErgoAlgos
 import scorex.util.encode.Base16
 import sigma.VersionContext
 import sigma.ast.ErgoTree.{HeaderType, substConstants}

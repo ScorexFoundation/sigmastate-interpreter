@@ -1,5 +1,4 @@
-package sigmastate.interpreter
-
+package sigma.interpreter
 
 import scorex.util.encode.Base16
 import sigma.serialization.{SigmaByteReader, SigmaByteWriter, SigmaSerializer}

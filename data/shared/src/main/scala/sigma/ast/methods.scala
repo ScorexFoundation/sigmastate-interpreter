@@ -14,7 +14,6 @@ import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma._
 import SMethod.{MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
 import sigma.eval.{CostDetails, ErgoTreeEvaluator, TracedCost}
-import sigmastate.eval._
 import sigma.utils.Overloading.Overload1
 import sigma.utils.SparseArrayContainer
 

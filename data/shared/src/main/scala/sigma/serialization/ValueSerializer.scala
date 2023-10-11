@@ -9,7 +9,6 @@ import sigma.util.Extensions.toUByte
 import sigma.serialization.ValueCodes.OpCode
 import sigma.serialization.transformers._
 import sigma.serialization.trees.{QuadrupleSerializer, Relation2Serializer}
-import sigmastate.utils._
 import ComplexityTable._
 import sigma.utils.SparseArrayContainer
 

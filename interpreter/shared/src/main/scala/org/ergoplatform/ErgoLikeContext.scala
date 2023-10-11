@@ -7,11 +7,12 @@ import sigma.ast._
 import sigma.data.{AvlTreeData, CAvlTree, CSigmaDslBuilder, SigmaConstants}
 import sigma.eval.Extensions.toAnyValue
 import sigma.exceptions.InterpreterException
+import sigma.interpreter.ContextExtension
 import sigma.validation.SigmaValidationSettings
 import sigma.{AnyValue, Coll, Header, PreHeader}
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
-import sigmastate.interpreter.{ContextExtension, InterpreterContext}
+import sigmastate.interpreter.InterpreterContext
 
 /** Represents a script evaluation context to be passed to a prover and a verifier to execute and
   * validate guarding proposition of input boxes of a transaction.

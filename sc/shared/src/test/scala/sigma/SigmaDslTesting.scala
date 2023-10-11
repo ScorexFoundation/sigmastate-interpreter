@@ -32,6 +32,7 @@ import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
 import sigmastate.interpreter._
 import sigma.ast.Apply
 import sigma.eval.Extensions.SigmaBooleanOps
+import sigma.interpreter.{ContextExtension, ProverResult}
 import sigma.serialization.ValueSerializer
 import sigma.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers._

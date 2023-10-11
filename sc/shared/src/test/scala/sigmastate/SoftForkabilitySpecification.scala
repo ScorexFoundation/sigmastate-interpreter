@@ -15,7 +15,7 @@ import ErgoTree.{EmptyConstants, HeaderType, ZeroHeader, setSizeBit}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.interpreter.{ContextExtension, ProverResult}
+import sigma.interpreter.{ContextExtension, ProverResult}
 import sigma.ast.defs._
 import sigma.eval.ErgoTreeEvaluator
 import sigma.eval.ErgoTreeEvaluator.DataEnv

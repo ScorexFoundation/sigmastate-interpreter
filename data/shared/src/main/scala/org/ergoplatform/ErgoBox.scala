@@ -1,10 +1,10 @@
 package org.ergoplatform
 
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, Token}
-import org.ergoplatform.settings.ErgoAlgos
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.Blake2b256
 import scorex.util._
+import scorex.util.encode.Base16
 import scorex.utils.{Ints, Shorts}
 import sigma.Extensions.ArrayOps
 import sigma.ast.SCollection.SByteArray
@@ -12,8 +12,8 @@ import sigma.ast.SType.AnyOps
 import sigma.data.{Digest32Coll, SigmaConstants}
 import sigma.ast._
 import sigma.serialization.{SigmaByteReader, SigmaByteWriter, SigmaSerializer}
-import sigmastate.utils.Helpers
 import sigma._
+import sigma.util.CollectionUtil
 
 /**
   * Box (aka coin, or an unspent output) is a basic concept of a UTXO-based cryptocurrency. In Bitcoin, such an object
@@ -75,7 +75,7 @@ class ErgoBox private (
   override def get(identifier: RegisterId): Option[Value[SType]] = {
     identifier match {
       case ReferenceRegId =>
-        val tupleVal = (creationHeight, Helpers.concatArrays(transactionId.toBytes, Shorts.toByteArray(index)).toColl)
+        val tupleVal = (creationHeight, CollectionUtil.concatArrays_v5(transactionId.toBytes, Shorts.toByteArray(index)).toColl)
         Some(Constant(tupleVal.asWrappedType, SReferenceRegType))
       case _ => super.get(identifier)
     }
@@ -104,8 +104,8 @@ class ErgoBox private (
   def toCandidate: ErgoBoxCandidate =
     new ErgoBoxCandidate(value, ergoTree, creationHeight, additionalTokens, additionalRegisters)
 
-  override def toString: String = s"ErgoBox(${ErgoAlgos.encode(id)},$value,$ergoTree," +
-    s"tokens: (${additionalTokens.map(t => ErgoAlgos.encode(t._1) + ":" + t._2)}), $transactionId, " +
+  override def toString: String = s"ErgoBox(${Base16.encode(id)},$value,$ergoTree," +
+    s"tokens: (${additionalTokens.map(t => Base16.encode(t._1.toArray) + ":" + t._2)}), $transactionId, " +
     s"$index, $additionalRegisters, $creationHeight)"
 }
 
@@ -182,9 +182,9 @@ object ErgoBox {
     .ensuring(_ == mandatoryRegisters.last.number + 1)
 
   val allRegisters: Seq[RegisterId] =
-    Helpers.concatArrays[RegisterId](
-      Helpers.castArray(_mandatoryRegisters): Array[RegisterId],
-      Helpers.castArray(_nonMandatoryRegisters): Array[RegisterId]).ensuring(_.length == maxRegisters)
+    CollectionUtil.concatArrays_v5[RegisterId](
+      CollectionUtil.castArray(_mandatoryRegisters): Array[RegisterId],
+      CollectionUtil.castArray(_nonMandatoryRegisters): Array[RegisterId]).ensuring(_.length == maxRegisters)
 
   val mandatoryRegistersCount: Byte = mandatoryRegisters.size.toByte
   val nonMandatoryRegistersCount: Byte = nonMandatoryRegisters.size.toByte

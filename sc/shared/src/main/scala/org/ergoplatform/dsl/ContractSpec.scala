@@ -1,7 +1,7 @@
 package org.ergoplatform.dsl
 
 import org.ergoplatform.ErgoBox.{BoxId, NonMandatoryRegisterId, TokenId}
-import sigmastate.interpreter.{CostedProverResult, ProverResult}
+import sigma.interpreter.{CostedProverResult, ProverResult}
 import sigma.data.{CSigmaDslBuilder, RType}
 import org.ergoplatform.{ErgoBox, ErgoLikeContext}
 import sigma.{AnyValue, Coll, SigmaDslBuilder, SigmaProp}

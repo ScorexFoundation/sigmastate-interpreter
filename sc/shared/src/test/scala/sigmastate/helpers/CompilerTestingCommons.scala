@@ -14,7 +14,7 @@ import sigma.validation.ValidationRules.CheckSerializableTypeCode
 import sigma.ast.defs.{SValue, SigmaPropValue}
 import sigma.eval.{CostDetails, EvalSettings, Extensions, GivenCost, TracedCost}
 import sigmastate.helpers.TestingHelpers._
-import sigmastate.interpreter.ContextExtension.VarBinding
+import sigma.interpreter.ContextExtension.VarBinding
 import sigmastate.interpreter.CErgoTreeEvaluator.DefaultProfiler
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.interpreter._

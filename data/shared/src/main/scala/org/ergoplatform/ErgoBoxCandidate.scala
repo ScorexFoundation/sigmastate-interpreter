@@ -2,7 +2,7 @@ package org.ergoplatform
 
 import debox.cfor
 import org.ergoplatform.ErgoBox._
-import org.ergoplatform.settings.ErgoAlgos
+import scorex.util.encode.Base16
 import scorex.util.{ModifierId, bytesToId}
 import sigma.Extensions.{ArrayOps, CollOps}
 import sigma.ast.{ErgoTree, SType}
@@ -14,6 +14,7 @@ import sigma.ast._
 import sigma.ast.defs._
 import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigma.serialization.{SigmaByteReader, SigmaByteWriter, SigmaSerializer}
+
 import scala.collection.{immutable, mutable}
 import scala.runtime.ScalaRunTime
 
@@ -95,7 +96,7 @@ class ErgoBoxCandidate(val value: Long,
   }
 
   override def toString: String = s"ErgoBoxCandidate($value, $ergoTree," +
-    s"tokens: (${additionalTokens.map(t => ErgoAlgos.encode(t._1) + ":" + t._2).toArray.mkString(", ")}), " +
+    s"tokens: (${additionalTokens.map(t => Base16.encode(t._1.toArray) + ":" + t._2).toArray.mkString(", ")}), " +
     s"$additionalRegisters, creationHeight: $creationHeight)"
 
   /** Additional tokens stored in the box, merged into a Map.

@@ -1,13 +1,11 @@
 package org.ergoplatform
 
-import java.util
-
 import org.ergoplatform.ErgoBox.BoxId
-import org.ergoplatform.settings.ErgoAlgos
 import scorex.crypto.authds.ADKey
-import sigmastate.interpreter.{ContextExtension, ProverResult}
+import scorex.util.encode.Base16
+import sigma.interpreter.{ContextExtension, ProverResult}
 import sigma.serialization.{SigmaByteReader, SigmaByteWriter, SigmaSerializer}
-import sigmastate.utils.Helpers
+import sigma.util.CollectionUtil
 
 /**
   * Inputs, that are used to enrich script context, but won't be spent by the transaction
@@ -15,14 +13,14 @@ import sigmastate.utils.Helpers
   * @param boxId - id of a box to add into context (should be in UTXO)
   */
 case class DataInput(boxId: BoxId) {
-  override def toString: String = s"DataInput(${ErgoAlgos.encode(boxId)})"
+  override def toString: String = s"DataInput(${Base16.encode(boxId)})"
 
   override def equals(obj: Any): Boolean = obj match {
     case x: DataInput => java.util.Arrays.equals(boxId, x.boxId)
     case _ => false
   }
 
-  override def hashCode(): Int = Helpers.deepHashCode(boxId)
+  override def hashCode(): Int = CollectionUtil.deepHashCode(boxId)
 }
 
 /**
@@ -43,7 +41,7 @@ class UnsignedInput(val boxId: BoxId, val extension: ContextExtension) {
     case _ => false
   }
 
-  override def hashCode(): Int = Helpers.deepHashCode(boxId)
+  override def hashCode(): Int = CollectionUtil.deepHashCode(boxId)
 
   /**
     * Input, that should be signed by prover and verified by verifier.
@@ -60,7 +58,7 @@ class UnsignedInput(val boxId: BoxId, val extension: ContextExtension) {
   */
 case class Input(override val boxId: BoxId, spendingProof: ProverResult)
   extends UnsignedInput(boxId, spendingProof.extension) {
-  override def toString: String = s"Input(${ErgoAlgos.encode(boxId)},$spendingProof)"
+  override def toString: String = s"Input(${Base16.encode(boxId)},$spendingProof)"
 }
 
 object Input {

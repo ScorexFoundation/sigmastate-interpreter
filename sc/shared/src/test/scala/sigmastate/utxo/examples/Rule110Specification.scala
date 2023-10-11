@@ -10,8 +10,8 @@ import sigma.data.AvlTreeData
 import sigmastate._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
-import sigmastate.interpreter.ContextExtension
 import sigma.ast.defs._
+import sigma.interpreter.ContextExtension
 import sigma.serialization.ValueSerializer
 import sigmastate.utxo.blockchain.BlockchainSimulationTestingCommons._
 

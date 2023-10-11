@@ -5,14 +5,14 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.encode.Base58
 import scorex.utils.Ints
 import sigma.ast.{DeserializeContext, SInt, SSigmaProp, Slice}
-import sigma.data.ProveDlog
+import sigma.data.{CSigmaProp, ProveDlog}
 import sigma.serialization.GroupElementSerializer
 import sigma.{Coll, SigmaException, VersionContext}
 import sigma.ast.ErgoTree.{ZeroHeader, setVersionBits}
 import sigma.ast._
 import sigma.ast.defs._
-import sigmastate.crypto.DLogProtocol.ProveDlogProp
 import sigma.serialization._
+
 import scala.util.Try
 
 /**
@@ -343,7 +343,7 @@ case class ErgoAddressEncoder(networkPrefix: NetworkPrefix) {
     */
   def fromProposition(proposition: ErgoTree): Try[ErgoAddress] = Try {
     proposition.root match {
-      case Right(SigmaPropConstant(ProveDlogProp(d))) => P2PKAddress(d)
+      case Right(SigmaPropConstant(CSigmaProp(d: ProveDlog))) => P2PKAddress(d)
       case Right(IsPay2SHAddress(scriptHash)) => new Pay2SHAddress(scriptHash.toArray)
       case Right(b: Value[SSigmaProp.type]@unchecked) if b.tpe == SSigmaProp => Pay2SAddress(proposition)
       case Left(unparsedErgoTree) =>

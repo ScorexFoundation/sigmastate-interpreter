@@ -58,37 +58,6 @@ object Helpers {
     target
   }
 
-  /** Concatenates two arrays into a new resulting array.
-    * All items of both arrays are copied to the result using System.arraycopy.
-    */
-  def concatArrays[T:ClassTag](arr1: Array[T], arr2: Array[T]): Array[T] = {
-    val l1 = arr1.length
-    val l2 = arr2.length
-    val length: Int = l1 + l2
-    val result: Array[T] = new Array[T](length)
-    System.arraycopy(arr1, 0, result, 0, l1)
-    System.arraycopy(arr2, 0, result, l1, l2)
-    result
-  }
-
-  def castArray[A, B >: A : ClassTag](array: Array[A]): Array[B] = {
-    val result: Array[B] = new Array[B](array.length)
-    System.arraycopy(array, 0, result, 0, array.length)
-    result
-  }
-
-  def deepHashCode[T](arr: Array[T]): Int = arr match {
-    case arr: Array[AnyRef] => java.util.Arrays.deepHashCode(arr)
-    case arr: Array[Byte] => java.util.Arrays.hashCode(arr)
-    case arr: Array[Short] => java.util.Arrays.hashCode(arr)
-    case arr: Array[Int] => java.util.Arrays.hashCode(arr)
-    case arr: Array[Long] => java.util.Arrays.hashCode(arr)
-    case arr: Array[Char] => java.util.Arrays.hashCode(arr)
-    case arr: Array[Float] => java.util.Arrays.hashCode(arr)
-    case arr: Array[Double] => java.util.Arrays.hashCode(arr)
-    case arr: Array[Boolean] => java.util.Arrays.hashCode(arr)
-  }
-
   /** Optimized hashCode for array of bytes when it represents some hash thus it have
     * enough randomness and we can use only first 4 bytes.
     * @param id result of some hash function

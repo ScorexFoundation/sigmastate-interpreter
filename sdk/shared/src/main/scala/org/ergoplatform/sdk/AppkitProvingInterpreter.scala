@@ -10,12 +10,14 @@ import org.ergoplatform.sdk.wallet.secrets.ExtendedSecretKey
 import org.ergoplatform.validation.ValidationRules
 import sigma.VersionContext
 import sigma.data.{AvlTreeData, ProveDlog, SigmaBoolean}
+import sigma.interpreter.{ContextExtension, ProverResult}
 import sigma.util.Extensions.LongOps
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.crypto.{DiffieHellmanTupleProverInput, SigmaProtocolPrivateInput}
 import sigmastate.interpreter.Interpreter.{ReductionResult, estimateCryptoVerifyCost}
 import sigmastate.interpreter._
 import sigma.serialization.{SigmaByteReader, SigmaByteWriter, SigmaSerializer}
+
 import java.util
 import java.util.{Objects, List => JList}
 import scala.collection.mutable

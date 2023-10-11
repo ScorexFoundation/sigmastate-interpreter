@@ -1,7 +1,6 @@
 package sigma.eval
 
 import sigma.eval.EvalSettings.EvaluationMode
-import sigmastate.interpreter.Interpreter
 import supertagged.TaggedType
 
 /** Configuration parameters of the evaluation run. */

@@ -12,8 +12,9 @@ import sigma.data.AvlTreeData
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting}
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.interpreter.{ContextExtension, CErgoTreeEvaluator}
+import sigmastate.interpreter.CErgoTreeEvaluator
 import sigma.ast.defs.ValueOps
+import sigma.interpreter.ContextExtension
 import sigmastate.lang.{CompilerResult, CompilerSettings, LangTests, SigmaCompiler}
 import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.CompilerTestsBase

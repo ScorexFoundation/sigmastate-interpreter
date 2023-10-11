@@ -18,10 +18,10 @@ import sigmastate._
 import sigma.Extensions.ArrayOps
 import sigma.eval.Extensions.SigmaBooleanOps
 import sigma.eval.SigmaDsl
-import sigmastate.eval.Extensions.EvalIterableOps
+import sigma.interpreter.{ContextExtension, CostedProverResult}
+import sigma.eval.Extensions.EvalIterableOps
 import sigmastate.eval._
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
-import sigmastate.interpreter.{ContextExtension, CostedProverResult}
 import sigma.serialization.OpCodes._
 import sigmastate.utils.Helpers._
 

@@ -8,9 +8,9 @@ import scorex.util._
 import sigma.Colls
 import sigma.ast.defs.ErgoBoxCandidateRType
 import sigma.data.Digest32Coll
+import sigma.eval.Extensions.EvalIterableOps
+import sigma.interpreter.ProverResult
 import sigma.util.safeNewArray
-import sigmastate.eval.Extensions._
-import sigmastate.interpreter.ProverResult
 import sigma.serialization.{SigmaByteReader, SigmaByteWriter, SigmaSerializer}
 
 import scala.util.Try

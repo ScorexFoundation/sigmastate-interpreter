@@ -18,7 +18,7 @@ import sigma.Colls
 import sigma.data.{AvlTreeData, AvlTreeFlags}
 import ErgoTree.ZeroHeader
 import sigma.eval.Extensions.SigmaBooleanOps
-import sigmastate.interpreter.ContextExtension
+import sigma.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.utxo.blockchain.BlockchainSimulationTestingCommons.{FullBlock, ValidationState}
 

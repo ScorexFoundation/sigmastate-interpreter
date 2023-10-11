@@ -9,7 +9,6 @@ import sigma.reflection.{RClass, RMethod}
 import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma.validation.ValidationRules.CheckTypeWithMethods
 import sigma.{Coll, Evaluation}
-import sigmastate.interpreter._
 
 import scala.collection.compat.immutable.ArraySeq
 import scala.reflect.ClassTag

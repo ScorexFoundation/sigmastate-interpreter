@@ -8,10 +8,9 @@ import sigma.ast.{ByteArrayConstant, Constant, ErgoTree, IntConstant, SigmaAnd, 
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers._
-import sigmastate.interpreter.ContextExtension.VarBinding
+import sigma.interpreter.ContextExtension.VarBinding
 import sigma.crypto.CryptoConstants.dlogGroup
 import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
-import sigmastate.interpreter.{ContextExtension, CostedProverResult}
 import sigma.ast.defs.ValueOps
 import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigma.serialization.ValueSerializer
@@ -23,6 +22,7 @@ import sigma.ast.ErgoTree.{ZeroHeader, setConstantSegregation}
 import sigma.ast.SType
 import sigma.data.ProveDlog
 import sigma.exceptions.{CostLimitException, InvalidType}
+import sigma.interpreter.{ContextExtension, CostedProverResult}
 import sigma.serialization.GroupElementSerializer
 import sigma.validation.ValidationException
 import sigma.validation.ValidationRules.CheckTypeCode

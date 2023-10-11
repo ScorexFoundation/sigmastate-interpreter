@@ -14,10 +14,8 @@ import scorex.util.encode.{Base58, Base64}
 import scorex.util.{ModifierId, bytesToId}
 import sigma.ast._
 import sigma.ast.defs._
-import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigma.crypto.CryptoConstants.dlogGroup
-import sigmastate.interpreter.{ContextExtension, ProverResult}
 import TransformingSigmaBuilder._
 import sigmastate._
 import sigma.Coll
@@ -29,8 +27,9 @@ import sigma.util.Extensions.EcpOps
 import sigma.validation.{ChangedRule, DisabledRule, EnabledRule, ReplacedRule, RuleStatus}
 import sigma.validation.ValidationRules.FirstRuleId
 import ErgoTree.ZeroHeader
-import sigma.eval.Extensions.SigmaBooleanOps
+import sigma.eval.Extensions.{EvalIterableOps, SigmaBooleanOps}
 import sigma.eval.SigmaDsl
+import sigma.interpreter.{ContextExtension, ProverResult}
 
 import java.math.BigInteger
 import scala.collection.compat.immutable.ArraySeq
