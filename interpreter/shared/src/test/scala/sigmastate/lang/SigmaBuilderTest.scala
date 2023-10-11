@@ -79,7 +79,7 @@ class SigmaBuilderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Ma
     an[ConstraintFailed] should be thrownBy mkDivide(LongConstant(1), IntConstant(1))
     an[ConstraintFailed] should be thrownBy mkModulo(LongConstant(1), IntConstant(1))
   }
-  import Platform.liftToConstant
+  import sigma.Platform.liftToConstant
 
   def testSuccess(v: Any, c: Constant[SType]): Unit = {
     liftToConstant(v, TransformingSigmaBuilder) shouldBe Nullable(c)

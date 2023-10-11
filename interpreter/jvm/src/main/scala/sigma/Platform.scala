@@ -1,16 +1,13 @@
-package sigmastate
+package sigma
 
 import org.ergoplatform.ErgoBox
-import sigma.data.{AvlTreeData, Nullable, SigmaBoolean}
-import sigma.{Evaluation, VersionContext}
-import sigma.ast.{Constant, FalseLeaf, SigmaBuilder, TrueLeaf}
-import sigma.eval.SigmaDsl
-import sigma.Coll
 import sigma.ast._
-import sigma.{AnyValue, AvlTree, GroupElement, SigmaProp}
+import sigma.data.{AvlTreeData, Nullable, SigmaBoolean}
+import sigma.eval.SigmaDsl
 
 import java.math.BigInteger
 
+/** JVM specific implementations */
 object Platform {
   /** Creates a new Constant instance with an appropriate type derived from the given data `obj`.
     * Uses scalan.Nullable instead of scala.Option to avoid allocation on consensus hot path.
@@ -26,9 +23,8 @@ object Platform {
       case arr: Array[Long] => Nullable(mkCollectionConstant[SLong.type](arr, SLong))
       case arr: Array[BigInteger] => Nullable(mkCollectionConstant[SBigInt.type](arr.map(SigmaDsl.BigInt(_)), SBigInt))
       case arr: Array[String] => Nullable(mkCollectionConstant[SString.type](arr, SString))
-      case v: AnyValue =>
-        val tpe = Evaluation.rtypeToSType(v.tVal)
-        Nullable(mkConstant[tpe.type](v.value.asInstanceOf[tpe.WrappedType], tpe))
+      case v: Byte => Nullable(mkConstant[SByte.type](v, SByte))
+      case v: Short => Nullable(mkConstant[SShort.type](v, SShort))
       case v: Int => Nullable(mkConstant[SInt.type](v, SInt))
       case v: Long => Nullable(mkConstant[SLong.type](v, SLong))
       case v: BigInteger => Nullable(mkConstant[SBigInt.type](SigmaDsl.BigInt(v), SBigInt))

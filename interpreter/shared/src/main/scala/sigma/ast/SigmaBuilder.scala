@@ -10,8 +10,8 @@ import sigma.data.Nullable
 import sigma.exceptions.ConstraintFailed
 import sigma.serialization.OpCodes
 import sigma.serialization.ValueCodes.OpCode
-import sigma.{AnyValue, Coll, Colls, Environment, Evaluation}
-import sigmastate._
+import sigma.{AnyValue, Coll, Colls, Environment, Evaluation, Platform}
+
 import scala.util.DynamicVariable
 
 /** Abstract interface of ErgoTree node builders.
