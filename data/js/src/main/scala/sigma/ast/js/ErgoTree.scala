@@ -1,4 +1,4 @@
-package sigma.interpreter.js
+package sigma.ast.js
 
 import sigma.ast
 import sigma.js.Value

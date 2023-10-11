@@ -12,7 +12,7 @@ import sigma.serialization.ConstantSerializer
 import sigmastate.utils.Helpers
 import sigma.SigmaTestingData
 import sigma.data.{CSigmaProp, ProveDlog}
-import sigma.interpreter.js.isoValueToConstant
+import sigma.ast.js.isoValueToConstant
 import sigma.js.Value
 
 import java.math.BigInteger

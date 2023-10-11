@@ -3,7 +3,7 @@ package sigmastate.lang.js
 import org.ergoplatform.ErgoAddressEncoder
 import org.scalablytyped.runtime.StringDictionary
 import sigma.ast
-import sigma.interpreter.js.{ErgoTree, isoValueToConstant}
+import sigma.ast.js.{ErgoTree, isoValueToConstant}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel

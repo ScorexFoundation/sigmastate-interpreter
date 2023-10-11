@@ -1,4 +1,4 @@
-package sigma.interpreter
+package sigma.ast
 
 import sigma.Evaluation
 import sigma.ast.SType
