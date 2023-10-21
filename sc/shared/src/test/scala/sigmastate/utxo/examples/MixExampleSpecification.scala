@@ -1,14 +1,13 @@
 package sigmastate.utxo.examples
 
 import java.math.BigInteger
-
 import org.ergoplatform.ErgoBox.{R4, R5}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.{AvlTreeData, CompilerCrossVersionProps}
-import sigmastate.Values.GroupElementConstant
+import sigmastate.Values.{ErgoTree, GroupElementConstant}
 import sigmastate.crypto.DLogProtocol.ProveDlog
-import sigmastate.crypto.{DiffieHellmanTupleProverInput, ProveDHTuple, CryptoConstants}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, CompilerTestingCommons, ErgoLikeTestInterpreter}
+import sigmastate.crypto.{CryptoConstants, DiffieHellmanTupleProverInput, ProveDHTuple}
+import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
@@ -185,7 +184,7 @@ class MixExampleSpecification extends CompilerTestingCommons
     val carolPubKey: ProveDlog = carol.dlogSecrets.head.publicImage
 
     val spendHeight = 90
-    val carolOutput = testBox(mixAmount, carolPubKey, spendHeight)
+    val carolOutput = testBox(mixAmount, ErgoTree.fromSigmaBoolean(carolPubKey), spendHeight)
 
     // normally this transaction would be invalid, but we're not checking it in this test
     val spendingTx = createTransaction(carolOutput)

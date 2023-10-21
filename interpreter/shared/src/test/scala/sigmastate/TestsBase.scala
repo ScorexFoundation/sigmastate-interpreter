@@ -4,6 +4,7 @@ import org.scalatest.matchers.should.Matchers
 import sigmastate.Values.{ErgoTree, SigmaBoolean, SigmaPropValue}
 import org.ergoplatform.ErgoTreePredef
 import sigma.VersionTesting
+import sigmastate.Values.ErgoTree.{HeaderType, ZeroHeader}
 
 trait TestsBase extends Matchers with VersionTesting {
   /** Set this to true to enable debug console output in tests */
@@ -15,7 +16,7 @@ trait TestsBase extends Matchers with VersionTesting {
   /** Current ErgoTree header flags assigned dynamically using [[CrossVersionProps]] and
     * ergoTreeVersionInTests.
     */
-  def ergoTreeHeaderInTests: Byte = ErgoTree.headerWithVersion(ergoTreeVersionInTests)
+  def ergoTreeHeaderInTests: HeaderType = ErgoTree.headerWithVersion(ZeroHeader, ergoTreeVersionInTests)
 
   /** Obtains [[ErgoTree]] which corresponds to True proposition using current
     * ergoTreeHeaderInTests. */

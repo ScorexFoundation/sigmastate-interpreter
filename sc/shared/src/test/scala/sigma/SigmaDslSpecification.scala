@@ -1,49 +1,49 @@
 package special.sigma
 
-import java.math.BigInteger
+import org.ergoplatform.ErgoBox.AdditionalRegisters
 import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
+import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
 import sigma.data.{CBigInt, ExactIntegral, ExactNumeric, ExactOrdering, RType}
+import org.scalatest.BeforeAndAfterAll
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.util.ModifierId
+import sigma.Extensions._
+import sigma.{VersionContext, _}
+import sigma.data.RType._
+import sigma.data.{ExactIntegral, ExactNumeric, ExactOrdering, RType}
 import sigma.util.Extensions._
 import sigmastate.utils.Extensions._
 import sigma.ast.SCollection._
 import sigmastate.Values.IntConstant
+import sigmastate.Values.ErgoTree.{HeaderType, ZeroHeader}
+import sigmastate.Values.{IntConstant, _}
 import sigmastate._
 import sigmastate.crypto.DLogProtocol._
-import sigmastate.Values._
-import sigmastate.lang.Terms.Apply
+import sigmastate.crypto.ProveDHTuple
 import sigmastate.eval.Extensions._
+import sigmastate.eval.OrderingOps._
 import sigmastate.eval._
 import sigmastate.lang.Terms.{MethodCall, PropertyCall}
 import sigmastate.utxo._
 import sigma._
 import sigma.Extensions._
+import sigma.ast.{SAvlTree, SBigInt, SBoolean, SBox, SByte, SCollection, SCollectionType, SContext, SGroupElement, SHeader, SInt, SLong, SOption, SPair, SShort, SSigmaProp, STuple, SType, STypeVar}
+import sigmastate.helpers.TestingHelpers._
+import sigmastate.interpreter._
+import sigmastate.lang.Terms.{Apply, MethodCall, PropertyCall}
+import sigmastate.serialization.ValueCodes.OpCode
+import sigmastate.utils.Extensions._
 import sigmastate.utils.Helpers
 import sigmastate.utils.Helpers._
-import sigmastate.helpers.TestingHelpers._
+import sigmastate.utxo._
 
-import scala.util.{Failure, Success, Try}
-import OrderingOps._
-import org.ergoplatform.ErgoBox.AdditionalRegisters
-import org.scalacheck.Arbitrary._
-import org.scalacheck.Gen.frequency
-import org.scalatest.{BeforeAndAfterAll, Tag}
-import sigma.data.RType._
-import scorex.util.ModifierId
-import sigmastate.crypto.ProveDHTuple
-import sigmastate.interpreter._
-import org.scalactic.source.Position
-import sigma.VersionContext
-import sigma.ast._
-import sigmastate.helpers.SigmaPPrint
-import sigmastate.exceptions.GraphBuildingException
-import sigmastate.serialization.ValueCodes.OpCode
-
+import java.math.BigInteger
 import scala.collection.compat.immutable.ArraySeq
+import scala.util.{Failure, Success}
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to
   * the evaluation of the corresponding ErgoScript operation.
@@ -4613,7 +4613,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       new ErgoBox(
         80946L,
         new ErgoTree(
-          16.toByte,
+          HeaderType @@ 16.toByte,
           Vector(
             SigmaPropConstant(
               CSigmaProp(
@@ -4643,7 +4643,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       new ErgoBox(
         -1L,
         new ErgoTree(
-          0.toByte,
+          HeaderType @@ 0.toByte,
           Vector(),
           Right(SigmaPropConstant(CSigmaProp(ProveDlog(Helpers.decodeECPoint("02af645874c3b53465a5e9d820eb207d6001258c3b708f0d31d7c2e342833dce64")))))
         ),
@@ -4709,7 +4709,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           new ErgoBox(
             1000000L,
             new ErgoTree(
-              16.toByte,
+              HeaderType @@ 16.toByte,
               Vector(
                 SigmaPropConstant(
                   CSigmaProp(
@@ -4746,7 +4746,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           new ErgoBox(
             2769336982721999022L,
             new ErgoTree(
-              0.toByte,
+              HeaderType @@ 0.toByte,
               Vector(),
               Right(SigmaPropConstant(CSigmaProp(ProveDlog(Helpers.decodeECPoint("02d13e1a8c31f32194761adc1cdcbaa746b3e049e682bba9308d8ee84576172991")))))
             ),
@@ -6578,7 +6578,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     new ErgoBox(
       1L,
       new ErgoTree(
-        0.toByte,
+        HeaderType @@ 0.toByte,
         Vector(),
         Right(
           SigmaPropConstant(
@@ -6614,7 +6614,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     new ErgoBox(
       1000000000L,
       new ErgoTree(
-        0.toByte,
+        HeaderType @@ 0.toByte,
         Vector(),
         Right(BoolToSigmaProp(OR(ConcreteCollection(Array(FalseLeaf, AND(ConcreteCollection(Array(FalseLeaf, FalseLeaf), SBoolean))), SBoolean))))
       ),
@@ -9655,14 +9655,14 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("substConstants equivalence") {
     // tree without constant segregation
-    val t1 = ErgoTree(ErgoTree.DefaultHeader, Vector(), TrueSigmaProp)
+    val t1 = ErgoTree(ErgoTree.ZeroHeader, Vector(), TrueSigmaProp)
     // tree with constant segregation, but without constants
-    val t2 = ErgoTree(ErgoTree.ConstantSegregationHeader, Vector(), TrueSigmaProp)
+    val t2 = ErgoTree(ErgoTree.setConstantSegregation(ZeroHeader), Vector(), TrueSigmaProp)
     // tree with one segregated constant
-    val t3 = ErgoTree(ErgoTree.ConstantSegregationHeader, Vector(TrueSigmaProp), ConstantPlaceholder(0, SSigmaProp))
+    val t3 = ErgoTree(ErgoTree.setConstantSegregation(ZeroHeader), Vector(TrueSigmaProp), ConstantPlaceholder(0, SSigmaProp))
     // tree with one segregated constant of different type
     val t4 = ErgoTree(
-      ErgoTree.ConstantSegregationHeader,
+      ErgoTree.setConstantSegregation(ZeroHeader),
       Vector(IntConstant(10)),
       BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), IntConstant(20))))
     def costDetails(i: Int) = TracedCost(

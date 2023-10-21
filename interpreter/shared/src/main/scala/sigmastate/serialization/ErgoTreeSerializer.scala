@@ -6,15 +6,13 @@ import sigmastate.Values.{Constant, ErgoTree, UnparsedErgoTree}
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.Values.ErgoTree.EmptyConstants
+import sigmastate.Values.ErgoTree.{EmptyConstants, HeaderType}
 import sigma.util.safeNewArray
 import sigmastate.utxo.ComplexityTable
 import debox.cfor
 import sigma.VersionContext
 import sigma.ast.SType
 import sigmastate.exceptions.{ReaderPositionLimitExceeded, SerializerException}
-
-import java.util
 
 /**
   * Rationale for soft-forkable ErgoTree serialization.
@@ -203,8 +201,8 @@ class ErgoTreeSerializer {
   }
 
   /** Deserialize `header` and optional `size` slots only. */
-  private def deserializeHeaderAndSize(r: SigmaByteReader): (Byte, Option[Int]) = {
-    val header = r.getByte()
+  private def deserializeHeaderAndSize(r: SigmaByteReader): (HeaderType, Option[Int]) = {
+    val header = HeaderType @@ r.getByte()
     CheckHeaderSizeBit(header)
     val sizeOpt = if (ErgoTree.hasSize(header)) {
       val size = r.getUInt().toInt
@@ -231,7 +229,7 @@ class ErgoTreeSerializer {
   /** Deserialize constants section only.
     * HOTSPOT: don't beautify this code
     */
-  private def deserializeConstants(header: Byte, r: SigmaByteReader): IndexedSeq[Constant[SType]] = {
+  private def deserializeConstants(header: HeaderType, r: SigmaByteReader): IndexedSeq[Constant[SType]] = {
     val constants: IndexedSeq[Constant[SType]] =
       if (ErgoTree.isConstantSegregation(header)) {
         val nConsts = r.getUInt().toInt
@@ -255,7 +253,7 @@ class ErgoTreeSerializer {
   }
 
   /** Deserialize header and constant sections, but output the rest of the bytes as separate array. */
-  def deserializeHeaderWithTreeBytes(r: SigmaByteReader): (Byte, Option[Int], IndexedSeq[Constant[SType]], Array[Byte]) = {
+  def deserializeHeaderWithTreeBytes(r: SigmaByteReader): (HeaderType, Option[Int], IndexedSeq[Constant[SType]], Array[Byte]) = {
     val (header, sizeOpt) = deserializeHeaderAndSize(r)
     val constants = deserializeConstants(header, r)
     val treeBytes = r.getBytes(r.remaining)

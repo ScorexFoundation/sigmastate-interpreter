@@ -11,7 +11,9 @@ import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.SigmaByteWriter
 import debox.cfor
+import sigmastate.Values.ErgoTree.ZeroHeader
 import sigmastate.crypto.GF2_192_Poly
+
 import scala.language.existentials
 
 object ConjectureType extends Enumeration {
@@ -255,7 +257,7 @@ object FiatShamirTree {
         case _: UncheckedDiffieHellmanTuple | _: UnprovenDiffieHellmanTuple => ToBytes_DHT
       }
       fixedCostOp(costInfo) {
-        val propTree = ErgoTree.withSegregation(SigmaPropConstant(l.proposition))
+        val propTree = ErgoTree.withSegregation(ZeroHeader, SigmaPropConstant(l.proposition))
         val propBytes = DefaultSerializer.serializeErgoTree(propTree)
         val commitmentBytes = l.commitmentOpt.get.bytes
         w.put(leafPrefix)

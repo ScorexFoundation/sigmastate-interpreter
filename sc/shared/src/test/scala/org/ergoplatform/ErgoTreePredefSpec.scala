@@ -93,7 +93,9 @@ class ErgoTreePredefSpec extends CompilerTestingCommons with CompilerCrossVersio
       // unable to satisfy R4 conditions
       checkSpending(remaining(height), height, prop, R4Prop(false)).isFailure shouldBe true
       // incorrect new script
-      checkSpending(remaining(height), height, TrivialProp.TrueProp, R4Prop(true)).isFailure shouldBe true
+      checkSpending(remaining(height), height,
+        ErgoTree.fromProposition(TrivialProp.TrueProp),
+        R4Prop(true)).isFailure shouldBe true
       // collect less coins then possible
       checkSpending(remaining(height) + 1, height, prop, R4Prop(true)).isSuccess shouldBe true
       // collect more coins then possible
@@ -189,7 +191,8 @@ class ErgoTreePredefSpec extends CompilerTestingCommons with CompilerCrossVersio
       createRewardTx(currentRate, height, correctProp).isSuccess shouldBe true
       createRewardTx(currentRate, height, incorrectDelay).isFailure shouldBe true
       createRewardTx(currentRate, height, incorrectPk).isFailure shouldBe true
-      createRewardTx(currentRate, height, minerPk).isFailure shouldBe true
+      createRewardTx(currentRate, height,
+        ErgoTree.fromSigmaBoolean(minerPk)).isFailure shouldBe true
     }
 
     def createRewardTx(emissionAmount: Long, nextHeight: Int, minerProp: ErgoTree): Try[ErgoLikeTransaction] = {

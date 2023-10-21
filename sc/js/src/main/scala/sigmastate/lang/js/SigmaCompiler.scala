@@ -7,6 +7,8 @@ import org.scalablytyped.runtime.StringDictionary
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
 import org.ergoplatform.sdk.js.{ErgoTree, Value}
+import sigmastate.Values
+import sigmastate.Values.ErgoTree.HeaderType
 import sigmastate.{STypeOps, Values}
 import sigmastate.eval.CompiletimeIRContext
 import sigmastate.lang.Terms.ValueOps
@@ -27,7 +29,7 @@ class SigmaCompiler(_compiler: sigmastate.lang.SigmaCompiler) extends js.Object 
   def compile(
       namedConstants: StringDictionary[Value],
       segregateConstants: Boolean,
-      additionalHeaderFlags: Byte, ergoScript: String): ErgoTree = {
+      treeHeader: Byte, ergoScript: String): ErgoTree = {
     val env = StringDictionary
         .wrapStringDictionary(namedConstants)
         .view.mapValues(v => isoValueToConstant.to(v)).toMap
@@ -36,9 +38,9 @@ class SigmaCompiler(_compiler: sigmastate.lang.SigmaCompiler) extends js.Object 
     require(prop.tpe.isSigmaProp, s"Expected SigmaProp expression type bue got ${prop.tpe}: $prop")
 
     val tree = if (segregateConstants) {
-      Values.ErgoTree.withSegregation(additionalHeaderFlags, prop.asSigmaProp)
+      Values.ErgoTree.withSegregation(HeaderType @@ treeHeader, prop.asSigmaProp)
     } else {
-      Values.ErgoTree.withoutSegregation(additionalHeaderFlags, prop.asSigmaProp)
+      Values.ErgoTree.withoutSegregation(HeaderType @@ treeHeader, prop.asSigmaProp)
     }
     new ErgoTree(tree)
   }
