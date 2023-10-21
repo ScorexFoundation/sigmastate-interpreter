@@ -215,7 +215,7 @@ object ErgoBoxCandidate {
       } else {
         val tokenIdSize = TokenId.size  // optimization: access the value once
         cfor(0)(_ < nTokens, _ + 1) { i =>
-          tokenIds(i) = Digest32Coll @@@ Colls.fromArray(r.getBytes(tokenIdSize)) // READ
+          tokenIds(i) = Digest32Coll @@ Colls.fromArray(r.getBytes(tokenIdSize)) // READ
           tokenAmounts(i) = r.getULong()         // READ
         }
       }

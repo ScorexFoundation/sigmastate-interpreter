@@ -4,11 +4,10 @@ import debox.cfor
 import org.ergoplatform._
 import org.ergoplatform.validation._
 import scorex.crypto.authds.avltree.batch.{Insert, Lookup, Remove, Update}
-import scorex.crypto.authds.{ADKey, ADValue}
 import sigma.ast.SCollection.{SBooleanArray, SBoxArray, SByteArray, SByteArray2, SHeaderArray}
 import sigma.ast.SType.TypeCode
 import sigma.ast.defs.{SValue, ValueOps}
-import sigma.data.{DataValueComparer, Nullable, RType, SigmaConstants}
+import sigma.data.{DataValueComparer, KeyValueColl, Nullable, RType, SigmaConstants}
 import sigma.reflection.RClass
 import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma._
@@ -1083,8 +1082,6 @@ case object SAvlTreeMethods extends MonoTypeMethods {
   lazy val TCollOptionCollByte = SCollection(SByteArrayOption)
   lazy val CollKeyValue = SCollection(STuple(SByteArray, SByteArray))
 
-  type KeyValueColl = Coll[(Coll[Byte], Coll[Byte])]
-
   lazy val digestMethod = SMethod(this, "digest", SFunc(SAvlTree, SByteArray), 1, FixedCost(JitCost(15)))
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(PropertyCall,
@@ -1212,35 +1209,13 @@ case object SAvlTreeMethods extends MonoTypeMethods {
     PerItemCost(baseCost = JitCost(100), perChunkCost = JitCost(15), chunkSize = 1),
     NamedDesc("RemoveAvlTree"))
 
-  /** Creates [[sigma.eval.AvlTreeVerifier]] for the given tree and proof. */
-  def createVerifier(tree: AvlTree, proof: Coll[Byte])(implicit E: ErgoTreeEvaluator) = {
-    // the cost of tree reconstruction from proof is O(proof.length)
-    E.addSeqCost(CreateAvlVerifier_Info, proof.length) { () =>
-      E.createTreeVerifier(tree, proof)
-    }
-  }
-
   /** Implements evaluation of AvlTree.contains method call ErgoTree node.
     * Called via reflection based on naming convention.
     * @see SMethod.evalMethod
     */
   def contains_eval(mc: MethodCall, tree: AvlTree, key: Coll[Byte], proof: Coll[Byte])
                    (implicit E: ErgoTreeEvaluator): Boolean = {
-    val bv = createVerifier(tree, proof)
-    val nItems = bv.treeHeight
-
-    var res = false
-    // the cost of tree lookup is O(bv.treeHeight)
-    E.addSeqCost(LookupAvlTree_Info, nItems) { () =>
-      res = bv.performLookup(ADKey @@ key.toArray) match {
-        case Success(r) => r match {
-          case Some(_) => true
-          case _ => false
-        }
-        case Failure(_) => false
-      }
-    }
-    res
+    E.contains_eval(mc, tree, key, proof)
   }
 
   lazy val getMethod = SMethod(this, "get",
@@ -1266,19 +1241,7 @@ case object SAvlTreeMethods extends MonoTypeMethods {
     */
   def get_eval(mc: MethodCall, tree: AvlTree, key: Coll[Byte], proof: Coll[Byte])
               (implicit E: ErgoTreeEvaluator): Option[Coll[Byte]] = {
-    val bv = createVerifier(tree, proof)
-    val nItems = bv.treeHeight
-
-    // the cost of tree lookup is O(bv.treeHeight)
-    E.addSeqCost(LookupAvlTree_Info, nItems) { () =>
-      bv.performLookup(ADKey @@ key.toArray) match {
-        case Success(r) => r match {
-          case Some(v) => Some(Colls.fromArray(v))
-          case _ => None
-        }
-        case Failure(_) => defs.error(s"Tree proof is incorrect $tree")
-      }
-    }
+    E.get_eval(mc, tree, key, proof)
   }
 
   lazy val getManyMethod = SMethod(this, "getMany",
@@ -1302,20 +1265,7 @@ case object SAvlTreeMethods extends MonoTypeMethods {
     */
   def getMany_eval(mc: MethodCall, tree: AvlTree, keys: Coll[Coll[Byte]], proof: Coll[Byte])
                   (implicit E: ErgoTreeEvaluator): Coll[Option[Coll[Byte]]] = {
-    val bv = createVerifier(tree, proof)
-    val nItems = bv.treeHeight
-    keys.map { key =>
-      // the cost of tree lookup is O(bv.treeHeight)
-      E.addSeqCost(LookupAvlTree_Info, nItems) { () =>
-        bv.performLookup(ADKey @@ key.toArray) match {
-          case Success(r) => r match {
-            case Some(v) => Some(Colls.fromArray(v))
-            case _ => None
-          }
-          case Failure(_) => defs.error(s"Tree proof is incorrect $tree")
-        }
-      }
-    }
+    E.getMany_eval(mc, tree, keys, proof)
   }
 
   lazy val insertMethod = SMethod(this, "insert",
@@ -1341,35 +1291,7 @@ case object SAvlTreeMethods extends MonoTypeMethods {
     */
   def insert_eval(mc: MethodCall, tree: AvlTree, entries: KeyValueColl, proof: Coll[Byte])
                  (implicit E: ErgoTreeEvaluator): Option[AvlTree] = {
-    E.addCost(isInsertAllowed_Info)
-    if (!tree.isInsertAllowed) {
-      None
-    } else {
-      val bv = createVerifier(tree, proof)
-      // when the tree is empty we still need to add the insert cost
-      val nItems = Math.max(bv.treeHeight, 1)
-
-      entries.forall { case (key, value) =>
-        var res = true
-        // the cost of tree lookup is O(bv.treeHeight)
-        E.addSeqCost(InsertIntoAvlTree_Info, nItems) { () =>
-          val insertRes = bv.performInsert(key.toArray, value.toArray)
-          // TODO v6.0: throwing exception is not consistent with update semantics
-          //  however it preserves v4.0 semantics (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/908)
-          if (insertRes.isFailure) {
-            defs.error(s"Incorrect insert for $tree (key: $key, value: $value, digest: ${tree.digest}): ${insertRes.failed.get}}")
-          }
-          res = insertRes.isSuccess
-        }
-        res
-      }
-      bv.digest match {
-        case Some(d) =>
-          E.addCost(updateDigest_Info)
-          Some(tree.updateDigest(Colls.fromArray(d)))
-        case _ => None
-      }
-    }
+    E.insert_eval(mc, tree, entries, proof)
   }
 
   lazy val updateMethod = SMethod(this, "update",
@@ -1396,31 +1318,7 @@ case object SAvlTreeMethods extends MonoTypeMethods {
   def update_eval(mc: MethodCall, tree: AvlTree,
                   operations: KeyValueColl, proof: Coll[Byte])
                  (implicit E: ErgoTreeEvaluator): Option[AvlTree] = {
-    E.addCost(isUpdateAllowed_Info)
-    if (!tree.isUpdateAllowed) {
-      None
-    } else {
-      val bv = createVerifier(tree, proof)
-      // when the tree is empty we still need to add the insert cost
-      val nItems = Math.max(bv.treeHeight, 1)
-
-      // here we use forall as looping with fast break on first failed tree oparation
-      operations.forall { case (key, value) =>
-        var res = true
-        // the cost of tree update is O(bv.treeHeight)
-        E.addSeqCost(UpdateAvlTree_Info, nItems) { () =>
-          val updateRes = bv.performUpdate(key.toArray, value.toArray)
-          res = updateRes.isSuccess
-        }
-        res
-      }
-      bv.digest match {
-        case Some(d) =>
-          E.addCost(updateDigest_Info)
-          Some(tree.updateDigest(Colls.fromArray(d)))
-        case _ => None
-      }
-    }
+    E.update_eval(mc, tree, operations, proof)
   }
 
   lazy val removeMethod = SMethod(this, "remove",
@@ -1447,29 +1345,7 @@ case object SAvlTreeMethods extends MonoTypeMethods {
   def remove_eval(mc: MethodCall, tree: AvlTree,
                   operations: Coll[Coll[Byte]], proof: Coll[Byte])
                  (implicit E: ErgoTreeEvaluator): Option[AvlTree] = {
-    E.addCost(isRemoveAllowed_Info)
-    if (!tree.isRemoveAllowed) {
-      None
-    } else {
-      val bv = createVerifier(tree, proof)
-      // when the tree is empty we still need to add the insert cost
-      val nItems = Math.max(bv.treeHeight, 1)
-
-      cfor(0)(_ < operations.length, _ + 1) { i =>
-        E.addSeqCost(RemoveAvlTree_Info, nItems) { () =>
-          val key = operations(i).toArray
-          bv.performRemove(key)
-        }
-      }
-
-      E.addCost(digest_Info)
-      bv.digest match {
-        case Some(d) =>
-          E.addCost(updateDigest_Info)
-          Some(tree.updateDigest(Colls.fromArray(d)))
-        case _ => None
-      }
-    }
+    E.remove_eval(mc, tree, operations, proof)
   }
 
   lazy val updateDigestMethod = SMethod(this, "updateDigest",

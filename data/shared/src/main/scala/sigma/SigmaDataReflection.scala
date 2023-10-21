@@ -1,10 +1,10 @@
 package sigma
 
 import org.ergoplatform.ErgoBox.RegisterId
-import sigma.ast.SAvlTreeMethods.KeyValueColl
 import sigma.ast.SCollection.{SBooleanArray, SByteArray, SIntArray}
 import sigma.ast._
 import sigma.ast.defs._
+import sigma.data.KeyValueColl
 import sigma.eval.ErgoTreeEvaluator
 import sigma.reflection.ReflectionData.registerClassEntry
 import sigma.reflection.{ReflectionData, mkConstructor, mkMethod}

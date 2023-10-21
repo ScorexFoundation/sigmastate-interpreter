@@ -2,8 +2,7 @@ package sigma
 
 import org.ergoplatform.ErgoBox
 import sigma.ast._
-import sigma.data.{AvlTreeData, Nullable, SigmaBoolean}
-import sigma.eval.SigmaDsl
+import sigma.data.{AvlTreeData, CAvlTree, CBigInt, CBox, CSigmaProp, Nullable, SigmaBoolean}
 
 import java.math.BigInteger
 
@@ -20,14 +19,14 @@ object Platform {
       case arr: Array[Short] => Nullable(mkCollectionConstant[SShort.type](arr, SShort))
       case arr: Array[Int] => Nullable(mkCollectionConstant[SInt.type](arr, SInt))
       case arr: Array[Long] => Nullable(mkCollectionConstant[SLong.type](arr, SLong))
-      case arr: Array[BigInteger] => Nullable(mkCollectionConstant[SBigInt.type](arr.map(SigmaDsl.BigInt(_)), SBigInt))
+      case arr: Array[BigInteger] => Nullable(mkCollectionConstant[SBigInt.type](arr.map[BigInt](n => CBigInt(n)), SBigInt))
       case arr: Array[String] => Nullable(mkCollectionConstant[SString.type](arr, SString))
       case v: AnyValue =>
         val tpe = Evaluation.rtypeToSType(v.tVal)
         Nullable(mkConstant[tpe.type](v.value.asInstanceOf[tpe.WrappedType], tpe))
       case v: Int => Nullable(mkConstant[SInt.type](v, SInt))
       case v: Long => Nullable(mkConstant[SLong.type](v, SLong))
-      case v: BigInteger => Nullable(mkConstant[SBigInt.type](SigmaDsl.BigInt(v), SBigInt))
+      case v: BigInteger => Nullable(mkConstant[SBigInt.type](CBigInt(v), SBigInt))
       case n: sigma.BigInt => Nullable(mkConstant[SBigInt.type](n, SBigInt))
       case ge: GroupElement => Nullable(mkConstant[SGroupElement.type](ge, SGroupElement))
       case b: Boolean => Nullable(if (b) TrueLeaf else FalseLeaf)
@@ -39,7 +38,7 @@ object Platform {
       // ErgoBox cannot be passed as argument as it is never valid value during evaluation.
       // Thus we can use activation-based versioning and fix this code when v5.0 is activated.
       case b: ErgoBox =>
-        Nullable(mkConstant[SBox.type](SigmaDsl.Box(b), SBox)) // fixed in v5.0
+        Nullable(mkConstant[SBox.type](CBox(b), SBox)) // fixed in v5.0
 
       // this case is added in v5.0 and it can be useful when the box value comes from a
       // register or a context variable is passed to SubstConstants.
@@ -48,9 +47,9 @@ object Platform {
           Nullable(mkConstant[SBox.type](b, SBox))
         else
           Nullable.None // return the same result as in v4.x when there was no this case
-      case avl: AvlTreeData => Nullable(mkConstant[SAvlTree.type](SigmaDsl.avlTree(avl), SAvlTree))
+      case avl: AvlTreeData => Nullable(mkConstant[SAvlTree.type](CAvlTree(avl), SAvlTree))
       case avl: AvlTree => Nullable(mkConstant[SAvlTree.type](avl, SAvlTree))
-      case sb: SigmaBoolean => Nullable(mkConstant[SSigmaProp.type](SigmaDsl.SigmaProp(sb), SSigmaProp))
+      case sb: SigmaBoolean => Nullable(mkConstant[SSigmaProp.type](CSigmaProp(sb), SSigmaProp))
       case p: SigmaProp => Nullable(mkConstant[SSigmaProp.type](p, SSigmaProp))
       case coll: Coll[a] =>
         val tpeItem = Evaluation.rtypeToSType(coll.tItem)

@@ -5,16 +5,18 @@ import sigma.ast._
 import sigma.ast.defs._
 import sigmastate.eval.{CAvlTreeVerifier, CProfiler}
 import sigmastate.interpreter.Interpreter.ReductionResult
-import sigma.{AvlTree, Coll, Context, SigmaProp, VersionContext, ast}
+import sigma.{AvlTree, Coll, Colls, Context, SigmaProp, VersionContext, ast}
 import sigma.util.Extensions._
-import debox.{Buffer => DBuffer}
+import debox.{cfor, Buffer => DBuffer}
+import scorex.crypto.authds.ADKey
+import sigma.ast.SAvlTreeMethods._
 import sigma.ast.SType
-import sigma.data.SigmaBoolean
+import sigma.data.{KeyValueColl, SigmaBoolean}
 import sigma.eval.{AvlTreeVerifier, ErgoTreeEvaluator, EvalSettings, Profiler}
 import sigma.eval.ErgoTreeEvaluator.DataEnv
 
 import scala.collection.compat.immutable.ArraySeq
-import scala.util.DynamicVariable
+import scala.util.{DynamicVariable, Failure, Success}
 
 /** Result of JITC evaluation with costing. */
 case class JitEvalResult[A](value: A, cost: JitCost)
@@ -64,6 +66,155 @@ class CErgoTreeEvaluator(
 
   override def createTreeVerifier(tree: AvlTree, proof: Coll[Byte]): AvlTreeVerifier =
     CAvlTreeVerifier(tree, proof)
+
+  /** Creates [[sigma.eval.AvlTreeVerifier]] for the given tree and proof. */
+  def createVerifier(tree: AvlTree, proof: Coll[Byte]) = {
+    // the cost of tree reconstruction from proof is O(proof.length)
+    addSeqCost(CreateAvlVerifier_Info, proof.length) { () =>
+      CAvlTreeVerifier(tree, proof)
+    }
+  }
+
+  override def contains_eval(mc: MethodCall, tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Boolean = {
+    val bv     = createVerifier(tree, proof)
+    val nItems = bv.treeHeight
+    var res = false
+    // the cost of tree lookup is O(bv.treeHeight)
+    addSeqCost(LookupAvlTree_Info, nItems) { () =>
+      res = bv.performLookup(ADKey @@ key.toArray) match {
+        case Success(r) => r match {
+          case Some(_) => true
+          case _ => false
+        }
+        case Failure(_) => false
+      }
+    }
+    res
+  }
+
+  override def get_eval(mc: MethodCall, tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]] = {
+    val bv     = createVerifier(tree, proof)
+    val nItems = bv.treeHeight
+
+    // the cost of tree lookup is O(bv.treeHeight)
+    addSeqCost(LookupAvlTree_Info, nItems) { () =>
+      bv.performLookup(ADKey @@ key.toArray) match {
+        case Success(r) => r match {
+          case Some(v) => Some(Colls.fromArray(v))
+          case _ => None
+        }
+        case Failure(_) => defs.error(s"Tree proof is incorrect $tree")
+      }
+    }
+  }
+
+  override def getMany_eval(
+      mc: MethodCall,
+      tree: AvlTree,
+      keys: Coll[Coll[Byte]],
+      proof: Coll[Byte]): Coll[Option[Coll[Byte]]] = {
+    val bv = createVerifier(tree, proof)
+    val nItems = bv.treeHeight
+    keys.map { key =>
+      // the cost of tree lookup is O(bv.treeHeight)
+      addSeqCost(LookupAvlTree_Info, nItems) { () =>
+        bv.performLookup(ADKey @@ key.toArray) match {
+          case Success(r) => r match {
+            case Some(v) => Some(Colls.fromArray(v))
+            case _ => None
+          }
+          case Failure(_) => defs.error(s"Tree proof is incorrect $tree")
+        }
+      }
+    }
+  }
+
+  override def insert_eval(mc: MethodCall, tree: AvlTree, entries: KeyValueColl, proof: Coll[Byte]): Option[AvlTree] = {
+    addCost(isInsertAllowed_Info)
+    if (!tree.isInsertAllowed) {
+      None
+    } else {
+      val bv     = createVerifier(tree, proof)
+      // when the tree is empty we still need to add the insert cost
+      val nItems = Math.max(bv.treeHeight, 1)
+      entries.forall { case (key, value) =>
+        var res = true
+        // the cost of tree lookup is O(bv.treeHeight)
+        addSeqCost(InsertIntoAvlTree_Info, nItems) { () =>
+          val insertRes = bv.performInsert(key.toArray, value.toArray)
+          // TODO v6.0: throwing exception is not consistent with update semantics
+          //  however it preserves v4.0 semantics (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/908)
+          if (insertRes.isFailure) {
+            defs.error(s"Incorrect insert for $tree (key: $key, value: $value, digest: ${tree.digest}): ${insertRes.failed.get}}")
+          }
+          res = insertRes.isSuccess
+        }
+        res
+      }
+      bv.digest match {
+        case Some(d) =>
+          addCost(updateDigest_Info)
+          Some(tree.updateDigest(Colls.fromArray(d)))
+        case _ => None
+      }
+    }
+  }
+
+  override def update_eval(
+      mc: MethodCall, tree: AvlTree,
+      operations: KeyValueColl, proof: Coll[Byte]): Option[AvlTree] = {
+    addCost(isUpdateAllowed_Info)
+    if (!tree.isUpdateAllowed) {
+      None
+    } else {
+      val bv     = createVerifier(tree, proof)
+      // when the tree is empty we still need to add the insert cost
+      val nItems = Math.max(bv.treeHeight, 1)
+
+      // here we use forall as looping with fast break on first failed tree oparation
+      operations.forall { case (key, value) =>
+        var res = true
+        // the cost of tree update is O(bv.treeHeight)
+        addSeqCost(UpdateAvlTree_Info, nItems) { () =>
+          val updateRes = bv.performUpdate(key.toArray, value.toArray)
+          res = updateRes.isSuccess
+        }
+        res
+      }
+      bv.digest match {
+        case Some(d) =>
+          addCost(updateDigest_Info)
+          Some(tree.updateDigest(Colls.fromArray(d)))
+        case _ => None
+      }
+    }
+  }
+
+  override def remove_eval(
+      mc: MethodCall, tree: AvlTree,
+      operations: Coll[Coll[Byte]], proof: Coll[Byte]): Option[AvlTree] = {
+    addCost(isRemoveAllowed_Info)
+    if (!tree.isRemoveAllowed) {
+      None
+    } else {
+      val bv     = createVerifier(tree, proof)
+      // when the tree is empty we still need to add the insert cost
+      val nItems = Math.max(bv.treeHeight, 1)
+      cfor(0)(_ < operations.length, _ + 1) { i =>
+        addSeqCost(RemoveAvlTree_Info, nItems) { () =>
+          val key = operations(i).toArray
+          bv.performRemove(key)
+        }
+      }
+      addCost(digest_Info)
+      bv.digest match {
+        case Some(d) =>
+          addCost(updateDigest_Info)
+          Some(tree.updateDigest(Colls.fromArray(d)))
+        case _ => None
+      }
+    }
+  }
 
   /** Evaluates the given expression in the given data environment. */
   def eval(env: DataEnv, exp: SValue): Any = {
