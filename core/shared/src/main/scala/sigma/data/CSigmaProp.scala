@@ -43,6 +43,7 @@ case class CSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[
 }
 
 object CSigmaProp {
+  /** Create trivial sigma proposition with given boolean value. */
   def apply(b: Boolean): CSigmaProp =
     CSigmaProp(TrivialProp(b))
     

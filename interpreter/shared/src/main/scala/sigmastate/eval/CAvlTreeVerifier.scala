@@ -12,7 +12,7 @@ import scala.util.Try
 /** Implements operations of AVL tree verifier based on
   * [[scorex.crypto.authds.avltree.batch.BatchAVLVerifier]].
   *
-  * @see BatchAVLVerifier
+  * @see BatchAVLVerifier, CAvlTreeVerifier
   */
 class CAvlTreeVerifier private(
     startingDigest: ADDigest,
@@ -34,6 +34,8 @@ class CAvlTreeVerifier private(
 
   override def performRemove(key: Array[Byte]): Try[Option[Array[Byte]]] =
     performOneOperation(Remove(ADKey @@ key))
+
+  override def digest: Option[ADDigest] = super.digest
 
   /** Override default logging which outputs stack trace to the console. */
   override protected def logError(t: Throwable): Unit = {}
