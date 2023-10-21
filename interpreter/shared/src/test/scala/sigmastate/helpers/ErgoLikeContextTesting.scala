@@ -2,14 +2,17 @@ package sigmastate.helpers
 
 import org.ergoplatform.ErgoLikeContext.Height
 import org.ergoplatform._
-import org.ergoplatform.validation.{SigmaValidationSettings, ValidationRules}
-import sigmastate.AvlTreeData
+import org.ergoplatform.validation.ValidationRules
+import sigma.data.AvlTreeData
+import sigma.serialization.GroupElementSerializer
+import sigma.util.Extensions.EcpOps
+import sigma.validation.SigmaValidationSettings
+import sigma.{Box, Coll, Colls, Header, PreHeader}
 import sigmastate.crypto.CryptoConstants
 import sigmastate.eval._
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultEvalSettings
-import sigmastate.serialization.{GroupElementSerializer, SigmaSerializer}
-import sigma.{Box, Coll, Colls, Header, PreHeader}
+import sigmastate.serialization.SigmaSerializer
 
 object ErgoLikeContextTesting {
   /* NO HF PROOF:
@@ -22,14 +25,14 @@ object ErgoLikeContextTesting {
   val dummyPubkey: Array[Byte] = GroupElementSerializer.toBytes(CryptoConstants.dlogGroup.generator)
 
   val noBoxes: IndexedSeq[ErgoBox] = IndexedSeq.empty[ErgoBox]
-  val noHeaders: Coll[Header] = CostingSigmaDslBuilder.Colls.emptyColl[Header]
+  val noHeaders: Coll[Header] = CSigmaDslBuilder.Colls.emptyColl[Header]
 
   def dummyPreHeader(currentHeight: Height, minerPk: Array[Byte]): PreHeader = CPreHeader(0,
     parentId = Colls.emptyColl[Byte],
     timestamp = 3,
     nBits = 0,
     height = currentHeight,
-    minerPk = GroupElementSerializer.parse(SigmaSerializer.startReader(minerPk)),
+    minerPk = GroupElementSerializer.parse(SigmaSerializer.startReader(minerPk)).toGroupElement,
     votes = Colls.emptyColl[Byte]
   )
 

@@ -1,12 +1,11 @@
 package sigmastate.crypto
 
+import sigma.crypto.Ecp
+
 import java.math.BigInteger
 
 /** Constants used in crypto operations implementation. */
 object CryptoConstants {
-  /** Type of group elements used in the signature scheme. */
-  type EcPointType = Ecp
-
   /** Length of encoded group element in bytes. */
   val EncodedGroupElementLength: Byte = 33
 
@@ -14,22 +13,14 @@ object CryptoConstants {
   val dlogGroup: BcDlogGroup = SecP256K1Group
 
   /** Secure random generator used in the signature scheme. */
-  val secureRandom: sigmastate.crypto.SecureRandom = dlogGroup.secureRandom
+  val secureRandom: sigma.crypto.SecureRandom = dlogGroup.secureRandom
 
   /** Size of the binary representation of any group element (2 ^ groupSizeBits == <number of elements in a group>) */
   val groupSizeBits: Int = 256
 
-  /** Number of bytes to represent any group element as byte array */
-  val groupSize: Int = 256 / 8 //32 bytes
 
   /** Group order, i.e. number of elements in the group */
   val groupOrder: BigInteger = dlogGroup.order
-
-  /** Length of hash function used in the signature scheme. Blake2b hash function is used. */
-  val hashLengthBits = 256
-
-  /** Length of hash in bytes. */
-  val hashLength: Int = hashLengthBits / 8
 
   /** A size of challenge in Sigma protocols, in bits.
     * If this anything but 192, threshold won't work, because we have polynomials over GF(2^192) and no others.

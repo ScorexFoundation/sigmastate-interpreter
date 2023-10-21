@@ -9,10 +9,11 @@ import scorex.crypto.hash.Blake2b256
 import scorex.util.Random
 import sigma.Colls
 import sigma.ast.SByte
+import sigma.data.{AvlTreeData, Digest32Coll, ProveDlog, TrivialProp}
 import sigma.util.BenchmarkUtil.measure
-import sigmastate.Values.{ByteArrayConstant, CollectionConstant, ErgoTree, IntConstant, SigmaPropConstant}
+import sigmastate.Values.{ByteArrayConstant, CollectionConstant, IntConstant, SigmaPropConstant}
 import sigmastate._
-import sigmastate.crypto.DLogProtocol.{DLogProverInput, ProveDlog}
+import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
@@ -20,7 +21,6 @@ import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.{ByIndex, ExtractCreationInfo, SelectField}
-import sigmastate.eval.Digest32Coll
 import sigmastate.utils.Helpers._
 
 import scala.util.Try

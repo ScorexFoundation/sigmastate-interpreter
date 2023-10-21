@@ -1,12 +1,13 @@
 package sigmastate.serialization.transformers
 
-import sigmastate.Values.{Value, SValue}
+import sigmastate.Values.{SValue, Value}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utils.SigmaByteWriter.DataInfo
+import sigmastate.utils.SigmaByteWriter._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.Slice
-import sigma.ast.{SInt, SCollection, SType}
+import sigma.ast.{SCollection, SInt, SType}
+import sigma.serialization.CoreByteWriter.DataInfo
 
 case class SliceSerializer(cons: (Value[SCollection[SType]], Value[SInt.type], Value[SInt.type]) => Value[SCollection[SType]])
   extends ValueSerializer[Slice[SType]] {

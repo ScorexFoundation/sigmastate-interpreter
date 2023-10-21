@@ -6,16 +6,15 @@ import org.ergoplatform.settings.ErgoAlgos
 import pprint.{PPrinter, Tree}
 import sigma.ast.SCollection.{SBooleanArray, SByteArray, SByteArray2}
 import sigma.ast._
-import sigma.data.{CollType, PrimitiveType}
+import sigma.crypto.EcPointType
+import sigma.data.{AvlTreeData, AvlTreeFlags, CollType, PrimitiveType, TrivialProp}
+import sigma.serialization.GroupElementSerializer
 import sigma.{Coll, GroupElement}
-import sigmastate.Values.{ConstantNode, ErgoTree, FuncValue, ValueCompanion}
+import sigmastate.Values.{ConstantNode, FuncValue, ValueCompanion}
 import sigmastate._
-import sigmastate.crypto.CryptoConstants.EcPointType
 import sigmastate.crypto.GF2_192_Poly
 import sigmastate.interpreter.{CompanionDesc, FixedCostItem, MethodDesc}
-import sigmastate.lang.Terms
 import sigmastate.lang.Terms.MethodCall
-import sigmastate.serialization.GroupElementSerializer
 import sigmastate.utxo.SelectField
 
 import java.math.BigInteger
@@ -248,7 +247,7 @@ object SigmaPPrint extends PPrinter {
     case mc @ MethodCall(obj, method, args, typeSubst) =>
       val objType = apply(method.objType).plainText
       val methodTemplate = method.objType.getMethodByName(method.name)
-      val methodT = Terms.unifyTypeLists(methodTemplate.stype.tDom, obj.tpe +: args.map(_.tpe)) match {
+      val methodT = unifyTypeLists(methodTemplate.stype.tDom, obj.tpe +: args.map(_.tpe)) match {
         case Some(subst) if subst.nonEmpty =>
           val getMethod = s"""$objType.getMethodByName("${method.name}").withConcreteTypes"""
           Tree.Apply(getMethod, treeifySeq(Seq(subst)))

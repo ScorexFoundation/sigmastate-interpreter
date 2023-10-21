@@ -8,11 +8,9 @@ import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.ConstantStore
 import sigma.ast._
-import sigmastate.crypto.DLogProtocol.ProveDlog
-import sigmastate.crypto.ProveDHTuple
+import sigma.data.{ProveDHTuple, ProveDlog}
 
 import scala.collection.mutable.ArrayBuffer
-import sigmastate.lang.Terms
 import sigmastate.serialization.ValueCodes.OpCode
 
 /** Implementation of IR-graph to ErgoTree expression translation.
@@ -282,7 +280,7 @@ trait TreeBuilding extends SigmaLibrary { IR: IRContext =>
           case (mth @ SCollectionMethods.ZipMethod, Seq(coll)) =>
             val typeSubst = Map(SCollection.tOV -> coll.asCollection[SType].tpe.elemType)
             typeSubst
-          case (mth, _) => Terms.EmptySubst
+          case (mth, _) => EmptySubst
         }
         val specMethod = method.withConcreteTypes(typeSubst + (SCollection.tIV -> colTpe.elemType))
         builder.mkMethodCall(col, specMethod, args.toIndexedSeq, Map())

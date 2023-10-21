@@ -5,6 +5,7 @@ import sigmastate.Values.Value
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import sigmastate.utils.SigmaByteWriter._
 import sigmastate.utxo.Append
 import sigma.ast.{SCollection, SType}
 

@@ -8,24 +8,28 @@ import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen.{choose, frequency}
 import org.scalacheck.util.Buildable
 import org.scalacheck.{Arbitrary, Gen}
-import sigma.data.RType
+import sigma.data._
 import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.util.encode.{Base58, Base64}
 import scorex.util.{ModifierId, bytesToId}
 import sigmastate.Values._
-import sigmastate.crypto.DLogProtocol.ProveDlog
-import sigmastate.crypto.{CryptoConstants, ProveDHTuple}
+import sigmastate.crypto.CryptoConstants
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
-import sigmastate.crypto.CryptoConstants.{EcPointType, dlogGroup}
+import sigmastate.crypto.CryptoConstants.dlogGroup
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.lang.TransformingSigmaBuilder._
 import sigmastate._
 import sigmastate.utxo._
 import sigma.Coll
+import sigma.Extensions.ArrayOps
 import sigma._
 import sigma.ast._
-import sigmastate.Values.ErgoTree.ZeroHeader
+import sigma.crypto.EcPointType
+import sigma.util.Extensions.EcpOps
+import sigma.validation.{ChangedRule, DisabledRule, EnabledRule, ReplacedRule, RuleStatus}
+import sigma.validation.ValidationRules.FirstRuleId
+import sigmastate.ErgoTree.ZeroHeader
 
 import java.math.BigInteger
 import scala.collection.compat.immutable.ArraySeq
@@ -157,7 +161,7 @@ trait ObjectGenerators extends TypeGenerators
 
   lazy  val groupElementConstGen: Gen[GroupElementConstant] = for {
     p <- groupElementGen
-  } yield mkConstant[SGroupElement.type](p, SGroupElement)
+  } yield mkConstant[SGroupElement.type](p.toGroupElement, SGroupElement)
 
   lazy val constantGen: Gen[Constant[SType]] =
     Gen.oneOf(booleanConstGen, byteConstGen,
@@ -331,11 +335,11 @@ trait ObjectGenerators extends TypeGenerators
   } yield mkTuple(values).asInstanceOf[Tuple]
 
   lazy val modifierIdGen: Gen[ModifierId] =
-    arrayOfN(CryptoConstants.hashLength, arbByte.arbitrary)
+    arrayOfN(sigma.crypto.hashLength, arbByte.arbitrary)
     .map(bytesToId)
 
   lazy val modifierIdBytesGen: Gen[Coll[Byte]] =
-    collOfN(CryptoConstants.hashLength, arbByte.arbitrary)
+    collOfN(sigma.crypto.hashLength, arbByte.arbitrary)
 
   val MaxTokens = 10
 
@@ -374,7 +378,7 @@ trait ObjectGenerators extends TypeGenerators
     creationHeight <- heightGen
   } yield new ErgoBoxCandidate(l, b, creationHeight, tokens, ar)
 
-  lazy val boxConstantGen: Gen[BoxConstant] = ergoBoxGen.map { v => BoxConstant(CostingBox(v)) }
+  lazy val boxConstantGen: Gen[BoxConstant] = ergoBoxGen.map { v => BoxConstant(CBox(v)) }
 
   lazy val digest32Gen: Gen[TokenId] = for {
     bytes <- collOfN(TokenId.size, arbByte.arbitrary)
@@ -680,7 +684,7 @@ trait ObjectGenerators extends TypeGenerators
   lazy val ergoTreeGen: Gen[ErgoTree] = for {
     sigmaBoolean <- Gen.delay(sigmaBooleanGen)
     propWithConstants <- Gen.delay(logicalExprTreeNodeGen(Seq(AND.apply, OR.apply, XorOf.apply)).map(_.toSigmaProp))
-    prop <- Gen.oneOf(propWithConstants, sigmaBoolean.toSigmaProp)
+    prop <- Gen.oneOf(propWithConstants, sigmaBoolean.toSigmaPropValue)
     treeBuilder <- Gen.oneOf(Seq[SigmaPropValue => ErgoTree](ErgoTree.withSegregation(ZeroHeader, _),
       ErgoTree.withoutSegregation(ZeroHeader, _)))
   } yield treeBuilder(prop)
@@ -688,7 +692,7 @@ trait ObjectGenerators extends TypeGenerators
   lazy val ergoTreeWithSegregationGen: Gen[ErgoTree] = for {
     sigmaBoolean <- Gen.delay(sigmaBooleanGen)
     propWithConstants <- Gen.delay(logicalExprTreeNodeGen(Seq(AND.apply, OR.apply, XorOf.apply)).map(_.toSigmaProp))
-    prop <- Gen.oneOf(propWithConstants, sigmaBoolean.toSigmaProp)
+    prop <- Gen.oneOf(propWithConstants, sigmaBoolean.toSigmaPropValue)
   } yield ErgoTree.withSegregation(ZeroHeader, prop)
 
   def headerGen(stateRoot: AvlTree, parentId: Coll[Byte]): Gen[Header] = for {
@@ -706,7 +710,7 @@ trait ObjectGenerators extends TypeGenerators
     powDistance <- arbBigInt.arbitrary
     votes <- minerVotesGen
   } yield CHeader(id, version, parentId, adProofsRoot, stateRoot, transactionRoot, timestamp, nBits,
-    height, extensionRoot, minerPk, powOnetimePk, powNonce, powDistance, votes)
+    height, extensionRoot, minerPk.toGroupElement, powOnetimePk.toGroupElement, powNonce, powDistance, votes)
 
   lazy val headerGen: Gen[Header] = for {
     stateRoot <- avlTreeGen
@@ -736,7 +740,7 @@ trait ObjectGenerators extends TypeGenerators
     height <- heightGen
     minerPk <- groupElementGen
     votes <- minerVotesGen
-  } yield CPreHeader(version, parentId, timestamp, nBits, height, minerPk, votes)
+  } yield CPreHeader(version, parentId, timestamp, nBits, height, minerPk.toGroupElement, votes)
 
   lazy val preHeaderGen: Gen[PreHeader] = for {
     parentId <- modifierIdBytesGen

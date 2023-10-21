@@ -6,25 +6,21 @@ import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen.containerOfN
 import org.scalacheck.util.Buildable
 import org.scalacheck.{Arbitrary, Gen}
-import sigma.data.{CBigInt, RType}
+import sigma.data._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ModifierId
-import sigmastate.Values.{ByteArrayConstant, ConcreteCollection, ConstantPlaceholder, ErgoTree, FalseLeaf, IntConstant, LongConstant, SigmaPropConstant, TrueLeaf}
-import sigmastate.crypto.CryptoConstants.EcPointType
-import sigmastate.crypto.DLogProtocol.ProveDlog
-import sigmastate.crypto.ProveDHTuple
-import sigmastate.eval._
-import sigmastate.eval.Extensions._
-import sigmastate.eval.{CAvlTree, CHeader, CPreHeader, CSigmaProp, CostingBox, CostingSigmaDslBuilder, SigmaDsl}
+import sigmastate.Values.{ByteArrayConstant, ConcreteCollection, ConstantPlaceholder, FalseLeaf, IntConstant, LongConstant, SigmaPropConstant, TrueLeaf}
+import sigma.Extensions.ArrayOps
+import sigmastate.eval.{CBox, CHeader, CPreHeader, CSigmaDslBuilder, SigmaDsl}
 import sigmastate.helpers.TestingCommons
 import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers
-import sigmastate._
-import sigma.Coll
+import sigmastate.{ErgoTree, _}
 import sigma.ast.{SBoolean, SSigmaProp}
-import sigmastate.Values.ErgoTree.HeaderType
+import sigma.crypto.EcPointType
+import sigmastate.ErgoTree.HeaderType
 
 import java.math.BigInteger
 import scala.reflect.ClassTag
@@ -32,7 +28,7 @@ import scala.reflect.ClassTag
 trait SigmaTestingData extends TestingCommons with ObjectGenerators {
   /** Creates a [[sigma.Coll]] with the given `items`. */
   def Coll[T](items: T*)(implicit cT: RType[T]): Coll[T] =
-    CostingSigmaDslBuilder.Colls.fromItems(items: _*)
+    CSigmaDslBuilder.Colls.fromItems(items: _*)
 
   /** Generator of random collection with `n` elements. */
   def collOfN[T: RType : Arbitrary](n: Int)
@@ -210,7 +206,7 @@ trait SigmaTestingData extends TestingCommons with ObjectGenerators {
       )
     )
 
-    val b1_instances = new CloneSet(1000, CostingBox(
+    val b1_instances = new CloneSet(1000, CBox(
       new ErgoBox(
         9223372036854775807L,
         new ErgoTree(
@@ -248,7 +244,7 @@ trait SigmaTestingData extends TestingCommons with ObjectGenerators {
 
     val b1: Box = create_b1()
 
-    val b2: Box = CostingBox(
+    val b2: Box = CBox(
       new ErgoBox(
         12345L,
         new ErgoTree(

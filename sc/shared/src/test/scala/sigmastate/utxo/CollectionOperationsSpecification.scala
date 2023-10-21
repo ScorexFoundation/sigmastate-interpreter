@@ -8,7 +8,9 @@ import sigmastate.lang.Terms._
 import org.ergoplatform._
 import sigma.ast.SCollection._
 import sigma.ast._
+import sigma.data.AvlTreeData
 import sigmastate.SCollectionMethods.{FlatMapMethod, IndexOfMethod, IndicesMethod, PatchMethod, UpdateManyMethod, UpdatedMethod}
+import sigmastate.eval.Extensions.SigmaBooleanOps
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.Helpers._
@@ -89,7 +91,7 @@ class CollectionOperationsSpecification extends CompilerTestingCommons
     val prover = new ContextEnrichingTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
 
-    val pubkey = prover.dlogSecrets.head.publicImage.toSigmaProp
+    val pubkey = prover.dlogSecrets.head.publicImage.toSigmaPropValue
     val pubkeyTree = mkTestErgoTree(pubkey)
 
     val prop = compile(Map(), "OUTPUTS.exists({ (box: Box) => box.value + 5 > 10 })").asBoolValue.toSigmaProp
@@ -204,7 +206,7 @@ class CollectionOperationsSpecification extends CompilerTestingCommons
     val prover = new ContextEnrichingTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
 
-    val pubkey = prover.dlogSecrets.head.publicImage.toSigmaProp
+    val pubkey = prover.dlogSecrets.head.publicImage.toSigmaPropValue
     val pubkeyTree = mkTestErgoTree(pubkey)
 
     val prop = compile(Map(),

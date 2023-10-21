@@ -3,11 +3,10 @@ package sigmastate.interpreter
 import java.util
 import sigma.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
 import org.ergoplatform.ErgoLikeContext
-import org.ergoplatform.validation.SigmaValidationSettings
+import sigma.validation.SigmaValidationSettings
 import org.ergoplatform.validation.ValidationRules._
-import sigmastate.crypto.DLogProtocol.ProveDlog
 import sigmastate.Values._
-import sigmastate.crypto.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage, ProveDlog}
+import sigmastate.crypto.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
 import sigmastate.crypto._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.serialization.{SigmaSerializer, ValueSerializer}
@@ -22,8 +21,10 @@ import sigmastate.lang.Terms.ValueOps
 import debox.cfor
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.{SBoolean, SSigmaProp, SType}
+import sigma.data.{CAND, COR, CTHRESHOLD, ProveDHTuple, ProveDlog, SigmaBoolean, TrivialProp}
 import sigma.{Evaluation, VersionContext}
 import sigma.kiama.rewriting.Strategy
+import sigma.validation.ValidationRules.trySoftForkable
 import sigmastate.exceptions.{CostLimitException, InterpreterException}
 
 import scala.util.{Success, Try}
@@ -52,6 +53,7 @@ trait Interpreter {
 
   type ProofT = UncheckedTree
 
+  /** Force initialization of reflection. */
   private val _ = InterpreterReflection
 
   /** Evaluation settings used by [[ErgoTreeEvaluator]] which is used by this

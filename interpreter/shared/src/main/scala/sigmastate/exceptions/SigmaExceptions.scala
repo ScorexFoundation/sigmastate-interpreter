@@ -1,24 +1,7 @@
 package sigmastate.exceptions
 
+import sigma.SigmaException
 import sigmastate.JitCost
-
-/** Base class for Sigma-related exceptions.
-  *
-  * @param message the error message
-  * @param cause an optional cause for the exception
-  */
-class SigmaException(val message: String, val cause: Option[Throwable] = None)
-    extends Exception(message, cause.orNull)
-
-/** Exception thrown during serialization.
-  *
-  * @param message the error message
-  * @param cause an optional cause for the exception
-  */
-case class SerializerException(
-    override val message: String,
-    override val cause: Option[Throwable] = None)
-    extends SigmaException(message, cause)
 
 /** Exception thrown by [[sigmastate.interpreter.Interpreter]].
   *

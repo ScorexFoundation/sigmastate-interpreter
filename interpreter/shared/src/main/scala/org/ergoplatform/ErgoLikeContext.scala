@@ -1,6 +1,5 @@
 package org.ergoplatform
 
-import org.ergoplatform.validation.SigmaValidationSettings
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval.Extensions._
@@ -12,9 +11,11 @@ import sigmastate.serialization.OpCodes
 import sigma.Coll
 import sigma.{AnyValue, Header, PreHeader}
 import debox.cfor
+import sigma.Extensions.ArrayOps
 import sigma.ast.{SBox, SCollection, SContext, SFunc, SGlobal, SInt, SType, SUnit}
-import sigma.ast.SType.{TypeCode, AnyOps}
-import sigma.data.SigmaConstants
+import sigma.ast.SType.{AnyOps, TypeCode}
+import sigma.data.{AvlTreeData, CAvlTree, SigmaConstants}
+import sigma.validation.SigmaValidationSettings
 import sigmastate.serialization.ValueCodes.OpCode
 
 /** Represents a script evaluation context to be passed to a prover and a verifier to execute and
@@ -147,7 +148,7 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
       for ((id, v) <- m) {
         res(id) = v
       }
-      CostingSigmaDslBuilder.Colls.fromArray(res)
+      CSigmaDslBuilder.Colls.fromArray(res)
     }
 
     val dataInputs = this.dataBoxes.toArray.map(_.toTestBox).toColl
@@ -170,7 +171,7 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
     val selfBox = boxesToSpend(selfIndex).toTestBox
     val ergoTreeVersion = currentErgoTreeVersion.getOrElse(
         Interpreter.error(s"Undefined context property: currentErgoTreeVersion"))
-    CostingDataContext(
+    CContext(
       dataInputs, headers, preHeader, inputs, outputs, preHeader.height, selfBox, selfIndex, avlTree,
       preHeader.minerPk.getEncoded, vars, activatedScriptVersion, ergoTreeVersion)
   }
@@ -358,6 +359,6 @@ case object Global extends NotReadyValue[SGlobal.type] with FixedCostValueCompan
   override val opType: SFunc = SFunc(SUnit, SGlobal)
   protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
     addCost(this.costKind)
-    CostingSigmaDslBuilder
+    CSigmaDslBuilder
   }
 }

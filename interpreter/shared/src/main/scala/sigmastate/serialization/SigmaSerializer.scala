@@ -1,12 +1,12 @@
 package sigmastate.serialization
 
 import java.nio.ByteBuffer
-import org.ergoplatform.validation.SigmaValidationSettings
 import scorex.util.ByteArrayBuilder
 import sigmastate.utils._
 import scorex.util.serialization._
 import sigma.data.SigmaConstants
-import sigmastate.exceptions.SerializerException
+import sigma.serialization.SerializerException
+import sigma.validation.SigmaValidationSettings
 import sigmastate.serialization.ValueCodes.OpCode
 
 object SigmaSerializer {

@@ -5,33 +5,24 @@ import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
-import sigma.data.{CBigInt, ExactIntegral, ExactNumeric, ExactOrdering, RType}
 import org.scalatest.BeforeAndAfterAll
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ModifierId
-import sigma.Extensions._
-import sigma.{VersionContext, _}
-import sigma.data.RType._
-import sigma.data.{ExactIntegral, ExactNumeric, ExactOrdering, RType}
-import sigma.util.Extensions._
-import sigmastate.utils.Extensions._
+import sigma.Extensions.{ArrayOps, CollOps}
 import sigma.ast.SCollection._
-import sigmastate.Values.IntConstant
-import sigmastate.Values.ErgoTree.{HeaderType, ZeroHeader}
+import sigma.ast._
+import sigma.data.RType._
+import sigma.data._
+import sigma.util.Extensions.{BooleanOps, IntOps, LongOps}
+import sigma.{VersionContext, data, _}
+import sigmastate.ErgoTree.{HeaderType, ZeroHeader}
 import sigmastate.Values.{IntConstant, _}
 import sigmastate._
-import sigmastate.crypto.DLogProtocol._
-import sigmastate.crypto.ProveDHTuple
-import sigmastate.eval.Extensions._
+import sigmastate.eval.Extensions.{AvlTreeOps, ByteExt, IntExt, LongExt, ShortExt}
 import sigmastate.eval.OrderingOps._
 import sigmastate.eval._
-import sigmastate.lang.Terms.{MethodCall, PropertyCall}
-import sigmastate.utxo._
-import sigma._
-import sigma.Extensions._
-import sigma.ast.{SAvlTree, SBigInt, SBoolean, SBox, SByte, SCollection, SCollectionType, SContext, SGroupElement, SHeader, SInt, SLong, SOption, SPair, SShort, SSigmaProp, STuple, SType, STypeVar}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter._
 import sigmastate.lang.Terms.{Apply, MethodCall, PropertyCall}
@@ -1067,7 +1058,6 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Byte methods equivalence (new features)") {
     lazy val toBytes = newFeature((x: Byte) => x.toBytes, "{ (x: Byte) => x.toBytes }")
-    lazy val toBits = newFeature((x: Byte) => x.toBits, "{ (x: Byte) => x.toBits }")
     lazy val toAbs = newFeature((x: Byte) => x.toAbs, "{ (x: Byte) => x.toAbs }")
     lazy val compareTo = newFeature(
       (x: (Byte, Byte)) => x._1.compareTo(x._2),
@@ -1082,7 +1072,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     "{ (x: (Byte, Byte)) => (x._1 & x._2).toByteExact }")
 
     forAll { x: Byte =>
-      Seq(toBytes, toBits, toAbs).foreach(f => f.checkEquality(x))
+      Seq(toBytes, toAbs).foreach(f => f.checkEquality(x))
     }
 
     forAll { x: (Byte, Byte) =>
@@ -1372,7 +1362,6 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Short methods equivalence (new features)") {
     lazy val toBytes = newFeature((x: Short) => x.toBytes, "{ (x: Short) => x.toBytes }")
-    lazy val toBits = newFeature((x: Short) => x.toBits, "{ (x: Short) => x.toBits }")
     lazy val toAbs = newFeature((x: Short) => x.toAbs, "{ (x: Short) => x.toAbs }")
 
     lazy val compareTo = newFeature((x: (Short, Short)) => x._1.compareTo(x._2),
@@ -1387,7 +1376,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     "{ (x: (Short, Short)) => x._1 & x._2 }")
 
     forAll { x: Short =>
-      Seq(toBytes, toBits, toAbs).foreach(_.checkEquality(x))
+      Seq(toBytes, toAbs).foreach(_.checkEquality(x))
     }
     forAll { x: (Short, Short) =>
       Seq(compareTo, bitOr, bitAnd).foreach(_.checkEquality(x))
@@ -1676,7 +1665,6 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Int methods equivalence (new features)") {
     lazy val toBytes = newFeature((x: Int) => x.toBytes, "{ (x: Int) => x.toBytes }")
-    lazy val toBits = newFeature((x: Int) => x.toBits, "{ (x: Int) => x.toBits }")
     lazy val toAbs = newFeature((x: Int) => x.toAbs, "{ (x: Int) => x.toAbs }")
     lazy val compareTo = newFeature((x: (Int, Int)) => x._1.compareTo(x._2),
       "{ (x: (Int, Int)) => x._1.compareTo(x._2) }")
@@ -1690,7 +1678,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     "{ (x: (Int, Int)) => x._1 & x._2 }")
 
     forAll { x: Int =>
-      Seq(toBytes, toBits, toAbs).foreach(_.checkEquality(x))
+      Seq(toBytes, toAbs).foreach(_.checkEquality(x))
     }
     forAll { x: (Int, Int) =>
       Seq(compareTo, bitOr, bitAnd).foreach(_.checkEquality(x))
@@ -1996,9 +1984,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Long methods equivalence (new features)") {
     lazy val toBytes = newFeature((x: Long) => x.toBytes, "{ (x: Long) => x.toBytes }")
-    lazy val toBits = newFeature((x: Long) => x.toBits, "{ (x: Long) => x.toBits }")
     lazy val toAbs = newFeature((x: Long) => x.toAbs, "{ (x: Long) => x.toAbs }")
-
     lazy val compareTo = newFeature((x: (Long, Long)) => x._1.compareTo(x._2),
       "{ (x: (Long, Long)) => x._1.compareTo(x._2) }")
 
@@ -2011,7 +1997,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     "{ (x: (Long, Long)) => x._1 & x._2 }")
 
     forAll { x: Long =>
-      Seq(toBytes, toBits, toAbs).foreach(_.checkEquality(x))
+      Seq(toBytes, toAbs).foreach(_.checkEquality(x))
     }
     forAll { x: (Long, Long) =>
       Seq(compareTo, bitOr, bitAnd).foreach(_.checkEquality(x))
@@ -2310,7 +2296,6 @@ class SigmaDslSpecification extends SigmaDslTesting
       FuncValue(Vector((1, SBigInt)), Downcast(ValUse(1, SBigInt), SLong)))
 
     lazy val toBytes = newFeature((x: BigInt) => x.toBytes, "{ (x: BigInt) => x.toBytes }")
-    lazy val toBits = newFeature((x: BigInt) => x.toBits, "{ (x: BigInt) => x.toBits }")
     lazy val toAbs = newFeature((x: BigInt) => x.toAbs, "{ (x: BigInt) => x.toAbs }")
 
     lazy val compareTo = newFeature((x: (BigInt, BigInt)) => x._1.compareTo(x._2),
@@ -2323,7 +2308,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     "{ (x: (BigInt, BigInt)) => x._1 & x._2 }")
 
     forAll { x: BigInt =>
-      Seq(toByte, toShort, toInt, toLong, toBytes, toBits, toAbs).foreach(_.checkEquality(x))
+      Seq(toByte, toShort, toInt, toLong, toBytes, toAbs).foreach(_.checkEquality(x))
     }
     forAll { x: (BigInt, BigInt) =>
       Seq(compareTo, bitOr, bitAnd).foreach(_.checkEquality(x))
@@ -2355,7 +2340,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   property("NEQ of pre-defined types") {
     verifyNeq(ge1, ge2, 1783, Array[CostItem](FixedCostItem(NamedDesc("EQ_GroupElement"), FixedCost(JitCost(172)))), 1783)(_.asInstanceOf[CGroupElement].copy())
     verifyNeq(t1, t2, 1767, Array[CostItem](FixedCostItem(NamedDesc("EQ_AvlTree"), FixedCost(JitCost(6)))), 1767)(_.asInstanceOf[CAvlTree].copy())
-    verifyNeq(b1, b2, 1767, Array[CostItem](), 1767)(_.asInstanceOf[CostingBox].copy())
+    verifyNeq(b1, b2, 1767, Array[CostItem](), 1767)(_.asInstanceOf[CBox].copy())
     verifyNeq(preH1, preH2, 1766, Array[CostItem](FixedCostItem(NamedDesc("EQ_PreHeader"), FixedCost(JitCost(4)))), 1766)(_.asInstanceOf[CPreHeader].copy())
     verifyNeq(h1, h2, 1767, Array[CostItem](FixedCostItem(NamedDesc("EQ_Header"), FixedCost(JitCost(6)))), 1767)(_.asInstanceOf[CHeader].copy())
   }
@@ -4609,7 +4594,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   def contextData() = {
-    val input = CostingBox(
+    val input = CBox(
       new ErgoBox(
         80946L,
         new ErgoTree(
@@ -4639,7 +4624,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       )
     )
 
-    val dataBox = CostingBox(
+    val dataBox = CBox(
       new ErgoBox(
         -1L,
         new ErgoTree(
@@ -4691,7 +4676,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       Helpers.decodeBytes("01ff13")
     )
 
-    val ctx = CostingDataContext(
+    val ctx = CContext(
       _dataInputs = Coll[Box](dataBox),
       headers = Coll[Header](header),
       preHeader = CPreHeader(
@@ -4705,7 +4690,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       ),
       inputs = Coll[Box](input),
       outputs = Coll[Box](
-        CostingBox(
+        CBox(
           new ErgoBox(
             1000000L,
             new ErgoTree(
@@ -4742,7 +4727,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             11
           )
         ),
-        CostingBox(
+        CBox(
           new ErgoBox(
             2769336982721999022L,
             new ErgoTree(
@@ -4784,19 +4769,19 @@ class SigmaDslSpecification extends SigmaDslTesting
     (input, dataBox, header, ctx, ctx2, ctx3)
   }
 
-  def ctxWithRegsInOutput(ctx: CostingDataContext, regs: AdditionalRegisters) = {
+  def ctxWithRegsInOutput(ctx: CContext, regs: AdditionalRegisters) = {
     ctx.copy(
       outputs = Coll({
-        val box = ctx.outputs(0).asInstanceOf[CostingBox]
+        val box = ctx.outputs(0).asInstanceOf[CBox]
         box.copy(ebox = copyBox(box.ebox)(additionalRegisters = regs))
       })
     )
   }
 
-  def ctxWithRegsInDataInput(ctx: CostingDataContext, regs: AdditionalRegisters) = {
+  def ctxWithRegsInDataInput(ctx: CContext, regs: AdditionalRegisters) = {
     ctx.copy(
       _dataInputs = Coll({
-        val box = ctx.dataInputs(0).asInstanceOf[CostingBox]
+        val box = ctx.dataInputs(0).asInstanceOf[CBox]
         box.copy(ebox = copyBox(box.ebox)(additionalRegisters = regs))
       })
     )
@@ -6574,7 +6559,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   def sampleCollBoxes = genSamples[Coll[Box]](collOfN[Box](5, arbitrary[Box]), MinSuccessful(20))
 
-  def create_b1 = CostingBox(
+  def create_b1 = CBox(
     new ErgoBox(
       1L,
       new ErgoTree(
@@ -6610,7 +6595,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     )
   )
 
-  def create_b2 = CostingBox(
+  def create_b2 = CBox(
     new ErgoBox(
       1000000000L,
       new ErgoTree(
@@ -9525,7 +9510,7 @@ class SigmaDslSpecification extends SigmaDslTesting
               "0008980204cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b04419702cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b04419602cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b0441"
             )
           ), cost = 1780, newDetails(18), expectedNewCost = 1780),
-          CSigmaProp(COR(Array(pk, dht, and, or, threshold))) -> Expected(Success(
+          CSigmaProp(data.COR(Array(pk, dht, and, or, threshold))) -> Expected(Success(
             Helpers.decodeBytes(
               "00089705cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b04419602cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b04419702cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b0441980204cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b04419702cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b04419602cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b0441"
             )

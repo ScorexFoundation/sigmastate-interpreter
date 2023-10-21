@@ -2,14 +2,14 @@ package sigmastate.serialization
 
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.lang.Terms.STypeSubst
 import sigmastate.lang.Terms.MethodCall
 import sigma.util.safeNewArray
-import sigmastate.utils.SigmaByteWriter.{DataInfo, valuesItemInfo}
+import sigmastate.utils.SigmaByteWriter._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.ComplexityTable
 import debox.cfor
-import sigma.ast.SType
+import sigma.ast.{SType, STypeSubst}
+import sigma.serialization.CoreByteWriter.{ArgInfo, DataInfo}
 
 case class MethodCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value[SType]], STypeSubst) => Value[SType])
   extends ValueSerializer[MethodCall] {

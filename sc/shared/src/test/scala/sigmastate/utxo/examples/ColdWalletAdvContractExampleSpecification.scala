@@ -2,8 +2,9 @@ package sigmastate.utxo.examples
 
 import org.ergoplatform.ErgoBox.{R4, R5, R6}
 import org.ergoplatform._
-import sigmastate.{AvlTreeData, CompilerCrossVersionProps}
-import sigmastate.Values.{ErgoTree, IntConstant, LongConstant}
+import sigma.data.AvlTreeData
+import sigmastate.{CompilerCrossVersionProps, ErgoTree}
+import sigmastate.Values.{IntConstant, LongConstant}
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp

@@ -1,15 +1,15 @@
 package sigmastate
 
 import org.ergoplatform.settings.ErgoAlgos
-import org.ergoplatform.validation.{ValidationException, ValidationRules}
+import org.ergoplatform.validation.ValidationRules
 import org.ergoplatform.{ErgoAddressEncoder, ErgoBox, ErgoLikeContext, Self}
 import sigma.data.RType.asType
-import sigma.data.{Nullable, RType}
+import sigma.data.{Nullable, RType, TrivialProp}
 import sigma.{Evaluation, VersionContext}
 import sigma.ast.SCollection.SByteArray
 import sigmastate.Values._
 import sigma.VersionContext._
-import sigmastate.eval.{CostingBox, Profiler}
+import sigmastate.eval.{CBox, Profiler}
 import sigmastate.exceptions.{CostLimitException, InterpreterException}
 import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}
 import sigmastate.interpreter.{ErgoTreeEvaluator, EvalSettings}
@@ -21,8 +21,10 @@ import sigmastate.utils.Helpers.TryOps
 import sigmastate.utxo._
 import sigma._
 import sigma.ast._
+import sigma.validation.ValidationException
+import sigma.validation.ValidationRules.CheckTypeCode
 import sigma.{ContractsTestkit, SigmaDslTesting}
-import sigmastate.Values.ErgoTree.HeaderType
+import sigmastate.ErgoTree.HeaderType
 import sigmastate.SCollectionMethods.checkValidFlatmap
 
 
@@ -70,7 +72,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
     val t = new ErgoTree(
       HeaderType @@ 16.toByte,
       Array(IntConstant(1)),
-      Left(UnparsedErgoTree(t1.bytes, ValidationException("", ValidationRules.CheckTypeCode, Seq())))
+      Left(UnparsedErgoTree(t1.bytes, ValidationException("", CheckTypeCode, Seq())))
     )
     assertExceptionThrown(
       t.toProposition(true),
@@ -690,7 +692,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
     )
 
     def createCtx: ErgoLikeContext = ErgoLikeContextTesting
-        .dummy(CostingBox(fakeSelf), VersionContext.current.activatedVersion)
+        .dummy(CBox(fakeSelf), VersionContext.current.activatedVersion)
         .withErgoTreeVersion(tree.version)
 
     VersionContext.withVersions(activatedVersion = 1, tree.version) {

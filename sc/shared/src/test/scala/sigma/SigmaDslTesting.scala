@@ -3,8 +3,7 @@ package sigma
 import debox.cfor
 import org.ergoplatform._
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, TestContractSpec}
-import org.ergoplatform.validation.ValidationRules.CheckSerializableTypeCode
-import org.ergoplatform.validation.{SigmaValidationSettings, ValidationException, ValidationRules}
+import org.ergoplatform.validation.ValidationRules
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen.frequency
 import org.scalacheck.{Arbitrary, Gen}
@@ -13,18 +12,19 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import scalan.Platform.threadSleepOrNoOp
-import sigma.data.{CollType, OptionType, PairType, RType}
+import sigma.Extensions.ArrayOps
+import sigma.data.{CollType, OptionType, PairType, ProveDlog, RType, SigmaLeaf}
 import sigma.util.BenchmarkUtil
 import sigma.util.CollectionUtil._
 import sigma.util.Extensions._
 import sigma.util.StringUtil.StringUtilExtensions
-import sigmastate.Values.ErgoTree.ZeroHeader
+import sigmastate.ErgoTree.ZeroHeader
 import sigma.ast.SType.AnyOps
-import sigmastate.Values.{ByteArrayConstant, Constant, ConstantNode, ErgoTree, IntConstant, SValue}
-import sigmastate.crypto.DLogProtocol.{DLogProverInput, ProveDlog}
+import sigmastate.Values.{ByteArrayConstant, Constant, ConstantNode, IntConstant, SValue}
+import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.crypto.SigmaProtocolPrivateInput
-import sigmastate.eval.Extensions._
-import sigmastate.eval.{CompiletimeIRContext, CostingBox, CostingDataContext, IRContext, SigmaDsl}
+import sigmastate.eval.Extensions.SigmaBooleanOps
+import sigmastate.eval.{CompiletimeIRContext, CBox, CContext, IRContext, SigmaDsl}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaPPrint}
 import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
@@ -35,7 +35,10 @@ import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers._
 import sigmastate.utxo.{DeserializeContext, DeserializeRegister, GetVar, OptionGet}
 import sigma.ast.{SOption, SSigmaProp, SType}
-import sigmastate.{SigmaLeaf, eval}
+import sigma.validation.ValidationRules.CheckSerializableTypeCode
+import sigma.validation.{SigmaValidationSettings, ValidationException}
+import sigmastate.{ErgoTree, eval}
+
 import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
@@ -255,11 +258,11 @@ class SigmaDslTesting extends AnyPropSpec
       }
     }
 
-    /** Creates a new ErgoLikeContext using given [[CostingDataContext]] as template.
+    /** Creates a new ErgoLikeContext using given [[CContext]] as template.
       * Copies most of the data from ctx and the missing data is taken from the args.
       * This is a helper method to be used in tests only.
       */
-    def createErgoLikeContext(ctx: CostingDataContext,
+    def createErgoLikeContext(ctx: CContext,
                               validationSettings: SigmaValidationSettings,
                               costLimit: Long,
                               initCost: Long
@@ -314,7 +317,7 @@ class SigmaDslTesting extends AnyPropSpec
           """.stripMargin
 
         val IR = new CompiletimeIRContext
-        val pkAlice = prover.pubKeys.head.toSigmaProp
+        val pkAlice = prover.pubKeys.head.toSigmaPropValue
         val env = Map("pkAlice" -> pkAlice)
         // Compile script the same way it is performed by applications (i.e. via Ergo Appkit)
         val prop = compile(env, code)(IR).asSigmaProp
@@ -331,19 +334,19 @@ class SigmaDslTesting extends AnyPropSpec
       }
 
       def ergoCtx(prover: FeatureProvingInterpreter, compiledTree: ErgoTree, expectedValue: B) = {
-        val pkBobBytes = ValueSerializer.serialize(prover.pubKeys(1).toSigmaProp)
-        val pkCarolBytes = ValueSerializer.serialize(prover.pubKeys(2).toSigmaProp)
+        val pkBobBytes = ValueSerializer.serialize(prover.pubKeys(1).toSigmaPropValue)
+        val pkCarolBytes = ValueSerializer.serialize(prover.pubKeys(2).toSigmaPropValue)
         val newRegisters = Map(
           ErgoBox.R4 -> Constant[SType](expectedValue.asInstanceOf[SType#WrappedType], tpeB),
           ErgoBox.R5 -> ByteArrayConstant(pkBobBytes)
         )
 
         val ctx = input match {
-          case ctx: CostingDataContext =>
+          case ctx: CContext =>
             // the context is passed as function argument (see func in the script)
             // Since Context is singleton, we should use this instance as the basis
             // for execution of verify instead of a new dummy context.
-            val self = ctx.selfBox.asInstanceOf[CostingBox]
+            val self = ctx.selfBox.asInstanceOf[CBox]
             val newSelf = self.copy(
               ebox = updatedRegisters(self.ebox, newRegisters)
             )

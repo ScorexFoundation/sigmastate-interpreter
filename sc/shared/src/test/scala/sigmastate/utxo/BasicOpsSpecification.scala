@@ -1,26 +1,27 @@
 package sigmastate.utxo
 
-import java.math.BigInteger
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, R6, R8}
 import org.ergoplatform._
-import sigma.data.RType
+import sigma.Extensions.ArrayOps
 import sigma.ast.SCollection.SByteArray
-import sigmastate.Values._
-import sigmastate._
-import sigmastate.eval.Extensions._
-import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
-import sigmastate.helpers.TestingHelpers._
-import sigmastate.interpreter.Interpreter._
-import sigmastate.lang.Terms._
 import sigma.ast.SType.AnyOps
 import sigma.ast._
+import sigma.data.{AvlTreeData, CAnyValue}
+import sigma.util.StringUtil._
+import sigmastate.Values._
+import sigmastate._
 import sigmastate.crypto.CryptoConstants
-import sigmastate.eval.{CAnyValue, InvalidType}
+import sigmastate.eval.InvalidType
+import sigmastate.helpers.TestingHelpers._
+import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultEvalSettings
 import sigmastate.interpreter.EvalSettings
+import sigmastate.interpreter.Interpreter._
+import sigmastate.lang.Terms._
 import sigmastate.utils.Helpers._
-import sigma.util.StringUtil._
+
+import java.math.BigInteger
 
 class BasicOpsSpecification extends CompilerTestingCommons
   with CompilerCrossVersionProps {

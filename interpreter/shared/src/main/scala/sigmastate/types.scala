@@ -10,6 +10,7 @@ import sigma.ast.SType.TypeCode
 import sigma.ast._
 import sigma.data.{Nullable, RType, SigmaConstants}
 import sigma.reflection.RClass
+import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma.{Coll, _}
 import sigmastate.SMethod.{MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
 import sigmastate.Values._
@@ -166,7 +167,7 @@ trait SNumericTypeMethods extends MonoTypeMethods {
   import SNumericTypeMethods.tNum
   protected override def getMethods(): Seq[SMethod] = {
     super.getMethods() ++ SNumericTypeMethods.methods.map {
-      m => m.copy(stype = Terms.applySubst(m.stype, Map(tNum -> this.ownerType)).asFunc)
+      m => m.copy(stype = applySubst(m.stype, Map(tNum -> this.ownerType)).asFunc)
     }
   }
 }
@@ -965,7 +966,7 @@ object STupleMethods extends MethodsContainer {
     // TODO: implement other methods
     val activeMethods = Set(1.toByte /*Coll.size*/, 10.toByte /*Coll.apply*/)
     SCollectionMethods.methods.filter(m => activeMethods.contains(m.methodId)).map { m =>
-      m.copy(stype = Terms.applySubst(m.stype, subst).asFunc)
+      m.copy(stype = applySubst(m.stype, subst).asFunc)
     }
   }
 

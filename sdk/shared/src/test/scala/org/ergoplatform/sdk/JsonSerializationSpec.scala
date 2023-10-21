@@ -5,23 +5,20 @@ import io.circe._
 import io.circe.syntax._
 import org.ergoplatform.ErgoBox._
 import org.ergoplatform.validation.ValidationRules
+import org.ergoplatform._
 import org.scalacheck.Arbitrary.arbitrary
 import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.util.ModifierId
 import scorex.util.encode.Base16
-import sigmastate.AvlTreeData
-import sigmastate.Values.{ByteArrayConstant, ByteConstant, ErgoTree, EvaluatedValue, IntConstant, LongArrayConstant, SigmaPropConstant}
+import sigma.ast.SType
+import sigma.data.{AvlTreeData, Digest32Coll, ProveDlog}
+import sigma.{Coll, Header, PreHeader}
+import sigmastate.ErgoTree
+import sigmastate.Values.{ByteArrayConstant, ByteConstant, EvaluatedValue, IntConstant, LongArrayConstant, SigmaPropConstant}
 import sigmastate.crypto.CryptoConstants
-import sigmastate.crypto.DLogProtocol.ProveDlog
-import sigmastate.eval.Digest32Coll
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.SerializationSpecification
-import sigmastate.utils.Helpers.DecoderResultOps  // required for Scala 2.11 (extension method toTry)
-import sigma.Coll
-import sigma.{Header, PreHeader}
-import org.ergoplatform.{DataInput, ErgoBox, ErgoLikeContext, ErgoLikeTransaction, ErgoLikeTransactionTemplate, Input, UnsignedErgoLikeTransaction, UnsignedInput}
-import sigma.ast.SType
-import scala.collection.mutable
+import sigmastate.utils.Helpers.DecoderResultOps  // required for Scala 2.11
 
 class JsonSerializationSpec extends SerializationSpecification with JsonCodecs {
 
@@ -134,7 +131,7 @@ class JsonSerializationSpec extends SerializationSpecification with JsonCodecs {
     val minerPkHex = "0326df75ea615c18acc6bb4b517ac82795872f388d5d180aac90eaa84de750b942"
     val minerPk = Base16.decode(minerPkHex).map { point =>
       ProveDlog(
-        CryptoConstants.dlogGroup.ctx.decodePoint(point).asInstanceOf[CryptoConstants.EcPointType]
+        CryptoConstants.dlogGroup.ctx.decodePoint(point)
       )
     }.get
     val regs = scala.collection.Map(

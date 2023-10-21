@@ -1,7 +1,7 @@
 package sigmastate.crypto
 
 import java.math.BigInteger
-import sigmastate.crypto.SecureRandom
+import sigma.crypto.SecureRandom
 
 /** Re-implementation in Scala of select set of utility methods from
   * org.bouncycastle.util.BigIntegers.

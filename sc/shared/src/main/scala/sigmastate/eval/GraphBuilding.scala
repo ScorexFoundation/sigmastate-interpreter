@@ -2,6 +2,8 @@ package sigmastate.eval
 
 import org.ergoplatform._
 import scalan.MutableLazy
+import sigma.SigmaException
+import sigma.ast.TypeCodes.LastConstantCode
 import sigma.data.ExactIntegral.{ByteIsExactIntegral, IntIsExactIntegral, LongIsExactIntegral, ShortIsExactIntegral}
 import sigma.data.ExactOrdering.{ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering, ShortIsExactOrdering}
 import sigma.util.Extensions.ByteOps
@@ -14,8 +16,8 @@ import sigmastate.lang.Terms.{Ident, Select, Val, ValueOps}
 import sigmastate.serialization.{OpCodes, ValueCodes}
 import sigmastate.utxo._
 import sigma.ast._
-import sigmastate.crypto.CryptoConstants.EcPointType
-import sigmastate.exceptions.{GraphBuildingException, SigmaException}
+import sigma.crypto.EcPointType
+import sigmastate.exceptions.GraphBuildingException
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -390,12 +392,12 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
     case OpCodes.LtCode  => OrderingLT[A](elemToExactOrdering(eA))
     case OpCodes.GeCode  => OrderingGTEQ[A](elemToExactOrdering(eA))
     case OpCodes.LeCode  => OrderingLTEQ[A](elemToExactOrdering(eA))
-    case _ => error(s"Cannot find BinOp for opcode newOpCode(${opCode.toUByte - ValueCodes.LastConstantCode}) and type $eA")
+    case _ => error(s"Cannot find BinOp for opcode newOpCode(${opCode.toUByte - LastConstantCode}) and type $eA")
   }
 
   import sigmastate._
 
-  protected implicit def groupElementToECPoint(g: sigma.GroupElement): EcPointType = CostingSigmaDslBuilder.toECPoint(g).asInstanceOf[EcPointType]
+  protected implicit def groupElementToECPoint(g: sigma.GroupElement): EcPointType = CSigmaDslBuilder.toECPoint(g).asInstanceOf[EcPointType]
 
   def error(msg: String) = throw new GraphBuildingException(msg, None)
   def error(msg: String, srcCtx: Option[SourceContext]) = throw new GraphBuildingException(msg, srcCtx)

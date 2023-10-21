@@ -1,5 +1,7 @@
 package sigma
 
+import supertagged.TaggedType
+
 import scala.annotation.nowarn
 import scala.reflect.classTag
 
@@ -47,4 +49,11 @@ package object data {
 
   type KeyValueColl = Coll[(Coll[Byte], Coll[Byte])]
 
+  trait BaseDigestColl extends TaggedType[Coll[Byte]]
+
+  object Digest32Coll extends BaseDigestColl
+
+  type Digest32Coll = Digest32Coll.Type
+
+  implicit val Digest32CollRType: RType[data.Digest32Coll] = RType[Coll[Byte]].asInstanceOf[RType[data.Digest32Coll]]
 }

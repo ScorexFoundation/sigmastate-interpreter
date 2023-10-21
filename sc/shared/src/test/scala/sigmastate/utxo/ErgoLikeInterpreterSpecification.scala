@@ -3,24 +3,24 @@ package sigmastate.utxo
 import scorex.utils.Bytes
 import org.ergoplatform.ErgoBox.R4
 import org.ergoplatform._
-import org.ergoplatform.validation.ValidationException
 import org.scalatest.TryValues._
 import scorex.crypto.hash.Blake2b256
 import sigma.ast.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigma.ast._
+import sigma.data.{AvlTreeData, ProveDHTuple, ProveDlog, TrivialProp}
+import sigma.util.Extensions.EcpOps
+import sigma.validation.ValidationException
 import sigmastate.eval._
-import sigmastate.eval.Extensions._
 import sigmastate.interpreter.Interpreter._
-import sigmastate.crypto.DLogProtocol.ProveDlog
-import sigmastate.crypto.ProveDHTuple
+import sigmastate.eval.Extensions.SigmaBooleanOps
 import sigmastate.helpers._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}
 import sigmastate.lang.Terms._
-import sigmastate.serialization.{ValueSerializer, SerializationSpecification}
+import sigmastate.serialization.{SerializationSpecification, ValueSerializer}
 import sigmastate.utils.Helpers._
 
 class ErgoLikeInterpreterSpecification extends CompilerTestingCommons
@@ -412,7 +412,7 @@ class ErgoLikeInterpreterSpecification extends CompilerTestingCommons
 
     val prover0 = new ContextEnrichingTestProvingInterpreter()
 
-    val customScript = prover0.dlogSecrets.head.publicImage.toSigmaProp
+    val customScript = prover0.dlogSecrets.head.publicImage.toSigmaPropValue
     val scriptBytes = ValueSerializer.serialize(customScript)
     val scriptHash = Blake2b256(scriptBytes).take(bytesCount)
 

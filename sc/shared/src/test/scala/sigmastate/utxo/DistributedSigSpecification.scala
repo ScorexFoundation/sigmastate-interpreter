@@ -1,7 +1,6 @@
 package sigmastate.utxo
 
-import sigmastate.Values.ErgoTree
-import sigmastate.Values.ErgoTree.ZeroHeader
+import sigma.data.CAND
 import sigmastate._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter}
 import sigmastate.interpreter._

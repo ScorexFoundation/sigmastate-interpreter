@@ -1,9 +1,10 @@
 package sigmastate.interpreter
 
+import sigma.data.{ProveDHTuple, ProveDlog, SigmaBoolean, SigmaConjecture, SigmaLeaf}
 import sigmastate._
-import sigmastate.Values.{ErgoTree, SigmaBoolean}
-import sigmastate.crypto.DLogProtocol.{DLogInteractiveProver, ProveDlog}
-import sigmastate.crypto.{DiffieHellmanTupleInteractiveProver, ProveDHTuple}
+import sigmastate.ErgoTree
+import sigmastate.crypto.DLogProtocol.DLogInteractiveProver
+import sigmastate.crypto.DiffieHellmanTupleInteractiveProver
 
 
 trait ProverUtils extends Interpreter {

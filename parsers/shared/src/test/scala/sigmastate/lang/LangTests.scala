@@ -2,19 +2,20 @@ package sigmastate.lang
 
 import org.scalatest.matchers.should.Matchers
 import sigmastate.lang.Terms.{Ident, MethodCallLike}
-import sigmastate.Values.{ConcreteCollection, LongConstant, SValue, SigmaBoolean, Value}
+import sigmastate.Values.{ConcreteCollection, LongConstant, SValue, Value}
 import sigmastate._
 
 import java.math.BigInteger
-import sigmastate.crypto.DLogProtocol.ProveDlog
 import sigma.ast.SCollection.SByteArray
-import sigmastate.crypto.{CryptoConstants, ProveDHTuple}
+import sigmastate.crypto.CryptoConstants
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigma._
 import sigmastate.eval._
 import sigmastate.helpers.NegativeTesting
 import sigma.Coll
 import sigma.ast._
+import sigma.data.{CAnyValue, ProveDHTuple, ProveDlog, SigmaBoolean}
+import sigma.util.Extensions.BigIntegerOps
 
 trait LangTests extends Matchers with NegativeTesting {
 
@@ -38,13 +39,13 @@ trait LangTests extends Matchers with NegativeTesting {
   val ecp2 = dlog.multiplyGroupElements(ecp1, ecp1)
   val ecp3 = dlog.multiplyGroupElements(ecp2, ecp2)
   val ecp4 = dlog.multiplyGroupElements(ecp3, ecp3)
-  val g1 = CostingSigmaDslBuilder.GroupElement(ecp1)
-  val g2 = CostingSigmaDslBuilder.GroupElement(ecp2)
-  val g3 = CostingSigmaDslBuilder.GroupElement(ecp3)
-  val g4 = CostingSigmaDslBuilder.GroupElement(ecp4)
+  val g1 = CSigmaDslBuilder.GroupElement(ecp1)
+  val g2 = CSigmaDslBuilder.GroupElement(ecp2)
+  val g3 = CSigmaDslBuilder.GroupElement(ecp3)
+  val g4 = CSigmaDslBuilder.GroupElement(ecp4)
 
-  protected val n1: BigInt = BigInt(10).underlying()
-  protected val n2: BigInt = BigInt(20).underlying()
+  protected val n1: BigInt = BigInt(10).underlying().toBigInt
+  protected val n2: BigInt = BigInt(20).underlying().toBigInt
   protected val bigIntegerArr1: Coll[BigInt] = Colls.fromItems(n1, n2)
   protected val big: BigInteger = BigInt(Long.MaxValue).underlying().pow(2)
   protected val p1: SigmaBoolean = ProveDlog(ecp1)

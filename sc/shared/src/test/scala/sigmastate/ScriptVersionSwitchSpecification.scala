@@ -3,11 +3,10 @@ package sigmastate
 import org.ergoplatform.ErgoBox.AdditionalRegisters
 import org.ergoplatform._
 import scorex.util.ModifierId
+import sigmastate.ErgoTree.{DefaultHeader, HeaderType, ZeroHeader, setConstantSegregation, setVersionBits}
 import sigma.VersionContext.MaxSupportedScriptVersion
 import sigma.{Box, SigmaDslTesting}
-import sigmastate.Values.ErgoTree.{HeaderType, ZeroHeader, setConstantSegregation, setVersionBits}
 import sigmastate.Values._
-import sigma.VersionContext.MaxSupportedScriptVersion
 import sigma.ast.{SBoolean, SBox, SCollection, SType}
 import sigmastate.eval._
 import sigmastate.exceptions.InterpreterException
@@ -33,7 +32,7 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting {
 
   implicit def IR: IRContext = createIR()
 
-  lazy val b1 = CostingBox(
+  lazy val b1 = CBox(
     new ErgoBox(
       1L,
       new ErgoTree(

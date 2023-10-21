@@ -1,11 +1,10 @@
 package sigmastate
 
 import debox.{cfor, Map => DMap}
-import org.ergoplatform.validation.SigmaValidationSettings
 import sigma.data.ExactIntegral._
 import sigma.data.ExactOrdering._
 import sigma.data.OverloadHack.Overloaded1
-import sigma.data.{ExactIntegral, ExactOrdering, SigmaConstants}
+import sigma.data.{CAND, COR, CTHRESHOLD, ExactIntegral, ExactOrdering, SigmaBoolean, SigmaConstants}
 import scorex.crypto.hash.{Blake2b256, CryptographicHash32, Sha256}
 import sigma.ast.SCollection
 import sigma.ast.SCollection.{SByteArray, SIntArray}
@@ -14,6 +13,8 @@ import sigma.{Coll, Colls, GroupElement, SigmaProp, VersionContext}
 import sigmastate.ArithOp.OperationImpl
 import sigmastate.Operations._
 import sigma.ast._
+import sigma.serialization.CoreByteWriter.ArgInfo
+import sigma.validation.SigmaValidationSettings
 import sigmastate.Values._
 import sigmastate.eval.Extensions.EvalCollOps
 import sigmastate.eval.NumericOps.{BigIntIsExactIntegral, BigIntIsExactOrdering}
@@ -26,135 +27,6 @@ import sigmastate.serialization._
 import sigmastate.utxo.{SimpleTransformerCompanion, Transformer}
 
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
-
-/**
-  * Basic trait for inner nodes of crypto-trees, so AND/OR/THRESHOLD sigma-protocol connectives
-  */
-trait SigmaConjecture extends SigmaBoolean {
-  def children: Seq[SigmaBoolean]
-}
-
-/**
-  * Basic trait for leafs of crypto-trees, such as
-  * [[sigmastate.crypto.DLogProtocol.ProveDlog]] and [[sigmastate.crypto.ProveDHTuple]]
-  * instances.
-  * It plays the same role as [[SigmaConjecture]]. It used in prover to distinguish leafs from
-  * other nodes and have logic common to leaves regardless of the concrete leaf type.
-  */
-trait SigmaLeaf extends SigmaBoolean
-
-
-/**
-  * AND conjunction for sigma propositions
-  */
-case class CAND(override val children: Seq[SigmaBoolean]) extends SigmaConjecture {
-  /** The same code is used for AND operation, but they belong to different type hierarchies. */
-  override val opCode: OpCode = OpCodes.AndCode
-  override val size: Int = SigmaBoolean.totalSize(children) + 1
-}
-
-object CAND {
-  import TrivialProp._
-
-  /** Connects the given sigma propositions into CAND proposition performing
-    * partial evaluation when some of them are trivial propositioins.
-    *
-    * @param items propositions to combine into CAND
-    * @return CAND, TrueProp, FalseProp or even one of the items depending on partial evaluation
-    */
-  def normalized(items: Seq[SigmaBoolean]): SigmaBoolean = {
-    require(items.nonEmpty)
-    val res = new ArrayBuffer[SigmaBoolean]()
-    val nItems = items.length
-    cfor(0)(_ < nItems, _ + 1) { i =>
-      val x = items(i)
-      x match {
-        case FalseProp => return FalseProp
-        case TrueProp => // skip
-        case _ => res += x
-      }
-    }
-    if (res.isEmpty) TrueProp
-    else if (res.length == 1) res(0)
-    else CAND(res.toSeq)
-  }
-}
-
-/**
-  * OR disjunction for sigma propositions
-  */
-case class COR(children: Seq[SigmaBoolean]) extends SigmaConjecture {
-  /** The same code is also used for OR operation, but they belong to different type hierarchies. */
-  override val opCode: OpCode = OpCodes.OrCode
-  override val size: Int = SigmaBoolean.totalSize(children) + 1
-}
-
-object COR {
-  import TrivialProp._
-
-  /** Connects the given sigma propositions into COR proposition performing
-    * partial evaluation when some of them are trivial propositioins.
-    *
-    * @param items propositions to combine into COR
-    * @return COR, TrueProp, FalseProp or even one of the items depending on partial evaluation
-    */
-  def normalized(items: Seq[SigmaBoolean]): SigmaBoolean = {
-    require(items.nonEmpty)
-    val res = new ArrayBuffer[SigmaBoolean]()
-    val nItems = items.length
-    cfor(0)(_ < nItems, _ + 1) { i =>
-      val x = items(i)
-      x match {
-        case FalseProp => // skip
-        case TrueProp => return TrueProp
-        case _ => res += x
-      }
-    }
-    if (res.isEmpty) FalseProp
-    else if (res.length == 1) res(0)
-    else COR(res.toSeq)
-  }
-}
-
-/**
-  * THRESHOLD connector for sigma propositions
-  */
-case class CTHRESHOLD(k: Int, children: Seq[SigmaBoolean]) extends SigmaConjecture {
-  // Our polynomial arithmetic can take only byte inputs
-  require(k >= 0 && k <= children.length && children.length <= 255)
-
-  override val opCode: OpCode = OpCodes.AtLeastCode
-  override val size: Int = SigmaBoolean.totalSize(children) + 1
-}
-
-
-/** Represents boolean values (true/false) in SigmaBoolean tree.
-  * Participates in evaluation of CAND, COR, THRESHOLD connectives over SigmaBoolean values.
-  * See CAND.normalized, COR.normalized and AtLeast.reduce. */
-abstract class TrivialProp(val condition: Boolean) extends SigmaBoolean with Product1[Boolean] {
-  override def _1: Boolean = condition
-  override def canEqual(that: Any): Boolean = that != null && that.isInstanceOf[TrivialProp]
-}
-object TrivialProp {
-  // NOTE: the corresponding unapply is missing because any implementation (even using Nullable)
-  // will lead to Boolean boxing, which we want to avoid
-  // So, instead of `case TrivialProp(b) => ... b ...` use more efficient
-  // `case p: TrivialProp => ... p.condition ...
-
-  def apply(b: Boolean): TrivialProp = if (b) TrueProp else FalseProp
-
-  val FalseProp = new TrivialProp(false) {
-    override val opCode: OpCode = OpCodes.TrivialPropFalseCode
-    override def size: Int = 1
-    override def toString = "FalseProp"
-  }
-  val TrueProp = new TrivialProp(true) {
-    override val opCode: OpCode = OpCodes.TrivialPropTrueCode
-    override def size: Int = 1
-    override def toString = "TrueProp"
-  }
-}
 
 /** Embedding of Boolean values to SigmaProp values. As an example, this operation allows boolean experesions
   * to be used as arguments of `atLeast(..., sigmaProp(boolExpr), ...)` operation.
@@ -470,7 +342,7 @@ object AtLeast extends ValueCompanion {
 
   /** HOTSPOT: don't beautify this code */
   def reduce(bound: Int, children: Seq[SigmaBoolean]): SigmaBoolean = {
-    import sigmastate.TrivialProp._
+    import sigma.data.TrivialProp._
     if (bound <= 0) return TrueProp
     val nChildren = children.length
     if (bound > nChildren) return FalseProp

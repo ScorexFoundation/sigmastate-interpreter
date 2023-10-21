@@ -1,12 +1,13 @@
 package sigmastate.serialization
 
-import sigmastate.crypto.ProveDHTuple
+import sigma.data.ProveDHTuple
+import sigmastate.eval.Extensions.SigmaBooleanOps
 
 class PDHTSerializerSpecification extends SerializationSpecification {
 
   property("ProveDiffieHellmanTupleSerializer: Serializer round trip") {
     forAll { i: ProveDHTuple =>
-      roundTripTest(i.toSigmaProp)
+      roundTripTest(i.toSigmaPropValue)
     }
 
     // In IntelliJ IDEA this test is executed last, at this point all statistics has been collected

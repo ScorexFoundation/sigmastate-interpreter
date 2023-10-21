@@ -1,16 +1,17 @@
 package sigmastate.eval
 
 import org.ergoplatform.ErgoBox
-import sigmastate.Values.{ConcreteCollection, ErgoTree, IntArrayConstant, IntConstant, SigmaPropConstant, SigmaPropValue}
+import sigmastate.Values.{ConcreteCollection, IntArrayConstant, IntConstant, SigmaPropConstant, SigmaPropValue}
 import sigmastate.helpers.ContextEnrichingTestProvingInterpreter
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
 import scalan.BaseCtxTests
 import sigma.ast.SSigmaProp
+import sigma.data.ProveDlog
 import sigmastate.lang.LangTests
 import sigma.util.BenchmarkUtil._
 import sigmastate._
-import sigmastate.crypto.DLogProtocol.{DLogProverInput, ProveDlog}
+import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 
 class EvaluationTest extends BaseCtxTests

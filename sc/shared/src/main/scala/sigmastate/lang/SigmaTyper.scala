@@ -5,7 +5,7 @@ import sigma.ast.SCollection.{SBooleanArray, SByteArray}
 import sigmastate.Values._
 import sigmastate._
 import sigma.ast._
-import sigma.data.Nullable
+import sigma.data.{Nullable, SigmaBoolean}
 import sigma.util.Extensions.Ensuring
 import sigmastate.lang.Terms._
 import sigmastate.exceptions._

@@ -6,20 +6,16 @@ import sigma.{Coll, Evaluation}
 import sigma.ast._
 import sigma.data.RType
 import sigma.reflection.{RClass, RMethod}
+import sigma.serialization.CoreByteWriter.ArgInfo
+import sigma.validation.ValidationRules.CheckTypeWithMethods
 import sigmastate.SMethod.{InvokeDescBuilder, MethodCostFunc}
 import sigmastate.Values.{SValue, ValueCompanion}
 import sigmastate.interpreter.{CostDetails, ErgoTreeEvaluator, FixedCostItem, GivenCost, MethodDesc, SeqCostItem, TracedCost}
 import sigmastate.lang.{SigmaBuilder, Terms}
-import sigmastate.lang.Terms.{MethodCall, OperationId, STypeSubst}
+import sigmastate.lang.Terms.{MethodCall, OperationId}
 
 import scala.collection.compat.immutable.ArraySeq
 import scala.reflect.ClassTag
-
-/** Meta information which can be attached to each argument of SMethod.
-  *
-  * @param name  name of the argument
-  * @param description argument description. */
-case class ArgInfo(name: String, description: String)
 
 /** Meta information which can be attached to SMethod.
   * @param opDesc  optional operation descriptor
@@ -184,7 +180,7 @@ case class SMethod(
     * @consensus
     */
   def specializeFor(objTpe: SType, args: Seq[SType]): SMethod = {
-    Terms.unifyTypeLists(stype.tDom, objTpe +: args) match {
+    unifyTypeLists(stype.tDom, objTpe +: args) match {
       case Some(subst) if subst.nonEmpty =>
         withConcreteTypes(subst)
       case _ => this
@@ -315,7 +311,7 @@ object SMethod {
     *            `parse` method and hence it is part of consensus protocol
     */
   def fromIds(typeId: Byte, methodId: Byte): SMethod = {
-    ValidationRules.CheckTypeWithMethods(typeId, MethodsContainer.contains(typeId))
+    CheckTypeWithMethods(typeId, MethodsContainer.contains(typeId))
     val container = MethodsContainer(typeId)
     val method = container.methodById(methodId)
     method

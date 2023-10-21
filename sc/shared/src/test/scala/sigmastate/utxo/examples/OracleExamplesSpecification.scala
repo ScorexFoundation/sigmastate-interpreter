@@ -16,11 +16,13 @@ import sigmastate.helpers.TestingHelpers._
 import org.ergoplatform._
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, TestContractSpec}
 import sigmastate.crypto.CryptoConstants
-import sigmastate.crypto.{BigIntegers, CryptoFacade}
-import sigmastate.eval.Extensions.ArrayOps
+import sigmastate.crypto.BigIntegers
+import sigma.Extensions.ArrayOps
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.utxo._
 import sigma.Context
+import sigma.crypto.CryptoFacade
+import sigma.data.{AvlTreeData, AvlTreeFlags}
 import sigmastate.utils.Helpers._
 
 class OracleExamplesSpecification extends CompilerTestingCommons

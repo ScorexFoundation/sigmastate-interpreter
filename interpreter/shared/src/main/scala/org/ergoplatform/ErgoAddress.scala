@@ -1,18 +1,19 @@
 package org.ergoplatform
 
-import scorex.utils.Ints
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.encode.Base58
+import scorex.utils.Ints
+import sigma.ast.{SInt, SSigmaProp}
+import sigma.data.ProveDlog
+import sigma.serialization.GroupElementSerializer
+import sigma.{Coll, SigmaException, VersionContext}
+import sigmastate.ErgoTree.{ZeroHeader, setVersionBits}
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.crypto.DLogProtocol.{ProveDlog, ProveDlogProp}
-import sigmastate.exceptions.SigmaException
+import sigmastate.crypto.DLogProtocol.ProveDlogProp
 import sigmastate.serialization._
 import sigmastate.utxo.{DeserializeContext, Slice}
-import sigma.{Coll, VersionContext}
-import sigma.ast.{SInt, SSigmaProp}
-import sigmastate.Values.ErgoTree.{ZeroHeader, setVersionBits}
 
 import scala.util.Try
 

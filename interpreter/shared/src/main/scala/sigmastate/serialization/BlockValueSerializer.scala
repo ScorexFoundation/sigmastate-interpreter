@@ -5,7 +5,8 @@ import sigmastate._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import ValueSerializer._
 import sigma.util.safeNewArray
-import sigmastate.utils.SigmaByteWriter.{DataInfo, U, Vlq}
+import sigma.serialization.CoreByteWriter.{ArgInfo, DataInfo, U, Vlq}
+import sigmastate.utils.SigmaByteWriter._
 import debox.cfor
 import sigma.ast.SType
 

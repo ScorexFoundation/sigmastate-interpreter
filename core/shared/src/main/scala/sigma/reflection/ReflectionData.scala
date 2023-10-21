@@ -175,14 +175,6 @@ object ReflectionData {
         mkMethod(clazz, "updateOperations", Array[Class[_]](classOf[Byte])) { (obj, args) =>
           obj.asInstanceOf[AvlTree].updateOperations(args(0).asInstanceOf[Byte])
         },
-        mkMethod(clazz, "getMany", Array[Class[_]](classOf[Coll[_]], classOf[Coll[_]])) { (obj, args) =>
-          obj.asInstanceOf[AvlTree].getMany(args(0).asInstanceOf[Coll[Coll[Byte]]],
-            args(1).asInstanceOf[Coll[Byte]])
-        },
-        mkMethod(clazz, "update", Array[Class[_]](classOf[Coll[_]], classOf[Coll[_]])) { (obj, args) =>
-          obj.asInstanceOf[AvlTree].update(args(0).asInstanceOf[Coll[(Coll[Byte], Coll[Byte])]],
-            args(1).asInstanceOf[Coll[Byte]])
-        },
         mkMethod(clazz, "keyLength", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[AvlTree].keyLength
         },
@@ -195,26 +187,11 @@ object ReflectionData {
         mkMethod(clazz, "digest", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[AvlTree].digest
         },
-        mkMethod(clazz, "insert", Array[Class[_]](classOf[Coll[_]], classOf[Coll[_]])) { (obj, args) =>
-          obj.asInstanceOf[AvlTree].insert(args(0).asInstanceOf[Coll[(Coll[Byte], Coll[Byte])]],
-            args(1).asInstanceOf[Coll[Byte]])
-        },
         mkMethod(clazz, "isRemoveAllowed", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[AvlTree].isRemoveAllowed
         },
         mkMethod(clazz, "valueLengthOpt", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[AvlTree].valueLengthOpt
-        },
-        mkMethod(clazz, "get", Array[Class[_]](classOf[Coll[_]], classOf[Coll[_]])) { (obj, args) =>
-          obj.asInstanceOf[AvlTree].get(args(0).asInstanceOf[Coll[Byte]],
-            args(1).asInstanceOf[Coll[Byte]])
-        },
-        mkMethod(clazz, "remove", Array[Class[_]](classOf[Coll[_]], classOf[Coll[_]])) { (obj, args) =>
-          obj.asInstanceOf[AvlTree].remove(args(0).asInstanceOf[Coll[Coll[Byte]]], args(1).asInstanceOf[Coll[Byte]])
-        },
-        mkMethod(clazz, "contains", Array[Class[_]](classOf[Coll[_]], classOf[Coll[_]])) { (obj, args) =>
-          obj.asInstanceOf[AvlTree].contains(args(0).asInstanceOf[Coll[Byte]],
-            args(1).asInstanceOf[Coll[Byte]])
         },
         mkMethod(clazz, "isUpdateAllowed", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[AvlTree].isUpdateAllowed

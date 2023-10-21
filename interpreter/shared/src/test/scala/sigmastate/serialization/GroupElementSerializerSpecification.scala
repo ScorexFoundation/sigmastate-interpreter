@@ -1,8 +1,9 @@
 package sigmastate.serialization
 
 import sigmastate.crypto.CryptoConstants
-import sigmastate.crypto.CryptoFacade
-import sigmastate.eval._
+import sigma.crypto.CryptoFacade
+import sigma.serialization.GroupElementSerializer
+import sigma.util.Extensions.{EcpOps, GroupElementOps}
 
 class GroupElementSerializerSpecification extends SerializationSpecification {
 
@@ -13,18 +14,18 @@ class GroupElementSerializerSpecification extends SerializationSpecification {
     val bytes = GroupElementSerializer.toBytes(identity)
     bytes.length shouldBe CryptoConstants.EncodedGroupElementLength
     bytes.forall(_ == 0) shouldBe true
-    GroupElementSerializer.parse(SigmaSerializer.startReader(bytes, 0)).isIdentity shouldBe true
+    GroupElementSerializer.parse(SigmaSerializer.startReader(bytes, 0)).toGroupElement.isIdentity shouldBe true
   }
 
   property("point roundtrip") {
     forAll(groupElementConstGen){ge =>
-      val bytes = GroupElementSerializer.toBytes(ge.value)
+      val bytes = GroupElementSerializer.toBytes(ge.value.toECPoint)
       bytes.length shouldBe CryptoConstants.EncodedGroupElementLength
       val restored = GroupElementSerializer.parse(SigmaSerializer.startReader(bytes, 0))
       CryptoFacade.getAffineXCoord(CryptoFacade.normalizePoint(restored)) shouldBe
-        CryptoFacade.getAffineXCoord(CryptoFacade.normalizePoint(ge.value))
+        CryptoFacade.getAffineXCoord(CryptoFacade.normalizePoint(ge.value.toECPoint))
       CryptoFacade.getAffineYCoord(CryptoFacade.normalizePoint(restored)) shouldBe
-        CryptoFacade.getAffineYCoord(CryptoFacade.normalizePoint(ge.value))
+        CryptoFacade.getAffineYCoord(CryptoFacade.normalizePoint(ge.value.toECPoint))
     }
   }
 }

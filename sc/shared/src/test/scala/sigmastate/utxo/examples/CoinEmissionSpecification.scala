@@ -4,9 +4,8 @@ import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
 import sigma.Colls
 import sigma.ast.{SBoolean, SBox, SInt, SLong, SOption}
-import sigmastate.Values.{BlockValue, ErgoTree, IntConstant, LongConstant, ValDef, ValUse}
-import sigmastate._
-import sigmastate.eval._
+import sigmastate.Values.{BlockValue, IntConstant, LongConstant, ValDef, ValUse}
+import sigmastate.{ErgoTree, _}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting}
 import sigmastate.interpreter.ContextExtension

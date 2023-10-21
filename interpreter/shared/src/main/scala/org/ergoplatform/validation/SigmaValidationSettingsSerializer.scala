@@ -1,9 +1,10 @@
 package org.ergoplatform.validation
 
+import sigma.serialization.SerializerException
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigma.util.Extensions.IntOps
-import sigmastate.exceptions.SerializerException
+import sigma.validation.{MapSigmaValidationSettings, SigmaValidationSettings}
 
 /** The rules are serialized ordered by ruleId.
   * This serializer preserves roundtrip identity `deserialize(serialize(_)) = identity`

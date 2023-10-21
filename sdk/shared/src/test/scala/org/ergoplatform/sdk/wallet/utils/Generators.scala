@@ -8,16 +8,17 @@ import org.ergoplatform.sdk.wallet.settings.EncryptionSettings
 import org.scalacheck.Arbitrary.arbByte
 import org.scalacheck.{Arbitrary, Gen}
 import scorex.crypto.authds.ADKey
-import sigmastate.Values.{ByteArrayConstant, CollectionConstant, ErgoTree, EvaluatedValue, FalseLeaf, TrueLeaf}
-import sigmastate.crypto.DLogProtocol.ProveDlog
+import sigmastate.Values.{ByteArrayConstant, CollectionConstant, EvaluatedValue, FalseLeaf, TrueLeaf}
 import sigma.ast.{SByte, SType}
 import scorex.util._
 import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, ErgoTreePredef, UnsignedErgoLikeTransaction, UnsignedInput}
-import sigmastate.eval.Extensions._
+import sigma.Extensions.ArrayOps
 import scorex.util.{ModifierId, bytesToId}
-import sigmastate.eval._
+import sigma.crypto.CryptoFacade
+import sigma.data.{Digest32Coll, ProveDlog}
+import sigmastate.ErgoTree
+import sigmastate.eval.Extensions.{EvalIterableOps, SigmaBooleanOps}
 import sigmastate.helpers.TestingHelpers._
-import sigmastate.crypto.CryptoFacade
 
 trait Generators {
 

@@ -9,20 +9,21 @@ import org.ergoplatform.sdk.wallet.secrets.{DerivationPath, ExtendedSecretKey}
 import org.ergoplatform.sdk.wallet.{Constants, TokensMap}
 import org.ergoplatform.settings.ErgoAlgos
 import scorex.crypto.authds.ADKey
-import sigmastate.utils.Helpers._
 import scorex.util.encode.Base16
 import scorex.util.{ModifierId, bytesToId, idToBytes}
 import sigma.ast.SType
+import sigma.crypto.{CryptoFacade, EcPointType}
 import sigma.data.ExactIntegral.LongIsExactIntegral
-import sigma.data.{InverseIso, Iso, RType, SigmaConstants}
+import sigma.data.{Digest32Coll, Iso, ProveDHTuple, ProveDlog, RType, SigmaBoolean, SigmaConstants}
+import sigma.serialization.GroupElementSerializer
 import sigma.util.StringUtil.StringUtilExtensions
 import sigma.{AnyValue, AvlTree, Coll, Colls, Evaluation, GroupElement, Header}
-import sigmastate.Values.{Constant, ErgoTree, EvaluatedValue, SValue, SigmaBoolean, SigmaPropConstant}
-import sigmastate.crypto.CryptoConstants.EcPointType
-import sigmastate.crypto.DLogProtocol.ProveDlog
-import sigmastate.crypto.{CryptoFacade, DiffieHellmanTupleProverInput, ProveDHTuple}
-import sigmastate.eval.{CostingSigmaDslBuilder, Digest32Coll}
-import sigmastate.serialization.{ErgoTreeSerializer, GroupElementSerializer, SigmaSerializer, ValueSerializer}
+import sigmastate.ErgoTree
+import sigmastate.Values.{Constant, EvaluatedValue, SValue, SigmaPropConstant}
+import sigmastate.crypto.DiffieHellmanTupleProverInput
+import sigmastate.eval.CSigmaDslBuilder
+import sigmastate.serialization.{ErgoTreeSerializer, SigmaSerializer, ValueSerializer}
+import sigmastate.utils.Helpers._  // required for Scala 2.11
 
 import java.lang.{Boolean => JBoolean, Byte => JByte, Integer => JInt, Long => JLong, Short => JShort, String => JString}
 import java.math.BigInteger
@@ -33,15 +34,7 @@ import scala.collection.{JavaConverters, mutable}
 trait LowPriorityIsos {
 }
 
-object Iso extends LowPriorityIsos {
-  implicit def identityIso[A]: Iso[A, A] = new Iso[A, A] {
-    override def to(a: A): A = a
-
-    override def from(b: A): A = b
-  }
-
-  implicit def inverseIso[A,B](implicit iso: Iso[A,B]): Iso[B,A] = InverseIso[A,B](iso)
-
+object SdkIsos extends LowPriorityIsos {
   implicit val jbyteToByte: Iso[JByte, Byte] = new Iso[JByte, Byte] {
     override def to(b: JByte): Byte = b
     override def from(a: Byte): JByte = a
@@ -341,7 +334,7 @@ object JavaHelpers {
 
   def BoxRType: RType[sigma.Box] = sigma.BoxRType
 
-  def SigmaDsl: CostingSigmaDslBuilder = sigmastate.eval.SigmaDsl
+  def SigmaDsl: CSigmaDslBuilder = sigmastate.eval.SigmaDsl
 
   def collFrom(arr: Array[Byte]): Coll[Byte] = {
     Colls.fromArray(arr)

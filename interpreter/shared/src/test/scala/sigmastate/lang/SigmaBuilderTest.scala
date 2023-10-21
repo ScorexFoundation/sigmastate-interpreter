@@ -3,12 +3,12 @@ package sigmastate.lang
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import sigma.data.{Nullable, RType}
+import sigma.data.{CAnyValue, CAvlTree, Nullable, RType}
 import sigma.{Environment, VersionContext}
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.eval.Extensions.ArrayOps
-import sigmastate.eval.{CAnyValue, CAvlTree, CostingBox, SigmaDsl}
+import sigma.Extensions.ArrayOps
+import sigmastate.eval.{CBox, SigmaDsl}
 import sigmastate.exceptions.ConstraintFailed
 import sigmastate.serialization.OpCodes
 import sigma.SigmaTestingData
@@ -208,7 +208,7 @@ class SigmaBuilderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Ma
   }
 
   property("liftToConstant ErgoBox") {
-    val v = TestData.b2.asInstanceOf[CostingBox].wrappedValue
+    val v = TestData.b2.asInstanceOf[CBox].wrappedValue
     val c = BoxConstant(TestData.b2)
     testSuccess(v, c) // TODO v6.0: ErgoBox should not be liftable directly (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/905)
     testFailure(Array.fill(10)(v))

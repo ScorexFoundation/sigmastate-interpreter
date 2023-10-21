@@ -2,9 +2,10 @@ package sigmastate
 
 import sigma.Environment
 import sigma.ast.SType.isValueOfType
-import sigmastate.eval.{CSigmaProp, CostingSigmaDslBuilder}
+import sigmastate.eval.CSigmaDslBuilder
 import sigma.SigmaTestingData
 import sigma.ast._
+import sigma.data.CSigmaProp
 
 class TypesSpecification extends SigmaTestingData {
 
@@ -97,8 +98,8 @@ class TypesSpecification extends SigmaTestingData {
     assertValidType(t1, SAvlTree)
     assertInvalidType(t1, SShort)
 
-    assertValidType(CostingSigmaDslBuilder, SGlobal)
-    assertInvalidType(CostingSigmaDslBuilder, SShort)
+    assertValidType(CSigmaDslBuilder, SGlobal)
+    assertInvalidType(CSigmaDslBuilder, SShort)
 
     assertValidType(h1, SHeader)
     assertInvalidType(h1, SShort)

@@ -1,7 +1,8 @@
 package sigmastate.utxo.examples
 
 import org.ergoplatform._
-import sigmastate.Values.{ErgoTree, IntConstant}
+import sigmastate.Values.IntConstant
+import sigma.data.AvlTreeData
 import sigmastate._
 import sigmastate.exceptions.InterpreterException
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}

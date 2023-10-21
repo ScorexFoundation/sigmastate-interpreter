@@ -1,19 +1,18 @@
 package sigmastate
 
-import sigmastate.crypto.{BigIntegers, GF2_192_Poly}
+import debox.cfor
 import scorex.util.encode.Base16
-import sigmastate.Values.SigmaBoolean
-import sigmastate.crypto.DLogProtocol.{ProveDlog, SecondDLogProverMessage}
+import sigma.Extensions.ArrayOps
+import sigma.data.{CAND, COR, CTHRESHOLD, ProveDHTuple, ProveDlog, SigmaBoolean}
+import sigma.serialization.SerializerException
+import sigma.util.safeNewArray
+import sigmastate.crypto.DLogProtocol.SecondDLogProverMessage
 import sigmastate.crypto.VerifierMessage.Challenge
-import sigmastate.crypto.{CryptoConstants, ProveDHTuple, SecondDHTupleProverMessage}
+import sigmastate.crypto.{BigIntegers, CryptoConstants, GF2_192_Poly, SecondDHTupleProverMessage}
 import sigmastate.interpreter.ErgoTreeEvaluator.{fixedCostOp, perItemCostOp}
 import sigmastate.interpreter.{ErgoTreeEvaluator, NamedDesc, OperationCostInfo}
 import sigmastate.serialization.SigmaSerializer
-import sigma.util.safeNewArray
 import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
-import debox.cfor
-import sigmastate.eval.Extensions.ArrayOps
-import sigmastate.exceptions.SerializerException
 
 /** Contains implementation of signature (aka proof) serialization.
  *
@@ -27,7 +26,7 @@ class SigSerializer {
   val hashSize = CryptoConstants.soundnessBits / 8
 
   /** Number of bytes to represent any group element as byte array */
-  val order = CryptoConstants.groupSize
+  val order = sigma.crypto.groupSize
 
   /** Recursively traverses the given node and serializes challenges and prover messages
     * to the given writer.

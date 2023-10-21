@@ -2,14 +2,18 @@ package sigmastate
 
 import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules._
-import org.ergoplatform.validation._
 import org.scalatest.BeforeAndAfterAll
-import sigma.ast.SPrimType.MaxPrimTypeCode
-import sigma.ast._
 import sigma.{Colls, SigmaTestingData}
-import sigmastate.Values.ErgoTree.{EmptyConstants, HeaderType, ZeroHeader, setSizeBit}
-import sigmastate.Values.{ByteArrayConstant, ErgoTree, IntConstant, NotReadyValueInt, UnparsedErgoTree, ValueCompanion}
-import sigmastate.exceptions.{InterpreterException, SerializerException}
+import sigma.ast.{SBoolean, SCollection, SContext, SFunc, SGlobal, SInt}
+import sigma.ast.SPrimType.MaxPrimTypeCode
+import sigma.ast.TypeCodes.LastConstantCode
+import sigma.data.AvlTreeData
+import sigma.serialization.SerializerException
+import sigma.validation.ValidationRules.{CheckPrimitiveTypeCode, CheckSerializableTypeCode, CheckTypeCode, CheckTypeWithMethods, trySoftForkable}
+import sigma.validation.{ChangedRule, ReplacedRule, SigmaValidationSettings, ValidationException, ValidationRule}
+import sigmastate.ErgoTree.{EmptyConstants, HeaderType, ZeroHeader, setSizeBit}
+import sigmastate.Values.{ByteArrayConstant, IntConstant, NotReadyValueInt, ValueCompanion}
+import sigmastate.exceptions.InterpreterException
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
@@ -17,8 +21,8 @@ import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.interpreter.{ContextExtension, ErgoTreeEvaluator, ProverResult}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.SigmaSerializer.startReader
-import sigmastate.serialization.ValueCodes.{LastConstantCode, OpCode}
-import sigmastate.serialization._
+import sigmastate.serialization.{DataSerializer, _}
+import sigmastate.serialization.ValueCodes.OpCode
 import sigmastate.utils.Helpers._
 import sigmastate.utxo.DeserializeContext
 

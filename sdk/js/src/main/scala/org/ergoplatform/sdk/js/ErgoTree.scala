@@ -1,5 +1,6 @@
 package org.ergoplatform.sdk.js
 
+import sigma.js.Value
 import sigmastate.Values
 
 import scala.scalajs.js
@@ -8,7 +9,7 @@ import scala.scalajs.js.annotation.JSExportTopLevel
 
 /** An exported JavaScript class wrapping the Scala `Values.ErgoTree` type. */
 @JSExportTopLevel("ErgoTree")
-class ErgoTree(tree: Values.ErgoTree) extends js.Object {
+class ErgoTree(tree: sigmastate.ErgoTree) extends js.Object {
   /** The first byte of serialized byte array which determines interpretation of the rest of the array. */
   def header(): Byte = tree.header
 
@@ -49,13 +50,13 @@ object ErgoTree extends js.Object {
     * @param hex a hexadecimal string representing the serialized ErgoTree
     */
   def fromHex(hex: String): ErgoTree =
-    new ErgoTree(Values.ErgoTree.fromHex(hex))
+    new ErgoTree(sigmastate.ErgoTree.fromHex(hex))
 
   /** Deserializes an ErgoTree instance from an array of bytes.
     *
     * @param bytes an array of bytes representing the serialized ErgoTree
     */
   def fromBytes(bytes: Array[Byte]): ErgoTree = {
-    new ErgoTree(Values.ErgoTree.fromBytes(bytes))
+    new ErgoTree(sigmastate.ErgoTree.fromBytes(bytes))
   }
 }

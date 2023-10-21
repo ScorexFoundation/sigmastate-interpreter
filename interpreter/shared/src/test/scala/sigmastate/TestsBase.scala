@@ -1,10 +1,11 @@
 package sigmastate
 
 import org.scalatest.matchers.should.Matchers
-import sigmastate.Values.{ErgoTree, SigmaBoolean, SigmaPropValue}
+import sigmastate.Values.SigmaPropValue
 import org.ergoplatform.ErgoTreePredef
 import sigma.VersionTesting
-import sigmastate.Values.ErgoTree.{HeaderType, ZeroHeader}
+import sigma.data.SigmaBoolean
+import sigmastate.ErgoTree.{HeaderType, ZeroHeader}
 
 trait TestsBase extends Matchers with VersionTesting {
   /** Set this to true to enable debug console output in tests */

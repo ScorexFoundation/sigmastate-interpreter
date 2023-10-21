@@ -1,12 +1,12 @@
 package sigmastate.serialization
 
-import sigma.ast.SType
+import sigma.ast.{EmptySubst, SType, STypeSubst}
+import sigma.serialization.CoreByteWriter.{ArgInfo, DataInfo}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.Terms
-import sigmastate.lang.Terms.STypeSubst
 import sigmastate.lang.Terms.{MethodCall, PropertyCall}
-import sigmastate.utils.SigmaByteWriter.DataInfo
+import sigmastate.utils.SigmaByteWriter._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.ComplexityTable
 
@@ -32,6 +32,6 @@ case class PropertyCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value
     val complexity = ComplexityTable.MethodCallComplexity.getOrElse((typeId, methodId), ComplexityTable.MinimalComplexity)
     r.addComplexity(complexity)
     val specMethod = method.specializeFor(obj.tpe, SType.EmptySeq)
-    cons(obj, specMethod, Value.EmptySeq, Terms.EmptySubst)
+    cons(obj, specMethod, Value.EmptySeq, EmptySubst)
   }
 }

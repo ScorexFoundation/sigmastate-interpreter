@@ -1,9 +1,9 @@
 package sigmastate.crypto
 
-import sigmastate.SigmaLeaf
 import sigmastate.crypto.CryptoConstants.dlogGroup
 import sigmastate.crypto.VerifierMessage.Challenge
 import sigma.Coll
+import sigma.data.SigmaLeaf
 import supertagged.TaggedType
 
 import java.math.BigInteger

@@ -3,7 +3,8 @@ package sigmastate.utxo.examples
 import org.ergoplatform.ErgoBox.{R4, R5}
 import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.{ErgoTree, IntConstant, SigmaPropConstant}
+import sigma.data.AvlTreeData
+import sigmastate.Values.{IntConstant, SigmaPropConstant}
 import sigmastate._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._

@@ -2,9 +2,9 @@ package sigmastate.serialization
 
 import sigmastate.Values.{BooleanConstant, Constant, IntConstant}
 import sigmastate._
-import sigmastate.eval.Extensions._
 import sigmastate.serialization.OpCodes._
 import scorex.util.encode.ZigZagEncoder.encodeZigZagInt
+import sigma.Extensions.ArrayOps
 import sigma.ast.{SBoolean, SCollection, SCollectionType, SInt}
 
 class AndSerializerSpecification extends TableSerializationSpecification {

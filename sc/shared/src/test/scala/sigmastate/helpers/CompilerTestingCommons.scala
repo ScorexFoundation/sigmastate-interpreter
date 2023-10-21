@@ -1,17 +1,17 @@
 package sigmastate.helpers
 
 import org.ergoplatform._
-import org.ergoplatform.validation.ValidationRules.CheckSerializableTypeCode
-import org.ergoplatform.validation.{ValidationException, ValidationSpecification}
+import org.ergoplatform.validation.ValidationSpecification
 import org.scalacheck.Arbitrary.arbByte
 import org.scalacheck.Gen
-import org.scalatest.Assertion
 import sigma.util.BenchmarkUtil
 import scalan.TestContexts
 import sigma.ast.{SOption, SType}
 import sigma.{Colls, Evaluation, TestUtils}
-import sigma.data.RType
-import sigmastate.Values.{Constant, ErgoTree, SValue, SigmaBoolean, SigmaPropValue}
+import sigma.data.{RType, SigmaBoolean}
+import sigma.validation.ValidationException
+import sigma.validation.ValidationRules.CheckSerializableTypeCode
+import sigmastate.Values.{Constant, SValue, SigmaPropValue}
 import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.ContextExtension.VarBinding
@@ -20,7 +20,7 @@ import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.interpreter._
 import sigmastate.lang.{CompilerSettings, SigmaCompiler, Terms}
 import sigmastate.serialization.SigmaSerializer
-import sigmastate.{CompilerTestsBase, JitCost}
+import sigmastate.{CompilerTestsBase, ErgoTree, JitCost}
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -49,7 +49,7 @@ trait CompilerTestingCommons extends TestingCommons
   def createContexts[A](in: A, bindings: Seq[VarBinding])(implicit tA: RType[A]) = {
     val tpeA = Evaluation.rtypeToSType(tA)
     in match {
-      case ctx: CostingDataContext =>
+      case ctx: CContext =>
         // the context is passed as function argument (this is for testing only)
         // This is to overcome non-functional semantics of context operations
         // (such as Inputs, Height, etc which don't have arguments and refer to the
@@ -84,7 +84,7 @@ trait CompilerTestingCommons extends TestingCommons
           .withErgoTreeVersion(ergoTreeVersionInTests)
           .withBindings(1.toByte -> Constant[SType](in.asInstanceOf[SType#WrappedType], tpeA))
           .withBindings(bindings: _*)
-        val calcCtx = ergoCtx.toSigmaContext().asInstanceOf[CostingDataContext]
+        val calcCtx = ergoCtx.toSigmaContext().asInstanceOf[CContext]
         calcCtx
     }
   }

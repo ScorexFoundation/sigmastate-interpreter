@@ -5,8 +5,8 @@ import org.ergoplatform._
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Remove}
 import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigmastate.{AvlTreeData, AvlTreeFlags, Values}
-import sigmastate.Values.{ErgoTree, LongConstant}
+import sigmastate.{ErgoTree, Values}
+import sigmastate.Values.LongConstant
 import sigmastate.eval._
 import sigmastate.helpers.{BlockchainState, CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, ErgoTransactionValidator}
 import sigmastate.helpers.TestingHelpers._
@@ -16,7 +16,9 @@ import scala.collection.mutable
 import scala.util.{Random, Try}
 import scorex.util._
 import sigma.Colls
-import sigmastate.Values.ErgoTree.ZeroHeader
+import sigma.data.{AvlTreeData, AvlTreeFlags}
+import sigmastate.ErgoTree.ZeroHeader
+import sigmastate.eval.Extensions.SigmaBooleanOps
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.utxo.blockchain.BlockchainSimulationTestingCommons.{FullBlock, ValidationState}
@@ -46,7 +48,7 @@ trait BlockchainSimulationTestingCommons extends CompilerTestingCommons {
                               propOpt: Option[ErgoTree] = None,
                               extension: ContextExtension = ContextExtension.empty): FullBlock = {
     val prop: ErgoTree = propOpt.getOrElse(
-      mkTestErgoTree(prover.dlogSecrets.head.publicImage.toSigmaProp))
+      mkTestErgoTree(prover.dlogSecrets.head.publicImage.toSigmaPropValue))
     val minerPubkey = prover.dlogSecrets.head.publicImage.pkBytes
 
     val boxesToSpend = state.boxesReader.randomBoxes(30 + height)

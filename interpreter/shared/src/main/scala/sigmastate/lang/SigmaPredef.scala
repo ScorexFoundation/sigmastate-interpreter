@@ -7,6 +7,7 @@ import scorex.util.encode.{Base16, Base58, Base64}
 import sigma.ast.SCollection.{SByteArray, SIntArray}
 import sigma.ast.SOption.SIntOption
 import sigma.ast._
+import sigma.serialization.CoreByteWriter.ArgInfo
 import sigmastate.Values.{BoolValue, ByteArrayConstant, Constant, ConstantPlaceholder, EvaluatedValue, IntValue, SValue, SigmaPropConstant, SigmaPropValue, StringConstant, Value, ValueCompanion}
 import sigmastate._
 import sigmastate.lang.Terms._

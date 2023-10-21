@@ -1,16 +1,14 @@
 package sigmastate.helpers
 
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, Token, allZerosModifierId}
-import org.ergoplatform.validation.SigmaValidationSettings
 import org.ergoplatform._
 import scorex.util.ModifierId
-import sigma.data.{CollOverArray, PairOfCols}
-import sigmastate.AvlTreeData
-import sigmastate.Values.ErgoTree
+import sigma.data.{AvlTreeData, CollOverArray, PairOfCols}
+import sigma.validation.SigmaValidationSettings
+import sigma.{Coll, Header, PreHeader}
+import sigmastate.ErgoTree
 import sigmastate.eval._
 import sigmastate.interpreter.ContextExtension
-import sigma.Coll
-import sigma.{Header, PreHeader}
 
 import scala.collection.compat.immutable.ArraySeq
 
@@ -28,7 +26,7 @@ object TestingHelpers {
               transactionId: ModifierId = allZerosModifierId,
               boxIndex: Short = 0): ErgoBox =
     new ErgoBox(value, ergoTree,
-      CostingSigmaDslBuilder.Colls.fromArray(additionalTokens.toArray[Token]),
+      CSigmaDslBuilder.Colls.fromArray(additionalTokens.toArray[Token]),
       additionalRegisters,
       transactionId, boxIndex, creationHeight)
 

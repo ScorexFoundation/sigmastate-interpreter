@@ -1,5 +1,9 @@
 package sigma.data
 
+import scorex.util.encode.Base16
+import sigma.Extensions.CollBytesOps
+import sigma.{Coll, Colls}
+
 /** Type-class of isomorphisms between types.
   * Isomorphism between two types `A` and `B` essentially say that both types
   * represents the same information (entity) but in a different way.
@@ -27,3 +31,22 @@ final case class ComposeIso[A, B, C](iso2: Iso[B, C], iso1: Iso[A, B]) extends I
   def to(a: A): C = iso2.to(iso1.to(a))
 }
 
+object Iso {
+  implicit def identityIso[A]: Iso[A, A] = new Iso[A, A] {
+    override def to(a: A): A = a
+    override def from(b: A): A = b
+  }
+
+  implicit def inverseIso[A, B](implicit iso: Iso[A, B]): Iso[B, A] = InverseIso[A, B](iso)
+
+  val isoStringToArray: Iso[String, Array[Byte]] = new Iso[String, Array[Byte]] {
+    override def to(x: String): Array[Byte] = Base16.decode(x).get
+    override def from(x: Array[Byte]): String = Base16.encode(x)
+  }
+
+  val isoStringToColl: Iso[String, Coll[Byte]] = new Iso[String, Coll[Byte]] {
+    override def to(x: String): Coll[Byte] = Colls.fromArray(Base16.decode(x).get)
+    override def from(x: Coll[Byte]): String = x.toHex
+  }
+
+}

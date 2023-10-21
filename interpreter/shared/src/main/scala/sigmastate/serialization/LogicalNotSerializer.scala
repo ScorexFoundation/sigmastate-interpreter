@@ -1,10 +1,11 @@
 package sigmastate.serialization
 
+import sigma.serialization.CoreByteWriter.DataInfo
 import sigmastate.LogicalNot
 import sigmastate.Operations.LogicalNotInfo.inputArg
 import sigmastate.Values.{BoolValue, SValue}
 import sigmastate.lang.Terms._
-import sigmastate.utils.SigmaByteWriter.DataInfo
+import sigmastate.utils.SigmaByteWriter._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 case class LogicalNotSerializer(cons: BoolValue => BoolValue)

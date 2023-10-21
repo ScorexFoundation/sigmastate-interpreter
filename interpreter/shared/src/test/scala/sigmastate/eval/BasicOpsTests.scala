@@ -2,18 +2,19 @@ package sigmastate.eval
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import sigma.data.TrivialProp
+import sigma.util.Extensions.SigmaBooleanOps
 
 import java.math.BigInteger
-import sigmastate.TrivialProp
 import sigmastate.crypto.SecP256K1Group
 import sigma.{ContractsTestkit, SigmaDslBuilder, SigmaProp}
 
 import scala.language.implicitConversions
 
 class BasicOpsTests extends AnyFunSuite with ContractsTestkit with Matchers {
-  override val SigmaDsl: SigmaDslBuilder = CostingSigmaDslBuilder
+  override val SigmaDsl: SigmaDslBuilder = CSigmaDslBuilder
 
-  implicit def boolToSigma(b: Boolean): SigmaProp = TrivialProp(b)
+  implicit def boolToSigma(b: Boolean): SigmaProp = TrivialProp(b).toSigmaProp
 
   test("atLeast") {
     val props = Colls.fromArray(Array[SigmaProp](false, true, true, false))

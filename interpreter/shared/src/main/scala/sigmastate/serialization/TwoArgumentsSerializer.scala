@@ -1,11 +1,12 @@
 package sigmastate.serialization
 
 import sigma.ast.SType
-import sigmastate.Values.{Value, SValue}
+import sigma.serialization.CoreByteWriter.DataInfo
+import sigmastate.Values.{SValue, Value}
 import sigmastate.lang.Terms._
-import sigmastate.utils.SigmaByteWriter.DataInfo
+import sigmastate.utils.SigmaByteWriter._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.{TwoArgumentsOperation, TwoArgumentOperationCompanion}
+import sigmastate.{TwoArgumentOperationCompanion, TwoArgumentsOperation}
 
 case class TwoArgumentsSerializer[LIV <: SType, RIV <: SType, OV <: Value[SType]]
 (override val opDesc: TwoArgumentOperationCompanion, constructor: (Value[LIV], Value[RIV]) => Value[SType])

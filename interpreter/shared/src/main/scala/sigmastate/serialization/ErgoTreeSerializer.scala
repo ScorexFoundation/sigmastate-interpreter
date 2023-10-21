@@ -1,18 +1,20 @@
 package sigmastate.serialization
 
-import org.ergoplatform.validation.ValidationRules.{CheckDeserializedScriptIsSigmaProp, CheckHeaderSizeBit, CheckPositionLimit}
-import org.ergoplatform.validation.{SigmaValidationSettings, ValidationException}
-import sigmastate.Values.{Constant, ErgoTree, UnparsedErgoTree}
+import org.ergoplatform.validation.ValidationRules.{CheckDeserializedScriptIsSigmaProp, CheckHeaderSizeBit}
+import sigmastate.Values.Constant
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.Values.ErgoTree.{EmptyConstants, HeaderType}
+import sigmastate.ErgoTree.{EmptyConstants, HeaderType}
 import sigma.util.safeNewArray
 import sigmastate.utxo.ComplexityTable
 import debox.cfor
 import sigma.VersionContext
 import sigma.ast.SType
-import sigmastate.exceptions.{ReaderPositionLimitExceeded, SerializerException}
+import sigma.serialization.{ReaderPositionLimitExceeded, SerializerException}
+import sigma.validation.{SigmaValidationSettings, ValidationException}
+import sigma.validation.ValidationRules.CheckPositionLimit
+import sigmastate.{ErgoTree, UnparsedErgoTree}
 
 /**
   * Rationale for soft-forkable ErgoTree serialization.

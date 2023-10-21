@@ -47,8 +47,8 @@ object NumericOps {
     def fromInt(x: Int): BigInt = x.toBigInt
     def toInt(x: BigInt): Int = x.toInt
     def toLong(x: BigInt): Long = x.toLong
-    def toFloat(x: BigInt): Float = CostingSigmaDslBuilder.toBigInteger(x).floatValue()
-    def toDouble(x: BigInt): Double = CostingSigmaDslBuilder.toBigInteger(x).doubleValue()
+    def toFloat(x: BigInt): Float = CSigmaDslBuilder.toBigInteger(x).floatValue()
+    def toDouble(x: BigInt): Double = CSigmaDslBuilder.toBigInteger(x).doubleValue()
   }
 
   /** The instance of Integral for BigInt.

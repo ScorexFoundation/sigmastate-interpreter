@@ -1,6 +1,6 @@
 package org.ergoplatform.settings
 
-import sigmastate.Values.ErgoTree
+import sigmastate.ErgoTree
 import org.ergoplatform.ErgoTreePredef
 import org.ergoplatform.mining.emission.EmissionRules
 

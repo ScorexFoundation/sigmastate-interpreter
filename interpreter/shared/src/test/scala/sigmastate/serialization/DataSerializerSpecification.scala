@@ -3,18 +3,19 @@ package sigmastate.serialization
 import java.math.BigInteger
 import org.ergoplatform.ErgoBox
 import org.scalacheck.Arbitrary._
-import sigma.data.{RType, TupleColl}
+import sigma.data.{RType, SigmaBoolean, TupleColl}
 import sigma.ast.SCollection.SByteArray
-import sigmastate.Values.{ErgoTree, SigmaBoolean}
+import sigmastate.ErgoTree
 import sigmastate._
 import sigmastate.eval._
-import sigmastate.eval.Extensions._
-import sigmastate.crypto.CryptoConstants.EcPointType
 import sigma.{AvlTree, Colls, Evaluation}
 import sigma.ast.SType.AnyOps
 import sigma.ast._
 import org.scalacheck.Gen
-import sigmastate.exceptions.SerializerException
+import sigma.Extensions.ArrayOps
+import sigma.crypto.EcPointType
+import sigma.serialization.SerializerException
+import sigma.util.Extensions.{BigIntegerOps, EcpOps, SigmaBooleanOps}
 import sigmastate.interpreter.{CostAccumulator, ErgoTreeEvaluator}
 import sigmastate.interpreter.ErgoTreeEvaluator.DefaultProfiler
 import sigmastate.utils.Helpers
@@ -98,9 +99,9 @@ class DataSerializerSpecification extends SerializationSpecification {
     forAll { x: Boolean => roundtrip[SBoolean.type](x, SBoolean) }
     forAll { x: Long => roundtrip[SLong.type](x, SLong) }
     forAll { x: String => roundtrip[SString.type](x, SString) }
-    forAll { x: BigInteger => roundtrip[SBigInt.type](x, SBigInt) }
-    forAll { x: EcPointType => roundtrip[SGroupElement.type](x, SGroupElement) }
-    forAll { x: SigmaBoolean => roundtrip[SSigmaProp.type](x, SSigmaProp) }
+    forAll { x: BigInteger => roundtrip[SBigInt.type](x.toBigInt, SBigInt) }
+    forAll { x: EcPointType => roundtrip[SGroupElement.type](x.toGroupElement, SGroupElement) }
+    forAll { x: SigmaBoolean => roundtrip[SSigmaProp.type](x.toSigmaProp, SSigmaProp) }
     forAll { x: ErgoBox => roundtrip[SBox.type](x, SBox) }
     forAll { x: AvlTree => roundtrip[SAvlTree.type](x, SAvlTree) }
     forAll { x: Array[Byte] => roundtrip[SByteArray](x.toColl, SByteArray) }

@@ -1,7 +1,9 @@
 package org.ergoplatform.validation
 
+import org.scalatest.Assertion
+import sigma.validation.{ReplacedRule, RuleStatus}
 import sigmastate.helpers.CompilerTestingCommons
-import sigmastate.serialization.{SigmaSerializer, SerializationSpecification}
+import sigmastate.serialization.{SerializationSpecification, SigmaSerializer}
 
 class RuleStatusSerializerSpec extends SerializationSpecification with CompilerTestingCommons {
 

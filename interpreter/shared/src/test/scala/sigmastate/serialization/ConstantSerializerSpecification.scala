@@ -3,19 +3,19 @@ package sigmastate.serialization
 import java.math.BigInteger
 import org.ergoplatform._
 import org.scalacheck.Arbitrary._
-import sigma.data.{RType, TupleColl}
+import sigma.data.{RType, SigmaBoolean, TupleColl}
 import sigma.ast.SCollection.SByteArray
 import sigmastate.Values.{BigIntConstant, ByteArrayConstant, Constant, FalseLeaf, GroupGenerator, LongConstant, SValue, TrueLeaf}
-import sigmastate.crypto.CryptoConstants.EcPointType
-import sigmastate._
 import sigmastate.eval._
-import sigmastate.eval.Extensions._
+import sigma.Extensions.ArrayOps
 import sigmastate.Values._
 import sigma.{AvlTree, Colls, Evaluation}
 import sigma.ast.SType.AnyOps
 import scorex.util.encode.Base16
 import sigma.ast._
-import sigmastate.exceptions.SerializerException
+import sigma.crypto.EcPointType
+import sigma.serialization.SerializerException
+import sigma.util.Extensions.{BigIntegerOps, EcpOps, SigmaBooleanOps}
 import sigmastate.lang.DeserializationSigmaBuilder
 
 import scala.annotation.nowarn
@@ -67,9 +67,9 @@ class ConstantSerializerSpecification extends TableSerializationSpecification {
     forAll { x: Boolean => roundTripTest(BooleanConstant.fromBoolean(x)) }
     forAll { x: Long => roundTripTest(Constant[SLong.type](x, SLong)) }
     forAll { x: String => roundTripTest(Constant[SString.type](x, SString)) }
-    forAll { x: BigInteger => roundTripTest(Constant[SBigInt.type](x, SBigInt)) }
-    forAll { x: EcPointType => roundTripTest(Constant[SGroupElement.type](x, SGroupElement)) }
-    forAll { x: SigmaBoolean => roundTripTest(Constant[SSigmaProp.type](x, SSigmaProp)) }
+    forAll { x: BigInteger => roundTripTest(Constant[SBigInt.type](x.toBigInt, SBigInt)) }
+    forAll { x: EcPointType => roundTripTest(Constant[SGroupElement.type](x.toGroupElement, SGroupElement)) }
+    forAll { x: SigmaBoolean => roundTripTest(Constant[SSigmaProp.type](x.toSigmaProp, SSigmaProp)) }
     forAll { x: ErgoBox => roundTripTest(Constant[SBox.type](x, SBox)) }
     forAll { x: AvlTree => roundTripTest(Constant[SAvlTree.type](x, SAvlTree)) }
     forAll { x: Array[Byte] => roundTripTest(Constant[SByteArray](x.toColl, SByteArray)) }

@@ -6,20 +6,19 @@ import io.circe.syntax._
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, Token}
 import org.ergoplatform.settings.ErgoAlgos
-import sigma.data.RType
+import sigma.data.{CAnyValue, RType}
 import scorex.util._
 import sigmastate.Values.{Constant, EvaluatedValue}
 import sigmastate.lang.SigmaParser
 import sigmastate.eval._
 import sigma._
 import debox.cfor
-import sigmastate.exceptions.SerializerException
 
 import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
 import sigma.ast._
-import sigmastate.serialization.SigmaSerializer
-import sigmastate.serialization.DataSerializer
+import sigma.serialization.SerializerException
+import sigmastate.serialization.{DataSerializer, SigmaSerializer}
 import sigmastate.serialization.ErgoTreeSerializer
 
 object DataJsonEncoder {

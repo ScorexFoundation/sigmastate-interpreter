@@ -1,14 +1,15 @@
 package sigmastate.crypto
 
-import java.math.BigInteger
+import sigma.SigmaProp
+import sigma.crypto.EcPointType
+import sigma.data.ProveDHTuple
+import sigma.serialization.GroupElementSerializer
 import sigmastate.Values.Value.PropositionCode
 import sigmastate._
 import sigmastate.crypto.VerifierMessage.Challenge
 import sigmastate.eval.SigmaDsl
-import CryptoConstants.EcPointType
-import sigmastate.serialization.{GroupElementSerializer, OpCodes}
-import sigma.SigmaProp
-import sigmastate.serialization.ValueCodes.OpCode
+
+import java.math.BigInteger
 
 
 trait DiffieHellmanTupleProtocol extends SigmaProtocol[DiffieHellmanTupleProtocol] {
@@ -63,22 +64,6 @@ case class FirstDHTupleProverMessage(a: EcPointType, b: EcPointType)
   */
 case class SecondDHTupleProverMessage(z: BigInteger) extends SecondProverMessage {
   override type SP = DiffieHellmanTupleProtocol
-}
-
-/** Construct a new SigmaProp value representing public key of Diffie Hellman signature protocol.
-  * Common input: (g,h,u,v) */
-case class ProveDHTuple(gv: EcPointType, hv: EcPointType, uv: EcPointType, vv: EcPointType)
-  extends SigmaLeaf {
-  override val opCode: OpCode = OpCodes.ProveDiffieHellmanTupleCode
-  override def size: Int = 4  // one node for each EcPoint
-  lazy val g = gv
-  lazy val h = hv
-  lazy val u = uv
-  lazy val v = vv
-}
-
-object ProveDHTuple {
-  val Code: PropositionCode = 103: Byte
 }
 
 /** Helper extractor to match SigmaProp values and extract ProveDHTuple out of it. */

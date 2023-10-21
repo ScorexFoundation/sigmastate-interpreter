@@ -1,34 +1,22 @@
 package sigmastate.crypto
 
-import java.math.BigInteger
-import sigmastate.Values._
-import Value.PropositionCode
 import scorex.util.encode.Base16
-import sigmastate._
-import sigmastate.eval._
-import sigmastate.crypto.VerifierMessage.Challenge
-import CryptoConstants.{EcPointType, dlogGroup}
-import sigmastate.serialization.{GroupElementSerializer, OpCodes}
 import sigma.SigmaProp
-import sigmastate.serialization.ValueCodes.OpCode
+import sigma.crypto.EcPointType
+import sigma.data.ProveDlog
+import sigma.serialization.GroupElementSerializer
+import sigmastate._
+import sigmastate.crypto.CryptoConstants.dlogGroup
+import sigmastate.crypto.VerifierMessage.Challenge
+import sigmastate.eval._
+
+import java.math.BigInteger
 
 object DLogProtocol {
 
   trait DLogSigmaProtocol extends SigmaProtocol[DLogSigmaProtocol] {
     override type A = FirstDLogProverMessage
     override type Z = SecondDLogProverMessage
-  }
-
-  /** Construct a new SigmaBoolean value representing public key of discrete logarithm signature protocol. */
-  case class ProveDlog(value: EcPointType) extends SigmaLeaf {
-    override def size: Int = 1
-    override val opCode: OpCode = OpCodes.ProveDlogCode
-    /** Serialized bytes of the elliptic curve point (using GroupElementSerializer). */
-    lazy val pkBytes: Array[Byte] = GroupElementSerializer.toBytes(value)
-  }
-
-  object ProveDlog {
-    val Code: PropositionCode = 102: Byte
   }
 
   /** Helper extractor to match SigmaProp values and extract ProveDlog out of it. */
