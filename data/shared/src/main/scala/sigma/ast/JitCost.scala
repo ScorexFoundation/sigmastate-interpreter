@@ -5,6 +5,7 @@ package sigma.ast
   *
   * @see toBlockCost
   */
+// TODO make 'value` private[sigma] after code moved from sigmastate package
 case class JitCost private[sigma](val value: Int) extends AnyVal {
   /** Adds two cost values. */
   def +(y: JitCost): JitCost =

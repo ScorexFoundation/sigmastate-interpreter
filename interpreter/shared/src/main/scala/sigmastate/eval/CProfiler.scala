@@ -198,7 +198,7 @@ class CProfiler extends Profiler {
   /** Timings of cost items */
   private val costItemsStat = new StatCollection[CostItemKey, Long]()
 
-  def addCostItem(costItem: CostItem, time: Long) = {
+  override def addCostItem(costItem: CostItem, time: Long) = {
     costItemsStat.addPoint(new CostItemKey(costItem), time)
   }
 

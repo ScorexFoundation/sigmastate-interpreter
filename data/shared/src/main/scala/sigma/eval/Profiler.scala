@@ -14,6 +14,11 @@ abstract class Profiler {
     */
   def onAfterNode(node: SValue): Unit
 
+  /** Add new measurement point to the stats of this profiler.
+    *
+    * @param costItem executed cost item
+    * @param time     time spent to execute this cost item
+    */
   def addCostItem(costItem: CostItem, time: Long): Unit
 
   /** Adds estimated cost and actual measured time data point to the StatCollection for
