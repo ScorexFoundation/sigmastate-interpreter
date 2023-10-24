@@ -13,7 +13,7 @@ object Platform {
     * Uses scalan.Nullable instead of scala.Option to avoid allocation on consensus hot path.
     * This method is part of consensus and is used in [[SubstConstants]] operation.
     */
-  def liftToConstant(obj: Any, builder: SigmaBuilder): Nullable[Constant[SType]] = {
+  private[sigma] def liftToConstant(obj: Any, builder: SigmaBuilder): Nullable[Constant[SType]] = {
     import builder._
     obj match {
       case arr: Array[Boolean] => Nullable(mkCollectionConstant[SBoolean.type](arr, SBoolean))

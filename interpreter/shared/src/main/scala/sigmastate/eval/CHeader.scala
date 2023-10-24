@@ -23,11 +23,12 @@ case class CHeader(
     powNonce: Coll[Byte],
     powDistance: BigInt,
     votes: Coll[Byte]
-) extends Header {
-}
+) extends Header
 
 object CHeader {
+  /** Size of of Header.votes array. */
   val VotesSize: Int = SigmaConstants.VotesArraySize.value
 
+  /** Size of nonce array from Autolykos POW solution in Header.powNonce array. */
   val NonceSize: Int = SigmaConstants.AutolykosPowSolutionNonceArraySize.value
 }

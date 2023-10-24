@@ -14,4 +14,4 @@ case class CPreHeader(
     height: Int,
     minerPk: GroupElement,
     votes: Coll[Byte]
-) extends PreHeader {}
+) extends PreHeader

@@ -73,10 +73,15 @@ object defs {
   val TrueSigmaProp  = SigmaPropConstant(CSigmaProp(TrivialProp.TrueProp))
 
   implicit class CollectionOps[T <: SType](val coll: Value[SCollection[T]]) extends AnyVal {
+    /** Returns number of items in the collection expression. */
     def length: Int = matchCase(_.items.length, _.value.length, _.items.length)
 
-    def items = matchCase(_.items, _ => sys.error(s"Cannot get 'items' property of node $coll"), _.items)
+    /** Returns a sequence of items in the collection expression. */
+    def items: Seq[Value[SType]] = matchCase(_.items, _ => sys.error(s"Cannot get 'items' property of node $coll"), _.items)
 
+    /** Abstracts from details of pattern matching collection expressions.
+      * Folds over given `coll` structure.
+      */
     def matchCase[R](
         whenConcrete: ConcreteCollection[T] => R,
         whenConstant: CollectionConstant[T] => R,
@@ -95,9 +100,6 @@ object defs {
     }
 
     def propBytes: Value[SByteArray] = SigmaPropBytes(p)
-
-    def treeWithSegregation(header: HeaderType): ErgoTree =
-      ErgoTree.withSegregation(header, p)
   }
 
   implicit class OptionValueOps[T <: SType](val p: Value[SOption[T]]) extends AnyVal {

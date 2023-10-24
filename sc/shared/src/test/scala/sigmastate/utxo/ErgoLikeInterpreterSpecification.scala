@@ -51,8 +51,8 @@ class ErgoLikeInterpreterSpecification extends CompilerTestingCommons
         .withErgoTreeVersion(ergoTreeVersionInTests)
 
     val e = compile(Map(
-      "h1" -> h1.treeWithSegregation(ergoTreeHeaderInTests).bytes,
-      "h2" -> h2.treeWithSegregation(ergoTreeHeaderInTests).bytes),
+      "h1" -> ErgoTree.withSegregation(ergoTreeHeaderInTests, h1).bytes,
+      "h2" -> ErgoTree.withSegregation(ergoTreeHeaderInTests, h2).bytes),
       "h1 == h1")
     val exp = TrueLeaf
     e shouldBe exp
@@ -61,8 +61,8 @@ class ErgoLikeInterpreterSpecification extends CompilerTestingCommons
     res shouldBe TrivialProp.TrueProp
     val ergoTree = mkTestErgoTree(
       EQ(
-        ByteArrayConstant(h1.treeWithSegregation(ergoTreeHeaderInTests).bytes),
-        ByteArrayConstant(h2.treeWithSegregation(ergoTreeHeaderInTests).bytes)
+        ByteArrayConstant(ErgoTree.withSegregation(ergoTreeHeaderInTests, h1).bytes),
+        ByteArrayConstant(ErgoTree.withSegregation(ergoTreeHeaderInTests, h2).bytes)
       ).toSigmaProp
     )
     val res2 = verifier.fullReduction(ergoTree, ctx).value

@@ -21,7 +21,7 @@ case class FixedCostItem(opDesc: OperationDesc, costKind: FixedCost) extends Cos
 }
 object FixedCostItem {
   def apply(companion: FixedCostValueCompanion): FixedCostItem = {
-    ast.FixedCostItem(companion.opDesc, companion.costKind)
+    FixedCostItem(companion.opDesc, companion.costKind)
   }
   def apply(method: SMethod, costKind: FixedCost): FixedCostItem = {
     FixedCostItem(MethodDesc(method), costKind)
@@ -55,7 +55,7 @@ case class TypeBasedCostItem(
 }
 object TypeBasedCostItem {
   def apply(companion: ValueCompanion, tpe: SType): TypeBasedCostItem = {
-    ast.TypeBasedCostItem(companion.opDesc, companion.costKind.asInstanceOf[TypeBasedCost], tpe)
+    TypeBasedCostItem(companion.opDesc, companion.costKind.asInstanceOf[TypeBasedCost], tpe)
   }
 }
 
@@ -76,18 +76,7 @@ case class SeqCostItem(opDesc: OperationDesc, costKind: PerItemCost, nItems: Int
 }
 object SeqCostItem {
   def apply(companion: PerItemCostValueCompanion, nItems: Int): SeqCostItem =
-    ast.SeqCostItem(companion.opDesc, companion.costKind, nItems)
-}
-
-/** An item in the cost accumulation trace of a [[sigma.ast.ErgoTree]] evaluation.
-  * Represents cost of MethodCall operation.
-  * Used for debugging, testing and profiling of costing.
-  *
-  * @param items cost details obtained as part of MethodCall evaluation
-  */
-case class MethodCallCostItem(items: CostDetails) extends CostItem {
-  override def opName: String = MethodCall.typeName
-  override def cost: JitCost = items.cost
+    SeqCostItem(companion.opDesc, companion.costKind, nItems)
 }
 
 

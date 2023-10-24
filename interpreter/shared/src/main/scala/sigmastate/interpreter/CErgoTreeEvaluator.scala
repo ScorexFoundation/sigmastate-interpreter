@@ -5,13 +5,13 @@ import sigma.ast._
 import sigma.ast.defs._
 import sigmastate.eval.{CAvlTreeVerifier, CProfiler}
 import sigmastate.interpreter.Interpreter.ReductionResult
-import sigma.{AvlTree, Coll, Colls, Context, SigmaProp, VersionContext, ast}
+import sigma.{AvlTree, Coll, Colls, Context, VersionContext}
 import sigma.util.Extensions._
 import debox.{cfor, Buffer => DBuffer}
 import scorex.crypto.authds.ADKey
 import sigma.ast.SAvlTreeMethods._
 import sigma.ast.SType
-import sigma.data.{KeyValueColl, SigmaBoolean}
+import sigma.data.{CSigmaProp, KeyValueColl, SigmaBoolean}
 import sigma.eval.{AvlTreeVerifier, ErgoTreeEvaluator, EvalSettings, Profiler}
 import sigma.eval.ErgoTreeEvaluator.DataEnv
 
@@ -256,42 +256,27 @@ class CErgoTreeEvaluator(
     costTrace.clear()
   }
 
-  /** Adds the given cost to the `coster`. If tracing is enabled, associates the cost with
-    * the given operation.
-    *
-    * @param costKind kind of the cost to be added to `coster`
-    * @param opDesc   operation descriptor to associate the cost with (when costTracingEnabled)
-    */
-  final def addCost(costKind: FixedCost, opDesc: OperationDesc): Unit = {
+  override def addCost(costKind: FixedCost, opDesc: OperationDesc): Unit = {
     coster.add(costKind.cost)
     if (settings.costTracingEnabled) {
-      costTrace += ast.FixedCostItem(opDesc, costKind)
+      costTrace += FixedCostItem(opDesc, costKind)
     }
   }
 
-  @inline final def addCost(costInfo: OperationCostInfo[FixedCost]): Unit = {
+  override def addCost(costInfo: OperationCostInfo[FixedCost]): Unit = {
     addCost(costInfo.costKind, costInfo.opDesc)
   }
 
-  /** Add the cost given by the cost descriptor and the type to the accumulator and
-    * associate it with this operation descriptor.
-    *
-    * @param costKind descriptor of the cost
-    * @param tpe      specific type for which the cost should be computed by this descriptor
-    *                 (see costFunc method)
-    * @param opDesc   operation which is associated with this cost
-    */
-  @inline
-  final def addTypeBasedCost[R](costKind: TypeBasedCost,
+  override def addTypeBasedCost[R](costKind: TypeBasedCost,
                              tpe: SType, opDesc: OperationDesc)(block: () => R): R = {
     var costItem: TypeBasedCostItem = null
     if (settings.costTracingEnabled) {
-      costItem = ast.TypeBasedCostItem(opDesc, costKind, tpe)
+      costItem = TypeBasedCostItem(opDesc, costKind, tpe)
       costTrace += costItem
     }
     if (settings.isMeasureOperationTime) {
       if (costItem == null) {
-        costItem = ast.TypeBasedCostItem(opDesc, costKind, tpe)
+        costItem = TypeBasedCostItem(opDesc, costKind, tpe)
       }
       val start = System.nanoTime()
       val cost = costKind.costFunc(tpe) // should be measured as part of the operation
@@ -307,22 +292,16 @@ class CErgoTreeEvaluator(
     }
   }
 
-  /** Adds the given cost to the `coster`. If tracing is enabled, associates the cost with
-    * the given operation.
-    * @param costKind kind of the cost to be added to `coster`
-    * @param opDesc the operation descriptor to associate the cost with (when costTracingEnabled)
-    * @param block  operation executed under the given cost
-    * @hotspot don't beautify the code
-    */
-  final def addFixedCost(costKind: FixedCost, opDesc: OperationDesc)(block: => Unit): Unit = {
+  /** @hotspot don't beautify the code */
+  override def addFixedCost(costKind: FixedCost, opDesc: OperationDesc)(block: => Unit): Unit = {
     var costItem: FixedCostItem = null
     if (settings.costTracingEnabled) {
-      costItem = ast.FixedCostItem(opDesc, costKind)
+      costItem = FixedCostItem(opDesc, costKind)
       costTrace += costItem
     }
     if (settings.isMeasureOperationTime) {
       if (costItem == null) {
-        costItem = ast.FixedCostItem(opDesc, costKind)
+        costItem = FixedCostItem(opDesc, costKind)
       }
       val start = System.nanoTime()
       coster.add(costKind.cost)
@@ -335,48 +314,30 @@ class CErgoTreeEvaluator(
     }
   }
 
-  @inline
-  final def addFixedCost(costInfo: OperationCostInfo[FixedCost])(block: => Unit): Unit = {
+  override def addFixedCost(costInfo: OperationCostInfo[FixedCost])(block: => Unit): Unit = {
     addFixedCost(costInfo.costKind, costInfo.opDesc)(block)
   }
 
-  /** Adds the given cost to the `coster`. If tracing is enabled, creates a new cost item
-    * with the given operation.
-    *
-    * @param costKind the cost to be added to `coster` for each item
-    * @param nItems   the number of items
-    * @param opDesc   the operation to associate the cost with (when costTracingEnabled)
-    * @hotspot don't beautify the code
-    */
-  final def addSeqCostNoOp(costKind: PerItemCost, nItems: Int, opDesc: OperationDesc): Unit = {
+  /** @hotspot don't beautify the code */
+  override def addSeqCostNoOp(costKind: PerItemCost, nItems: Int, opDesc: OperationDesc): Unit = {
     var costItem: SeqCostItem = null
     if (settings.costTracingEnabled) {
-      costItem = ast.SeqCostItem(opDesc, costKind, nItems)
+      costItem = SeqCostItem(opDesc, costKind, nItems)
       costTrace += costItem
     }
     val cost = costKind.cost(nItems)
     coster.add(cost)
   }
 
-  /** Adds the given cost to the `coster`. If tracing is enabled, creates a new cost item
-    * with the given operation.
-    *
-    * @param costKind the cost to be added to `coster` for each item
-    * @param nItems   the number of items
-    * @param opDesc   the operation to associate the cost with (when costTracingEnabled)
-    * @param block    operation executed under the given cost
-    * @tparam R result type of the operation
-    * @hotspot don't beautify the code
-    */
-  final def addSeqCost[R](costKind: PerItemCost, nItems: Int, opDesc: OperationDesc)(block: () => R): R = {
+  override def addSeqCost[R](costKind: PerItemCost, nItems: Int, opDesc: OperationDesc)(block: () => R): R = {
     var costItem: SeqCostItem = null
     if (settings.costTracingEnabled) {
-      costItem = ast.SeqCostItem(opDesc, costKind, nItems)
+      costItem = SeqCostItem(opDesc, costKind, nItems)
       costTrace += costItem
     }
     if (settings.isMeasureOperationTime) {
       if (costItem == null) {
-        costItem = ast.SeqCostItem(opDesc, costKind, nItems)
+        costItem = SeqCostItem(opDesc, costKind, nItems)
       }
       val start = System.nanoTime()
       val cost = costKind.cost(nItems) // should be measured as part of the operation
@@ -392,29 +353,12 @@ class CErgoTreeEvaluator(
     }
   }
 
-  /** Adds the cost to the `coster`. See the other overload for details. */
-  @inline
-  final def addSeqCost[R](costInfo: OperationCostInfo[PerItemCost], nItems: Int)
+  override def addSeqCost[R](costInfo: OperationCostInfo[PerItemCost], nItems: Int)
                          (block: () => R): R = {
     addSeqCost(costInfo.costKind, nItems, costInfo.opDesc)(block)
   }
 
-  /** Adds the cost to the `coster`. If tracing is enabled, creates a new cost item with
-    * the given operation descriptor and cost kind. If time measuring is enabled also
-    * performs profiling.
-    *
-    * WARNING: The cost is accumulated AFTER the block is executed.
-    * Each usage of this method should be accompanied with a proof of why this cannot lead
-    * to unbounded execution (see all usages).
-    *
-    * @param costKind the cost descriptor to be used to compute the cost based on the
-    *                 actual number of items returned by the `block`
-    * @param opDesc   the operation to associate the cost with (when costTracingEnabled)
-    * @param block    operation executed under the given cost descriptors, returns the
-    *                 actual number of items processed
-    * @hotspot don't beautify the code
-    */
-  final def addSeqCost(costKind: PerItemCost, opDesc: OperationDesc)(block: () => Int): Unit = {
+  override def addSeqCost(costKind: PerItemCost, opDesc: OperationDesc)(block: () => Int): Unit = {
     var costItem: SeqCostItem = null
     var nItems = 0
     if (settings.isMeasureOperationTime) {
@@ -424,7 +368,7 @@ class CErgoTreeEvaluator(
       coster.add(cost)
       val end = System.nanoTime()
 
-      costItem = ast.SeqCostItem(opDesc, costKind, nItems)
+      costItem = SeqCostItem(opDesc, costKind, nItems)
       profiler.addCostItem(costItem, end - start)
     } else {
       nItems = block()
@@ -433,13 +377,12 @@ class CErgoTreeEvaluator(
     }
     if (settings.costTracingEnabled) {
       if (costItem == null)
-        costItem = ast.SeqCostItem(opDesc, costKind, nItems)
+        costItem = SeqCostItem(opDesc, costKind, nItems)
       costTrace += costItem
     }
   }
 
-  /** Adds the cost to the `coster`. See the other overload for details. */
-  final def addSeqCost(costInfo: OperationCostInfo[PerItemCost])(block: () => Int): Unit = {
+  override def addSeqCost(costInfo: OperationCostInfo[PerItemCost])(block: () => Int): Unit = {
     addSeqCost(costInfo.costKind, costInfo.opDesc)(block)
   }
 }
@@ -507,7 +450,7 @@ object CErgoTreeEvaluator {
     * Note, `null` is used instead of Option to avoid allocations.
     */
   def fixedCostOp[R <: AnyRef](costInfo: OperationCostInfo[FixedCost])
-                              (block: => R)(implicit E: CErgoTreeEvaluator): R = {
+                              (block: => R)(implicit E: ErgoTreeEvaluator): R = {
     if (E != null) {
       var res: R = null.asInstanceOf[R]
       E.addFixedCost(costInfo) {
@@ -536,7 +479,7 @@ object CErgoTreeEvaluator {
     * Note, `null` is used instead of Option to avoid allocations.
     */
   def perItemCostOp[R](costInfo: OperationCostInfo[PerItemCost], nItems: Int)
-                      (block: () => R)(implicit E: CErgoTreeEvaluator): R = {
+                      (block: () => R)(implicit E: ErgoTreeEvaluator): R = {
     if (E != null) {
       E.addSeqCost(costInfo, nItems)(block)
     } else
@@ -554,8 +497,7 @@ object CErgoTreeEvaluator {
   def evalToCrypto(context: ErgoLikeContext, ergoTree: ErgoTree, evalSettings: EvalSettings): ReductionResult = {
     val (res, cost) = eval(context, ergoTree.constants, ergoTree.toProposition(replaceConstants = false), evalSettings)
     val sb = res match {
-      case sp: SigmaProp =>
-        sigma.eval.SigmaDsl.toSigmaBoolean(sp)
+      case sp: CSigmaProp => sp.wrappedValue
       case sb: SigmaBoolean => sb
       case _ => error(s"Expected SigmaBoolean but was: $res")
     }

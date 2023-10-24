@@ -1,17 +1,15 @@
-package sigmastate.lang
+package sigma.ast
 
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import sigma.data.{CAnyValue, CAvlTree, CBox, Nullable, RType}
-import sigma.{Environment, VersionContext}
-import sigma.ast._
-import sigmastate._
 import sigma.Extensions.ArrayOps
-import sigma.serialization.OpCodes
-import sigma.SigmaTestingData
+import sigma.data.{CAnyValue, CAvlTree, CBox, Nullable, RType}
 import sigma.eval.SigmaDsl
 import sigma.exceptions.ConstraintFailed
+import sigma.serialization.OpCodes
+import sigma.{Environment, SigmaTestingData, VersionContext}
+import sigmastate._
 
 import java.math.BigInteger
 

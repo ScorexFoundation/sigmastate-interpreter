@@ -4,6 +4,7 @@ import debox.cfor
 import sigma.data.{CAND, COR, CTHRESHOLD, ProveDHTuple, ProveDlog, SigmaBoolean, SigmaLeaf}
 import sigma.ast.ErgoTree.ZeroHeader
 import sigma.ast.{ErgoTree, FixedCost, JitCost, NamedDesc, OperationCostInfo, SigmaPropConstant}
+import sigma.eval.ErgoTreeEvaluator
 import sigmastate.crypto.DLogProtocol.FirstDLogProverMessage
 import sigmastate.crypto.VerifierMessage.Challenge
 import sigmastate.crypto.{FirstDHTupleProverMessage, FirstProverMessage, GF2_192_Poly}
@@ -11,6 +12,7 @@ import sigmastate.interpreter.CErgoTreeEvaluator.fixedCostOp
 import sigmastate.interpreter.CErgoTreeEvaluator
 import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigma.serialization.{SigmaByteWriter, SigmaSerializer}
+
 import java.math.BigInteger
 import scala.language.existentials
 
@@ -223,7 +225,7 @@ object FiatShamirTree {
   /** Prover Step 7: Convert the tree to a byte array `s` for input to the Fiat-Shamir hash
     * function.
     * See the other overload for detailed docs. */
-  def toBytes(tree: ProofTree)(implicit E: CErgoTreeEvaluator): Array[Byte] = {
+  def toBytes(tree: ProofTree)(implicit E: ErgoTreeEvaluator): Array[Byte] = {
     val w = SigmaSerializer.startWriter()
     toBytes(tree, w)
     w.toBytes
@@ -248,7 +250,7 @@ object FiatShamirTree {
     * HOTSPOT: don't beautify the code
     */
   def toBytes(tree: ProofTree, w: SigmaByteWriter)
-             (implicit E: CErgoTreeEvaluator): Unit = tree match {
+             (implicit E: ErgoTreeEvaluator): Unit = tree match {
     case l: ProofTreeLeaf =>
       val costInfo = l match {
         case _: UncheckedSchnorr | _: UnprovenSchnorr => ToBytes_Schnorr
