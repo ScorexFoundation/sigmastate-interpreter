@@ -1,10 +1,8 @@
 package sigma.ast
 
 import sigma.Evaluation
-import sigma.ast.SType
 import sigma.data.Iso
 import sigma.js.{Type, Value}
-import sigma.ast.Constant
 
 package object js {
   /** Conversion between `Value` and `Constant[SType]`. */

@@ -1,23 +1,21 @@
 package sigma.ast
 
-import debox.cfor
 import org.ergoplatform._
 import org.ergoplatform.validation._
-import scorex.crypto.authds.avltree.batch.{Insert, Lookup, Remove, Update}
+import sigma._
 import sigma.ast.SCollection.{SBooleanArray, SBoxArray, SByteArray, SByteArray2, SHeaderArray}
+import sigma.ast.SMethod.{MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
 import sigma.ast.SType.TypeCode
 import sigma.ast.syntax.{SValue, ValueOps}
+import sigma.data.OverloadHack.Overloaded1
 import sigma.data.{DataValueComparer, KeyValueColl, Nullable, RType, SigmaConstants}
+import sigma.eval.{CostDetails, ErgoTreeEvaluator, TracedCost}
 import sigma.reflection.RClass
 import sigma.serialization.CoreByteWriter.ArgInfo
-import sigma._
-import SMethod.{MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
-import sigma.eval.{CostDetails, ErgoTreeEvaluator, TracedCost}
-import sigma.utils.Overloading.Overload1
 import sigma.utils.SparseArrayContainer
 
+import scala.annotation.unused
 import scala.language.implicitConversions
-import scala.util.{Failure, Success}
 
 /** Base type for all companions of AST nodes of sigma lang. */
 trait SigmaNodeCompanion
@@ -515,7 +513,8 @@ object SOptionMethods extends MethodsContainer {
         FilterMethod
       )
 
-  def apply[T <: SType](implicit elemType: T, ov: Overload1): SOption[T] = SOption(elemType)
+  /** Creates a descriptor of `Option[T]` type for the given element type `T`. */
+  def apply[T <: SType](implicit elemType: T, @unused ov: Overloaded1): SOption[T] = SOption(elemType)
 }
 
 object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {

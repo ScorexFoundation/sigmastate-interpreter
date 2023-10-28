@@ -390,11 +390,11 @@ trait ProverInterpreter extends Interpreter with ProverUtils {
         if (su.simulated) {
           // Step 5 (simulated leaf -- complete the simulation)
           assert(su.challengeOpt.isDefined)
-          val (fm, sm) = DLogInteractiveProver.simulate(su.proposition, su.challengeOpt.get)
+          val (fm, sm) = DLogProver.simulate(su.proposition, su.challengeOpt.get)
           UncheckedSchnorr(su.proposition, Some(fm), su.challengeOpt.get, sm)
         } else {
           // Step 6 -- compute the commitment
-          val (r, commitment) = DLogInteractiveProver.firstMessage()
+          val (r, commitment) = DLogProver.firstMessage()
           su.copy(commitmentOpt = Some(commitment), randomnessOpt = Some(r))
         }
       }
@@ -410,11 +410,11 @@ trait ProverInterpreter extends Interpreter with ProverUtils {
           if (dhu.simulated) {
             // Step 5 (simulated leaf -- complete the simulation)
             assert(dhu.challengeOpt.isDefined)
-            val (fm, sm) = DiffieHellmanTupleInteractiveProver.simulate(dhu.proposition, dhu.challengeOpt.get)
+            val (fm, sm) = DiffieHellmanTupleProver.simulate(dhu.proposition, dhu.challengeOpt.get)
             UncheckedDiffieHellmanTuple(dhu.proposition, Some(fm), dhu.challengeOpt.get, sm)
           } else {
             // Step 6 -- compute the commitment
-            val (r, fm) = DiffieHellmanTupleInteractiveProver.firstMessage(dhu.proposition)
+            val (r, fm) = DiffieHellmanTupleProver.firstMessage(dhu.proposition)
             dhu.copy(commitmentOpt = Some(fm), randomnessOpt = Some(r))
           }
         }
@@ -498,12 +498,12 @@ trait ProverInterpreter extends Interpreter with ProverUtils {
       val z = privKeyOpt match {
         case Some(privKey: DLogProverInput) =>
           hintsBag.ownCommitments.find(_.position == su.position).map { oc =>
-            DLogInteractiveProver.secondMessage(
+            DLogProver.secondMessage(
               privKey,
               oc.secretRandomness,
               su.challengeOpt.get)
           }.getOrElse {
-            DLogInteractiveProver.secondMessage(
+            DLogProver.secondMessage(
               privKey,
               su.randomnessOpt.get,
               su.challengeOpt.get)
@@ -531,12 +531,12 @@ trait ProverInterpreter extends Interpreter with ProverUtils {
       val z = privKeyOpt match {
         case Some(privKey) =>
           hintsBag.ownCommitments.find(_.position == dhu.position).map { oc =>
-            DiffieHellmanTupleInteractiveProver.secondMessage(
+            DiffieHellmanTupleProver.secondMessage(
               privKey.asInstanceOf[DiffieHellmanTupleProverInput],
               oc.secretRandomness,
               dhu.challengeOpt.get)
           }.getOrElse {
-            DiffieHellmanTupleInteractiveProver.secondMessage(
+            DiffieHellmanTupleProver.secondMessage(
               privKey.asInstanceOf[DiffieHellmanTupleProverInput],
               dhu.randomnessOpt.get,
               dhu.challengeOpt.get)

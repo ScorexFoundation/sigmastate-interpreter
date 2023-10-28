@@ -16,7 +16,7 @@ import sigma.validation.SigmaValidationSettings
 import sigma.validation.ValidationRules.trySoftForkable
 import sigmastate.FiatShamirTree._
 import sigmastate._
-import sigmastate.crypto.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
+import sigmastate.crypto.DLogProtocol.{DLogProver, FirstDLogProverMessage}
 import sigmastate.crypto._
 import sigmastate.eval.{CProfiler, addCostChecked}
 import sigmastate.interpreter.CErgoTreeEvaluator.fixedCostOp
@@ -404,14 +404,14 @@ trait Interpreter {
     case sn: UncheckedSchnorr =>
       implicit val E = CErgoTreeEvaluator.getCurrentEvaluator
       fixedCostOp(ComputeCommitments_Schnorr) {
-        val a = DLogInteractiveProver.computeCommitment(sn.proposition, sn.challenge, sn.secondMessage)
+        val a = DLogProver.computeCommitment(sn.proposition, sn.challenge, sn.secondMessage)
         sn.copy(commitmentOpt = Some(FirstDLogProverMessage(a)))
       }
 
     case dh: UncheckedDiffieHellmanTuple =>
       implicit val E = CErgoTreeEvaluator.getCurrentEvaluator
       fixedCostOp(ComputeCommitments_DHT) {
-        val (a, b) = DiffieHellmanTupleInteractiveProver.computeCommitment(dh.proposition, dh.challenge, dh.secondMessage)
+        val (a, b) = DiffieHellmanTupleProver.computeCommitment(dh.proposition, dh.challenge, dh.secondMessage)
         dh.copy(commitmentOpt = Some(FirstDHTupleProverMessage(a, b)))
       }
 

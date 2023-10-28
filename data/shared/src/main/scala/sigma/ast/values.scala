@@ -7,6 +7,7 @@ import sigma.ast.SCollection.SByteArray
 import sigma.ast.TypeCodes.ConstantCode
 import sigma.ast.syntax._
 import sigma.crypto.{CryptoConstants, EcPointType}
+import sigma.data.OverloadHack.Overloaded1
 import sigma.data.{CSigmaDslBuilder, CSigmaProp, Nullable, RType, SigmaBoolean}
 import sigma.eval.ErgoTreeEvaluator.DataEnv
 import sigma.eval.{ErgoTreeEvaluator, SigmaDsl}
@@ -17,10 +18,10 @@ import sigma.serialization.ValueCodes.OpCode
 import sigma.serialization._
 import sigma.util.CollectionUtil._
 import sigma.util.Extensions._
-import sigma.utils.Overloading.Overload1
 
 import java.math.BigInteger
 import java.util.{Arrays, Objects}
+import scala.annotation.unused
 import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
 import scala.language.implicitConversions
@@ -1053,7 +1054,8 @@ object Block extends ValueCompanion {
 
   override def costKind: CostKind = Value.notSupportedError(this, "costKind")
 
-  def apply(let: Val, result: SValue)(implicit o1: Overload1): Block =
+  /** Create a Block node with a single Val definition. */
+  def apply(let: Val, result: SValue)(implicit @unused o1: Overloaded1): Block =
     Block(Seq(let), result)
 }
 

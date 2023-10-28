@@ -4,8 +4,8 @@ import sigma.ast.ErgoTree
 import sigma.data.{ProveDHTuple, ProveDlog, SigmaBoolean, SigmaConjecture, SigmaLeaf}
 import sigma.serialization.SigSerializer
 import sigmastate._
-import sigmastate.crypto.DLogProtocol.DLogInteractiveProver
-import sigmastate.crypto.DiffieHellmanTupleInteractiveProver
+import sigmastate.crypto.DLogProtocol.DLogProver
+import sigmastate.crypto.DiffieHellmanTupleProver
 
 
 trait ProverUtils extends Interpreter {
@@ -46,9 +46,9 @@ trait ProverUtils extends Interpreter {
           if (generateFor.contains(leaf)) {
             val (r, a) = leaf match {
               case _: ProveDlog =>
-                DLogInteractiveProver.firstMessage()
+                DLogProver.firstMessage()
               case pdh: ProveDHTuple =>
-                DiffieHellmanTupleInteractiveProver.firstMessage(pdh)
+                DiffieHellmanTupleProver.firstMessage(pdh)
               case _ => ???
             }
             val hints = Seq(OwnCommitment(leaf, r, a, position), RealCommitment(leaf, a, position))
