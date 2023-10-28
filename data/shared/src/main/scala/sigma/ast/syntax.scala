@@ -11,7 +11,9 @@ import sigma.exceptions.InterpreterException
 import scala.annotation.nowarn
 import scala.reflect.classTag
 
-/** Contains global definitions for sigma.ast package. */
+/** Contains global definitions which define syntactic extensions for working with classes
+  * of  sigma.ast package.
+  */
 object syntax {
   /** Force initialization of reflection. */
   val reflection = SigmaDataReflection
@@ -50,6 +52,7 @@ object syntax {
   /** Sigma proposition with trivial true proposition. */
   val TrueSigmaProp  = SigmaPropConstant(CSigmaProp(TrivialProp.TrueProp))
 
+  /** Methods to work with tree nodes of [[SCollection]] type. */
   implicit class CollectionOps[T <: SType](val coll: Value[SCollection[T]]) extends AnyVal {
     /** Returns number of items in the collection expression. */
     def length: Int = matchCase(_.items.length, _.value.length, _.items.length)
@@ -72,10 +75,12 @@ object syntax {
     }
   }
 
+  /** Methods to work with tree nodes of [[SSigmaProp]] type. */
   implicit class SigmaPropValueOps(val p: Value[SSigmaProp.type]) extends AnyVal {
     def propBytes: Value[SByteArray] = SigmaPropBytes(p)
   }
 
+  /** Methods to work with tree nodes of [[SSigmaProp]] type. */
   implicit class OptionValueOps[T <: SType](val p: Value[SOption[T]]) extends AnyVal {
     def get: Value[T] = OptionGet(p)
 
@@ -83,6 +88,7 @@ object syntax {
 
     def isDefined: Value[SBoolean.type] = OptionIsDefined(p)
   }
+
 
   def GetVarBoolean(varId: Byte): GetVar[SBoolean.type] = GetVar(varId, SBoolean)
 
@@ -120,6 +126,11 @@ object syntax {
 
   implicit val AvlTreeDataRType: RType[AvlTreeData] = GeneralType(classTag[AvlTreeData])
 
+  /** Type casting methods for [[Value]] nodes.
+    * Each `asX` method casts the value to the corresponding `X` type of node.
+    * No runtime checks are performed, so the caller should ensure that the value has the
+    * expected type.
+    * */
   implicit class ValueOps(val v: Value[SType]) extends AnyVal {
     def asValue[T <: SType]: Value[T] = v.asInstanceOf[Value[T]]
 
@@ -151,6 +162,10 @@ object syntax {
 
     def asFunc: Value[SFunc] = v.asInstanceOf[Value[SFunc]]
 
+    /** Upcast the value `v` to the given type checking that `v` if of a numeric type.
+      * @param targetType type to upcast to
+      * @return upcasted value
+      */
     def upcastTo[T <: SNumericType](targetType: T): Value[T] = {
       assert(v.tpe.isInstanceOf[SNumericType],
         s"Cannot upcast value of type ${v.tpe} to $targetType: only numeric types can be upcasted.")
@@ -162,13 +177,17 @@ object syntax {
         mkUpcast(tV, targetType).withSrcCtx(v.sourceContext)
     }
 
+    /** Assigns optional [[SourceContext]] to the value `v`.
+      * The is effectful operation changing state of `v`.
+      * @return the same instance of `v` with the given source context assigned
+      */
     def withSrcCtx[T <: SType](sourceContext: Nullable[SourceContext]): Value[T] = {
       v.sourceContext = sourceContext
       v.asValue[T]
     }
 
     /**
-      * Set source context only if it's empty
+      * Sets the source context of the `v` instance only if it's empty (i.e. not set yet).
       */
     def withEnsuredSrcCtx[T <: SType](sourceContext: Nullable[SourceContext]): Value[T] = {
       if (v.sourceContext.isEmpty) v.sourceContext = sourceContext
