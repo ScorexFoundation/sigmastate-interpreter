@@ -5,10 +5,10 @@ import org.ergoplatform._
 import sigma.data.AvlTreeData
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
-import sigmastate.{CompilerCrossVersionProps}
+import sigmastate.CompilerCrossVersionProps
 import sigma.ast.{ErgoTree, IntConstant, LongConstant}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
-import sigma.ast.defs._
+import sigma.ast.syntax._
 
 
 class ColdWalletContractExampleSpecification extends CompilerTestingCommons

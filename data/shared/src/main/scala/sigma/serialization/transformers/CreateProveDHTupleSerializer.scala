@@ -1,9 +1,9 @@
 package sigma.serialization.transformers
 
 import sigma.ast.{CreateProveDHTuple, SGroupElement}
-import sigma.ast.defs.SigmaPropValue
+import sigma.ast.syntax.SigmaPropValue
 import sigma.ast.Value
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigma.serialization._
 import SigmaByteWriter._
 

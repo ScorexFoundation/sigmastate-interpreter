@@ -2,7 +2,7 @@ package sigma.serialization
 
 import org.ergoplatform.validation.ValidationRules.{CheckDeserializedScriptIsSigmaProp, CheckHeaderSizeBit}
 import sigma.ast.{ComplexityTable, Constant, DeserializationSigmaBuilder, ErgoTree, SType, SubstConstants, UnparsedErgoTree}
-import sigma.ast.defs.ValueOps
+import sigma.ast.syntax.ValueOps
 import sigma.ast.ErgoTree.{EmptyConstants, HeaderType}
 import sigma.util.safeNewArray
 import debox.cfor

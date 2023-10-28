@@ -20,7 +20,7 @@ import sigma.util.Extensions._
 import sigma.util.StringUtil.StringUtilExtensions
 import sigma.ast.ErgoTree.ZeroHeader
 import sigma.ast.SType.AnyOps
-import sigma.ast.defs.{SValue, ValueOps}
+import sigma.ast.syntax.{SValue, ValueOps}
 import sigma.ast._
 import sigma.eval.{CostDetails, EvalSettings, SigmaDsl}
 import sigmastate.crypto.DLogProtocol.DLogProverInput

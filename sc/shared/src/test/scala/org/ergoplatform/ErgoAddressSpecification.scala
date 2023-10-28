@@ -11,7 +11,7 @@ import sigmastate.helpers._
 import sigma.interpreter.ContextExtension.VarBinding
 import sigma.crypto.CryptoConstants.dlogGroup
 import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
-import sigma.ast.defs.ValueOps
+import sigma.ast.syntax.ValueOps
 import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigma.serialization.ValueSerializer
 import sigmastate.utils.Helpers._

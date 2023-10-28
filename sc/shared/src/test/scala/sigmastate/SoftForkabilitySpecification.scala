@@ -16,7 +16,7 @@ import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigma.interpreter.{ContextExtension, ProverResult}
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigma.eval.ErgoTreeEvaluator
 import sigma.eval.ErgoTreeEvaluator.DataEnv
 import sigma.exceptions.InterpreterException

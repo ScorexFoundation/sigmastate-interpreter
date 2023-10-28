@@ -6,7 +6,7 @@ import sigma.util.safeNewArray
 import SigmaByteWriter._
 import debox.cfor
 import sigma.ast.SType
-import sigma.ast.defs.{CollectionOps, SValue}
+import sigma.ast.syntax.{CollectionOps, SValue}
 import sigma.serialization.CoreByteWriter.{ArgInfo, DataInfo, U}
 
 case class TupleSerializer(cons: Seq[Value[SType]] => Value[SType])

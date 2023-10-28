@@ -12,7 +12,7 @@ import sigma.serialization.{SerializerException, SigmaByteReader, SigmaByteWrite
 import sigma.util.safeNewArray
 import sigma.ast.ErgoTree.{ZeroHeader, headerWithVersion, setConstantSegregation}
 import sigma.ast._
-import sigma.ast.defs.SigmaPropValue
+import sigma.ast.syntax.SigmaPropValue
 import sigma.serialization._
 import java.util.Objects
 import scala.collection.mutable

@@ -12,7 +12,7 @@ import scorex.crypto.authds.ADKey
 import scorex.util.encode.Base16
 import scorex.util.{ModifierId, bytesToId, idToBytes}
 import sigma.ast.{ErgoTree, SType}
-import sigma.ast.defs.SValue
+import sigma.ast.syntax.SValue
 import sigma.crypto.{CryptoFacade, EcPointType}
 import sigma.data.ExactIntegral.LongIsExactIntegral
 import sigma.data.{CSigmaDslBuilder, Digest32Coll, Iso, ProveDHTuple, ProveDlog, RType, SigmaBoolean, SigmaConstants}

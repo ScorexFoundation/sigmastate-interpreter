@@ -4,7 +4,7 @@ import org.ergoplatform.ErgoBox
 import scorex.utils.Ints
 import sigma.Evaluation.stypeToRType
 import sigma.ast.SCollection.SByteArray
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigma.ast.{ConstantNode, EvaluatedValue, SInt, STuple, SType}
 import sigma.data.CBox.regs
 import sigma.eval.Extensions.toAnyValue

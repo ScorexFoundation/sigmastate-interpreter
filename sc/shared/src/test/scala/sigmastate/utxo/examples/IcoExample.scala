@@ -14,14 +14,14 @@ import sigma.data.{AvlTreeData, AvlTreeFlags, Digest32Coll}
 import sigma.ast._
 import sigmastate._
 import sigma.Extensions.ArrayOps
-import sigma.ast.defs.{CollectionConstant, SigmaPropValue}
+import sigma.ast.syntax.{CollectionConstant, SigmaPropValue}
 import sigma.crypto.CryptoConstants
 import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.interpreter.Interpreter
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigma.eval.SigmaDsl
 import sigma.serialization.ErgoTreeSerializer
 import sigma.serialization.ErgoTreeSerializer.DefaultSerializer

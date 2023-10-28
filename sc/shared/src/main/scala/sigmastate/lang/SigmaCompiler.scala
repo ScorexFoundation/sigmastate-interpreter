@@ -12,7 +12,7 @@ import sigma.ast.SigmaPredef.PredefinedFuncRegistry
 import sigma.ast.MethodCall
 import sigmastate.lang.parsers.ParserException
 import sigma.ast._
-import sigma.ast.defs.SValue
+import sigma.ast.syntax.SValue
 import SCollectionMethods.{ExistsMethod, ForallMethod, MapMethod}
 import sigmastate.InterpreterReflection
 

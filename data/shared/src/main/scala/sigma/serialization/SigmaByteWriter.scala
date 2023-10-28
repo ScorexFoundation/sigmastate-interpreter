@@ -1,7 +1,7 @@
 package sigma.serialization
 
 import scorex.util.serialization.Writer
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigma.ast._
 import sigma.serialization.CoreByteWriter.{ArgInfo, DataInfo, FormatDescriptor, SeqFmt}
 

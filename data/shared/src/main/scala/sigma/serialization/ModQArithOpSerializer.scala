@@ -1,7 +1,7 @@
 package sigma.serialization
 
 import sigma.ast.{ModQArithOp, ModQArithOpCompanion, SType}
-import sigma.ast.defs.{BigIntValue, SValue, ValueOps}
+import sigma.ast.syntax.{BigIntValue, SValue, ValueOps}
 import sigma.serialization.CoreByteWriter.DataInfo
 import sigma.ast.Value
 import SigmaByteWriter._

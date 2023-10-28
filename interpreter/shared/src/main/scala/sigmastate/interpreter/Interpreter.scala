@@ -5,7 +5,7 @@ import org.ergoplatform.ErgoLikeContext
 import org.ergoplatform.validation.ValidationRules._
 import sigma.VersionContext
 import sigma.ast.SCollection.SByteArray
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigma.ast._
 import sigma.data.{CAND, COR, CTHRESHOLD, ProveDHTuple, ProveDlog, SigmaBoolean, TrivialProp}
 import sigma.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
@@ -21,7 +21,7 @@ import sigmastate.crypto._
 import sigmastate.eval.{CProfiler, addCostChecked}
 import sigmastate.interpreter.CErgoTreeEvaluator.fixedCostOp
 import sigmastate.interpreter.Interpreter._
-import sigma.ast.defs.ValueOps
+import sigma.ast.syntax.ValueOps
 import sigma.eval.{EvalSettings, SigmaDsl}
 import sigma.exceptions.{CostLimitException, InterpreterException}
 import sigma.interpreter.ProverResult

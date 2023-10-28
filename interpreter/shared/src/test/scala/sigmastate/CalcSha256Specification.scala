@@ -3,7 +3,7 @@ package sigmastate
 import org.scalatest.prop.TableFor2
 import scorex.util.encode.Base16
 import sigma.ast.{ByteArrayConstant, CalcSha256, EQ, SByte}
-import sigma.ast.defs.CollectionConstant
+import sigma.ast.syntax.CollectionConstant
 import sigma.data.TrivialProp
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, TestingCommons}
 

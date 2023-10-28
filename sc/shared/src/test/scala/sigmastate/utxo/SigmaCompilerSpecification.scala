@@ -3,10 +3,10 @@ package sigmastate.utxo
 import sigma.ast.{GE, ModQ, SType}
 import sigma.data.CAnyValue
 import sigma.ast._
-import sigma.ast.defs.{GetVarInt, OptionValueOps}
+import sigma.ast.syntax.{GetVarInt, OptionValueOps}
 import sigmastate.helpers.CompilerTestingCommons
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigma.ast.defs._
+import sigma.ast.syntax._
 
 /**
   * Specification for compile function

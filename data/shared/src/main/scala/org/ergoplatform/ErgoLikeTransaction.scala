@@ -6,7 +6,7 @@ import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.Blake2b256
 import scorex.util._
 import sigma.Colls
-import sigma.ast.defs.ErgoBoxCandidateRType
+import sigma.ast.syntax.ErgoBoxCandidateRType
 import sigma.data.Digest32Coll
 import sigma.eval.Extensions.EvalIterableOps
 import sigma.interpreter.ProverResult

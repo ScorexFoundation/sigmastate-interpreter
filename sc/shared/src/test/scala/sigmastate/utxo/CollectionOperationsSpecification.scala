@@ -4,7 +4,7 @@ import sigma.ast._
 import sigmastate._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import org.ergoplatform._
 import sigma.ast.SCollection._
 import sigma.data.AvlTreeData

@@ -13,7 +13,7 @@ import sigma.validation.ValidationException
 import sigma.validation.ValidationRules.CheckPositionLimit
 import sigma.{Colls, Environment}
 import sigma.ast._
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigmastate._
 import sigma.Extensions.ArrayOps
 import sigma.eval.Extensions.SigmaBooleanOps

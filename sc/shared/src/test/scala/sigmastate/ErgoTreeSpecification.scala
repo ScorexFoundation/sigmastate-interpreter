@@ -5,7 +5,7 @@ import org.ergoplatform.{ErgoAddressEncoder, ErgoBox, ErgoLikeContext}
 import sigma.VersionContext._
 import sigma.ast.SCollection.SByteArray
 import sigma.ast._
-import sigma.ast.defs.{SValue, SigmaPropValue, TrueSigmaProp}
+import sigma.ast.syntax.{SValue, SigmaPropValue, TrueSigmaProp}
 import sigma.data.RType.asType
 import sigma.data.{CBox, Nullable, RType, TrivialProp}
 import sigma.validation.ValidationException
@@ -16,7 +16,7 @@ import sigmastate.eval.CProfiler
 import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}
 import sigmastate.interpreter.Interpreter.ReductionResult
 import sigmastate.interpreter.CErgoTreeEvaluator
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigma.eval.EvalSettings
 import sigma.exceptions.{CostLimitException, InterpreterException}
 import sigmastate.lang.CompilerSettings

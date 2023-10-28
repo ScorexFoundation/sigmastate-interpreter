@@ -3,7 +3,7 @@ package sigmastate.lang
 import org.scalatest.matchers.should.Matchers
 import sigma.{Coll, _}
 import sigma.ast.SCollection.SByteArray
-import sigma.ast.defs.{SValue, ValueOps}
+import sigma.ast.syntax.{SValue, ValueOps}
 import sigma.ast._
 import sigma.crypto.CryptoConstants
 import sigma.data.{CAnyValue, CSigmaDslBuilder, ProveDHTuple, ProveDlog, SigmaBoolean}

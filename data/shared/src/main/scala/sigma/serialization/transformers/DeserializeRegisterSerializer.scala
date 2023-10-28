@@ -6,7 +6,7 @@ import sigma.ast.{DeserializeRegister, Value}
 import sigma.serialization.{SigmaByteReader, SigmaByteWriter, ValueSerializer}
 import ValueSerializer._
 import sigma.ast.SType
-import sigma.ast.defs.SValue
+import sigma.ast.syntax.SValue
 import sigma.serialization.CoreByteWriter.{ArgInfo, DataInfo}
 import sigma.ast.Operations.DeserializeRegisterInfo._
 import sigma.serialization.SigmaByteWriter._

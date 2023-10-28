@@ -5,7 +5,7 @@ import sigma.data.{AvlTreeData, CAND, COR, CTHRESHOLD}
 import sigma.ast.{GT, Height, IntConstant, SigmaAnd, SigmaOr}
 import sigmastate._
 import sigmastate.helpers._
-import sigma.ast.defs._
+import sigma.ast.syntax._
 
 import scala.util.Random
 

@@ -4,13 +4,13 @@ import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
 import scorex.util._
 import sigma.Colls
-import sigma.ast.defs.{BooleanConstant, GetVarByteArray, OptionValueOps}
+import sigma.ast.syntax.{BooleanConstant, GetVarByteArray, OptionValueOps}
 import sigma.ast._
 import sigma.data.AvlTreeData
 import sigmastate._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigma.interpreter.ContextExtension
 import sigma.serialization.ValueSerializer
 import sigmastate.utxo.blockchain.BlockchainSimulationTestingCommons._

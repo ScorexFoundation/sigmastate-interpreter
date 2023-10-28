@@ -8,7 +8,7 @@ import sigmastate._
 import sigmastate.helpers.NegativeTesting
 import sigma.serialization.{SerializationSpecification, SigmaSerializer}
 import sigma.ContractsTestkit
-import sigma.ast.defs.SigmaPropValue
+import sigma.ast.syntax.SigmaPropValue
 import sigma.ast.{SByte, SInt, SType}
 import sigma.data.CBigInt
 import ErgoTree.setConstantSegregation

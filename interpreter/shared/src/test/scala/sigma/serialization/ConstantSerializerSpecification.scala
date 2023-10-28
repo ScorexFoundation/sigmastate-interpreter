@@ -14,7 +14,7 @@ import sigma.ast.SType.AnyOps
 import scorex.util.encode.Base16
 import sigma.ast.BoolArrayConstant.BoolArrayTypeCode
 import sigma.ast.ByteArrayConstant.ByteArrayTypeCode
-import sigma.ast.defs.{BoolValue, SValue}
+import sigma.ast.syntax.{BoolValue, SValue}
 import sigma.crypto.EcPointType
 import sigma.util.Extensions.{BigIntegerOps, EcpOps, SigmaBooleanOps}
 import scala.annotation.nowarn

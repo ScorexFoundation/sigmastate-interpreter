@@ -6,7 +6,7 @@ import scorex.util.encode.{Base16, Base58, Base64}
 import sigma.ast.SCollection.{SByteArray, SIntArray}
 import sigma.ast.SOption.SIntOption
 import sigma.ast.SigmaPropConstant
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigma.data.Nullable
 import sigma.exceptions.InvalidArguments
 import sigma.serialization.CoreByteWriter.ArgInfo

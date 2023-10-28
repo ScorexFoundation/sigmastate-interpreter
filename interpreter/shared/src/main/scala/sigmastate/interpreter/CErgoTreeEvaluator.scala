@@ -2,7 +2,7 @@ package sigmastate.interpreter
 
 import org.ergoplatform.ErgoLikeContext
 import sigma.ast._
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigmastate.eval.{CAvlTreeVerifier, CProfiler}
 import sigmastate.interpreter.Interpreter.ReductionResult
 import sigma.{AvlTree, Coll, Colls, Context, VersionContext}
@@ -103,7 +103,7 @@ class CErgoTreeEvaluator(
           case Some(v) => Some(Colls.fromArray(v))
           case _ => None
         }
-        case Failure(_) => defs.error(s"Tree proof is incorrect $tree")
+        case Failure(_) => syntax.error(s"Tree proof is incorrect $tree")
       }
     }
   }
@@ -123,7 +123,7 @@ class CErgoTreeEvaluator(
             case Some(v) => Some(Colls.fromArray(v))
             case _ => None
           }
-          case Failure(_) => defs.error(s"Tree proof is incorrect $tree")
+          case Failure(_) => syntax.error(s"Tree proof is incorrect $tree")
         }
       }
     }
@@ -145,7 +145,7 @@ class CErgoTreeEvaluator(
           // TODO v6.0: throwing exception is not consistent with update semantics
           //  however it preserves v4.0 semantics (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/908)
           if (insertRes.isFailure) {
-            defs.error(s"Incorrect insert for $tree (key: $key, value: $value, digest: ${tree.digest}): ${insertRes.failed.get}}")
+            syntax.error(s"Incorrect insert for $tree (key: $key, value: $value, digest: ${tree.digest}): ${insertRes.failed.get}}")
           }
           res = insertRes.isSuccess
         }

@@ -3,7 +3,7 @@ package sigma.serialization
 import sigma.ast.LogicalNot
 import sigma.serialization.CoreByteWriter.DataInfo
 import sigma.ast.Operations.LogicalNotInfo.inputArg
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import SigmaByteWriter._
 
 case class LogicalNotSerializer(cons: BoolValue => BoolValue)

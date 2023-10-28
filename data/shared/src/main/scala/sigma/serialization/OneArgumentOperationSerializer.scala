@@ -3,7 +3,7 @@ package sigma.serialization
 import sigma.ast.{OneArgumentOperation, OneArgumentOperationCompanion, SType}
 import sigma.serialization.CoreByteWriter.DataInfo
 import sigma.ast.Value
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import SigmaByteWriter._
 
 case class OneArgumentOperationSerializer[T <: SType](opDesc: OneArgumentOperationCompanion, cons: Value[T] => SValue)

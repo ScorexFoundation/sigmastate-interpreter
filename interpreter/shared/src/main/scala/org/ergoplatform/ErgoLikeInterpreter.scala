@@ -2,7 +2,7 @@ package org.ergoplatform
 
 import sigma.ast.SCollection.SByteArray
 import sigma.ast._
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigmastate.interpreter.Interpreter
 
 

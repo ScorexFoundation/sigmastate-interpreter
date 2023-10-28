@@ -8,11 +8,11 @@ import org.ergoplatform.dsl.TestContractSpec
 import scorex.crypto.hash.Blake2b256
 import sigma.ast.SCollection.SByteArray
 import sigma.ast._
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigma.data.{CSigmaProp, Digest32Coll, TrivialProp}
 import sigma.ast.{BlockValue, ByteArrayConstant, LongConstant, ValDef, ValUse, Value}
 import sigmastate.eval.Extensions._
-import sigma.ast.defs.ValueOps
+import sigma.ast.syntax.ValueOps
 import sigma.eval.Extensions.toAnyValue
 
 /** An example of an atomic ergo <=> asset exchange.

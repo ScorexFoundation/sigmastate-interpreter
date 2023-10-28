@@ -8,10 +8,10 @@ import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import sigma.ast.SCollection.{SByteArray, SLongArray}
 import sigma.ast._
-import sigma.ast.defs.SValue
+import sigma.ast.syntax.SValue
 import sigmastate._
 import SigmaPredef.PredefinedFuncRegistry
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigmastate.lang.parsers.ParserException
 import sigma.serialization.OpCodes
 

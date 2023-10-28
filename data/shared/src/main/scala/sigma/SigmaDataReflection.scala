@@ -3,7 +3,7 @@ package sigma
 import org.ergoplatform.ErgoBox.RegisterId
 import sigma.ast.SCollection.{SBooleanArray, SByteArray, SIntArray}
 import sigma.ast._
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigma.data.KeyValueColl
 import sigma.eval.ErgoTreeEvaluator
 import sigma.reflection.ReflectionData.registerClassEntry

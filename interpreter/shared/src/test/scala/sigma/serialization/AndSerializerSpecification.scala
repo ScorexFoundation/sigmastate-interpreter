@@ -4,7 +4,7 @@ import sigma.ast.{AND, BooleanConstant, Constant, EQ, IntConstant, SBoolean, SCo
 import sigma.serialization.OpCodes._
 import scorex.util.encode.ZigZagEncoder.encodeZigZagInt
 import sigma.Extensions.ArrayOps
-import sigma.ast.defs.BooleanConstant
+import sigma.ast.syntax.BooleanConstant
 
 class AndSerializerSpecification extends TableSerializationSpecification {
 

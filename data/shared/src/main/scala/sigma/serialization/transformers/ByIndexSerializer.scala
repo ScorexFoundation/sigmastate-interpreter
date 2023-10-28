@@ -1,10 +1,10 @@
 package sigma.serialization.transformers
 
 import sigma.ast.{ByIndex, Value}
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigma.serialization.{SigmaByteReader, SigmaByteWriter, ValueSerializer}
 import ValueSerializer._
-import sigma.ast.defs.SValue
+import sigma.ast.syntax.SValue
 import sigma.ast.Operations.ByIndexInfo._
 import sigma.serialization.SigmaByteWriter._
 import sigma.ast.{SCollection, SInt, SType}

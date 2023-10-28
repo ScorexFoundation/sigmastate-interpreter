@@ -4,11 +4,11 @@ import scorex.crypto.hash.Blake2b256
 import scorex.utils.Random
 import sigma.data.AvlTreeData
 import sigma.ast._
-import sigma.ast.defs.{CollectionConstant, GetVarByteArray, OptionValueOps}
+import sigma.ast.syntax.{CollectionConstant, GetVarByteArray, OptionValueOps}
 import sigmastate._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.helpers._
-import sigma.ast.defs._
+import sigma.ast.syntax._
 
 class AtomicSwapExampleSpecification extends CompilerTestingCommons with CompilerCrossVersionProps {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext

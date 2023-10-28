@@ -12,7 +12,7 @@ import scala.annotation.nowarn
 import scala.reflect.classTag
 
 /** Contains global definitions for sigma.ast package. */
-object defs {
+object syntax {
   /** Force initialization of reflection. */
   val reflection = SigmaDataReflection
 

@@ -4,11 +4,11 @@ import scorex.util.encode.Base16
 import sigma.VersionContext
 import sigma.ast.ErgoTree.{HeaderType, substConstants}
 import sigma.ast.SigmaPropConstant
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigma.data.SigmaBoolean
 import sigma.kiama.rewriting.Rewriter.{everywherebu, strategy}
 import sigma.validation.ValidationException
-import sigma.ast.defs.ValueOps
+import sigma.ast.syntax.ValueOps
 import sigma.eval.Extensions.SigmaBooleanOps
 import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigma.serialization.{ConstantStore, ErgoTreeSerializer, SigmaSerializer, ValueSerializer}

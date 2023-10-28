@@ -3,10 +3,10 @@ package sigmastate.eval
 
 import sigma.ast._
 import org.ergoplatform._
-import sigma.ast.defs.ValueOps
+import sigma.ast.syntax.ValueOps
 import sigma.serialization.OpCodes._
 import sigma.serialization.ConstantStore
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigma.data.{ProveDHTuple, ProveDlog}
 
 import scala.collection.mutable.ArrayBuffer

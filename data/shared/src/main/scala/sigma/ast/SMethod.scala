@@ -2,7 +2,7 @@ package sigma.ast
 
 import debox.cfor
 import sigma.ast.SMethod.{InvokeDescBuilder, MethodCostFunc}
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigma.data.RType
 import sigma.eval.{CostDetails, ErgoTreeEvaluator, GivenCost, TracedCost}
 import sigma.reflection.{RClass, RMethod}

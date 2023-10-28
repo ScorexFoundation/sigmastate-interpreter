@@ -4,7 +4,7 @@ import org.ergoplatform.ErgoBox
 import org.ergoplatform.validation.ValidationRules.CheckDeserializedScriptIsSigmaProp
 import sigma.SigmaProp
 import sigma.ast._
-import sigma.ast.defs.SigmaPropValue
+import sigma.ast.syntax.SigmaPropValue
 import sigma.data.CBigInt
 import sigma.util.Extensions.SigmaPropOps
 import sigma.validation.ValidationException

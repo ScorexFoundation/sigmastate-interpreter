@@ -7,7 +7,7 @@ import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition}
 import org.ergoplatform.sdk.JavaHelpers.collRType
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigma._
-import sigma.ast.{SType, defs}
+import sigma.ast.{SType, syntax}
 import sigma.ast.SType.AnyOps
 
 import scala.reflect.ClassTag
@@ -56,11 +56,11 @@ trait ContractSyntax { contract: SigmaContract =>
       case _: Unit => UnitType
       case _: sigma.BigInt => BigIntRType
       case _: GroupElement => GroupElementRType
-      case _: ErgoBox => defs.ErgoBoxRType // TODO remove this RType
+      case _: ErgoBox => syntax.ErgoBoxRType // TODO remove this RType
       case _: Box => BoxRType
-      case _: AvlTreeData => defs.AvlTreeDataRType // TODO remove this RType
+      case _: AvlTreeData => syntax.AvlTreeDataRType // TODO remove this RType
       case _: AvlTree => AvlTreeRType
-      case _: SigmaBoolean => defs.SigmaBooleanRType // TODO remove this RType
+      case _: SigmaBoolean => syntax.SigmaBooleanRType // TODO remove this RType
       case _: SigmaProp => SigmaPropRType
       case _: Context => ContextRType
       case _ =>

@@ -166,7 +166,7 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
     // as result selfBoxIndex is always (erroneously) returns -1 in ErgoTree v0, v1
     val selfBox = boxesToSpend(selfIndex).toTestBox
     val ergoTreeVersion = currentErgoTreeVersion.getOrElse(
-        defs.error(s"Undefined context property: currentErgoTreeVersion"))
+        syntax.error(s"Undefined context property: currentErgoTreeVersion"))
     CContext(
       dataInputs, headers, preHeader, inputs, outputs, preHeader.height, selfBox, selfIndex, avlTree,
       preHeader.minerPk.getEncoded, vars, activatedScriptVersion, ergoTreeVersion)

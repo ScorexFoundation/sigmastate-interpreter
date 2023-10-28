@@ -6,7 +6,7 @@ import sigma.ast.ArithOp.OperationImpl
 import sigma.ast.Operations._
 import sigma.ast.SCollection.{SByteArray, SIntArray}
 import sigma.ast.SOption.SIntOption
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigma.data.ExactIntegral._
 import sigma.data.ExactOrdering._
 import sigma.data.OverloadHack.Overloaded1

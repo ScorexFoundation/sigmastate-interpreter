@@ -6,11 +6,11 @@ import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import sigma.ast.{NoType, SBoolean, SBox, SCollection, SFunc, SInt, SLong, STuple}
 import sigma.ast._
-import sigma.ast.defs.SValue
+import sigma.ast.syntax.SValue
 import sigmastate._
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import SigmaPredef.PredefinedFuncRegistry
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigma.eval.SigmaDsl
 import sigma.exceptions.BinderException
 

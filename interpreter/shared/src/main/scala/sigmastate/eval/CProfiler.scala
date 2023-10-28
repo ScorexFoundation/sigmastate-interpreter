@@ -3,7 +3,7 @@ package sigmastate.eval
 import debox.{sp, Buffer => DBuffer, Map => DMap}
 import sigma.ast.{CostItem, FixedCost, FixedCostItem, JitCost, SMethod, SeqCostItem, TypeBasedCostItem}
 import sigma.ast.TypeCodes.LastConstantCode
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigma.util.Extensions.{ByteOps, DBufferOps}
 import sigma.ast.{MethodCall, PropertyCall}
 import sigma.eval.Profiler

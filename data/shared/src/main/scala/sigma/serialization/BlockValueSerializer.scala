@@ -1,7 +1,7 @@
 package sigma.serialization
 
 import sigma.ast._
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import ValueSerializer._
 import sigma.util.safeNewArray
 import sigma.serialization.CoreByteWriter.{ArgInfo, DataInfo, U, Vlq}

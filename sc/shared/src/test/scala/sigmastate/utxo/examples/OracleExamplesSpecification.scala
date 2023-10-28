@@ -9,7 +9,7 @@ import sigma.ast.SCollection.SByteArray
 import sigma.ast._
 import sigmastate._
 import sigmastate.eval._
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import org.ergoplatform._
@@ -17,7 +17,7 @@ import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, Te
 import sigma.Extensions.ArrayOps
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigma.Context
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigma.crypto.{BigIntegers, CryptoConstants, CryptoFacade}
 import sigma.data.{AvlTreeData, AvlTreeFlags}
 import sigmastate.utils.Helpers._

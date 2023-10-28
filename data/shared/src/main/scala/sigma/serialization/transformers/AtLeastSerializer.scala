@@ -1,9 +1,9 @@
 package sigma.serialization.transformers
 
-import sigma.ast.defs.SigmaPropValue
+import sigma.ast.syntax.SigmaPropValue
 import sigma.ast.{AtLeast, SCollection, SInt, SSigmaProp, Value}
 import sigma.ast.Operations.AtLeastInfo
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigma.serialization.{SigmaByteReader, SigmaByteWriter, ValueSerializer}
 import sigma.serialization.SigmaByteWriter._
 

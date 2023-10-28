@@ -1,6 +1,6 @@
 package sigmastate.lang.parsers
 
-import sigma.ast.defs.SValue
+import sigma.ast.syntax.SValue
 import sigma.ast._
 import sigmastate.lang.parsers
 

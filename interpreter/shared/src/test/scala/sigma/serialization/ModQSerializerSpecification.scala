@@ -1,7 +1,7 @@
 package sigma.serialization
 
 import sigma.ast.ModQ
-import sigma.ast.defs.BigIntConstant
+import sigma.ast.syntax.BigIntConstant
 
 class ModQSerializerSpecification extends SerializationSpecification {
 

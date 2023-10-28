@@ -3,7 +3,7 @@ package sigma.serialization
 import sigma.ast.{ModQ, SType}
 import sigma.ast.Value
 import SigmaByteWriter._
-import sigma.ast.defs.ValueOps
+import sigma.ast.syntax.ValueOps
 
 // TODO v6.0: make sure it is covered with tests (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/327)
 object ModQSerializer extends ValueSerializer[ModQ] {

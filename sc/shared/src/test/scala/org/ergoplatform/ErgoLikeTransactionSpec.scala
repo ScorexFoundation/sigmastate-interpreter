@@ -8,7 +8,7 @@ import sigma.Extensions._
 import sigma.SigmaDslTesting
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.SType._
-import sigma.ast.defs.{ErgoBoxCandidateRType, TrueSigmaProp}
+import sigma.ast.syntax.{ErgoBoxCandidateRType, TrueSigmaProp}
 import sigma.ast._
 import sigma.data.{CSigmaProp, Digest32Coll, TrivialProp}
 import sigma.eval.Extensions.{EvalCollOps, EvalIterableOps}

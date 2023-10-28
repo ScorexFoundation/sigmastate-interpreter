@@ -1,7 +1,7 @@
 package sigma.serialization.transformers
 
 import sigma.ast.{Filter, Value}
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigma.serialization.{SigmaByteReader, SigmaByteWriter, ValueSerializer}
 import sigma.ast.{SCollection, SType, SFunc}
 

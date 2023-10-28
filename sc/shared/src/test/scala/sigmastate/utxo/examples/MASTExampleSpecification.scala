@@ -10,10 +10,10 @@ import sigma.data.{AvlTreeData, AvlTreeFlags}
 import sigma.ast._
 import sigmastate._
 import sigma.Extensions.ArrayOps
-import sigma.ast.defs.{GetVarByteArray, OptionValueOps}
+import sigma.ast.syntax.{GetVarByteArray, OptionValueOps}
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigma.eval.SigmaDsl
 import sigmastate.interpreter.Interpreter._
 import sigma.serialization.ValueSerializer

@@ -3,7 +3,7 @@ package sigma.serialization.transformers
 import sigma.ast.{SType, SimpleTransformerCompanion, Transformer}
 import sigma.serialization.CoreByteWriter.DataInfo
 import sigma.ast.Value
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigma.serialization.{SigmaByteReader, SigmaByteWriter, ValueSerializer}
 import sigma.serialization.SigmaByteWriter._
 

@@ -1,7 +1,7 @@
 package sigmastate.utxo
 
 import sigma.ast._
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigma.data.{AvlTreeData, CAND, COR, ProveDlog, TrivialProp}
 import sigma.eval.Extensions.SigmaBooleanOps
 import sigma.exceptions.GraphBuildingException

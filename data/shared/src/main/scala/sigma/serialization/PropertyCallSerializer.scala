@@ -3,7 +3,7 @@ package sigma.serialization
 import sigma.ast.{ComplexityTable, EmptySubst, SType, STypeSubst}
 import sigma.serialization.CoreByteWriter.{ArgInfo, DataInfo}
 import sigma.ast._
-import sigma.ast.defs.SValue
+import sigma.ast.syntax.SValue
 import SigmaByteWriter._
 
 case class PropertyCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value[SType]], STypeSubst) => Value[SType])

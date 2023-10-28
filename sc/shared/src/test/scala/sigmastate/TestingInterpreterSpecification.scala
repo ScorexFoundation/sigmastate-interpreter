@@ -3,10 +3,10 @@ package sigmastate
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import scorex.crypto.hash.Blake2b256
 import sigma.ast._
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigmastate.interpreter._
 import Interpreter._
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import org.ergoplatform._
 import org.scalatest.BeforeAndAfterAll
 import scorex.util.encode.Base58

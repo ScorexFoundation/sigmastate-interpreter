@@ -3,7 +3,7 @@ package sigmastate.lang
 import fastparse.internal.Logger
 import sigma.ast._
 import sigma.data.Nullable
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigmastate.lang.parsers.{Basic, Core, Exprs}
 
 import scala.collection.mutable

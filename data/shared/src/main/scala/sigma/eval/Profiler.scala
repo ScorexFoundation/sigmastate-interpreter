@@ -1,7 +1,7 @@
 package sigma.eval
 
 import sigma.ast.{CostItem, JitCost}
-import sigma.ast.defs.SValue
+import sigma.ast.syntax.SValue
 
 abstract class Profiler {
   /** Called from evaluator immediately before the evaluator start recursive evaluation of

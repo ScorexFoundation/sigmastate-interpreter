@@ -5,10 +5,10 @@ import sigmastate.lang.{CompilerResult, CompilerSettings, SigmaCompiler}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigma.ast.{ErgoTree, SType, TransformingSigmaBuilder, Value}
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
-import sigma.ast.defs.{SValue, SigmaPropValue}
+import sigma.ast.syntax.{SValue, SigmaPropValue}
 import sigma.serialization.ValueSerializer
 import sigmastate.eval.IRContext
-import sigma.ast.defs.ValueOps
+import sigma.ast.syntax.ValueOps
 
 trait CompilerTestsBase extends TestsBase {
   protected val _lowerMethodCalls = new DynamicVariable[Boolean](true)

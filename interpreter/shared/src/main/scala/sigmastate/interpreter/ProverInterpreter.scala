@@ -151,7 +151,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils {
                     hintsBag: HintsBag): Array[Byte] = {
     val proofTree = sb match {
       case TrueProp => NoProof
-      case FalseProp => defs.error("Script reduced to false")
+      case FalseProp => syntax.error("Script reduced to false")
       case sigmaTree =>
         val unprovenTree = convertToUnproven(sigmaTree)
         prove(unprovenTree, message, hintsBag)
@@ -193,7 +193,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils {
       }
       ul.withSimulated(!isReal)
     case t: UnprovenTree =>
-      defs.error(s"Don't know how to markReal($t)")
+      syntax.error(s"Don't know how to markReal($t)")
   })
 
   /**
@@ -419,14 +419,14 @@ trait ProverInterpreter extends Interpreter with ProverUtils {
           }
         }
 
-    case t: ProofTree => defs.error(s"Don't know how to challengeSimulated($t)")
+    case t: ProofTree => syntax.error(s"Don't know how to challengeSimulated($t)")
   })
 
   private def extractChallenge(pt: ProofTree): Option[Challenge] = pt match {
     case upt: UnprovenTree => upt.challengeOpt
     case sn: UncheckedSchnorr => Some(sn.challenge)
     case dh: UncheckedDiffieHellmanTuple => Some(dh.challenge)
-    case _ => defs.error(s"Cannot extractChallenge($pt)")
+    case _ => syntax.error(s"Cannot extractChallenge($pt)")
   }
 
   /**
@@ -584,7 +584,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils {
     case dh: ProveDHTuple =>
       UnprovenDiffieHellmanTuple(dh, None, None, None, simulated = false)
     case _ =>
-      defs.error(s"Cannot convertToUnproven($sigmaTree)")
+      syntax.error(s"Cannot convertToUnproven($sigmaTree)")
   }
 
   //converts ProofTree => UncheckedSigmaTree
@@ -598,7 +598,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils {
     case s: UncheckedSchnorr => s
     case d: UncheckedDiffieHellmanTuple => d
     case a: Any =>
-      defs.error(s"Cannot convertToUnproven($a)")
+      syntax.error(s"Cannot convertToUnproven($a)")
   }
 
   /**

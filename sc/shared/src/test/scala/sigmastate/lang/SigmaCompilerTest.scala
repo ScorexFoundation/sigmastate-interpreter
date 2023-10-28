@@ -4,7 +4,7 @@ import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform._
 import scorex.util.encode.Base58
 import sigma.ast.{ByIndex, ExtractAmount, GetVar, _}
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigmastate._
 import sigmastate.helpers.CompilerTestingCommons
 import sigmastate.interpreter.Interpreter.ScriptEnv

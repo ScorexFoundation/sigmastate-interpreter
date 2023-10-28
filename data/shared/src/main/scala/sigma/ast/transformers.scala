@@ -3,7 +3,7 @@ package sigma.ast
 import org.ergoplatform.ErgoBox.RegisterId
 import sigma.ast.Operations._
 import sigma.ast.SCollection.SByteArray
-import sigma.ast.defs.SValue
+import sigma.ast.syntax.SValue
 import sigma.data.{CSigmaProp, RType}
 import sigma.eval.ErgoTreeEvaluator
 import sigma.eval.ErgoTreeEvaluator.DataEnv

@@ -2,7 +2,7 @@ package sigma.serialization.trees
 
 import sigma.serialization.CoreByteWriter.DataInfo
 import sigma.ast._
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigma.serialization.{SigmaByteReader, SigmaByteWriter, ValueSerializer}
 import sigma.serialization.SigmaByteWriter._
 

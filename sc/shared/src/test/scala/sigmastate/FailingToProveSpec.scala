@@ -2,7 +2,7 @@ package sigmastate
 
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import org.scalatest.TryValues._
 import sigma.data.AvlTreeData
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}

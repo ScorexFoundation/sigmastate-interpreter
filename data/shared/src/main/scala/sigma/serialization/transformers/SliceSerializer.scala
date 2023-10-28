@@ -1,7 +1,7 @@
 package sigma.serialization.transformers
 
 import sigma.ast.{Slice, Value}
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigma.serialization.{SigmaByteReader, SigmaByteWriter, ValueSerializer}
 import sigma.serialization.SigmaByteWriter._
 import sigma.ast.{SCollection, SInt, SType}

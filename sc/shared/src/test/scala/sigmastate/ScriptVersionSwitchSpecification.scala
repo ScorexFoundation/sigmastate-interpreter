@@ -13,7 +13,7 @@ import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.CErgoTreeEvaluator.DefaultEvalSettings
 import sigma.eval.EvalSettings.EvaluationMode
 import sigmastate.interpreter._
-import sigma.ast.defs.ValueOps
+import sigma.ast.syntax.ValueOps
 import sigma.data.CBox
 import sigma.eval.EvalSettings
 import sigma.exceptions.InterpreterException

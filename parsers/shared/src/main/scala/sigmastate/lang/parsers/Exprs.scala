@@ -3,7 +3,7 @@ package sigmastate.lang.parsers
 import fastparse._
 import ScalaWhitespace._
 import sigma.ast._
-import sigma.ast.defs.{SValue, ValueOps}
+import sigma.ast.syntax.{SValue, ValueOps}
 import sigmastate.lang._
 import SigmaPredef._
 import sigmastate.lang.parsers.Basic._

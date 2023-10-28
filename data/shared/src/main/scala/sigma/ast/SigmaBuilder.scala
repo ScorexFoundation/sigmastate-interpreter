@@ -5,7 +5,7 @@ import org.ergoplatform.ErgoBox.RegisterId
 import sigma.ast.Constraints._
 import sigma.ast.SCollection.{SByteArray, SIntArray}
 import sigma.ast.SOption.SIntOption
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigma.data.Nullable
 import sigma.exceptions.ConstraintFailed
 import sigma.serialization.OpCodes

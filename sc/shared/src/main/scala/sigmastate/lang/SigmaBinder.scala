@@ -6,10 +6,10 @@ import sigma.ast.NoType
 import sigma.data.Nullable
 import sigma.kiama.rewriting.CallbackRewriter
 import sigma.ast._
-import sigma.ast.defs.SValue
+import sigma.ast.syntax.SValue
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import SigmaPredef.PredefinedFuncRegistry
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigma.exceptions.{BinderException, InvalidArguments}
 
 object SrcCtxCallbackRewriter extends CallbackRewriter {

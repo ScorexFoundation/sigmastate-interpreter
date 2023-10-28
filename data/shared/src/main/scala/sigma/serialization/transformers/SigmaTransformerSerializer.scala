@@ -1,6 +1,6 @@
 package sigma.serialization.transformers
 
-import sigma.ast.defs.{SValue, SigmaPropValue}
+import sigma.ast.syntax.{SValue, SigmaPropValue}
 import sigma.serialization.{SigmaByteReader, SigmaByteWriter, ValueSerializer}
 import sigma.util.safeNewArray
 import sigma.serialization.SigmaByteWriter._

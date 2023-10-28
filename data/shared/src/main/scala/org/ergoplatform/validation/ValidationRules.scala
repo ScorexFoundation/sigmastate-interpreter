@@ -8,7 +8,7 @@ import sigma.util.Extensions.toUByte
 import sigma.validation.ValidationRules._
 import sigma.validation._
 import sigma.ast.ErgoTree.HeaderType
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigma.exceptions.InterpreterException
 import sigma.serialization.ValueCodes.OpCode
 import sigma.serialization.ValueSerializer

@@ -12,7 +12,7 @@ import sigmastate.crypto.DiffieHellmanTupleProverInput
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
-import sigma.ast.defs._
+import sigma.ast.syntax._
 
 class DHTupleExampleSpecification extends CompilerTestingCommons
   with CompilerCrossVersionProps {

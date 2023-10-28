@@ -3,14 +3,14 @@ package sigmastate.utxo.examples
 import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
 import sigma.Colls
-import sigma.ast.defs.OptionValueOps
+import sigma.ast.syntax.OptionValueOps
 import sigma.ast._
 import sigmastate._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting}
 import sigma.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigmastate.utxo.blockchain.BlockchainSimulationTestingCommons._
 
 /**

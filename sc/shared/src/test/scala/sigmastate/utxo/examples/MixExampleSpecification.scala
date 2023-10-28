@@ -7,13 +7,13 @@ import sigma.data.{AvlTreeData, ProveDHTuple, ProveDlog}
 import sigma.util.Extensions.EcpOps
 import sigmastate.CompilerCrossVersionProps
 import sigma.ast.{ErgoTree, GroupElementConstant}
-import sigma.ast.defs.GroupElementConstant
+import sigma.ast.syntax.GroupElementConstant
 import sigma.crypto.CryptoConstants
 import sigmastate.crypto.DiffieHellmanTupleProverInput
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigma.eval.SigmaDsl
 
 class MixExampleSpecification extends CompilerTestingCommons

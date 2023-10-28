@@ -6,7 +6,7 @@ import org.ergoplatform.validation._
 import scorex.crypto.authds.avltree.batch.{Insert, Lookup, Remove, Update}
 import sigma.ast.SCollection.{SBooleanArray, SBoxArray, SByteArray, SByteArray2, SHeaderArray}
 import sigma.ast.SType.TypeCode
-import sigma.ast.defs.{SValue, ValueOps}
+import sigma.ast.syntax.{SValue, ValueOps}
 import sigma.data.{DataValueComparer, KeyValueColl, Nullable, RType, SigmaConstants}
 import sigma.reflection.RClass
 import sigma.serialization.CoreByteWriter.ArgInfo

@@ -63,7 +63,7 @@ object Extensions {
           case Some(v) => Some(Colls.fromArray(v))
           case _ => None
         }
-        case Failure(_) => defs.error(s"Tree proof is incorrect $tree")
+        case Failure(_) => syntax.error(s"Tree proof is incorrect $tree")
       }
     }
 
@@ -77,7 +77,7 @@ object Extensions {
             case Some(v) => Some(Colls.fromArray(v))
             case _ => None
           }
-          case Failure(_) => defs.error(s"Tree proof is incorrect $tree")
+          case Failure(_) => syntax.error(s"Tree proof is incorrect $tree")
         }
       }
     }
@@ -92,7 +92,7 @@ object Extensions {
         entries.forall { case (key, value) =>
           val insertRes = bv.performOneOperation(Insert(ADKey @@ key.toArray, ADValue @@ value.toArray))
           if (insertRes.isFailure) {
-            defs.error(s"Incorrect insert for $tree (key: $key, value: $value, digest: ${tree.digest}): ${insertRes.failed.get}}")
+            syntax.error(s"Incorrect insert for $tree (key: $key, value: $value, digest: ${tree.digest}): ${insertRes.failed.get}}")
           }
           insertRes.isSuccess
         }

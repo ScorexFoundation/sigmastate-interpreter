@@ -5,7 +5,7 @@ import sigma.ast._
 import sigmastate.helpers.ContextEnrichingTestProvingInterpreter
 import sigmastate.interpreter.Interpreter._
 import scalan.BaseCtxTests
-import sigma.ast.defs.ValueOps
+import sigma.ast.syntax.ValueOps
 import sigmastate.lang.LangTests
 import sigma.ast.Apply
 

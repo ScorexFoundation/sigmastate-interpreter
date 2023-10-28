@@ -9,7 +9,7 @@ import scorex.crypto.hash.Blake2b256
 import scorex.util.Random
 import sigma.Colls
 import sigma.ast._
-import sigma.ast.defs.CollectionConstant
+import sigma.ast.syntax.CollectionConstant
 import sigma.data.{AvlTreeData, Digest32Coll, ProveDlog, TrivialProp}
 import sigma.util.BenchmarkUtil.measure
 import sigmastate._
@@ -17,7 +17,7 @@ import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigma.ast.defs.ValueOps
+import sigma.ast.syntax.ValueOps
 import sigma.interpreter.{ContextExtension, ProverResult}
 import sigma.serialization.ValueSerializer
 import sigmastate.utils.Helpers._

@@ -15,7 +15,7 @@ import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingIn
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigma.serialization.ErgoTreeSerializer
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigma.eval.SigmaDsl
 
 import scala.util.Random

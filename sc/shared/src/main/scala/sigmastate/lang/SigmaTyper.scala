@@ -3,12 +3,12 @@ package sigmastate.lang
 import org.ergoplatform._
 import sigma.ast.SCollection.{SBooleanArray, SByteArray}
 import sigma.ast._
-import sigma.ast.defs.SValue
+import sigma.ast.syntax.SValue
 import sigma.data.{Nullable, SigmaBoolean}
 import sigma.util.Extensions.Ensuring
 import sigmastate.exceptions._
 import SigmaPredef._
-import sigma.ast.defs._
+import sigma.ast.syntax._
 import sigma.exceptions.TyperException
 import sigma.serialization.OpCodes
 

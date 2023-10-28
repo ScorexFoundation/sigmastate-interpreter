@@ -5,7 +5,7 @@ import sigma.data.CAND
 import sigmastate._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter}
 import sigmastate.interpreter._
-import sigma.ast.defs._
+import sigma.ast.syntax._
 
 /**
   * Distributed signatures examples.
