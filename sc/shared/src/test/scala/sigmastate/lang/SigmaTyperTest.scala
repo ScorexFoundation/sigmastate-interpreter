@@ -639,7 +639,7 @@ class SigmaTyperTest extends AnyPropSpec
 
   property("substConst") {
     def script(pk: ProveDlog): SigmaPropValue =
-      AND(EQ(IntConstant(1), IntConstant(1)), SigmaPropConstant(pk).isProven).toSigmaProp
+      AND(EQ(IntConstant(1), IntConstant(1)), SigmaPropIsProven(SigmaPropConstant(pk))).toSigmaProp
 
     val pk1 = DLogProverInput.random().publicImage
     val pk2 = DLogProverInput.random().publicImage

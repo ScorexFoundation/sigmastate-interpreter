@@ -2,7 +2,6 @@ package sigma.ast
 
 import sigma.ast.SCollection.{SByteArray, SIntArray}
 import sigma.data.{AvlTreeData, CSigmaProp, GeneralType, Nullable, RType, SigmaBoolean, TrivialProp}
-import ErgoTree.HeaderType
 import org.ergoplatform.{ErgoBox, ErgoBoxCandidate}
 import sigma.kiama.rewriting.Rewriter.{everywherebu, rewrite, rule}
 import StdSigmaBuilder.mkUpcast
@@ -12,64 +11,43 @@ import sigma.exceptions.InterpreterException
 import scala.annotation.nowarn
 import scala.reflect.classTag
 
+/** Contains global definitions for sigma.ast package. */
 object defs {
   /** Force initialization of reflection. */
   val reflection = SigmaDataReflection
 
+  /** The following type synonyms are used throughout the codebase to simplify type annotations. */
   type SValue = Value[SType]
-
   type BoolValue = Value[SBoolean.type]
-
   type ByteValue = Value[SByte.type]
-
   type ShortValue = Value[SShort.type]
-
   type IntValue = Value[SInt.type]
-
   type LongValue = Value[SLong.type]
-
-  type StringValue = Value[SString.type]
-
   type BigIntValue = Value[SBigInt.type]
-
   type BoxValue = Value[SBox.type]
-
   type GroupElementValue = Value[SGroupElement.type]
-
   type SigmaPropValue = Value[SSigmaProp.type]
-
   type AvlTreeValue = Value[SAvlTree.type]
-
   type SAnyValue = Value[SAny.type]
-
-  type BooleanConstant = Constant[SBoolean.type]
-
-  type ByteConstant = Constant[SByte.type]
-
-  type ShortConstant = Constant[SShort.type]
-
-  type IntConstant = Constant[SInt.type]
-
-  type LongConstant = Constant[SLong.type]
-
-  type StringConstant = Constant[SString.type]
-
-  type BigIntConstant = Constant[SBigInt.type]
-
-  type BoxConstant = Constant[SBox.type]
-
-  type GroupElementConstant = Constant[SGroupElement.type]
-
-  type SigmaPropConstant = Constant[SSigmaProp.type]
-
-  type AvlTreeConstant = Constant[SAvlTree.type]
-
-  type CollectionConstant[T <: SType] = Constant[SCollection[T]]
-
   type CollectionValue[T <: SType] = Value[SCollection[T]]
 
+  type BooleanConstant = Constant[SBoolean.type]
+  type ByteConstant = Constant[SByte.type]
+  type ShortConstant = Constant[SShort.type]
+  type IntConstant = Constant[SInt.type]
+  type LongConstant = Constant[SLong.type]
+  type StringConstant = Constant[SString.type]
+  type BigIntConstant = Constant[SBigInt.type]
+  type BoxConstant = Constant[SBox.type]
+  type GroupElementConstant = Constant[SGroupElement.type]
+  type SigmaPropConstant = Constant[SSigmaProp.type]
+  type AvlTreeConstant = Constant[SAvlTree.type]
+  type CollectionConstant[T <: SType] = Constant[SCollection[T]]
+
+  /** Sigma proposition with trivial false proposition. */
   val FalseSigmaProp = SigmaPropConstant(CSigmaProp(TrivialProp.FalseProp))
 
+  /** Sigma proposition with trivial true proposition. */
   val TrueSigmaProp  = SigmaPropConstant(CSigmaProp(TrivialProp.TrueProp))
 
   implicit class CollectionOps[T <: SType](val coll: Value[SCollection[T]]) extends AnyVal {
@@ -95,10 +73,6 @@ object defs {
   }
 
   implicit class SigmaPropValueOps(val p: Value[SSigmaProp.type]) extends AnyVal {
-    def isProven: Value[SBoolean.type] = {
-      SigmaPropIsProven(p)
-    }
-
     def propBytes: Value[SByteArray] = SigmaPropBytes(p)
   }
 

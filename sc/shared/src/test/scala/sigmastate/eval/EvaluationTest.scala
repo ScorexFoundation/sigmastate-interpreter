@@ -1,12 +1,12 @@
 package sigmastate.eval
 
 import org.ergoplatform.ErgoBox
-import sigma.ast.{AND, ConcreteCollection, CreateProveDlog, DecodePoint, EQ, ErgoTree, IntArrayConstant, IntConstant, SSigmaProp, SigmaPropConstant, SubstConstants}
+import sigma.ast.{AND, ConcreteCollection, CreateProveDlog, DecodePoint, EQ, ErgoTree, IntArrayConstant, IntConstant, SSigmaProp, SigmaPropConstant, SigmaPropIsProven, SubstConstants}
 import sigmastate.helpers.ContextEnrichingTestProvingInterpreter
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
 import scalan.BaseCtxTests
-import sigma.ast.defs.{SigmaPropValue, SigmaPropValueOps}
+import sigma.ast.defs.SigmaPropValue
 import sigma.data.ProveDlog
 import sigmastate.lang.LangTests
 import sigma.util.BenchmarkUtil._
@@ -102,7 +102,7 @@ class EvaluationTest extends BaseCtxTests
   
   test("SubstConst") {
     def script(pk: ProveDlog): SigmaPropValue =
-      AND(EQ(IntConstant(1), IntConstant(1)), SigmaPropConstant(pk).isProven).toSigmaProp
+      AND(EQ(IntConstant(1), IntConstant(1)), SigmaPropIsProven(SigmaPropConstant(pk))).toSigmaProp
 
     val pk1 = DLogProverInput.random().publicImage
     val pk2 = DLogProverInput.random().publicImage
