@@ -10,7 +10,7 @@ import sigmastate.eval.IRContext
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigma.ast.SigmaPredef.PredefinedFuncRegistry
 import sigma.ast.MethodCall
-import sigmastate.lang.syntax.ParserException
+import sigmastate.lang.parsers.ParserException
 import sigma.ast._
 import sigma.ast.defs.SValue
 import SCollectionMethods.{ExistsMethod, ForallMethod, MapMethod}

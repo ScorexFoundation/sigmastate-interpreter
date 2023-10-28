@@ -12,7 +12,7 @@ import sigma.ast.defs.SValue
 import sigmastate._
 import SigmaPredef.PredefinedFuncRegistry
 import sigma.ast.defs._
-import sigmastate.lang.syntax.ParserException
+import sigmastate.lang.parsers.ParserException
 import sigma.serialization.OpCodes
 
 class SigmaParserTest extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers with LangTests {

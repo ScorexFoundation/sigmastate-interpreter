@@ -1,10 +1,10 @@
-package sigmastate.lang.syntax
+package sigmastate.lang.parsers
 
 import fastparse.NoWhitespace._
 import fastparse._
 import sigma.ast.defs.BooleanConstant
 import sigma.ast._
-import sigmastate.lang.syntax.Identifiers._
+import sigmastate.lang.parsers.Identifiers._
 import java.lang.Integer.parseInt
 import java.lang.Long.parseLong
 

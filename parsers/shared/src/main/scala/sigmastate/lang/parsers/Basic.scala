@@ -1,4 +1,4 @@
-package sigmastate.lang.syntax
+package sigmastate.lang.parsers
 
 import fastparse._
 import NoWhitespace._

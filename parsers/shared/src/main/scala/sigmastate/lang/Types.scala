@@ -2,8 +2,8 @@ package sigmastate.lang
 
 import fastparse._
 import ScalaWhitespace._
-import sigmastate.lang.syntax.Core
-import syntax.Basic.error
+import sigmastate.lang.parsers.Core
+import parsers.Basic.error
 import sigma.ast._
 
 //noinspection ForwardReference

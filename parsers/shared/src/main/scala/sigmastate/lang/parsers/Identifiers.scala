@@ -1,9 +1,9 @@
-package sigmastate.lang.syntax
+package sigmastate.lang.parsers
 
 import fastparse.CharPredicates.{isDigit, isLetter}
 import fastparse._
 import NoWhitespace._
-import sigmastate.lang.syntax.Basic._
+import sigmastate.lang.parsers.Basic._
 
 //noinspection ForwardReference
 /** Identifiers and keywords */

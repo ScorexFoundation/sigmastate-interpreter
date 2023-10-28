@@ -4,7 +4,7 @@ import fastparse.internal.Logger
 import sigma.ast._
 import sigma.data.Nullable
 import sigma.ast.defs._
-import sigmastate.lang.syntax.{Basic, Core, Exprs}
+import sigmastate.lang.parsers.{Basic, Core, Exprs}
 
 import scala.collection.mutable
 import scala.util.DynamicVariable

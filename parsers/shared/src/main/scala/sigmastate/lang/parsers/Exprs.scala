@@ -1,4 +1,4 @@
-package sigmastate.lang.syntax
+package sigmastate.lang.parsers
 
 import fastparse._
 import ScalaWhitespace._
@@ -6,7 +6,7 @@ import sigma.ast._
 import sigma.ast.defs.{SValue, ValueOps}
 import sigmastate.lang._
 import SigmaPredef._
-import sigmastate.lang.syntax.Basic._
+import sigmastate.lang.parsers.Basic._
 
 import scala.annotation.tailrec
 import scala.collection.compat.immutable.ArraySeq
@@ -75,7 +75,7 @@ trait Exprs extends Core with Types {
     }
 
     private def SuperPostfixSuffix[_:P] = P( (`=` ~/ Expr).? )
-    private def ExprPrefix[_:P] = P( WL ~ CharPred("-+!~".contains(_)).! ~~ !syntax.Basic.OpChar ~ WS)
+    private def ExprPrefix[_:P] = P( WL ~ CharPred("-+!~".contains(_)).! ~~ !parsers.Basic.OpChar ~ WS)
     private def ExprSuffix[_:P] = P(
       (WL ~ "." ~/ (Index ~ Id.!).map{ case (i, s) => atSrcPos(i) { mkIdent(s, NoType)} }
       | WL ~ TypeArgs.map(items => STypeApply("", items.toIndexedSeq))

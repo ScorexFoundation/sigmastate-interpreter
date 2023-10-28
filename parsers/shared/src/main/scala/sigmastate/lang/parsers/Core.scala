@@ -1,11 +1,11 @@
-package sigmastate.lang.syntax
+package sigmastate.lang.parsers
 
 import sigma.ast.defs.SValue
 import sigma.ast._
-import sigmastate.lang.syntax
+import sigmastate.lang.parsers
 
 /** Keywords and identifiers used in expressions. */
-trait Core extends syntax.Literals {
+trait Core extends parsers.Literals {
   import fastparse._
   import ScalaWhitespace._
 
