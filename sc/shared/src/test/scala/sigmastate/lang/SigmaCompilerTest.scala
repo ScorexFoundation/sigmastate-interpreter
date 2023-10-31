@@ -3,17 +3,15 @@ package sigmastate.lang
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform._
 import scorex.util.encode.Base58
-import sigma.ast.{EmptySubst, SAvlTree, SBoolean, SBox, SByte, SCollection, SInt, SSigmaProp, SType}
-import sigmastate.Values._
+import sigma.ast.{ByIndex, ExtractAmount, GetVar, _}
+import sigma.ast.syntax._
 import sigmastate._
-import sigmastate.exceptions.{GraphBuildingException, InvalidArguments, TyperException}
 import sigmastate.helpers.CompilerTestingCommons
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.Terms.{Apply, MethodCall, ZKProofBlock}
-import sigmastate.serialization.ValueSerializer
-import sigmastate.serialization.generators.ObjectGenerators
-import sigmastate.utxo.{ByIndex, ExtractAmount, GetVar}
-
+import sigma.ast.{Apply, MethodCall, ZKProofBlock}
+import sigma.exceptions.{GraphBuildingException, InvalidArguments, TyperException}
+import sigma.serialization.ValueSerializer
+import sigma.serialization.generators.ObjectGenerators
 import scala.annotation.unused
 
 class SigmaCompilerTest extends CompilerTestingCommons with LangTests with ObjectGenerators {

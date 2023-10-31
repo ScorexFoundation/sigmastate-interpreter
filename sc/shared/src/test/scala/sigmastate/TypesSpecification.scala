@@ -2,10 +2,9 @@ package sigmastate
 
 import sigma.Environment
 import sigma.ast.SType.isValueOfType
-import sigmastate.eval.CSigmaDslBuilder
 import sigma.SigmaTestingData
 import sigma.ast._
-import sigma.data.CSigmaProp
+import sigma.data.{CSigmaDslBuilder, CSigmaProp}
 
 class TypesSpecification extends SigmaTestingData {
 

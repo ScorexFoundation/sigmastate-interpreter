@@ -11,16 +11,16 @@ import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.crypto.hash.Digest32
 import scorex.util.ModifierId
 import sigma.Extensions.ArrayOps
-import sigma.ast.SType
+import sigma.ast.{ErgoTree, SType}
 import sigma.data.{AvlTreeData, AvlTreeFlags, CBigInt, Digest32Coll, WrapperOf}
 import sigma.validation.SigmaValidationSettings
 import sigma.{AnyValue, Coll, Colls, Header, PreHeader, SigmaException}
-import sigmastate.ErgoTree
-import sigmastate.Values.EvaluatedValue
-import sigmastate.eval.Extensions._
+import sigma.ast.EvaluatedValue
+import sigma.eval.Extensions.EvalIterableOps
+import sigma.eval.SigmaDsl
 import sigmastate.eval._
-import sigmastate.interpreter.{ContextExtension, ProverResult}
-import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
+import sigma.interpreter.{ContextExtension, ProverResult}
+import sigma.serialization.{ErgoTreeSerializer, ValueSerializer}
 import sigmastate.utils.Helpers._  // required for Scala 2.11
 
 import java.math.BigInteger

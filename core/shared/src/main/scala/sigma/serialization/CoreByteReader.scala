@@ -2,11 +2,8 @@ package sigma.serialization
 
 import scorex.util.Extensions._
 import scorex.util.serialization.Reader
-import sigma.util.safeNewArray
-import debox.cfor
 import sigma.ast.SType
 import sigma.validation.ValidationRules.CheckPositionLimit
-import sigmastate.serialization.TypeSerializer
 
 /** Reader used in the concrete implementations of [[SigmaSerializer]].
   * It decorates the given reader, delegates most of the methods to it, but also adds new
@@ -14,7 +11,7 @@ import sigmastate.serialization.TypeSerializer
   *
   * @param r                              the underlying reader this reader reads from
   * @param constantStore                  the store of constants which is used to resolve
-  *                                       [[sigmastate.Values.ConstantPlaceholder]]
+  *                                       [[sigma.ast.ConstantPlaceholder]]
   * @param resolvePlaceholdersToConstants if true then resolved constants will be
   *                                       substituted in the tree instead of the placeholder.
   * @param maxTreeDepth                   limit on the tree depth (recursive invocations)

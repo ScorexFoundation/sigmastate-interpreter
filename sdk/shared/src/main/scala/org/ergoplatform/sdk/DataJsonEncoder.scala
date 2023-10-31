@@ -5,21 +5,22 @@ import io.circe._
 import io.circe.syntax._
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, Token}
-import org.ergoplatform.settings.ErgoAlgos
 import sigma.data.{CAnyValue, RType}
 import scorex.util._
-import sigmastate.Values.{Constant, EvaluatedValue}
+import sigma.ast.{Constant, EvaluatedValue}
 import sigmastate.lang.SigmaParser
 import sigmastate.eval._
 import sigma._
 import debox.cfor
+import scorex.util.encode.Base16
 
 import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
 import sigma.ast._
+import sigma.eval.SigmaDsl
 import sigma.serialization.SerializerException
-import sigmastate.serialization.{DataSerializer, SigmaSerializer}
-import sigmastate.serialization.ErgoTreeSerializer
+import sigma.serialization.{DataSerializer, SigmaSerializer}
+import sigma.serialization.ErgoTreeSerializer
 
 object DataJsonEncoder {
   def encode[T <: SType](v: T#WrappedType, tpe: T): Json = {
@@ -32,7 +33,7 @@ object DataJsonEncoder {
   }
 
   private def encodeBytes: Encoder[Array[Byte]] = Encoder.instance((bytes: Array[Byte]) => {
-    ErgoAlgos.encode(bytes).asJson
+    Base16.encode(bytes).asJson
   })
 
   def encodeAnyValue(v: AnyValue): Json = {
@@ -152,7 +153,7 @@ object DataJsonEncoder {
   private def decodeBytes(json: Json): Array[Byte] = {
     val jsonStr = json.as[String]
     jsonStr match {
-      case Right(jsonStr) => ErgoAlgos.decode(jsonStr).get
+      case Right(jsonStr) => Base16.decode(jsonStr).get
       case Left(error) => throw new SerializerException(error.getMessage)
     }
   }

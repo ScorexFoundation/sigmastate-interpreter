@@ -3,12 +3,12 @@ package sigmastate.utxo.examples
 import sigmastate.interpreter.Interpreter._
 import org.ergoplatform._
 import sigma.data.AvlTreeData
-import sigmastate.Values.ShortConstant
+import sigma.ast.ShortConstant
 import sigmastate._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
-import sigmastate.interpreter.ContextExtension
-import sigmastate.lang.Terms._
+import sigma.interpreter.ContextExtension
+import sigma.ast.syntax._
 
 class DemurrageExampleSpecification extends CompilerTestingCommons
   with CompilerCrossVersionProps {

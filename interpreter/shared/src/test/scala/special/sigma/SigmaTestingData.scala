@@ -10,17 +10,17 @@ import sigma.data._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ModifierId
-import sigmastate.Values.{ByteArrayConstant, ConcreteCollection, ConstantPlaceholder, FalseLeaf, IntConstant, LongConstant, SigmaPropConstant, TrueLeaf}
+import sigma.ast._
 import sigma.Extensions.ArrayOps
-import sigmastate.eval.{CBox, CHeader, CPreHeader, CSigmaDslBuilder, SigmaDsl}
+import sigmastate.eval.{CHeader, CPreHeader}
 import sigmastate.helpers.TestingCommons
-import sigmastate.serialization.ErgoTreeSerializer
-import sigmastate.serialization.generators.ObjectGenerators
+import sigma.serialization.ErgoTreeSerializer
+import sigma.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers
-import sigmastate.{ErgoTree, _}
 import sigma.ast.{SBoolean, SSigmaProp}
 import sigma.crypto.EcPointType
-import sigmastate.ErgoTree.HeaderType
+import ErgoTree.HeaderType
+import sigma.eval.SigmaDsl
 
 import java.math.BigInteger
 import scala.reflect.ClassTag

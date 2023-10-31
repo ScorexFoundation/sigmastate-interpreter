@@ -1,17 +1,16 @@
 package sigmastate.lang.js
 
 import org.ergoplatform.ErgoAddressEncoder
-import org.ergoplatform.sdk.js.Isos.isoValueToConstant
 import org.scalablytyped.runtime.StringDictionary
+import sigma.ast
+import sigma.ast.js.{ErgoTree, isoValueToConstant}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
-import org.ergoplatform.sdk.js.ErgoTree
 import sigma.js.Value
-import sigmastate.ErgoTree.HeaderType
-import sigmastate.Values
+import sigma.ast.ErgoTree.HeaderType
 import sigmastate.eval.CompiletimeIRContext
-import sigmastate.lang.Terms.ValueOps
+import sigma.ast.syntax.ValueOps
 
 
 /** Wrapper exported to JS. */
@@ -38,9 +37,9 @@ class SigmaCompiler(_compiler: sigmastate.lang.SigmaCompiler) extends js.Object 
     require(prop.tpe.isSigmaProp, s"Expected SigmaProp expression type bue got ${prop.tpe}: $prop")
 
     val tree = if (segregateConstants) {
-      sigmastate.ErgoTree.withSegregation(HeaderType @@ treeHeader, prop.asSigmaProp)
+      ast.ErgoTree.withSegregation(HeaderType @@ treeHeader, prop.asSigmaProp)
     } else {
-      sigmastate.ErgoTree.withoutSegregation(HeaderType @@ treeHeader, prop.asSigmaProp)
+      ast.ErgoTree.withoutSegregation(HeaderType @@ treeHeader, prop.asSigmaProp)
     }
     new ErgoTree(tree)
   }

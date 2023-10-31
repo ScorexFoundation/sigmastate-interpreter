@@ -1,13 +1,9 @@
 package org.ergoplatform.sdk.wallet.secrets
 
-import sigma.crypto.CryptoFacade
+import sigma.crypto.{BigIntegers, CryptoConstants, CryptoFacade}
 import sigma.data.ProveDlog
 import sigmastate.crypto.DLogProtocol.DLogProverInput
-import sigmastate.crypto.CryptoConstants
-import sigmastate.crypto.BigIntegers
-import sigmastate.serialization.SigmaSerializer
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-
+import sigma.serialization.{SigmaByteReader, SigmaByteWriter, SigmaSerializer}
 import scala.annotation.tailrec
 
 /**

@@ -2,16 +2,15 @@ package sigmastate.lang
 
 import org.ergoplatform._
 import sigma.ast.SCollection.{SBooleanArray, SByteArray}
-import sigmastate.Values._
-import sigmastate._
 import sigma.ast._
+import sigma.ast.syntax.SValue
 import sigma.data.{Nullable, SigmaBoolean}
 import sigma.util.Extensions.Ensuring
-import sigmastate.lang.Terms._
 import sigmastate.exceptions._
-import sigmastate.lang.SigmaPredef._
-import sigmastate.serialization.OpCodes
-import sigmastate.utxo._
+import SigmaPredef._
+import sigma.ast.syntax._
+import sigma.exceptions.TyperException
+import sigma.serialization.OpCodes
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -504,7 +503,6 @@ class SigmaTyper(val builder: SigmaBuilder,
     case Inputs => Inputs
     case Outputs => Outputs
     case LastBlockUtxoRootHash => LastBlockUtxoRootHash
-    case v: ContextVariable[_] => v
     case v: GetVar[_] => v
     case v: OptionGet[_] => v
     case v: EvaluatedValue[_] => v

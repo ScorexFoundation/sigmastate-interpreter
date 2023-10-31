@@ -1,18 +1,19 @@
 package sigmastate.utxo
 
-import sigmastate.Values._
+import sigma.ast._
 import sigmastate._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
-import sigmastate.lang.Terms._
+import sigma.ast.syntax._
 import org.ergoplatform._
 import sigma.ast.SCollection._
-import sigma.ast._
 import sigma.data.AvlTreeData
-import sigmastate.SCollectionMethods.{FlatMapMethod, IndexOfMethod, IndicesMethod, PatchMethod, UpdateManyMethod, UpdatedMethod}
-import sigmastate.eval.Extensions.SigmaBooleanOps
+import SCollectionMethods.{FlatMapMethod, IndexOfMethod, IndicesMethod, PatchMethod, UpdateManyMethod, UpdatedMethod}
+import sigma.ast
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.serialization.OpCodes._
+import sigma.serialization.OpCodes._
+import sigma.ast.MethodCall
+import sigma.eval.Extensions.SigmaBooleanOps
 import sigmastate.utils.Helpers._
 
 class CollectionOperationsSpecification extends CompilerTestingCommons
@@ -219,8 +220,8 @@ class CollectionOperationsSpecification extends CompilerTestingCommons
       FuncValue(
         Vector((1, SBox)),
         EQ(
-          utxo.ExtractRegisterAs[SLong.type](ValUse(1, SBox), reg1).get,
-          Plus(utxo.ExtractRegisterAs[SLong.type](Self, reg1).get, LongConstant(1)))
+          ast.ExtractRegisterAs[SLong.type](ValUse(1, SBox), reg1).get,
+          Plus(ast.ExtractRegisterAs[SLong.type](Self, reg1).get, LongConstant(1)))
       )
     ).toSigmaProp
     prop shouldBe propExpected
@@ -262,8 +263,8 @@ class CollectionOperationsSpecification extends CompilerTestingCommons
       FuncValue(
         Vector((1, SBox)),
         EQ(
-          utxo.ExtractRegisterAs[SLong.type](ValUse(1, SBox), reg1).getOrElse(LongConstant(0)),
-          Plus(utxo.ExtractRegisterAs[SLong.type](Self, reg1).get, LongConstant(1))
+          ast.ExtractRegisterAs[SLong.type](ValUse(1, SBox), reg1).getOrElse(LongConstant(0)),
+          Plus(ast.ExtractRegisterAs[SLong.type](Self, reg1).get, LongConstant(1))
         )
       )
     ).toSigmaProp

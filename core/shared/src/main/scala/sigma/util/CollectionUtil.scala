@@ -41,6 +41,13 @@ object CollectionUtil {
     result
   }
 
+  /** Casts the array of `A`s into array of `B`s, where B is a superclass of A. */
+  def castArray[A, B >: A : ClassTag](array: Array[A]): Array[B] = {
+    val result: Array[B] = new Array[B](array.length)
+    System.arraycopy(array, 0, result, 0, array.length)
+    result
+  }
+
   /** Computes the deep hash code for the given array.
     *
     * This method calculates the hash code based on the array's elements and type, taking nested arrays

@@ -1,29 +1,29 @@
-package sigmastate.serialization
+package sigma.serialization
 
-import org.ergoplatform.{ErgoBoxCandidate, Outputs}
+import org.ergoplatform.ErgoBoxCandidate
 import org.scalacheck.Gen
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.serialization.{Reader, VLQByteBufferReader}
-import sigma.ast.{SBoolean, SInt}
+import sigma.ast.{SBoolean, SInt, SizeOf}
 import sigma.data.{AvlTreeData, AvlTreeFlags, CAND, SigmaBoolean}
-import sigma.serialization.{DeserializeCallDepthExceeded, InvalidTypePrefix, ReaderPositionLimitExceeded, SerializerException}
 import sigma.util.{BenchmarkUtil, safeNewArray}
 import sigma.validation.ValidationException
 import sigma.validation.ValidationRules.CheckPositionLimit
 import sigma.{Colls, Environment}
-import sigmastate.Values.{BlockValue, GetVarInt, IntConstant, SValue, SigmaPropValue, Tuple, ValDef, ValUse}
+import sigma.ast._
+import sigma.ast.syntax._
 import sigmastate._
 import sigma.Extensions.ArrayOps
-import sigmastate.eval.Extensions.{EvalIterableOps, SigmaBooleanOps}
+import sigma.eval.Extensions.SigmaBooleanOps
+import sigma.eval.SigmaDsl
+import sigma.interpreter.{ContextExtension, CostedProverResult}
+import sigma.eval.Extensions.EvalIterableOps
 import sigmastate.eval._
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
-import sigmastate.interpreter.{ContextExtension, CostedProverResult}
-import sigmastate.serialization.OpCodes._
+import sigma.serialization.OpCodes._
 import sigmastate.utils.Helpers._
-import sigmastate.utils.SigmaByteReader
-import sigmastate.utxo.SizeOf
 
 import java.nio.ByteBuffer
 import scala.collection.immutable.Seq
@@ -420,7 +420,7 @@ class DeserializationResilience extends DeserializationResilienceTesting {
     val v = k
     avlProver.performOneOperation(Insert(ADKey @@@ k, ADValue @@@ v))
     val proof = avlProver.generateProof()
-    val verifier = AvlTreeVerifier(tree, Colls.fromArray(proof))
+    val verifier = CAvlTreeVerifier(tree, Colls.fromArray(proof))
     verifier.performOneOperation(Insert(ADKey @@@ k, ADValue @@@ v)).isFailure shouldBe true
     // NOTE, even though performOneOperation fails, some AvlTree$ methods used in Interpreter
     // (remove_eval, update_eval, contains_eval) won't throw, while others will.

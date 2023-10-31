@@ -4,15 +4,15 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import scorex.util.encode.Base16
-import sigma.ast.SType
-import sigmastate.Values.{AvlTreeConstant, BigIntConstant, BooleanConstant, BoxConstant, ByteConstant, Constant, GroupElementConstant, IntConstant, LongConstant, ShortConstant, SigmaPropConstant, UnitConstant}
-import sigmastate.crypto.CryptoConstants.dlogGroup
+import sigma.ast.{DeserializationSigmaBuilder, SType}
+import sigma.ast._
+import sigma.crypto.CryptoConstants.dlogGroup
 import sigma.crypto.CryptoFacade
-import sigmastate.lang.DeserializationSigmaBuilder
-import sigmastate.serialization.ConstantSerializer
+import sigma.serialization.ConstantSerializer
 import sigmastate.utils.Helpers
 import sigma.SigmaTestingData
 import sigma.data.{CSigmaProp, ProveDlog}
+import sigma.ast.js.isoValueToConstant
 import sigma.js.Value
 
 import java.math.BigInteger
@@ -20,11 +20,11 @@ import java.math.BigInteger
 class ValueSpec extends AnyPropSpec with Matchers with SigmaTestingData with ScalaCheckPropertyChecks {
 
   def test[T <: SType](c: Constant[T], expectedHex: String) = {
-    val v = Isos.isoValueToConstant.from(c)
+    val v = isoValueToConstant.from(c)
     val S = ConstantSerializer(DeserializationSigmaBuilder)
     Base16.encode(S.toBytes(c)) shouldBe expectedHex
     v.toHex() shouldBe expectedHex
-    Isos.isoValueToConstant.to(Value.fromHex(expectedHex)) shouldBe c
+    isoValueToConstant.to(Value.fromHex(expectedHex)) shouldBe c
   }
 
   property("Boolean toHex()/fromHex()") {

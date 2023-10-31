@@ -2,14 +2,14 @@ package org.ergoplatform.dsl
 
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.TokenId
-import sigma.data.{AvlTreeData, RType, SigmaBoolean}
+import sigma.data.{AvlTreeData, CSigmaDslBuilder, RType, SigmaBoolean}
 import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition}
 import org.ergoplatform.sdk.JavaHelpers.collRType
-import sigmastate.eval.CSigmaDslBuilder
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigma._
-import sigma.ast.SType
+import sigma.ast.{SType, syntax}
 import sigma.ast.SType.AnyOps
+
 import scala.reflect.ClassTag
 import scala.util.Try
 
@@ -56,11 +56,11 @@ trait ContractSyntax { contract: SigmaContract =>
       case _: Unit => UnitType
       case _: sigma.BigInt => BigIntRType
       case _: GroupElement => GroupElementRType
-      case _: ErgoBox => sigmastate.ErgoBoxRType // TODO remove this RType
+      case _: ErgoBox => syntax.ErgoBoxRType // TODO remove this RType
       case _: Box => BoxRType
-      case _: AvlTreeData => sigmastate.AvlTreeDataRType // TODO remove this RType
+      case _: AvlTreeData => syntax.AvlTreeDataRType // TODO remove this RType
       case _: AvlTree => AvlTreeRType
-      case _: SigmaBoolean => sigmastate.SigmaBooleanRType // TODO remove this RType
+      case _: SigmaBoolean => syntax.SigmaBooleanRType // TODO remove this RType
       case _: SigmaProp => SigmaPropRType
       case _: Context => ContextRType
       case _ =>

@@ -3,15 +3,14 @@ package sigmastate.utxo.examples
 import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
 import sigma.Colls
-import sigma.ast.{SBoolean, SBox, SInt, SLong, SOption}
-import sigmastate.Values.{BlockValue, IntConstant, LongConstant, ValDef, ValUse}
-import sigmastate.{ErgoTree, _}
+import sigma.ast.syntax.OptionValueOps
+import sigma.ast._
+import sigmastate._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting}
-import sigmastate.interpreter.ContextExtension
+import sigma.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.lang.Terms._
-import sigmastate.utxo._
+import sigma.ast.syntax._
 import sigmastate.utxo.blockchain.BlockchainSimulationTestingCommons._
 
 /**

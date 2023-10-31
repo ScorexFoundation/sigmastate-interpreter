@@ -3,12 +3,12 @@ package sigmastate.utxo.examples
 import org.ergoplatform.ErgoBox.{R4, R5, R6}
 import org.ergoplatform._
 import sigma.data.AvlTreeData
-import sigmastate.{CompilerCrossVersionProps, ErgoTree}
-import sigmastate.Values.{IntConstant, LongConstant}
+import sigmastate.CompilerCrossVersionProps
+import sigma.ast.{ErgoTree, IntConstant, LongConstant}
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
-import sigmastate.lang.Terms._
+import sigma.ast.syntax._
 
 
 class ColdWalletAdvContractExampleSpecification extends CompilerTestingCommons

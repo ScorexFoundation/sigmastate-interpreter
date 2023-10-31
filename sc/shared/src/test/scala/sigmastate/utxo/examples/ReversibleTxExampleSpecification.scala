@@ -4,12 +4,12 @@ import org.ergoplatform.ErgoBox.{R4, R5}
 import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
 import sigma.data.AvlTreeData
-import sigmastate.Values.{IntConstant, SigmaPropConstant}
+import sigma.ast.{ErgoTree, IntConstant, SigmaPropConstant}
 import sigmastate._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
-import sigmastate.lang.Terms._
+import sigma.ast.syntax._
 
 
 class ReversibleTxExampleSpecification extends CompilerTestingCommons

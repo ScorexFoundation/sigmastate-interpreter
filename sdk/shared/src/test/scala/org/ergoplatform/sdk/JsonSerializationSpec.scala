@@ -10,14 +10,12 @@ import org.scalacheck.Arbitrary.arbitrary
 import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.util.ModifierId
 import scorex.util.encode.Base16
-import sigma.ast.SType
 import sigma.data.{AvlTreeData, Digest32Coll, ProveDlog}
 import sigma.{Coll, Header, PreHeader}
-import sigmastate.ErgoTree
-import sigmastate.Values.{ByteArrayConstant, ByteConstant, EvaluatedValue, IntConstant, LongArrayConstant, SigmaPropConstant}
-import sigmastate.crypto.CryptoConstants
-import sigmastate.interpreter.{ContextExtension, ProverResult}
-import sigmastate.serialization.SerializationSpecification
+import sigma.ast._
+import sigma.crypto.CryptoConstants
+import sigma.interpreter.{ContextExtension, ProverResult}
+import sigma.serialization.SerializationSpecification
 import sigmastate.utils.Helpers.DecoderResultOps  // required for Scala 2.11
 
 class JsonSerializationSpec extends SerializationSpecification with JsonCodecs {

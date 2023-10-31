@@ -12,9 +12,9 @@ import sigma.ast.SType
 import sigma.data.Iso
 import sigma.js.AvlTree
 import sigma.{Coll, Colls, GroupElement}
-import sigmastate.Values.Constant
-import sigmastate.interpreter.{ContextExtension, ProverResult}
-import sigmastate.serialization.generators.ObjectGenerators
+import sigma.ast.Constant
+import sigma.interpreter.{ContextExtension, ProverResult}
+import sigma.serialization.generators.ObjectGenerators
 
 import scala.scalajs.js
 

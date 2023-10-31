@@ -1,24 +1,14 @@
 package sigmastate
 
 import org.ergoplatform.ErgoBox
-import sigma.{Coll, _}
-import sigma.crypto.EcPointType
-import sigma.data.{AvlTreeData, RType, SigmaBoolean}
-import sigmastate.exceptions.CostLimitException
-import supertagged.TaggedType
+import sigma._
+import sigma.data.{AvlTreeData, SigmaBoolean}
+import sigma.eval.SigmaDsl
+import sigma.exceptions.CostLimitException
 
-import java.math.BigInteger
 import scala.language.implicitConversions
 
 package object eval {
-  /** The primary reference to Global instance of SigmaDsl.
-    * Besides operations of SigmaDslBuilder class, this instance also contains methods,
-    * which are not available in Dsl code, and which are not in SigmaDslBuilder interface.
-    * For example methods like `Box`, `toErgoBox` are available here, but not available in Dsl.
-    * @see SigmaDslBuilder
-    */
-  val SigmaDsl = CSigmaDslBuilder
-
   /** Implicit conversions between Dsl type and the type wrapped by the corresponding type Dsl type.
     * Here BigInt is Dsl type and BigInteger is wrapped type.
     * @see `sigma.CBigInt`

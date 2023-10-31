@@ -1,13 +1,13 @@
 package sigmastate.utxo
 
-import sigma.ast.SSigmaProp
+import sigma.ast._
+import sigma.ast.syntax._
 import sigma.data.{AvlTreeData, CAND, COR, ProveDlog, TrivialProp}
-import sigmastate.crypto.DLogProtocol.DLogProverInput
-import sigmastate.Values.{ConcreteCollection, FalseLeaf, IntConstant, SigmaPropConstant, SigmaPropValue, TrueLeaf}
+import sigma.eval.Extensions.SigmaBooleanOps
+import sigma.exceptions.GraphBuildingException
 import sigmastate._
-import sigmastate.eval.Extensions.SigmaBooleanOps
-import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTransactionTesting}
-import sigmastate.exceptions.GraphBuildingException
+import sigmastate.crypto.DLogProtocol.DLogProverInput
+import sigmastate.helpers._
 
 class ThresholdSpecification extends CompilerTestingCommons
   with CompilerCrossVersionProps {
@@ -116,7 +116,6 @@ class ThresholdSpecification extends CompilerTestingCommons
   }
 
   property("threshold reduce to crypto") {
-    import sigma.data.TrivialProp._
     val prover = new ContextEnrichingTestProvingInterpreter
     val ctx = ErgoLikeContextTesting(
       currentHeight = 1,

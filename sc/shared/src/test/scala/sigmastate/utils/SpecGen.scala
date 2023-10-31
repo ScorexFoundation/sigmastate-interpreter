@@ -1,21 +1,16 @@
 package sigmastate.utils
 
-import sigma.util.PrintExtensions.IterableExtensions
-import sigmastate._
 import sigma.Evaluation._
 import sigma.ast.TypeCodes.LastConstantCode
-import sigma.ast.{SBigInt, SBoolean, SCollection, SEmbeddable, SGlobal, SGroupElement, SNumericType, SOption, SPrimType, SString, SType, STypeCompanion}
+import sigma.ast._
 import sigma.serialization.CoreByteWriter.ArgInfo
-import sigma.util.Extensions.ByteOps
 import sigma.util.CollectionUtil
+import sigma.util.Extensions.ByteOps
 import sigma.util.PrintExtensions._
-import sigmastate.Values._
-import sigmastate.lang.SigmaPredef.{PredefinedFunc, PredefinedFuncRegistry}
-import sigmastate.lang.StdSigmaBuilder
-import sigmastate.lang.Terms.{MethodCall, PropertyCall}
-import sigmastate.serialization.ValueCodes.OpCode
-import sigmastate.serialization.{OpCodes, ValueCodes, ValueSerializer}
-import sigmastate.utxo.{SelectField, SigmaPropIsProven}
+import SigmaPredef.{PredefinedFunc, PredefinedFuncRegistry}
+import sigma.ast.{MethodCall, PropertyCall}
+import sigma.serialization.ValueCodes.OpCode
+import sigma.serialization.ValueSerializer
 
 object SpecGenUtils {
   val types = SType.allPredefTypes.diff(Seq(SString))
@@ -32,7 +27,7 @@ trait SpecGen {
       description: String,
       args: Seq[ArgInfo], op: Either[PredefinedFunc, SMethod])
 
-  def collectSerializers(): Seq[ValueSerializer[_ <: Values.Value[SType]]] = {
+  def collectSerializers(): Seq[ValueSerializer[_ <: Value[SType]]] = {
     ((LastConstantCode + 1) to 255).collect {
       case i if ValueSerializer.serializers(i.toByte) != null =>
         val ser = ValueSerializer.serializers(i.toByte)
@@ -257,7 +252,7 @@ object GenPrimOpsApp extends SpecGen {
     val methods = collectMethods()
     val ops = collectSerializableOperations()
     val noOps = Set(
-      TaggedVariable, ValUse, ConstantPlaceholder, TrueLeaf, FalseLeaf,
+      ValUse, ConstantPlaceholder, TrueLeaf, FalseLeaf,
       ConcreteCollection, ConcreteCollectionBooleanConstant, Tuple, SelectField, SigmaPropIsProven, ValDef, FunDef, BlockValue
     )
 

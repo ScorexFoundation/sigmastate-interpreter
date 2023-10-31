@@ -40,13 +40,13 @@ import scala.scalajs.js.annotation.JSExportTopLevel
 class Value(val data: Any, val tpe: Type) extends js.Object {
 
   /** Get Sigma runtime value which can be passed to interpreter, saved in register and
-    * [[sigmastate.Values.Constant]] nodes.
+    * [[sigma.ast.Constant]] nodes.
     */
   final def runtimeData: Any = toRuntimeData(data, tpe.rtype)
 
   /**
     * Encode this value as Base16 hex string.
-    * 1) it transforms this value into {@link sigmastate.Values.ConstantNode} of sigma.
+    * 1) it transforms this value into {@link sigma.ast.ConstantNode} of sigma.
     * 2) it serializes the constant into byte array using {@link sigmastate.serialization.ConstantSerializer}
     * 3) the bytes are encoded using Base16 encoder into string
     *
@@ -71,7 +71,7 @@ object Value extends js.Object {
   val MinLong = -js.BigInt("0x8000000000000000")
 
   /** Helper method to get Sigma runtime value which can be passed to interpreter, saved
-    * in register and [[sigmastate.Values.Constant]] nodes.
+    * in register and [[sigma.ast.Constant]] nodes.
     */
   final private[js] def toRuntimeData(data: Any, rtype: RType[_]): Any = rtype match {
     case sigma.BooleanType => data

@@ -1,21 +1,12 @@
 package sigmastate.crypto
 
-import sigma.SigmaProp
-import sigma.crypto.EcPointType
+import sigma.crypto.{BigIntegers, CryptoConstants, EcPointType}
 import sigma.data.ProveDHTuple
 import sigma.serialization.GroupElementSerializer
-import sigmastate.Values.Value.PropositionCode
-import sigmastate._
 import sigmastate.crypto.VerifierMessage.Challenge
-import sigmastate.eval.SigmaDsl
 
 import java.math.BigInteger
 
-
-trait DiffieHellmanTupleProtocol extends SigmaProtocol[DiffieHellmanTupleProtocol] {
-  override type A = FirstDHTupleProverMessage
-  override type Z = SecondDHTupleProverMessage
-}
 
 case class DiffieHellmanTupleProverInput(w: BigInteger, commonInput: ProveDHTuple)
   extends SigmaProtocolPrivateInput[ProveDHTuple] {
@@ -43,13 +34,10 @@ object DiffieHellmanTupleProverInput {
 /** First message of Diffie Hellman tuple sigma protocol.
   * @param a commitment to secret randomness `a = g^r`, where `g` is default generator of the group
   * @param b commitment to secret randomness `b = h^r`, where `h` is another random generator of the group
-  * @see createRandomGenerator in [[sigmastate.crypto.CryptoConstants.dlogGroup]]
+  * @see createRandomGenerator in [[CryptoConstants.dlogGroup]]
   */
 case class FirstDHTupleProverMessage(a: EcPointType, b: EcPointType)
   extends FirstProverMessage {
-
-  override type SP = DiffieHellmanTupleProtocol
-
   override def bytes: Array[Byte] = {
     GroupElementSerializer.toBytes(a) ++ GroupElementSerializer.toBytes(b)
   }
@@ -62,19 +50,9 @@ case class FirstDHTupleProverMessage(a: EcPointType, b: EcPointType)
   *          `w` is the prover's secret.
   *          `q` is the group order
   */
-case class SecondDHTupleProverMessage(z: BigInteger) extends SecondProverMessage {
-  override type SP = DiffieHellmanTupleProtocol
-}
+case class SecondDHTupleProverMessage(z: BigInteger) extends SecondProverMessage
 
-/** Helper extractor to match SigmaProp values and extract ProveDHTuple out of it. */
-object ProveDHTupleProp {
-  def unapply(p: SigmaProp): Option[ProveDHTuple] = SigmaDsl.toSigmaBoolean(p) match {
-    case d: ProveDHTuple => Some(d)
-    case _ => None
-  }
-}
-
-object DiffieHellmanTupleInteractiveProver extends SigmaProtocolProver {
+object DiffieHellmanTupleProver extends SigmaProtocolProver {
 
   import CryptoConstants.dlogGroup
 

@@ -4,24 +4,23 @@ import fastparse.Parsed
 import fastparse.Parsed.Success
 import sigma.kiama.rewriting.Rewriter.{everywherebu, rewrite, rule}
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
-import org.ergoplatform.Global
 import scalan.GraphIRReflection
-import sigmastate.Values.{SValue, Value}
+import sigma.ast.{Exponentiate, MultiplyGroup, SCollectionMethods, SGlobalMethods, SGroupElementMethods, Value, Xor}
 import sigmastate.eval.IRContext
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
-import sigmastate.lang.Terms.MethodCall
-import sigmastate.lang.syntax.ParserException
-import sigmastate.utxo._
+import sigma.ast.SigmaPredef.PredefinedFuncRegistry
+import sigma.ast.MethodCall
+import sigmastate.lang.parsers.ParserException
 import sigma.ast._
-import sigmastate.SCollectionMethods.{ExistsMethod, ForallMethod, MapMethod}
-import sigmastate.{Exponentiate, InterpreterReflection, MultiplyGroup, SCollectionMethods, SGlobalMethods, SGroupElementMethods, Xor}
+import sigma.ast.syntax.SValue
+import SCollectionMethods.{ExistsMethod, ForallMethod, MapMethod}
+import sigmastate.InterpreterReflection
 
 /**
   * @param networkPrefix    network prefix to decode an ergo address from string (PK op)
   * @param builder          used to create ErgoTree nodes
   * @param lowerMethodCalls if true, then MethodCall nodes are lowered to ErgoTree nodes
-  *                         when [[sigmastate.SMethod.irInfo.irBuilder]] is defined. For
+  *                         when [[sigma.ast.SMethod.irInfo.irBuilder]] is defined. For
   *                         example, in the `coll.map(x => x+1)` code, the `map` method
   *                         call can be lowered to MapCollection node.
   *                         The lowering if preferable, because it is more compact (1 byte

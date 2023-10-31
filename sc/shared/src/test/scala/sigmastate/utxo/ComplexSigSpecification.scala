@@ -1,12 +1,11 @@
 package sigmastate.utxo
 
-import org.ergoplatform.Height
 import org.scalacheck.Gen
 import sigma.data.{AvlTreeData, CAND, COR, CTHRESHOLD}
-import sigmastate.Values.IntConstant
+import sigma.ast.{GT, Height, IntConstant, SigmaAnd, SigmaOr}
 import sigmastate._
 import sigmastate.helpers._
-import sigmastate.lang.Terms._
+import sigma.ast.syntax._
 
 import scala.util.Random
 

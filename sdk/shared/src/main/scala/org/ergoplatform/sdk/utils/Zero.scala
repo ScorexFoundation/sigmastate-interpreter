@@ -6,12 +6,11 @@ import sigma.data.RType._
 import scorex.crypto.authds.avltree.batch.BatchAVLProver
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ModifierId
-import sigmastate.ErgoTree
-import sigmastate.crypto.CryptoConstants
 import sigmastate.eval._
 import sigma._
-import sigmastate.ErgoTree.HeaderType
-
+import sigma.ast.ErgoTree
+import ErgoTree.HeaderType
+import sigma.crypto.CryptoConstants
 import java.math.BigInteger
 import scala.language.implicitConversions
 

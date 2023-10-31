@@ -13,31 +13,31 @@ import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import scalan.Platform.threadSleepOrNoOp
 import sigma.Extensions.ArrayOps
-import sigma.data.{CollType, OptionType, PairType, ProveDlog, RType, SigmaLeaf}
+import sigma.data.{CBox, CollType, OptionType, PairType, ProveDlog, RType, SigmaLeaf}
 import sigma.util.BenchmarkUtil
 import sigma.util.CollectionUtil._
 import sigma.util.Extensions._
 import sigma.util.StringUtil.StringUtilExtensions
-import sigmastate.ErgoTree.ZeroHeader
+import sigma.ast.ErgoTree.ZeroHeader
 import sigma.ast.SType.AnyOps
-import sigmastate.Values.{ByteArrayConstant, Constant, ConstantNode, IntConstant, SValue}
+import sigma.ast.syntax.{SValue, ValueOps}
+import sigma.ast._
+import sigma.eval.{CostDetails, EvalSettings, SigmaDsl}
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.crypto.SigmaProtocolPrivateInput
-import sigmastate.eval.Extensions.SigmaBooleanOps
-import sigmastate.eval.{CompiletimeIRContext, CBox, CContext, IRContext, SigmaDsl}
+import sigmastate.eval.{CContext, CompiletimeIRContext, IRContext}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaPPrint}
 import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
 import sigmastate.interpreter._
-import sigmastate.lang.Terms.{Apply, ValueOps}
-import sigmastate.serialization.ValueSerializer
-import sigmastate.serialization.generators.ObjectGenerators
+import sigma.ast.Apply
+import sigma.eval.Extensions.SigmaBooleanOps
+import sigma.interpreter.{ContextExtension, ProverResult}
+import sigma.serialization.ValueSerializer
+import sigma.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers._
-import sigmastate.utxo.{DeserializeContext, DeserializeRegister, GetVar, OptionGet}
-import sigma.ast.{SOption, SSigmaProp, SType}
 import sigma.validation.ValidationRules.CheckSerializableTypeCode
 import sigma.validation.{SigmaValidationSettings, ValidationException}
-import sigmastate.{ErgoTree, eval}
 
 import scala.collection.mutable
 import scala.reflect.ClassTag
@@ -323,14 +323,14 @@ class SigmaDslTesting extends AnyPropSpec
         val prop = compile(env, code)(IR).asSigmaProp
 
         // Add additional oparations which are not yet implemented in ErgoScript compiler
-        val multisig = sigmastate.AtLeast(
+        val multisig = AtLeast(
           IntConstant(2),
           Array(
             pkAlice,
             DeserializeRegister(ErgoBox.R5, SSigmaProp),  // deserialize pkBob
             DeserializeContext(2, SSigmaProp)))           // deserialize pkCarol
         val header = ErgoTree.headerWithVersion(ZeroHeader, ergoTreeVersionInTests)
-        ErgoTree.withSegregation(header, sigmastate.SigmaOr(prop, multisig))
+        ErgoTree.withSegregation(header, SigmaOr(prop, multisig))
       }
 
       def ergoCtx(prover: FeatureProvingInterpreter, compiledTree: ErgoTree, expectedValue: B) = {
@@ -352,8 +352,8 @@ class SigmaDslTesting extends AnyPropSpec
             )
 
             // We add ctx as it's own variable with id = 1
-            val ctxVar = eval.Extensions.toAnyValue[sigma.Context](ctx)(sigma.ContextRType)
-            val carolVar = eval.Extensions.toAnyValue[Coll[Byte]](pkCarolBytes.toColl)(RType[Coll[Byte]])
+            val ctxVar = sigma.eval.Extensions.toAnyValue[sigma.Context](ctx)(sigma.ContextRType)
+            val carolVar = sigma.eval.Extensions.toAnyValue[Coll[Byte]](pkCarolBytes.toColl)(RType[Coll[Byte]])
             val newCtx = ctx
                 .withUpdatedVars(1 -> ctxVar, 2 -> carolVar)
                 .copy(
@@ -462,7 +462,7 @@ class SigmaDslTesting extends AnyPropSpec
   }
 
   /** A number of times the newF function in each test feature is repeated.
-    * In combination with [[sigmastate.eval.Profiler]] it allows to collect more accurate
+    * In combination with [[sigmastate.eval.CProfiler]] it allows to collect more accurate
     * timings for all operations.
     * @see SigmaDslSpecification */
   def nBenchmarkIters: Int = 0

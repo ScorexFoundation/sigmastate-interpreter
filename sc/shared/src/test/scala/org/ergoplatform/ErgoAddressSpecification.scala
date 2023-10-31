@@ -4,26 +4,25 @@ import org.ergoplatform.ErgoAddressEncoder.{MainnetNetworkPrefix, TestnetNetwork
 import org.scalatest.{Assertion, TryValues}
 import scorex.crypto.hash.Blake2b256
 import scorex.util.encode.Base58
-import sigmastate.Values.{ByteArrayConstant, Constant, IntConstant}
+import sigma.ast.{ByteArrayConstant, Constant, ErgoTree, IntConstant, SigmaAnd, UnparsedErgoTree}
 import sigmastate.crypto.DLogProtocol.DLogProverInput
-import sigmastate.eval.InvalidType
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers._
-import sigmastate.interpreter.ContextExtension.VarBinding
-import sigmastate.crypto.CryptoConstants.dlogGroup
-import sigmastate.exceptions.CostLimitException
+import sigma.interpreter.ContextExtension.VarBinding
+import sigma.crypto.CryptoConstants.dlogGroup
 import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
-import sigmastate.interpreter.{ContextExtension, CostedProverResult}
-import sigmastate.lang.Terms.ValueOps
-import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.serialization.ValueSerializer
+import sigma.ast.syntax.ValueOps
+import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigma.serialization.ValueSerializer
 import sigmastate.utils.Helpers._
-import sigmastate.{CompilerCrossVersionProps, ErgoTree, SigmaAnd, UnparsedErgoTree}
+import sigmastate.CompilerCrossVersionProps
 import sigma.SigmaDslTesting
-import sigmastate.ErgoTree.{ZeroHeader, setConstantSegregation}
+import sigma.ast.ErgoTree.{ZeroHeader, setConstantSegregation}
 
 import sigma.ast.SType
 import sigma.data.ProveDlog
+import sigma.exceptions.{CostLimitException, InvalidType}
+import sigma.interpreter.{ContextExtension, CostedProverResult}
 import sigma.serialization.GroupElementSerializer
 import sigma.validation.ValidationException
 import sigma.validation.ValidationRules.CheckTypeCode

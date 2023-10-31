@@ -3,13 +3,11 @@ package sigmastate.helpers
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, Token, allZerosModifierId}
 import org.ergoplatform._
 import scorex.util.ModifierId
-import sigma.data.{AvlTreeData, CollOverArray, PairOfCols}
+import sigma.ast.ErgoTree
+import sigma.data.{AvlTreeData, CSigmaDslBuilder, CollOverArray, PairOfCols}
+import sigma.interpreter.ContextExtension
 import sigma.validation.SigmaValidationSettings
-import sigma.{Coll, Header, PreHeader}
-import sigmastate.ErgoTree
-import sigmastate.eval._
-import sigmastate.interpreter.ContextExtension
-
+import sigma.{Coll, Colls, Header, PreHeader}
 import scala.collection.compat.immutable.ArraySeq
 
 // TODO refactor: unification is required between two hierarchies of tests
@@ -47,7 +45,7 @@ object TestingHelpers {
     */
   def cloneColl[A](c: Coll[A]): Coll[A] = (c match {
     case c: CollOverArray[_] =>
-      new CollOverArray(c.toArray.clone(), SigmaDsl.Colls)(c.tItem)
+      new CollOverArray(c.toArray.clone(), Colls)(c.tItem)
     case ps: PairOfCols[_,_] =>
       new PairOfCols(cloneColl(ps.ls), cloneColl(ps.rs))
   }).asInstanceOf[Coll[A]]

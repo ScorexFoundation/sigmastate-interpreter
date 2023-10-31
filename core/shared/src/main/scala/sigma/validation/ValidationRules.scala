@@ -4,7 +4,7 @@ import sigma.SigmaException
 import sigma.ast.{SGlobal, SOption, TypeCodes}
 import sigma.serialization.{ReaderPositionLimitExceeded, SerializerException}
 import sigma.util.Extensions.toUByte
-import sigmastate.serialization.TypeSerializer.embeddableIdToType
+import sigma.serialization.TypeSerializer.embeddableIdToType
 
 /** Base class for different validation rules registered in ValidationRules.currentSettings.
   * Each rule is identified by `id` and have a description.

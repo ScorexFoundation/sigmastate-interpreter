@@ -1,8 +1,7 @@
 package org.ergoplatform.validation
 
-import sigma.serialization.SerializerException
-import sigmastate.serialization.SigmaSerializer
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import sigma.serialization.{SerializerException, SigmaByteReader, SigmaByteWriter}
+import sigma.serialization.SigmaSerializer
 import sigma.util.Extensions.IntOps
 import sigma.validation.{MapSigmaValidationSettings, SigmaValidationSettings}
 

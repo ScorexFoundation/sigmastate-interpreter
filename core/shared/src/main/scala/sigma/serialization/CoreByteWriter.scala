@@ -1,10 +1,9 @@
 package sigma.serialization
 
-import scorex.util.serialization.{VLQByteBufferWriter, Writer}
 import scorex.util.serialization.Writer.Aux
+import scorex.util.serialization.{VLQByteBufferWriter, Writer}
 import sigma.ast.SType
 import sigma.serialization.CoreByteWriter.{Bits, DataInfo, U, Vlq, ZigZag}
-import sigmastate.serialization.TypeSerializer
 
 class CoreByteWriter(val w: Writer) extends Writer {
   type CH = w.CH

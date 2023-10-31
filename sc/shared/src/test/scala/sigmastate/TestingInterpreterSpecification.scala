@@ -2,19 +2,20 @@ package sigmastate
 
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values._
+import sigma.ast._
+import sigma.ast.syntax._
 import sigmastate.interpreter._
 import Interpreter._
-import sigmastate.lang.Terms._
+import sigma.ast.syntax._
 import org.ergoplatform._
 import org.scalatest.BeforeAndAfterAll
 import scorex.util.encode.Base58
+import sigma.crypto.CryptoConstants
 import sigma.data.{AvlTreeData, CAND, ProveDlog, SigmaBoolean, TrivialProp}
 import sigma.util.Extensions.IntOps
-import sigmastate.crypto.CryptoConstants
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
 import sigmastate.helpers.TestingHelpers._
-import sigmastate.serialization.ValueSerializer
+import sigma.serialization.ValueSerializer
 import sigmastate.utils.Helpers._
 
 import scala.util.Random

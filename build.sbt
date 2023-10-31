@@ -230,9 +230,27 @@ lazy val coreJS = core.js
       )
     )
 
+lazy val data = crossProject(JVMPlatform, JSPlatform)
+  .in(file("data"))
+  .dependsOn(core % allConfigDependency)
+  .settings(
+    commonSettings ++ testSettings2,
+    commonDependenies2,
+    testingDependencies2,
+    scorexUtilDependency, fastparseDependency, circeDependency, scryptoDependency,
+    publish / skip := true
+  )
+  .jvmSettings( crossScalaSettings )
+  .jsSettings(
+    crossScalaSettingsJS,
+    useYarn := true
+  )
+lazy val dataJS = data.js
+    .enablePlugins(ScalaJSBundlerPlugin)
+
 lazy val interpreter = crossProject(JVMPlatform, JSPlatform)
   .in(file("interpreter"))
-  .dependsOn(core % allConfigDependency)
+  .dependsOn(core % allConfigDependency, data % allConfigDependency)
   .settings(
     commonSettings ++ testSettings2,
     commonDependenies2,
@@ -275,7 +293,7 @@ lazy val parsersJS = parsers.js
 
 lazy val sdk = crossProject(JVMPlatform, JSPlatform)
     .in(file("sdk"))
-    .dependsOn(core % allConfigDependency, interpreter % allConfigDependency, parsers % allConfigDependency)
+    .dependsOn(core % allConfigDependency, data % allConfigDependency, interpreter % allConfigDependency, parsers % allConfigDependency)
     .settings(commonSettings ++ testSettings2,
       commonDependenies2,
       testingDependencies2,
@@ -343,13 +361,13 @@ lazy val scJS = sc.js
 
 
 lazy val sigma = (project in file("."))
-  .aggregate(core.jvm, interpreter.jvm, parsers.jvm, sdk.jvm, sc.jvm)
+  .aggregate(core.jvm, data.jvm, interpreter.jvm, parsers.jvm, sdk.jvm, sc.jvm)
   .settings(libraryDefSettings, rootSettings)
   .settings(publish / aggregate := false)
   .settings(publishLocal / aggregate := false)
 
 lazy val aggregateCompile = ScopeFilter(
-  inProjects(core.jvm, interpreter.jvm, parsers.jvm, sdk.jvm, sc.jvm),
+  inProjects(core.jvm, data.jvm, interpreter.jvm, parsers.jvm, sdk.jvm, sc.jvm),
   inConfigurations(Compile))
 
 lazy val rootSettings = Seq(

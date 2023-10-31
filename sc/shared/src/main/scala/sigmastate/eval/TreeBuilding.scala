@@ -1,17 +1,16 @@
 package sigmastate.eval
 
 
-import sigmastate.Values._
-import org.ergoplatform._
-import sigmastate._
-import sigmastate.lang.Terms.ValueOps
-import sigmastate.serialization.OpCodes._
-import sigmastate.serialization.ConstantStore
 import sigma.ast._
+import org.ergoplatform._
+import sigma.ast.syntax.ValueOps
+import sigma.serialization.OpCodes._
+import sigma.serialization.ConstantStore
+import sigma.ast.syntax._
 import sigma.data.{ProveDHTuple, ProveDlog}
 
 import scala.collection.mutable.ArrayBuffer
-import sigmastate.serialization.ValueCodes.OpCode
+import sigma.serialization.ValueCodes.OpCode
 
 /** Implementation of IR-graph to ErgoTree expression translation.
   * This, in a sense, is inverse to [[GraphBuilding]], however roundtrip identity is not
@@ -158,7 +157,7 @@ trait TreeBuilding extends SigmaLibrary { IR: IRContext =>
     def recurse[T <: SType](s: Sym) = buildValue(ctx, mainG, env, s, defId, constantsProcessing).asValue[T]
     object In { def unapply(s: Sym): Option[SValue] = Some(buildValue(ctx, mainG, env, s, defId, constantsProcessing)) }
     s match {
-      case _ if s == ctx => org.ergoplatform.Context
+      case _ if s == ctx => sigma.ast.Context
       case _ if env.contains(s) =>
         val (id, tpe) = env(s)
         ValUse(id, tpe) // recursion base
@@ -241,7 +240,7 @@ trait TreeBuilding extends SigmaLibrary { IR: IRContext =>
         val col = recurse(colSym)
         mkByIndex(col, index.asIntValue, None)
       case CollM.length(col) =>
-        utxo.SizeOf(recurse(col).asCollection[SType])
+        sigma.ast.SizeOf(recurse(col).asCollection[SType])
       case CollM.exists(colSym, pSym) =>
         val Seq(col, p) = Seq(colSym, pSym).map(recurse)
         mkExists(col.asCollection[SType], p.asFunc)

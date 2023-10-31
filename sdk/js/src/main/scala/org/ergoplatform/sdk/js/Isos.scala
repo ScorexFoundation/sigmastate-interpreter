@@ -10,11 +10,12 @@ import scorex.util.ModifierId
 import scorex.util.encode.Base16
 import sigma.Extensions.CollBytesOps
 import sigma.ast.SType
+import sigma.ast.syntax.GroupElementConstant
 import sigma.data.Iso.{isoStringToArray, isoStringToColl}
 import sigma.data.{CBigInt, CGroupElement, Digest32Coll, Iso}
 import sigma.js.{AvlTree, GroupElement, Type, Value}
 import sigma.{Coll, Colls, Evaluation}
-import sigmastate.Values.{Constant, GroupElementConstant}
+import sigma.ast.{Constant, GroupElementConstant}
 import sigmastate.eval.{CHeader, CPreHeader}
 import sigmastate.fleetSdkCommon.distEsmTypesBoxesMod.Box
 import sigmastate.fleetSdkCommon.distEsmTypesCommonMod.HexString
@@ -22,8 +23,8 @@ import sigmastate.fleetSdkCommon.distEsmTypesRegistersMod.NonMandatoryRegisters
 import sigmastate.fleetSdkCommon.distEsmTypesTokenMod.TokenAmount
 import sigmastate.fleetSdkCommon.distEsmTypesTransactionsMod.{SignedTransaction, UnsignedTransaction}
 import sigmastate.fleetSdkCommon.{distEsmTypesBoxesMod => boxesMod, distEsmTypesCommonMod => commonMod, distEsmTypesContextExtensionMod => contextExtensionMod, distEsmTypesInputsMod => inputsMod, distEsmTypesProverResultMod => proverResultMod, distEsmTypesRegistersMod => registersMod, distEsmTypesTokenMod => tokenMod}
-import sigmastate.interpreter.{ContextExtension, ProverResult}
-import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
+import sigma.interpreter.{ContextExtension, ProverResult}
+import sigma.serialization.{ErgoTreeSerializer, ValueSerializer}
 import sigma.data.Digest32CollRType
 import java.math.BigInteger
 import scala.collection.immutable.ListMap
@@ -32,18 +33,6 @@ import scala.scalajs.js.Object
 
 /** Definitions of isomorphisms. */
 object Isos {
-  /** Conversion between `Value` and `Constant[SType]`. */
-  implicit val isoValueToConstant: Iso[Value, Constant[SType]] = new Iso[Value, Constant[SType]] {
-    override def to(x: Value): Constant[SType] =
-      Constant(x.runtimeData.asInstanceOf[SType#WrappedType], Evaluation.rtypeToSType(x.tpe.rtype))
-
-    override def from(x: Constant[SType]): Value = {
-      val rtype = Evaluation.stypeToRType(x.tpe)
-      val jsvalue = Value.fromRuntimeData(x.value, rtype)
-      new Value(jsvalue, new Type(rtype))
-    }
-  }
-
   val isoStringToGroupElement: Iso[String, sigma.GroupElement] = new Iso[String, sigma.GroupElement] {
     override def to(x: String): sigma.GroupElement = {
       val bytes = Base16.decode(x).get

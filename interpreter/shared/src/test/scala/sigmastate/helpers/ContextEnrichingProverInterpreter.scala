@@ -1,10 +1,10 @@
 package sigmastate.helpers
 
-import sigma.ast.SType
-import sigmastate.ErgoTree
-import sigmastate.Values.EvaluatedValue
+import sigma.ast.{ErgoTree, SType}
+import sigma.ast.EvaluatedValue
+import sigma.interpreter.{ContextExtension, CostedProverResult}
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.interpreter.{ContextExtension, CostedProverResult, HintsBag, ProverInterpreter}
+import sigmastate.interpreter.{HintsBag, ProverInterpreter}
 
 import scala.util.Try
 

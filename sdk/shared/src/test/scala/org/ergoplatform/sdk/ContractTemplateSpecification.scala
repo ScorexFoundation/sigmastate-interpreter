@@ -3,14 +3,15 @@ package org.ergoplatform.sdk
 import org.ergoplatform.sdk.generators.ObjectGenerators
 import org.scalatest.compatible.Assertion
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import sigmastate.Values._
+import sigma.ast._
 import sigmastate._
 import sigmastate.helpers.NegativeTesting
-import sigmastate.serialization.{SerializationSpecification, SigmaSerializer}
+import sigma.serialization.{SerializationSpecification, SigmaSerializer}
 import sigma.ContractsTestkit
+import sigma.ast.syntax.SigmaPropValue
 import sigma.ast.{SByte, SInt, SType}
 import sigma.data.CBigInt
-import sigmastate.ErgoTree.setConstantSegregation
+import ErgoTree.setConstantSegregation
 
 import java.math.BigInteger
 

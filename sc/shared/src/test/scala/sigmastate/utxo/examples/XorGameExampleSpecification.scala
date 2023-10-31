@@ -5,12 +5,12 @@ import org.ergoplatform.ErgoBox.{R4, R5, R6}
 import scorex.crypto.hash.Blake2b256
 import scorex.utils.Random
 import sigma.data.{AvlTreeData, ProveDlog}
-import sigmastate.Values.{ByteArrayConstant, ByteConstant, IntConstant, SigmaPropConstant}
+import sigma.ast.{ByteArrayConstant, ByteConstant, IntConstant, SigmaPropConstant}
 import sigmastate._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
-import sigmastate.lang.Terms._
+import sigma.ast.syntax._
 
 class XorGameExampleSpecification extends CompilerTestingCommons
   with CompilerCrossVersionProps {

@@ -6,22 +6,19 @@ import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigma.ast.SCollection.SByteArray
-import sigmastate.Values._
-import sigmastate._
 import sigma.ast._
+import sigmastate._
 import sigmastate.eval._
-import sigmastate.lang.Terms._
+import sigma.ast.syntax._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import org.ergoplatform._
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, TestContractSpec}
-import sigmastate.crypto.CryptoConstants
-import sigmastate.crypto.BigIntegers
 import sigma.Extensions.ArrayOps
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.utxo._
 import sigma.Context
-import sigma.crypto.CryptoFacade
+import sigma.ast.syntax._
+import sigma.crypto.{BigIntegers, CryptoConstants, CryptoFacade}
 import sigma.data.{AvlTreeData, AvlTreeFlags}
 import sigmastate.utils.Helpers._
 

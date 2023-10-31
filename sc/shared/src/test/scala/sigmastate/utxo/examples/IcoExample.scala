@@ -11,19 +11,20 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigma.Colls
 import sigma.ast.SByte
 import sigma.data.{AvlTreeData, AvlTreeFlags, Digest32Coll}
-import sigmastate.Values._
+import sigma.ast._
 import sigmastate._
-import sigmastate.crypto.CryptoConstants
 import sigma.Extensions.ArrayOps
+import sigma.ast.syntax.{CollectionConstant, SigmaPropValue}
+import sigma.crypto.CryptoConstants
 import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.interpreter.Interpreter
-import sigmastate.lang.Terms._
-import sigmastate.serialization.ErgoTreeSerializer
-import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.utxo.ComplexityTableStat
+import sigma.ast.syntax._
+import sigma.eval.SigmaDsl
+import sigma.serialization.ErgoTreeSerializer
+import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
 
 import scala.util.Random
 
@@ -550,10 +551,6 @@ class IcoExample extends CompilerTestingCommons
     printDebug("withdrawal script cost: " + res.cost)
     printDebug("remove proof size: " + removalProof.length)
     printDebug("lookup proof size: " + lookupProof.length)
-  }
-
-  property("ComplexityTableStat") {
-    printDebug(ComplexityTableStat.complexityTableString)
   }
 
   /** This is the last executed test suite, so this method is executed after all tests.

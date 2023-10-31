@@ -8,14 +8,15 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigma.Colls
 import sigma.data.{AvlTreeData, AvlTreeFlags, Digest32Coll, TrivialProp}
 import sigmastate.CompilerCrossVersionProps
-import sigmastate.Values.{AvlTreeConstant, ByteArrayConstant, LongConstant, SigmaPropConstant}
+import sigma.ast.{AvlTreeConstant, ByteArrayConstant, LongConstant, SigmaPropConstant}
 import sigma.Extensions.ArrayOps
-import sigmastate.eval.{IRContext, SigmaDsl}
+import sigmastate.eval.IRContext
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
-import sigmastate.serialization.ErgoTreeSerializer
-import sigmastate.lang.Terms._
+import sigma.serialization.ErgoTreeSerializer
+import sigma.ast.syntax._
+import sigma.eval.SigmaDsl
 
 import scala.util.Random
 

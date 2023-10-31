@@ -5,14 +5,16 @@ import org.ergoplatform.ErgoBox.{R4, R5}
 import scorex.crypto.hash.Blake2b256
 import sigma.data.{AvlTreeData, ProveDHTuple, ProveDlog}
 import sigma.util.Extensions.EcpOps
-import sigmastate.{CompilerCrossVersionProps, ErgoTree}
-import sigmastate.Values.GroupElementConstant
-import sigmastate.crypto.{CryptoConstants, DiffieHellmanTupleProverInput}
+import sigmastate.CompilerCrossVersionProps
+import sigma.ast.{ErgoTree, GroupElementConstant}
+import sigma.ast.syntax.GroupElementConstant
+import sigma.crypto.CryptoConstants
+import sigmastate.crypto.DiffieHellmanTupleProverInput
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter._
-import sigmastate.lang.Terms._
-import sigmastate.eval._
+import sigma.ast.syntax._
+import sigma.eval.SigmaDsl
 
 class MixExampleSpecification extends CompilerTestingCommons
   with CompilerCrossVersionProps {

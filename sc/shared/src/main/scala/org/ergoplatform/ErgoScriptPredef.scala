@@ -4,8 +4,9 @@ import sigmastate.lang.SigmaCompiler
 import sigmastate.eval.IRContext
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import sigma.ast.SType
-import sigmastate.Values.{SigmaPropValue, Value}
-import sigmastate.lang.Terms.ValueOps
+import sigma.ast.syntax.SigmaPropValue
+import sigma.ast.Value
+import sigma.ast.syntax.ValueOps
 
 object ErgoScriptPredef {
   import sigmastate.interpreter.Interpreter._

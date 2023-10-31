@@ -3,19 +3,21 @@ package sigmastate
 import org.ergoplatform.ErgoBox.AdditionalRegisters
 import org.ergoplatform._
 import scorex.util.ModifierId
-import sigmastate.ErgoTree.{DefaultHeader, HeaderType, ZeroHeader, setConstantSegregation, setVersionBits}
 import sigma.VersionContext.MaxSupportedScriptVersion
+import sigma.ast.ErgoTree.{HeaderType, ZeroHeader, setConstantSegregation, setVersionBits}
+import sigma.ast._
 import sigma.{Box, SigmaDslTesting}
-import sigmastate.Values._
-import sigma.ast.{SBoolean, SBox, SCollection, SType}
 import sigmastate.eval._
-import sigmastate.exceptions.InterpreterException
 import sigmastate.helpers.TestingHelpers.createBox
 import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter}
-import sigmastate.interpreter.ErgoTreeEvaluator.DefaultEvalSettings
-import sigmastate.interpreter.EvalSettings.EvaluationMode
+import sigmastate.interpreter.CErgoTreeEvaluator.DefaultEvalSettings
+import sigma.eval.EvalSettings.EvaluationMode
 import sigmastate.interpreter._
-import sigmastate.lang.Terms.ValueOps
+import sigma.ast.syntax.ValueOps
+import sigma.data.CBox
+import sigma.eval.EvalSettings
+import sigma.exceptions.InterpreterException
+import sigma.interpreter.{CostedProverResult, ProverResult}
 import sigmastate.utils.Helpers._
 
 /** Specification to verify that the interpreter behaves according to docs/aot-jit-switch.md.
@@ -26,7 +28,7 @@ import sigmastate.utils.Helpers._
 class ScriptVersionSwitchSpecification extends SigmaDslTesting {
   override implicit val generatorDrivenConfig: PropertyCheckConfiguration = PropertyCheckConfiguration(minSuccessful = 30)
   override implicit val evalSettings: EvalSettings =
-    ErgoTreeEvaluator.DefaultEvalSettings.copy(
+    CErgoTreeEvaluator.DefaultEvalSettings.copy(
       costTracingEnabled = true  // should always be enabled in tests (and false by default)
     )
 

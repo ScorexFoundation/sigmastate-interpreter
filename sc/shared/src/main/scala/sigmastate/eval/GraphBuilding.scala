@@ -2,22 +2,20 @@ package sigmastate.eval
 
 import org.ergoplatform._
 import scalan.MutableLazy
-import sigma.SigmaException
+import sigma.{SigmaException, ast}
 import sigma.ast.TypeCodes.LastConstantCode
+import sigma.ast.Value.Typed
+import sigma.ast._
+import sigma.ast.syntax.{SValue, ValueOps}
+import sigma.crypto.EcPointType
 import sigma.data.ExactIntegral.{ByteIsExactIntegral, IntIsExactIntegral, LongIsExactIntegral, ShortIsExactIntegral}
 import sigma.data.ExactOrdering.{ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering, ShortIsExactOrdering}
+import sigma.data.{CSigmaDslBuilder, ExactIntegral, ExactNumeric, ExactOrdering, Lazy, Nullable}
 import sigma.util.Extensions.ByteOps
-import sigma.data.{ExactIntegral, ExactNumeric, ExactOrdering, Lazy, Nullable}
-import sigmastate.Values.Value.Typed
-import sigmastate.Values._
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.{SourceContext, Terms}
-import sigmastate.lang.Terms.{Ident, Select, Val, ValueOps}
-import sigmastate.serialization.{OpCodes, ValueCodes}
-import sigmastate.utxo._
-import sigma.ast._
-import sigma.crypto.EcPointType
-import sigmastate.exceptions.GraphBuildingException
+import sigma.ast.{Ident, Select, Val}
+import sigma.exceptions.GraphBuildingException
+import sigma.serialization.OpCodes
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -45,7 +43,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
   import WOption._
 
   /** Should be specified in the final cake */
-  val builder: sigmastate.lang.SigmaBuilder
+  val builder: SigmaBuilder
   import builder._
 
 
@@ -313,8 +311,6 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
     case _ => error(s"Don't know how to convert Elem $e to SType")
   }
 
-  import Liftables._
-
   /** Translates Elem to the corresponding Liftable instance.
     * @param eWT type descriptor
     */
@@ -341,7 +337,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
       FuncIsLiftable(la, lb)
   }).asInstanceOf[Liftable[_,WT]]
 
-  import NumericOps._
+  import sigma.data.NumericOps._
   private lazy val elemToExactNumericMap = Map[Elem[_], ExactNumeric[_]](
     (ByteElement, ByteIsExactIntegral),
     (ShortElement, ShortIsExactIntegral),
@@ -486,7 +482,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
           val resV = toRep(v)(e)
           resV
       }
-      case org.ergoplatform.Context => ctx
+      case sigma.ast.Context => ctx
       case Global => sigmaDslBuilder
       case Height => ctx.HEIGHT
       case Inputs => ctx.INPUTS
@@ -498,10 +494,10 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
       case Ident(n, _) =>
         env.getOrElse(n, !!!(s"Variable $n not found in environment $env"))
 
-      case sigmastate.Upcast(Constant(value, _), toTpe: SNumericType) =>
+      case ast.Upcast(Constant(value, _), toTpe: SNumericType) =>
         eval(mkConstant(toTpe.upcast(value.asInstanceOf[AnyVal]), toTpe))
 
-      case sigmastate.Downcast(Constant(value, _), toTpe: SNumericType) =>
+      case ast.Downcast(Constant(value, _), toTpe: SNumericType) =>
         eval(mkConstant(toTpe.downcast(value.asInstanceOf[AnyVal]), toTpe))
 
       // Rule: col.size --> SizeOf(col)
@@ -550,7 +546,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         else
           eval(mkUpcast(numValue, tRes))
 
-      case Terms.Apply(col, Seq(index)) if col.tpe.isCollection =>
+      case sigma.ast.Apply(col, Seq(index)) if col.tpe.isCollection =>
         eval(mkByIndex(col.asCollection[SType], index.asValue[SInt.type], None))
 
       case GetVar(id, optTpe) =>
@@ -560,7 +556,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
       case ValUse(valId, _) =>
         env.getOrElse(valId, !!!(s"ValUse $valId not found in environment $env"))
 
-      case Terms.Block(binds, res) =>
+      case Block(binds, res) =>
         var curEnv = env
         for (v @ Val(n, _, b) <- binds) {
           if (curEnv.contains(n))
@@ -593,37 +589,37 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val vv = asRep[GroupElement](_vv)
         sigmaDslBuilder.proveDHTuple(gv, hv, uv, vv)
 
-      case sigmastate.Exponentiate(In(l), In(r)) =>
+      case Exponentiate(In(l), In(r)) =>
         val lV = asRep[GroupElement](l)
         val rV = asRep[BigInt](r)
         lV.exp(rV)
 
-      case sigmastate.MultiplyGroup(In(_l), In(_r)) =>
+      case MultiplyGroup(In(_l), In(_r)) =>
         val l = asRep[GroupElement](_l)
         val r = asRep[GroupElement](_r)
         l.multiply(r)
 
-      case Values.GroupGenerator =>
+      case GroupGenerator =>
         sigmaDslBuilder.groupGenerator
 
-      case sigmastate.ByteArrayToBigInt(In(arr)) =>
+      case ByteArrayToBigInt(In(arr)) =>
         val arrV = asRep[Coll[Byte]](arr)
         sigmaDslBuilder.byteArrayToBigInt(arrV)
 
-      case sigmastate.LongToByteArray(In(x)) =>
+      case LongToByteArray(In(x)) =>
         val xV = asRep[Long](x)
         sigmaDslBuilder.longToByteArray(xV)
 
       // opt.get
-      case utxo.OptionGet(In(opt: ROption[_]@unchecked)) =>
+      case OptionGet(In(opt: ROption[_]@unchecked)) =>
         opt.get
 
       // opt.isDefined
-      case utxo.OptionIsDefined(In(opt: ROption[_]@unchecked)) =>
+      case OptionIsDefined(In(opt: ROption[_]@unchecked)) =>
         opt.isDefined
 
       // opt.getOrElse(default)
-      case utxo.OptionGetOrElse(In(opt: ROption[a]@unchecked), In(default)) =>
+      case OptionGetOrElse(In(opt: ROption[a]@unchecked), In(default)) =>
         opt.getOrElse(asRep[a](default))
 
       // tup._1 or tup._2
@@ -641,7 +637,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         }
 
       // (x, y)
-      case Values.Tuple(InSeq(Seq(x, y))) =>
+      case Tuple(InSeq(Seq(x, y))) =>
         Pair(x, y)
 
       // xs.exists(predicate) or xs.forall(predicate)
@@ -707,7 +703,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val pV = asRep[Any => Boolean](eval(p))
         inputV.filter(pV)
 
-      case Terms.Apply(f, Seq(x)) if f.tpe.isFunc =>
+      case sigma.ast.Apply(f, Seq(x)) if f.tpe.isFunc =>
         val fV = asRep[Any => Coll[Any]](eval(f))
         val xV = asRep[Any](eval(x))
         Apply(fV, xV, mayInline = false)
@@ -722,7 +718,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val res = sigmaDslBuilder.sha256(inputV)
         res
 
-      case utxo.SizeOf(In(xs)) =>
+      case ast.SizeOf(In(xs)) =>
         xs.elem.asInstanceOf[Any] match {
           case _: CollElem[a,_] =>
             val xsV = asRep[Coll[a]](xs)
@@ -751,26 +747,26 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val pV = asRep[SigmaProp](eval(p))
         pV.propBytes
 
-      case utxo.ExtractId(In(box: Ref[Box]@unchecked)) =>
+      case ExtractId(In(box: Ref[Box]@unchecked)) =>
         box.id
 
-      case utxo.ExtractBytesWithNoRef(In(box: Ref[Box]@unchecked)) =>
+      case ExtractBytesWithNoRef(In(box: Ref[Box]@unchecked)) =>
         box.bytesWithoutRef
 
-      case utxo.ExtractAmount(In(box)) =>
+      case ExtractAmount(In(box)) =>
         val boxV = asRep[Box](box)
         boxV.value
 
-      case utxo.ExtractScriptBytes(In(box: Ref[Box]@unchecked)) =>
+      case ExtractScriptBytes(In(box: Ref[Box]@unchecked)) =>
         box.propositionBytes
 
-      case utxo.ExtractBytes(In(box: Ref[Box]@unchecked)) =>
+      case ExtractBytes(In(box: Ref[Box]@unchecked)) =>
         box.bytes
 
-      case utxo.ExtractCreationInfo(In(box: Ref[Box]@unchecked)) =>
+      case ExtractCreationInfo(In(box: Ref[Box]@unchecked)) =>
         box.creationInfo
 
-      case utxo.ExtractRegisterAs(In(box: Ref[Box]@unchecked), regId, optTpe) =>
+      case ExtractRegisterAs(In(box: Ref[Box]@unchecked), regId, optTpe) =>
         val elem = stypeToElem(optTpe.elemType).asInstanceOf[Elem[Any]]
         val i: Ref[Int] = regId.number.toInt
         box.getReg(i)(elem)
@@ -888,14 +884,14 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val y = eval(rel.right)
         binop.apply(x, asRep[t#WrappedType](y))
 
-      case Terms.Lambda(_, Seq((n, argTpe)), _, Some(body)) =>
+      case sigma.ast.Lambda(_, Seq((n, argTpe)), _, Some(body)) =>
         val eArg = stypeToElem(argTpe).asInstanceOf[Elem[Any]]
         val f = fun(removeIsProven({ x: Ref[Any] =>
           buildNode(ctx, env + (n -> x), body)
         }))(Lazy(eArg))
         f
 
-      case Terms.Lambda(_, Seq((accN, accTpe), (n, tpe)), _, Some(body)) =>
+      case sigma.ast.Lambda(_, Seq((accN, accTpe), (n, tpe)), _, Some(body)) =>
         (stypeToElem(accTpe), stypeToElem(tpe)) match { case (eAcc: Elem[s], eA: Elem[a]) =>
           val eArg = pairElement(eAcc, eA)
           val f = fun { x: Ref[(s, a)] =>
@@ -916,11 +912,11 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val values = colBuilder.fromItems(vs: _*)(eAny)
         values
 
-      case sigmastate.Upcast(In(input), tpe) =>
+      case ast.Upcast(In(input), tpe) =>
         val elem = stypeToElem(tpe.asNumType)
         upcast(input)(elem)
 
-      case sigmastate.Downcast(In(input), tpe) =>
+      case ast.Downcast(In(input), tpe) =>
         val elem = stypeToElem(tpe.asNumType)
         downcast(input)(elem)
 
@@ -938,7 +934,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         sigmaDslBuilder.decodePoint(bytes)
 
       // fallback rule for MethodCall, should be the last case in the list
-      case Terms.MethodCall(obj, method, args, _) =>
+      case sigma.ast.MethodCall(obj, method, args, _) =>
         val objV = eval(obj)
         val argsV = args.map(eval)
         (objV, method.objType) match {

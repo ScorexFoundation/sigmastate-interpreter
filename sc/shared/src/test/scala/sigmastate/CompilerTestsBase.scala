@@ -1,14 +1,14 @@
 package sigmastate
 
 import scala.util.DynamicVariable
-import sigmastate.lang.{CompilerResult, CompilerSettings, SigmaCompiler, TransformingSigmaBuilder}
+import sigmastate.lang.{CompilerResult, CompilerSettings, SigmaCompiler}
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.Values.{SValue, SigmaPropValue, Value}
+import sigma.ast.{ErgoTree, SType, TransformingSigmaBuilder, Value}
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
-import sigma.ast.SType
-import sigmastate.serialization.ValueSerializer
+import sigma.ast.syntax.{SValue, SigmaPropValue}
+import sigma.serialization.ValueSerializer
 import sigmastate.eval.IRContext
-import sigmastate.lang.Terms.ValueOps
+import sigma.ast.syntax.ValueOps
 
 trait CompilerTestsBase extends TestsBase {
   protected val _lowerMethodCalls = new DynamicVariable[Boolean](true)

@@ -1,7 +1,7 @@
 package sigmastate.utxo.examples
 
 import org.ergoplatform.dsl.{SigmaContractSyntax, ContractSpec, TestContractSpec, StdContracts}
-import sigmastate.eval.Extensions
+import sigma.eval.Extensions
 import sigmastate.helpers.CompilerTestingCommons
 import sigma.Context
 

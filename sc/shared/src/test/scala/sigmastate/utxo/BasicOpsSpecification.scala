@@ -5,20 +5,20 @@ import org.ergoplatform._
 import sigma.Extensions.ArrayOps
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.SType.AnyOps
-import sigma.ast._
 import sigma.data.{AvlTreeData, CAnyValue}
 import sigma.util.StringUtil._
-import sigmastate.Values._
+import sigma.ast._
+import sigma.ast.syntax._
+import sigma.crypto.CryptoConstants
 import sigmastate._
-import sigmastate.crypto.CryptoConstants
-import sigmastate.eval.InvalidType
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
-import sigmastate.interpreter.ContextExtension.VarBinding
-import sigmastate.interpreter.ErgoTreeEvaluator.DefaultEvalSettings
-import sigmastate.interpreter.EvalSettings
+import sigma.interpreter.ContextExtension.VarBinding
+import sigmastate.interpreter.CErgoTreeEvaluator.DefaultEvalSettings
 import sigmastate.interpreter.Interpreter._
-import sigmastate.lang.Terms._
+import sigma.ast.Apply
+import sigma.eval.EvalSettings
+import sigma.exceptions.InvalidType
 import sigmastate.utils.Helpers._
 
 import java.math.BigInteger

@@ -1,32 +1,13 @@
-import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, ErgoLikeContext}
+import org.ergoplatform.ErgoLikeContext
 import sigma.ast._
-import sigma.data.{AvlTreeData, GeneralType, RType, SigmaBoolean}
-import sigmastate.Values._
-import sigmastate.lang.{CheckingSigmaBuilder, Terms}
+import sigma.data.RType
 
-import scala.annotation.nowarn
 import scala.reflect.classTag
 
 package object sigmastate {
   import CheckingSigmaBuilder._
 
-  /** Shadow the implicit from sigma package so it doesn't interfere with the resolution
-    * of ClassTags below.
-    */
-  @nowarn private def rtypeToClassTag = ???
-
-  /** RType descriptors for predefined types used in AOTC-based interpreter. */
-
-  implicit val SigmaBooleanRType    : RType[SigmaBoolean]     = RType.fromClassTag(classTag[SigmaBoolean])
-
-  implicit val ErgoBoxRType         : RType[ErgoBox]          = RType.fromClassTag(classTag[ErgoBox])
-
-  implicit val ErgoBoxCandidateRType: RType[ErgoBoxCandidate] = RType.fromClassTag(classTag[ErgoBoxCandidate])
-
-  implicit val AvlTreeDataRType     : RType[AvlTreeData]      = GeneralType(classTag[AvlTreeData])
-
-  implicit val ErgoLikeContextRType : RType[ErgoLikeContext]  = RType.fromClassTag(classTag[ErgoLikeContext])
-
+  implicit val ErgoLikeContextRType: RType[ErgoLikeContext] = RType.fromClassTag(classTag[ErgoLikeContext])
 
   /** Helper method to create "+" operation node. */
   def Plus[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
@@ -55,5 +36,4 @@ package object sigmastate {
   /** Helper method to create "max" operation node. */
   def Max[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
     mkMax(left, right)
-
 }

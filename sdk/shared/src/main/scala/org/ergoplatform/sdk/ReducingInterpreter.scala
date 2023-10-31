@@ -6,11 +6,11 @@ import org.ergoplatform.sdk.utils.ArithUtils
 import org.ergoplatform.sdk.wallet.protocol.context.{BlockchainStateContext, TransactionContext}
 import org.ergoplatform.validation.ValidationRules
 import org.ergoplatform.{ErgoLikeContext, ErgoLikeInterpreter}
+import sigma.ast.ErgoTree
 import sigma.data.AvlTreeData
+import sigma.exceptions.CostLimitException
 import sigma.util.Extensions.LongOps
-import sigmastate.ErgoTree
 import sigmastate.eval.addCostChecked
-import sigmastate.exceptions.CostLimitException
 import sigmastate.interpreter.Interpreter
 import sigmastate.interpreter.Interpreter.ScriptEnv
 

@@ -1,31 +1,28 @@
-package sigmastate
+package sigma
 
 import org.ergoplatform.settings.ErgoAlgos
-import org.ergoplatform.validation.ValidationRules
-import org.ergoplatform.{ErgoAddressEncoder, ErgoBox, ErgoLikeContext, Self}
-import sigma.data.RType.asType
-import sigma.data.{Nullable, RType, TrivialProp}
-import sigma.{Evaluation, VersionContext}
-import sigma.ast.SCollection.SByteArray
-import sigmastate.Values._
+import org.ergoplatform.{ErgoAddressEncoder, ErgoBox, ErgoLikeContext}
 import sigma.VersionContext._
-import sigmastate.eval.{CBox, Profiler}
-import sigmastate.exceptions.{CostLimitException, InterpreterException}
-import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}
-import sigmastate.interpreter.{ErgoTreeEvaluator, EvalSettings}
-import sigmastate.interpreter.Interpreter.ReductionResult
-import sigmastate.lang.{CompilerSettings, SourceContext}
-import sigmastate.lang.Terms._
-import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.utils.Helpers.TryOps
-import sigmastate.utxo._
-import sigma._
+import sigma.ast.SCollection.SByteArray
 import sigma.ast._
+import sigma.ast.syntax.{SValue, SigmaPropValue, TrueSigmaProp}
+import sigma.data.RType.asType
+import sigma.data.{CBox, Nullable, RType, TrivialProp}
 import sigma.validation.ValidationException
 import sigma.validation.ValidationRules.CheckTypeCode
-import sigma.{ContractsTestkit, SigmaDslTesting}
-import sigmastate.ErgoTree.HeaderType
-import sigmastate.SCollectionMethods.checkValidFlatmap
+import ErgoTree.HeaderType
+import SCollectionMethods.checkValidFlatmap
+import sigmastate.eval.CProfiler
+import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}
+import sigmastate.interpreter.Interpreter.ReductionResult
+import sigmastate.interpreter.CErgoTreeEvaluator
+import sigma.ast.syntax._
+import sigma.eval.EvalSettings
+import sigma.exceptions.{CostLimitException, InterpreterException}
+import sigmastate.lang.CompilerSettings
+import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigmastate.Plus
+import sigmastate.utils.Helpers.TryOps
 
 
 /** Regression tests with ErgoTree related test vectors.
@@ -51,7 +48,6 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
       Block(Seq(), null),
       ValNode("x", SInt, null),
       ApplyTypes(null, Seq()),
-      TaggedVariableNode(1, SByte),
       ValDef(1, null),
       ValUse(1, SInt),
       BlockValue(IndexedSeq(), null)
@@ -614,7 +610,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
   }
 
   property("checkValidFlatmap") {
-    implicit val E = ErgoTreeEvaluator.forProfiling(new Profiler, evalSettings)
+    implicit val E = CErgoTreeEvaluator.forProfiling(new CProfiler, evalSettings)
     def mkLambda(t: SType, mkBody: SValue => SValue) = {
       MethodCall(
         ValUse(1, SCollectionType(t)),
@@ -692,19 +688,19 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
     )
 
     def createCtx: ErgoLikeContext = ErgoLikeContextTesting
-        .dummy(CBox(fakeSelf), VersionContext.current.activatedVersion)
+        .dummy(fakeSelf, VersionContext.current.activatedVersion)
         .withErgoTreeVersion(tree.version)
 
     VersionContext.withVersions(activatedVersion = 1, tree.version) {
       // v4.x behavior
-      val res = ErgoTreeEvaluator.evalToCrypto(createCtx, tree, evalSettings)
+      val res = CErgoTreeEvaluator.evalToCrypto(createCtx, tree, evalSettings)
       res shouldBe ReductionResult(TrivialProp(true), 3)
     }
 
     VersionContext.withVersions(activatedVersion = 2, tree.version) {
       // v5.0 behavior
       assertExceptionThrown(
-        ErgoTreeEvaluator.evalToCrypto(createCtx, tree, evalSettings),
+        CErgoTreeEvaluator.evalToCrypto(createCtx, tree, evalSettings),
         exceptionLike[ClassCastException]()
       )
     }

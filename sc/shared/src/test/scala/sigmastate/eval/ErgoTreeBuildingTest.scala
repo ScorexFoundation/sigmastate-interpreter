@@ -1,15 +1,13 @@
 package sigmastate.eval
 
-import org.ergoplatform.{Height, Inputs, Outputs, Self}
 import sigmastate._
-import sigmastate.Values.{BlockValue, FuncValue, IntConstant, LongConstant, SigmaPropConstant, ValDef, ValUse}
+import sigma.ast._
 import sigmastate.helpers.ContextEnrichingTestProvingInterpreter
 import sigmastate.interpreter.Interpreter._
 import scalan.BaseCtxTests
-import sigma.ast.{SBox, SFunc, SInt, SLong, SSigmaProp, SType}
+import sigma.ast.syntax.ValueOps
 import sigmastate.lang.LangTests
-import sigmastate.lang.Terms.{Apply, ValueOps}
-import sigmastate.utxo._
+import sigma.ast.Apply
 
 class ErgoTreeBuildingTest extends BaseCtxTests
     with LangTests with ExampleContracts with ErgoScriptTestkit {

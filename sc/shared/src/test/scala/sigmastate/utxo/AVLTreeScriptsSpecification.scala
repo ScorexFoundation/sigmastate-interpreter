@@ -7,7 +7,7 @@ import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue, SerializedAdProof}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigma.ast.SCollection.SByteArray
-import sigmastate.Values._
+import sigma.ast._
 import sigmastate._
 import sigmastate.eval.IRContext
 import sigmastate.eval._
@@ -15,11 +15,13 @@ import sigma.Extensions.ArrayOps
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
-import sigmastate.interpreter.ProverResult
-import sigmastate.lang.Terms._
+import sigma.ast.syntax._
 import sigma.Coll
 import sigma.ast.SAvlTree
+import sigma.ast.syntax.{GetVarByteArray, OptionValueOps}
 import sigma.data.{AvlTreeData, AvlTreeFlags, CSigmaProp, TrivialProp}
+import sigma.eval.SigmaDsl
+import sigma.interpreter.ProverResult
 import sigma.{AvlTree, Context}
 import sigmastate.eval.Extensions.AvlTreeOps
 

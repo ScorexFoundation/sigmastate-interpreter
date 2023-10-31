@@ -2,20 +2,22 @@ package sigmastate.eval
 
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.validation.ValidationSpecification
-import org.ergoplatform.{Context => _, _}
+import org.ergoplatform._
 import scalan.BaseCtxTests
 import sigma.VersionContext
-import sigmastate.Values.{BigIntArrayConstant, EvaluatedValue, SValue, SigmaPropConstant, Value}
+import sigma.ast.{BigIntArrayConstant, ErgoTree, EvaluatedValue, SigmaPropConstant, Value}
 import sigma.ast.SType
+import sigma.ast.syntax.SValue
 import sigma.data.AvlTreeData
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting}
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.interpreter.{ContextExtension, ErgoTreeEvaluator}
-import sigmastate.lang.Terms.ValueOps
+import sigmastate.interpreter.CErgoTreeEvaluator
+import sigma.ast.syntax.ValueOps
+import sigma.interpreter.ContextExtension
 import sigmastate.lang.{CompilerResult, CompilerSettings, LangTests, SigmaCompiler}
-import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.{CompilerTestsBase, ErgoTree}
+import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigmastate.CompilerTestsBase
 import sigma.{ContractsTestkit, Context => DContext}
 
 import scala.annotation.unused
@@ -168,11 +170,11 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
           }
 
           // check calc
-          val (res, _) = ErgoTreeEvaluator.eval(
+          val (res, _) = CErgoTreeEvaluator.eval(
             context = ectx,
             constants = ergoTree.constants,
             exp = ergoTree.toProposition(replaceConstants = false),
-            evalSettings = ErgoTreeEvaluator.DefaultEvalSettings
+            evalSettings = CErgoTreeEvaluator.DefaultEvalSettings
           )
           checkExpected(res, expectedResult.calc,
             "Calc evaluation:\n value = %s,\n expectedResult.calc: %s\n")

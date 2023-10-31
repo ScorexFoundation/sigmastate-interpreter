@@ -10,20 +10,17 @@ import sigma.crypto.EcPointType
 import sigma.data.{AvlTreeData, AvlTreeFlags, CollType, PrimitiveType, TrivialProp}
 import sigma.serialization.GroupElementSerializer
 import sigma.{Coll, GroupElement}
-import sigmastate.Values.{ConstantNode, FuncValue, ValueCompanion}
+import sigma.ast.{ConstantNode, FuncValue, ValueCompanion}
 import sigmastate._
 import sigmastate.crypto.GF2_192_Poly
-import sigmastate.interpreter.{CompanionDesc, FixedCostItem, MethodDesc}
-import sigmastate.lang.Terms.MethodCall
-import sigmastate.utxo.SelectField
-
+import sigma.ast.MethodCall
 import java.math.BigInteger
 import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 
-/** Pretty-printer customized to print [[sigmastate.Values.Value]] instances
+/** Pretty-printer customized to print [[sigma.ast.Value]] instances
   * into a valid Scala code (can be cut-and-pasted).*/
 object SigmaPPrint extends PPrinter {
   override def showFieldNames = false

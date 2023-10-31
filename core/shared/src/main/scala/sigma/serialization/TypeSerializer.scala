@@ -1,4 +1,4 @@
-package sigmastate.serialization
+package sigma.serialization
 
 import debox.cfor
 import sigma.ast.SCollectionType.{CollectionTypeCode, NestedCollectionTypeCode}
