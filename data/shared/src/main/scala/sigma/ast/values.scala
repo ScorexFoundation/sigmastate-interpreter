@@ -222,7 +222,6 @@ object Value {
           case (_, SContextMethods) => method.name match {
             case SContextMethods.headersMethod.name => 1
             case SContextMethods.preHeaderMethod.name => 1
-            case SContextMethods.preHeaderMethod.name => 1
             case SContextMethods.heightMethod.name => 1
             case SContextMethods.lastBlockUtxoRootHashMethod.name => 1
             case SContextMethods.minerPubKeyMethod.name => 1

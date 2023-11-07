@@ -826,7 +826,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
       val addr = ErgoAddressEncoder.Mainnet.fromString("3ehvg9kjzVt2ep6VkYbsNZBXVoFjQA3b26LTmCwvE9vTUEU2TG1uKdqh7sb1a23G1HLkXa6rv4NUcR5Ucghp8CTuBnUxJB4qYq61GYNDFmCHdoZJq32vUVJ7Jsq4cFE7zp9ddFnchb8EN2Qkaa9rqzmruj4iKjLu8MMJ3V8ns1tpRF8eSp2KSjPuMYt6ZHysFNGoMt4dQ2P45YoCXbgiJtzcADgjMnr5bkpqKMx2ZEaAUWoZfHN8DUwvNawSCr2yHieHKbWujxeGuPUuGPAdJHQRcC47xpBj7rKExxGE6T117vAAzSwc98UG3CC8Lb8UeoE7WWi9LCTdXqJpJFrwb8Zqc9HnqSVRvAxeaKgcueX36absXAxpqpAGUcH8YwYoeVmSYLsQKQbUAVrFe73eJyRtgxpcVEqrs4rBZ3KeDJUe5J2NJTNYKoUFcruqqu4N1XUFCECWXANsE9TLoQNyqDgNRcnHE4t8nw6THPJXQWCTBHK6mHvkVcj6SvGinvVGfMpeuA8MF1FFtZJTMnM31cuMBexK3m5mDxsbamJngQiPrcyVqK4smDpdiqhds7APGJbwKTHgst2u1P6").getOrThrow
       val tree = addr.script
       tree match {
-        case ErgoTree(_, _, Right(BlockValueWithInvalidBoolToSigmaProp(_)), _, _, _) =>
+        case ErgoTree(_, _, Right(BlockValueWithInvalidBoolToSigmaProp(_)), _, _, _, _) =>
       }
     }
 
@@ -839,7 +839,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
       val addr = ErgoAddressEncoder.Mainnet.fromString("bpn7HXccD8wzY3x8XbymfBCh71aeci1FyM7JJgVx6mVY3vxznf2Pom7gtEgQBxr9UZb8cn9Z6GiXEjV7mB7ypRfH9Qpf3eCsd8qoEGmvsFqW2GyEvxgYWnJGd8QYTYZLBgGkSFcAeerLLDZwS1bos5oV4atMLnPDUJ6bH2EFFwVRdTAQKxaVMAhNtNYZxAcYtWhaYBJqYZM8ne3hGFrkWNTgNy7NxEDQ5LpBEM3rq6EqUENAGhH6THDL7RyU8AMkpr2vhosqEeqp4yXJmK887vU4qbnGGrMLX4w5GrgL9zLk41Vm6vzEUVLvp8XQJ8CULwkHNiKkNHRLeTk6BG4hwJsFoUSJJNWgsfputm8pEbaTuKfNG5u4NFmZ3YLfGsrqpr62c95QuNuD3g3FaoBUhxigkfNhKwFFtpKKsYerJvvp2Suh2eVRptFsCN15pjdkveUakhFsAo9j9YwhYVjjPpCWZgB8Wme8iZLRVfopSuDVdiqGsnmpJcuccmPsebgXPz3XvyjQazYE7WnR3Jrr1mRWHVEnJb3UU89JVPDpJPP1jUaSqmkKCkrPj3WMMQTDg17WW2DkhGKsb").getOrThrow
       val tree = addr.script
       tree match {
-        case ErgoTree(_, _, Right(BlockValueWithInvalidBoolToSigmaProp(_)), _, _, _) =>
+        case ErgoTree(_, _, Right(BlockValueWithInvalidBoolToSigmaProp(_)), _, _, _, _) =>
       }
     }
 
@@ -863,7 +863,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
       val addr = ErgoAddressEncoder.Mainnet.fromString("9drgw9DeDxHwdwYWT11yrYD3qCN3fzgnjA3eS5ZXEkR2Rrpd2x58R3HFViGAs93hYFqroBGShW5DG6h2tU7PqDURegny88hEhNKfLpWKBHpLMmfDwZwTM75MuYKXkmtyUmiMRAfGAVVjaSqThddra5ykZ4UrG8kgqkHSBTxtibVPmNff8Fx7Fy5q82xsZ95RFpjGkAX1QgtirHc3JP6QDZfHUFPx2gnyT9pDpYrKWEhjK8Ake779PoYqGzrL5gtuHyLqsC3WtLFMvP3QNfVtwPaqeCLEmjFmWYU6MV1A8fTJxGWDByiCMnva9wDgZgLh8wrSwttEGE9XHiZaWxWNWqVM8Ypn8aW8x8mKSjxQjF1BNxV41JTeGEMFDvY2HaNYgGbQhBbrTXFq9cvxuzPgXHtfwcbb2kiytr3YBCz8eNmbzp73LSKzRk4AFaTiTdFSSWJe72uLAurQTQBTzAzVgPptGWfrhMWmHCkN5qXQMpUQWNsCzwqRHeZzpSMVtWTyrBCGsbyuPitbukdLHZ8Wee7DtCy8j4Gkhewrwn23jVQu1ApN4uGAFEa29AL26bsMGD7tdu1StE9CKRVzbfEknaReqv6").getOrThrow
       val tree = addr.script
       tree match {
-        case ErgoTree(_, _, Right(BlockValueWithInvalidBoolToSigmaProp(_)), _, _, _) =>
+        case ErgoTree(_, _, Right(BlockValueWithInvalidBoolToSigmaProp(_)), _, _, _, _) =>
       }
       val lines = SigmaPPrint.tokenize(tree, 150, 300)
       if (printDebugInfo) {

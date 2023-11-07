@@ -157,4 +157,12 @@ class CoreByteReader(val r: Reader, val maxTreeDepth: Int = CoreSerializer.MaxTr
   @inline final def wasDeserialize_=(v: Boolean): Unit = {
     _wasDeserialize = v
   }
+
+  private var _wasUsingBlockchainContext: Boolean = false
+  /** Helper property which is used to track operations using the blockchain context during parsing. */
+  @inline final def wasUsingBlockchainContext: Boolean = _wasUsingBlockchainContext
+
+  @inline final def wasUsingBlockchainContext_=(v: Boolean): Unit = {
+    wasUsingBlockchainContext = v
+  }
 }
