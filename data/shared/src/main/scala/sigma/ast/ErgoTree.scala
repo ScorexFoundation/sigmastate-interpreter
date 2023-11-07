@@ -163,6 +163,20 @@ case class ErgoTree private[sigma](
     _hasDeserialize.get
   }
 
+  private[sigma] var _isUsingBlockchainContext: Option[Boolean] = None
+
+  /** Returns true if the tree depends on the blockchain context.
+   */
+  lazy val isUsingBlockchainContext: Boolean = {
+    if (_isUsingBlockchainContext.isEmpty) {
+      _isUsingBlockchainContext = Some(root match {
+        case Right(p) => Value.isUsingBlockchainContext(p)
+        case _ => false
+      })
+    }
+    _isUsingBlockchainContext.get
+  }
+
   /** Serialized proposition expression of SigmaProp type with
     * ConstantPlaceholder nodes not replaced by Constant nodes.
     */

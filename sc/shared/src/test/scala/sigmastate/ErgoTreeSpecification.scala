@@ -140,6 +140,104 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
     }
   }
 
+  property("ErgoTree.isUsingBlockchainContext") {
+    {
+      val t = new ErgoTree(
+        HeaderType @@ 0.toByte,
+        Array[Constant[SType]](),
+        Right(TrueSigmaProp))
+      t._isUsingBlockchainContext shouldBe None
+      t.isUsingBlockchainContext shouldBe false
+    }
+
+    {
+      val t = new ErgoTree(
+        HeaderType @@ 16.toByte,
+        Array(IntConstant(1)),
+        Right(BoolToSigmaProp(GT(Height, ConstantPlaceholder(0, SInt))))
+      )
+      t._isUsingBlockchainContext shouldBe None
+      t.isUsingBlockchainContext shouldBe true
+    }
+
+    {
+      val t = new ErgoTree(
+        HeaderType @@ 16.toByte,
+        Vector(),
+        Right(OptionIsDefined(IR.builder.mkMethodCall(
+          LastBlockUtxoRootHash, SAvlTreeMethods.getMethod,
+          IndexedSeq(ExtractId(GetVarBox(22: Byte).get), GetVarByteArray(23: Byte).get)).asOption[SByteArray]))
+      )
+      t._isUsingBlockchainContext shouldBe None
+      t.isUsingBlockchainContext shouldBe true
+    }
+
+    {
+      val t = new ErgoTree(
+        HeaderType @@ 16.toByte,
+        Vector(),
+        Right(BoolToSigmaProp(EQ(MinerPubkey, ErgoLikeContextTesting.dummyPubkey)))
+      )
+      t._isUsingBlockchainContext shouldBe None
+      t.isUsingBlockchainContext shouldBe true
+    }
+
+    {
+      val t = new ErgoTree(
+        HeaderType @@ 16.toByte,
+        Vector(),
+        Right(OptionIsDefined(IR.builder.mkMethodCall(
+          Context, SContextMethods.headersMethod, Vector()).asOption[SByteArray]))
+      )
+      t._isUsingBlockchainContext shouldBe None
+      t.isUsingBlockchainContext shouldBe true
+    }
+
+    {
+      val t = new ErgoTree(
+        HeaderType @@ 16.toByte,
+        Vector(),
+        Right(OptionIsDefined(IR.builder.mkMethodCall(
+          Context, SContextMethods.preHeaderMethod, Vector()).asOption[SByteArray]))
+      )
+      t._isUsingBlockchainContext shouldBe None
+      t.isUsingBlockchainContext shouldBe true
+    }
+
+    {
+      val t = new ErgoTree(
+        HeaderType @@ 16.toByte,
+        Vector(),
+        Right(OptionIsDefined(IR.builder.mkMethodCall(
+          Context, SContextMethods.heightMethod, Vector()).asOption[SByteArray]))
+      )
+      t._isUsingBlockchainContext shouldBe None
+      t.isUsingBlockchainContext shouldBe true
+    }
+
+    {
+      val t = new ErgoTree(
+        HeaderType @@ 16.toByte,
+        Vector(),
+        Right(OptionIsDefined(IR.builder.mkMethodCall(
+          Context, SContextMethods.lastBlockUtxoRootHashMethod, Vector()).asOption[SByteArray]))
+      )
+      t._isUsingBlockchainContext shouldBe None
+      t.isUsingBlockchainContext shouldBe true
+    }
+
+    {
+      val t = new ErgoTree(
+        HeaderType @@ 16.toByte,
+        Vector(),
+        Right(OptionIsDefined(IR.builder.mkMethodCall(
+          Context, SContextMethods.minerPubKeyMethod, Vector()).asOption[SByteArray]))
+      )
+      t._isUsingBlockchainContext shouldBe None
+      t.isUsingBlockchainContext shouldBe true
+    }
+  }
+
   property("ErgoTree equality") {
     val t1 = new ErgoTree(
       HeaderType @@ 16.toByte,
