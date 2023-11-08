@@ -227,6 +227,7 @@ object SType {
   }
 
   implicit class STypeOps(val tpe: SType) extends AnyVal {
+    def isBoolean: Boolean = tpe.isInstanceOf[SBoolean.type]
     def isCollectionLike: Boolean = tpe.isInstanceOf[SCollection[_]]
     def isCollection: Boolean = tpe.isInstanceOf[SCollectionType[_]]
     def isOption: Boolean = tpe.isInstanceOf[SOption[_]]
@@ -907,13 +908,12 @@ case object SBoolean extends SPrimType with SEmbeddable with SLogical with SProd
   override val reprClass: RClass[_] = RClass(classOf[Boolean])
 
   val ToByte = "toByte"
-  protected override def getMethods() = super.getMethods()
-  /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-  ++ Seq(
-    SMethod(this, ToByte, SFunc(this, SByte), 1)
-      .withInfo(PropertyCall, "Convert true to 1 and false to 0"),
-  )
-  */
+
+  lazy val ToByteMethod: SMethod = SMethod(
+    this, ToByte, SFunc(this, SByte), 1, FixedCost(JitCost(1)))
+    .withInfo(PropertyCall, "Convert true to 1 and false to 0")
+
+  protected override def getMethods() = super.getMethods() ++ Seq(ToByteMethod)
 }
 
 /** Descriptor of ErgoTree type `Byte` - 8-bit signed integer. */
