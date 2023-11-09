@@ -1,4 +1,5 @@
 package org.ergoplatform.validation
+import scorex.utils.Ints
 
 import java.util
 
