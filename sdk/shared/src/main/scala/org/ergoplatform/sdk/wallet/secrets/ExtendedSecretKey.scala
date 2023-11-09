@@ -10,6 +10,7 @@ import sigmastate.basics.CryptoConstants
 import sigmastate.crypto.CryptoFacade
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import scorex.utils.Ints
 
 /**
   * Secret, its chain code and path in key tree.
@@ -45,8 +46,8 @@ final class ExtendedSecretKey(/*private[secrets]*/ val keyBytes: Array[Byte],
   })
 
   override def hashCode(): Int = {
-    var h = util.Arrays.hashCode(keyBytes)
-    h = 31 * h + util.Arrays.hashCode(chainCode)
+    var h = Ints.fromByteArray(keyBytes)
+    h = 31 * h + Ints.fromByteArray(chainCode)
     h = 31 * h + path.hashCode()
     h
   }

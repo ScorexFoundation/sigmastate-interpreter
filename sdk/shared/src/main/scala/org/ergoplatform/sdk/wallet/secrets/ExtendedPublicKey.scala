@@ -7,6 +7,7 @@ import sigmastate.crypto.CryptoFacade
 import sigmastate.crypto.BigIntegers
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import scorex.utils.Ints
 
 import scala.annotation.tailrec
 
@@ -36,8 +37,8 @@ final class ExtendedPublicKey(/*private[secrets] */val keyBytes: Array[Byte],
   })
 
   override def hashCode(): Int = {
-    var h = util.Arrays.hashCode(keyBytes)
-    h = 31 * h + util.Arrays.hashCode(chainCode)
+    var h = Ints.fromByteArray(keyBytes)
+    h = 31 * h + Ints.fromByteArray(chainCode)
     h = 31 * h + path.hashCode()
     h
   }

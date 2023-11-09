@@ -1,6 +1,7 @@
 package org.ergoplatform.sdk
 
 import debox.cfor
+import scorex.utils.Ints
 
 import java.util
 
@@ -73,7 +74,7 @@ final class SecretString private[sdk](val _data: Array[Char]) {
 
   override def hashCode(): Int = {
     checkErased()
-    util.Arrays.hashCode(_data)
+    Ints.fromByteArray(_data)
   }
 
   /** this is adapted version of java.lang.String */
