@@ -1,4 +1,5 @@
 package sigma.validation
+import scorex.utils.Ints
 
 /** Base trait for rule status information. */
 sealed trait RuleStatus {
@@ -43,7 +44,7 @@ case class  ReplacedRule(newRuleId: Short) extends RuleStatus {
 case class ChangedRule(newValue: Array[Byte]) extends RuleStatus {
   val statusCode: Byte = RuleStatus.ChangedRuleCode
 
-  override def hashCode(): Int = java.util.Arrays.hashCode(newValue)
+  override def hashCode(): Int = Ints.fromByteArray(newValue)
 
   override def canEqual(that: Any): Boolean = that.isInstanceOf[ChangedRule]
 

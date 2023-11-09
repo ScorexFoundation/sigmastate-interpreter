@@ -29,6 +29,7 @@
 package sigmastate.crypto
 
 import debox.cfor
+import scorex.utils.Ints
 
 import java.util
 
@@ -113,7 +114,7 @@ class GF2_192 extends AnyRef {
     }
   }
 
-  override def hashCode = java.util.Arrays.hashCode(word)
+  override def hashCode = Ints.fromByteArray(word)
 
   /**
     *

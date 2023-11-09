@@ -2,6 +2,7 @@ package sigma.interpreter
 
 import scorex.util.encode.Base16
 import sigma.serialization.{SigmaByteReader, SigmaByteWriter, SigmaSerializer}
+import scorex.utils.Ints
 
 /**
   * Proof of correctness of tx spending
@@ -10,7 +11,7 @@ import sigma.serialization.{SigmaByteReader, SigmaByteWriter, SigmaSerializer}
   * @param extension - user-defined variables to be put into context
   */
 class ProverResult(val proof: Array[Byte], val extension: ContextExtension) {
-  override def hashCode(): Int = java.util.Arrays.hashCode(proof) * 31 + extension.hashCode()
+  override def hashCode(): Int = Ints.fromByteArray(proof) * 31 + extension.hashCode()
 
   override def equals(obj: scala.Any): Boolean =
   (this eq obj.asInstanceOf[AnyRef]) || (obj match {

@@ -5,6 +5,7 @@ import sigma.data.ProveDlog
 import java.math.BigInteger
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigma.serialization.{SigmaByteReader, SigmaByteWriter, SigmaSerializer}
+import scorex.utils.Ints
 
 /**
   * Secret, its chain code and path in key tree.
@@ -40,8 +41,8 @@ final class ExtendedSecretKey(/*private[secrets]*/ val keyBytes: Array[Byte],
   })
 
   override def hashCode(): Int = {
-    var h = java.util.Arrays.hashCode(keyBytes)
-    h = 31 * h + java.util.Arrays.hashCode(chainCode)
+    var h = Ints.fromByteArray(keyBytes)
+    h = 31 * h + Ints.fromByteArray(chainCode)
     h = 31 * h + path.hashCode()
     h
   }
