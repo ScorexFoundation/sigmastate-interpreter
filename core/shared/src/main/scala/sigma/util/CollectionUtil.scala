@@ -4,6 +4,7 @@ import scala.collection.{Seq, mutable, GenIterable}
 import scala.collection.mutable.{HashMap, ArrayBuffer}
 import scala.reflect.ClassTag
 import scala.collection.compat._
+import scorex.utils.Ints
 
 object CollectionUtil {
 
@@ -58,14 +59,14 @@ object CollectionUtil {
     */
   def deepHashCode[T](arr: Array[T]): Int = arr match {
     case arr: Array[AnyRef] => java.util.Arrays.deepHashCode(arr)
-    case arr: Array[Byte] => java.util.Arrays.hashCode(arr)
-    case arr: Array[Short] => java.util.Arrays.hashCode(arr)
-    case arr: Array[Int] => java.util.Arrays.hashCode(arr)
-    case arr: Array[Long] => java.util.Arrays.hashCode(arr)
-    case arr: Array[Char] => java.util.Arrays.hashCode(arr)
-    case arr: Array[Float] => java.util.Arrays.hashCode(arr)
-    case arr: Array[Double] => java.util.Arrays.hashCode(arr)
-    case arr: Array[Boolean] => java.util.Arrays.hashCode(arr)
+    case arr: Array[Byte] => Ints.fromByteArray(arr) 
+    case arr: Array[Short] => Ints.fromByteArray(arr) 
+    case arr: Array[Int] => Ints.fromByteArray(arr) 
+    case arr: Array[Long] => Ints.fromByteArray(arr)
+    case arr: Array[Char] => Ints.fromByteArray(arr) 
+    case arr: Array[Float] => Ints.fromByteArray(arr)
+    case arr: Array[Double] => Ints.fromByteArray(arr) 
+    case arr: Array[Boolean] => Ints.fromByteArray(arr) 
   }
 
   /** Group the given sequence of pairs by first values as keys.
