@@ -13,3 +13,6 @@ final class MethodNotFound(message: String, source: Option[SourceContext] = None
 
 final class NonApplicableMethod(message: String, source: Option[SourceContext] = None)
   extends TyperException(message, source)
+
+final class UnexpectedType(message: String, source: Option[SourceContext] = None)
+  extends TyperException(message, source)
