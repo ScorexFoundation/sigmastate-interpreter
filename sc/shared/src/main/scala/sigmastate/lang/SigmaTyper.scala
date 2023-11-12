@@ -96,7 +96,7 @@ class SigmaTyper(val builder: SigmaBuilder,
           val tMeth = method.stype
           val tRes = tMeth match {
             case SFunc(args, _, _) =>
-              val tThis = args(0) // first arg corresponds to method's receiver
+              val tThis = args(0)  // first arg corresponds to method's receiver
               val tMethSpec = unifyTypes(tThis, tNewObj) match {
                 case Some(subst) if subst.nonEmpty => applySubst(tMeth, subst).asFunc // specialize for concrete receiver type
                 case _ => tMeth.asFunc
@@ -166,7 +166,7 @@ class SigmaTyper(val builder: SigmaBuilder,
           error(s"Cannot get field '$n' in in the object $obj of non-product type ${obj.tpe}", sel.sourceContext)
       }
 
-    case app@Apply(sel @ Select(obj, n, _), args) =>
+    case app @ Apply(sel @ Select(obj, n, _), args) =>
       val newSel = assignType(env, sel)
       val newArgs = args.map(assignType(env, _))
       newSel.tpe match {
