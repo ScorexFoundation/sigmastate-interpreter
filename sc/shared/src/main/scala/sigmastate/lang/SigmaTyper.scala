@@ -53,9 +53,10 @@ class SigmaTyper(val builder: SigmaBuilder,
     case Block(bs, res) =>
       var curEnv = env
       val bs1 = ArrayBuffer[Val]()
-      for (v @ Val(n, _, b) <- bs) {
+      for (v @ Val(n, givenTpe, b) <- bs) {
         if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}", v.sourceContext)
-        val b1 = assignType(curEnv, b)
+        val expectedTpe = if (givenTpe != NoType) Some(givenTpe) else None
+        val b1 = assignType(curEnv, b, expectedTpe)
         curEnv = curEnv + (n -> b1.tpe)
         builder.currentSrcCtx.withValue(v.sourceContext) {
           bs1 += mkVal(n, b1.tpe, b1)
