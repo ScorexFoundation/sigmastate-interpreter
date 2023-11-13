@@ -9,7 +9,7 @@ import scala.scalajs.js.annotation.JSExportTopLevel
 
 /** An exported JavaScript class wrapping the Scala `ErgoTree` type. */
 @JSExportTopLevel("ErgoTree")
-class ErgoTree(tree: ast.ErgoTree) extends js.Object {
+class ErgoTree(val tree: ast.ErgoTree) extends js.Object {
   /** The first byte of serialized byte array which determines interpretation of the rest of the array. */
   def header(): Byte = tree.header
 
