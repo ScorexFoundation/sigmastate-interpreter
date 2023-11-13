@@ -260,14 +260,6 @@ object JavaHelpers {
     ErgoAlgos.encode(ErgoAlgos.hash(s))
   }
 
-
-  def toSigmaBoolean(ergoTree: ErgoTree): SigmaBoolean = {
-    val prop = ergoTree.toProposition(ergoTree.isConstantSegregation)
-    prop match {
-      case SigmaPropConstant(p) => SigmaDsl.toSigmaBoolean(p)
-    }
-  }
-
   def toErgoTree(sigmaBoolean: SigmaBoolean): ErgoTree = ErgoTree.fromSigmaBoolean(sigmaBoolean)
 
   def getStateDigest(tree: AvlTree): Array[Byte] = {

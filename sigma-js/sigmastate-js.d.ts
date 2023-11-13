@@ -11,6 +11,18 @@ declare module "sigmastate-js/main" {
   type HexString = string;
   type ByteArray = { u: Int8Array };
 
+  export declare class Address {
+    isMainnet(): boolean;
+    isP2PK(): boolean;
+    isP2S(): boolean;
+    toSigmaPropOpt(): SigmaProp | undefined;
+    toString(): string;
+  }
+
+  export declare class AddressObj {
+    static fromString(value: HexString): Address;
+  }
+
   export declare class ErgoTree {
     toHex(): HexString;
     bytes(): ByteArray;

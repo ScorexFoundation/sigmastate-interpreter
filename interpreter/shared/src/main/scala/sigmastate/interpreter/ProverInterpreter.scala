@@ -99,7 +99,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils {
 
     // Prover Step 8: compute the challenge for the root of the tree as the Fiat-Shamir hash of propBytes
     // and the message being signed.
-    val rootChallenge = Challenge @@ CryptoFunctions.hashFn(CollectionUtil.concatArrays_v5(propBytes, message)).toColl
+    val rootChallenge = Challenge @@ CryptoFunctions.hashFn(CollectionUtil.concatArrays(propBytes, message)).toColl
     val step8 = step6.withChallenge(rootChallenge)
 
     // Prover Step 9: complete the proof by computing challenges at real nodes and additionally responses at real leaves
