@@ -59,7 +59,7 @@ abstract class Address extends js.Object {
     * @throws IllegalArgumentException if this instance is not P2S address
     */
   def asP2S(): P2SAddress = {
-    require(isP2PK(), s"This instance $this is not P2PKAddress")
+    require(isP2S(), s"This instance $this is not P2SAddress")
     new P2SAddress(ergoAddress.asInstanceOf[org.ergoplatform.Pay2SAddress])
   }
 

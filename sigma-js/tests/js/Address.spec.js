@@ -17,6 +17,7 @@ describe("Address", () => {
 
     expect(addr.toString()).not.toBeUndefined();
     expect(addr.toString()).toEqual(addrStr)
+    expect(addr.asP2PK()).not.toBeUndefined();
   });
 
   it("roundtrip for P2S", () => {
@@ -26,6 +27,7 @@ describe("Address", () => {
 
     expect(addr.toString()).not.toBeUndefined();
     expect(addr.toString()).toEqual(p2sStr)
+    expect(addr.asP2S()).not.toBeUndefined();
   });
 
   it("toSigmaPropOpt", () => {
@@ -33,6 +35,18 @@ describe("Address", () => {
 
     expect(addr.isMainnet()).toEqual(true)
     expect(addr.toSigmaPropOpt()).not.toBeUndefined()
+  });
+
+  it("other properties", () => {
+    let addr = AddressObj.fromString(addrStr);
+    expect(addr.toErgoTree()).not.toBeUndefined()
+    expect(addr.asP2PK()).not.toBeUndefined()
+    expect(addr.asP2PK().isP2PK()).toEqual(true)
+    expect(addr.asP2PK().toErgoTree()).not.toBeUndefined()
+    expect(addr.asP2PK().toSigmaProp()).not.toBeUndefined()
+    expect(addr.asP2PK().toPropositionBytes()).not.toBeUndefined()
+    expect(addr.asP2PK().addressTypePrefix()).not.toBeUndefined()
+    expect(addr.asP2PK().getPublicKeyGE()).not.toBeUndefined()
   });
 
 });
