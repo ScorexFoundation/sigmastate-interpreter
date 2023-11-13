@@ -20,14 +20,17 @@ abstract class Address extends js.Object {
     ErgoAddressEncoder(ergoAddress.networkPrefix).toBytes(ergoAddress)
   }
 
-  def addressBytes: Array[Byte] = _addressBytes
+  /** Serialize this address to bytes.
+    * @see ErgoAddressEncoder.toBytes()
+    */
+  def addressBytes(): Array[Byte] = _addressBytes
 
   /** Address type code used to differentiate between pay-to-public-key, pay-to-script,
     * pay-to-script-hash addresses.
     *
     * @see [[P2PKAddress]], [[P2SAddress]], [[P2SHAddress]]
     */
-  def addressTypePrefix: Byte = ergoAddress.addressTypePrefix
+  def addressTypePrefix(): Byte = ergoAddress.addressTypePrefix
 
   /** First byte is used to encode network type and address type.
     *
@@ -60,11 +63,11 @@ abstract class Address extends js.Object {
     new P2SAddress(ergoAddress.asInstanceOf[org.ergoplatform.Pay2SAddress])
   }
 
-  /** @return true if this address has Pay-To-Script type. */
+  /** @return true if this address has Pay-To-Script-Hash type. */
   def isP2SH(): Boolean = ergoAddress.isInstanceOf[org.ergoplatform.Pay2SHAddress]
 
   /** @return underlying {@link P2SHAddress}.
-    * @throws IllegalArgumentException if this instance is not P2S address
+    * @throws IllegalArgumentException if this instance is not P2SH address
     */
   def asP2SH(): P2SHAddress = {
     require(isP2SH(), s"This instance $this is not P2SHAddress")
@@ -100,6 +103,7 @@ abstract class Address extends js.Object {
 /** An exported JavaScript object providing utility methods for working with Address instances. */
 @JSExportTopLevel("AddressObj")
 object Address extends js.Object {
+  /** Creates JS wrapper over given [[ErgoAddress]]. */
   def fromErgoAddress(ergoAddress: org.ergoplatform.ErgoAddress): Address = {
     ergoAddress match {
       case p2pk: org.ergoplatform.P2PKAddress =>
@@ -118,9 +122,9 @@ object Address extends js.Object {
     if (isMainnet(headByte)) ErgoAddressEncoder.MainnetNetworkPrefix else ErgoAddressEncoder.TestnetNetworkPrefix
   }
 
-  /** Deserializes an ErgoTree instance from a hexadecimal string.
+  /** Deserializes an ErgoTree instance from an address string.
     *
-    * @param hex a hexadecimal string representing the serialized ErgoTree
+    * @param base58String a Base58 string representing the serialized ErgoTree
     */
   def fromString(base58String: String): Address = {
     Base58.decode(base58String) match {
