@@ -298,6 +298,7 @@ lazy val sdk = crossProject(JVMPlatform, JSPlatform)
       commonDependenies2,
       testingDependencies2,
       scodecBitsDependency,
+      circeDependency,
       publish / skip := true
     )
     .jvmSettings(
