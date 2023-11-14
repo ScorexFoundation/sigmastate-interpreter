@@ -5,6 +5,7 @@ import sigma.ast.{ComplexityTable, MethodCall, SContextMethods, SMethod, SType, 
 import sigma.util.safeNewArray
 import SigmaByteWriter._
 import debox.cfor
+import sigma.ast.SContextMethods.BlockchainContextMethodNames
 import sigma.serialization.CoreByteWriter.{ArgInfo, DataInfo}
 
 case class MethodCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value[SType]], STypeSubst) => Value[SType])
@@ -60,13 +61,8 @@ case class MethodCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value[S
 
     val specMethod = method.specializeFor(obj.tpe, types)
 
-    var isUsingBlockchainContext = specMethod.objType == SContextMethods && (
-      method.name == SContextMethods.headersMethod.name ||
-        method.name == SContextMethods.preHeaderMethod.name ||
-        method.name == SContextMethods.heightMethod.name ||
-        method.name == SContextMethods.lastBlockUtxoRootHashMethod.name ||
-        method.name == SContextMethods.minerPubKeyMethod.name
-      )
+    var isUsingBlockchainContext = specMethod.objType == SContextMethods &&
+      BlockchainContextMethodNames.contains(method.name)
     r.wasUsingBlockchainContext ||= isUsingBlockchainContext
 
     cons(obj, specMethod, args, Map.empty)

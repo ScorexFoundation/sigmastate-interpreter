@@ -217,18 +217,13 @@ object Value {
       case Height => 1
       case LastBlockUtxoRootHash => 1
       case MinerPubkey => 1
-      case MethodCall(obj, method, _, _) =>
-        (obj, method.objType) match {
-          case (_, SContextMethods) => method.name match {
-            case SContextMethods.headersMethod.name => 1
-            case SContextMethods.preHeaderMethod.name => 1
-            case SContextMethods.heightMethod.name => 1
-            case SContextMethods.lastBlockUtxoRootHashMethod.name => 1
-            case SContextMethods.minerPubKeyMethod.name => 1
-            case _ => 0
-          }
+      case MethodCall(_, method, _, _) =>
+        method.objType match {
+          case SContextMethods =>
+            if (SContextMethods.BlockchainContextMethodNames.contains(method.name)) 1 else 0
           case _ => 0
         }
+      case _ => 0
     }
     val c = count(blockchainContextNode)(exp)
     c > 0
