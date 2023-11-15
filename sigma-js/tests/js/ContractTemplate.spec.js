@@ -7,18 +7,50 @@ describe("Smoke tests for API exporting", () => {
 });
 
 describe("ContractTemplate", () => {
-  let addrStr = "9iJd9drp1KR3R7HLi7YmQbB5sJ5HFKZoPb5MxGepamggJs5vDHm";
-  let p2sStr = "JryiCXrZf5VDetH1PM7rKDX3q4sLF34AdErWJFqG87Hf5ikTDf636b35Nr7goWMdRUKA3ZPxdeqFNbQzBjhnDR9SUMYwDX1tdV8ZuGgXwQPaRVcB9"
+  let templateJsonStr = "{\n" +
+      "  \"treeVersion\" : null,\n" +
+      "  \"name\" : \"TestContractTemplate\",\n" +
+      "  \"description\" : \"TestContractTemplateDescription\",\n" +
+      "  \"constTypes\" : [\n" +
+      "    \"02\",\n" +
+      "    \"02\",\n" +
+      "    \"02\"\n" +
+      "  ],\n" +
+      "  \"constValues\" : [\n" +
+      "    10,\n" +
+      "    20,\n" +
+      "    30\n" +
+      "  ],\n" +
+      "  \"parameters\" : [\n" +
+      "    {\n" +
+      "      \"name\" : \"p1\",\n" +
+      "      \"description\" : \"p1_description\",\n" +
+      "      \"constantIndex\" : 0\n" +
+      "    },\n" +
+      "    {\n" +
+      "      \"name\" : \"p2\",\n" +
+      "      \"description\" : \"p2_description\",\n" +
+      "      \"constantIndex\" : 1\n" +
+      "    },\n" +
+      "    {\n" +
+      "      \"name\" : \"p3\",\n" +
+      "      \"description\" : \"p3_description\",\n" +
+      "      \"constantIndex\" : 2\n" +
+      "    }\n" +
+      "  ],\n" +
+      "  \"expressionTree\" : \"d1939a730073017302\"\n" +
+      "}";
 
-  // it("roundtrip for P2PK", () => {
-  //   let addr = AddressObj.fromString(addrStr);
-  //   expect(addr.isP2PK()).toEqual(true)
-  //   expect(addr.isP2S()).toEqual(false)
-  //
-  //   expect(addr.toString()).not.toBeUndefined();
-  //   expect(addr.toString()).toEqual(addrStr)
-  //   expect(addr.asP2PK()).not.toBeUndefined();
-  // });
+  it("roundtrip for P2PK", () => {
+    let template = ContractTemplateObj.fromJsonString(templateJsonStr);
+    expect(template).not.toBeUndefined();
+    expect(template.toJsonString()).toEqual(templateJsonStr);
+    // expect(addr.isP2PK()).toEqual(true)
+    //
+    // expect(addr.isP2S()).toEqual(false)
+    // expect(addr.toString()).toEqual(addrStr)
+    // expect(addr.asP2PK()).not.toBeUndefined();
+  });
 
 });
 

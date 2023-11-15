@@ -437,4 +437,40 @@ declare module "sigmastate-js/main" {
     export declare class ProverBuilderObj {
         static create(parameters: BlockchainParameters, network: number): ProverBuilder;
     }
+
+
+    /**
+     * Represents a reusable ContractTemplate with support to generate ErgoTree based on provided parameters.
+     *
+     * @param treeVersion    the optional version of ErgoTree which should be used. If this value is not provided here then
+     *                       it must be provided while generating the `ErgoTree` by calling `applyTemplate`.
+     * @param name           user readable name (non-empty string bytes in UTF-8 encoding)
+     * @param description    user readable contract description (string bytes in UTF-8 encoding)
+     * @param constTypes     list denoting the type of ConstantPlaceholders in the expressionTree
+     * @param constValues    optional list of optional default values for the ConstantPlaceholders in the expressionTree.
+     *                       If an entry in the sequence is None, it must have a corresponding entry in parameters and its
+     *                       value must be provided while generating the `ErgoTree` by calling `applyTemplate`. If all the
+     *                       entries are None, the whole `constValues` field can be set to None.
+     * @param parameters     typed template parameters of the contract template. It must have an entry for each
+     *                       `ConstantPlaceholder` which has a `None` in the `constValues` field. Other fields which do have
+     *                       a value defined in `constValues` can also be allowed to be optionally overridden by accepting
+     *                       it in `parameters`.
+     * @param expressionTree root of the contract which is a valid expression of `SigmaProp` type. Must have constants
+     *                       segregated into `constTypes` and optionally `constValues`
+     */
+    export declare class ContractTemplate {
+        /** @return JSON representation of this contract template pretty-printed to a string
+         *         indentation of two spaces.
+         */
+        toJsonString(): String
+    }
+
+    export declare class ContractTemplateObj {
+        /** Create a new contract template from a JSON string.
+         *
+         * @param json JSON string representing a contract template.
+         * @return a new contract template.
+         */
+        fromJsonString(json: String): ContractTemplate
+    }
 }

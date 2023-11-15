@@ -114,12 +114,15 @@ case class ErgoTree private[sigma](
   @deprecated("Use toProposition instead", "v2.1")
   lazy val proposition: SigmaPropValue = toProposition(isConstantSegregation)
 
+  /** Version of this tree (== BlockVersion - 1). */
   @inline final def version: Byte = ErgoTree.getVersion(header)
 
   @inline final def isRightParsed: Boolean = root.isRight
 
+  /** @return true, if constant segregation bit is set in the header. */
   @inline final def isConstantSegregation: Boolean = ErgoTree.isConstantSegregation(header)
 
+  /** @return true, if size bit is set in the header. */
   @inline final def hasSize: Boolean = ErgoTree.hasSize(header)
 
   private[sigma] var _bytes: Array[Byte] = propositionBytes

@@ -1,6 +1,5 @@
 package org.ergoplatform.sdk
 
-import cats.syntax.either._
 import debox.cfor
 import io.circe._
 import io.circe.syntax.EncoderOps
@@ -16,7 +15,6 @@ import sigma.ast.syntax.SigmaPropValue
 import sigma.serialization._
 import java.util.Objects
 import scala.collection.mutable
-import scala.language.implicitConversions
 
 /**
  * Represents a ContractTemplate parameter.
@@ -178,6 +176,14 @@ case class ContractTemplate(
       this.expressionTree
     )
   }
+
+  /** @return Json representation of this contract template */
+  def toJson: Json = ContractTemplate.jsonEncoder.encoder(this)
+
+  /** @return JSON representation of this contract template pretty-printed to a string
+    *         indentation of two spaces.
+    */
+  def toJsonString: String = toJson.spaces2
 
   override def hashCode(): Int = Objects.hash(treeVersion, name, description, constTypes, constValues, parameters, expressionTree)
 

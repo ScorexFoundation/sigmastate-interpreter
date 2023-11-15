@@ -9,13 +9,14 @@ import scorex.crypto.authds.ADKey
 import scorex.util.ModifierId
 import scorex.util.encode.Base16
 import sigma.Extensions.CollBytesOps
-import sigma.ast.SType
 import sigma.ast.syntax.GroupElementConstant
+import sigma.ast.{Constant, GroupElementConstant, SType}
 import sigma.data.Iso.{isoStringToArray, isoStringToColl}
-import sigma.data.{CBigInt, CGroupElement, Digest32Coll, Iso}
-import sigma.js.{AvlTree, GroupElement, Type, Value}
-import sigma.{Coll, Colls, Evaluation}
-import sigma.ast.{Constant, GroupElementConstant}
+import sigma.data.{CBigInt, CGroupElement, Digest32Coll, Digest32CollRType, Iso}
+import sigma.interpreter.{ContextExtension, ProverResult}
+import sigma.js.{AvlTree, GroupElement}
+import sigma.serialization.{ErgoTreeSerializer, ValueSerializer}
+import sigma.{Coll, Colls}
 import sigmastate.eval.{CHeader, CPreHeader}
 import sigmastate.fleetSdkCommon.distEsmTypesBoxesMod.Box
 import sigmastate.fleetSdkCommon.distEsmTypesCommonMod.HexString
@@ -23,9 +24,7 @@ import sigmastate.fleetSdkCommon.distEsmTypesRegistersMod.NonMandatoryRegisters
 import sigmastate.fleetSdkCommon.distEsmTypesTokenMod.TokenAmount
 import sigmastate.fleetSdkCommon.distEsmTypesTransactionsMod.{SignedTransaction, UnsignedTransaction}
 import sigmastate.fleetSdkCommon.{distEsmTypesBoxesMod => boxesMod, distEsmTypesCommonMod => commonMod, distEsmTypesContextExtensionMod => contextExtensionMod, distEsmTypesInputsMod => inputsMod, distEsmTypesProverResultMod => proverResultMod, distEsmTypesRegistersMod => registersMod, distEsmTypesTokenMod => tokenMod}
-import sigma.interpreter.{ContextExtension, ProverResult}
-import sigma.serialization.{ErgoTreeSerializer, ValueSerializer}
-import sigma.data.Digest32CollRType
+
 import java.math.BigInteger
 import scala.collection.immutable.ListMap
 import scala.scalajs.js

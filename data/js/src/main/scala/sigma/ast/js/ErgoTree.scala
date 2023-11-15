@@ -10,13 +10,21 @@ import scala.scalajs.js.annotation.JSExportTopLevel
 /** An exported JavaScript class wrapping the Scala `ErgoTree` type. */
 @JSExportTopLevel("ErgoTree")
 class ErgoTree(val tree: ast.ErgoTree) extends js.Object {
+  /** Root of the contract which is a valid expression of `SigmaProp` type. Must have constants
+    * segregated into `constTypes` and optionally `constValues`
+    */
+  val root: Expr = new Expr(tree.root.toOption.get)
+
   /** The first byte of serialized byte array which determines interpretation of the rest of the array. */
   def header(): Byte = tree.header
 
+  /** Version of this tree (== BlockVersion - 1). */
   def version(): Byte = tree.version
 
+  /** @return true, if constant segregation bit is set in the header. */
   def isConstantSegregation(): Boolean = tree.isConstantSegregation
 
+  /** @return true, if size bit is set in the header. */
   def hasSize(): Boolean = tree.hasSize
 
   /** Serializes the ErgoTree instance to an array of bytes. */
