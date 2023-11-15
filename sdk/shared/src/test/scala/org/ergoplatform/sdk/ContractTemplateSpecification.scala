@@ -238,10 +238,6 @@ class ContractTemplateSpecification extends SerializationSpecification
       val template = templates(i)
       val applied = template.applyTemplate(Some(ergoTreeVersionInTests), templateValues(i))
       applied shouldEqual expectedErgoTree(i)
-//      if (ergoTreeVersionInTests == VersionContext.JitActivationVersion) {
-//        println("Template: " + template.toJsonString)
-//        println("Applied ErgoTree: " + applied.bytesHex)
-//      }
     }
     )
   }

@@ -438,31 +438,85 @@ declare module "sigmastate-js/main" {
         static create(parameters: BlockchainParameters, network: number): ProverBuilder;
     }
 
+    /**
+     * Represents a ContractTemplate parameter.
+     */
+    export declare class Parameter {
+        /** User readable parameter name (string bytes in UTF-8 encoding) */
+        name: String
+        /** User readable parameter description (string bytes in UTF-8 encoding) */
+        description: String
+        /** Index in the ErgoTree.constants array */
+        constantIndex: number
+    }
+
+    /** JavaScript class wrapping the Scala [[sigma.ast.Value]]. */
+    export declare class Expr {
+    }
 
     /**
-     * Represents a reusable ContractTemplate with support to generate ErgoTree based on provided parameters.
-     *
-     * @param treeVersion    the optional version of ErgoTree which should be used. If this value is not provided here then
-     *                       it must be provided while generating the `ErgoTree` by calling `applyTemplate`.
-     * @param name           user readable name (non-empty string bytes in UTF-8 encoding)
-     * @param description    user readable contract description (string bytes in UTF-8 encoding)
-     * @param constTypes     list denoting the type of ConstantPlaceholders in the expressionTree
-     * @param constValues    optional list of optional default values for the ConstantPlaceholders in the expressionTree.
-     *                       If an entry in the sequence is None, it must have a corresponding entry in parameters and its
-     *                       value must be provided while generating the `ErgoTree` by calling `applyTemplate`. If all the
-     *                       entries are None, the whole `constValues` field can be set to None.
-     * @param parameters     typed template parameters of the contract template. It must have an entry for each
-     *                       `ConstantPlaceholder` which has a `None` in the `constValues` field. Other fields which do have
-     *                       a value defined in `constValues` can also be allowed to be optionally overridden by accepting
-     *                       it in `parameters`.
-     * @param expressionTree root of the contract which is a valid expression of `SigmaProp` type. Must have constants
-     *                       segregated into `constTypes` and optionally `constValues`
+     * Represents a reusable ContractTemplate with support to generate ErgoTree based on
+     * provided parameters.
      */
     export declare class ContractTemplate {
+        /**
+         * The optional version of ErgoTree which should be used. If this value is not
+         * provided here then it must be provided while generating the `ErgoTree` by
+         * calling `applyTemplate`.
+         */
+        treeVersion: number | undefined;
+
+        /** User readable name (non-empty string bytes in UTF-8 encoding). */
+        name: string;
+
+        /** User readable contract description (string bytes in UTF-8 encoding). */
+        description: string;
+
+        /** List denoting the type of ConstantPlaceholders in the expressionTree. */
+        constTypes: Type[];
+
+        /**
+         * Optional list of optional default values for the ConstantPlaceholders in the
+         * expressionTree. If an entry in the sequence is None, it must have a
+         * corresponding entry in parameters and its value must be provided while
+         * generating the `ErgoTree` by calling `applyTemplate`. If all the entries are
+         * None, the whole `constValues` field can be set to None.
+         */
+        constValues: (Value | undefined)[] | undefined;
+
+        /**
+         * Typed template parameters of the contract template. It must have an entry for
+         * each `ConstantPlaceholder` which has a `None` in the `constValues` field. Other
+         * fields which do have a value defined in `constValues` can also be allowed to be
+         * optionally overridden by accepting it in `parameters`.
+         */
+        parameters: Parameter[];
+
+        /** Root of the contract which is a valid expression of `SigmaProp` type. Must
+         * have constants segregated into `constTypes` and optionally `constValues`
+         */
+        expressionTree: Expr
+
         /** @return JSON representation of this contract template pretty-printed to a string
          *         indentation of two spaces.
          */
         toJsonString(): String
+
+        /**
+         * Generate the ErgoTree from the template by providing the values for parameters.
+         *
+         * @param version the version of the `ErgoTree` to use. Must be provided if the `treeVersion` was not provided in the
+         * template.
+         * @param paramValues the name-value map for the parameters accepted by the `ContractTemplate`. Must contain an entry
+         * for each parameter for which no default value was provided in the template. Optionally, can also
+         * provide values to override for parameters which do have a default value defined in the template.
+         * The type of the provided value must match with the corresponding entry in the `constTypes`
+         * provided in the template.
+         * @return `ErgoTree` generated by replacing the template parameters with the value provided in `paramValues`.
+         */
+        applyTemplate(
+            version: number | undefined,
+            paramValues: SigmaCompilerNamedConstantsMap): ErgoTree
     }
 
     export declare class ContractTemplateObj {
