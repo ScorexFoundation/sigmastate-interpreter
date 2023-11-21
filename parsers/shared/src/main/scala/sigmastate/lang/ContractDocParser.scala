@@ -97,8 +97,10 @@ object ContractDocParser {
   import DocumentationToken._
 
   def parse(source: String): Parsed[ContractDoc] = {
-    fastparse.parse(source, docString(_).map(ContractDoc.apply))
+    fastparse.parse(source, parse(_))
   }
+
+  def parse[_: P]: P[ContractDoc] = P(" ".rep.? ~ "/*" ~ docLine.rep ~ " ".rep.? ~ "*/").map(ContractDoc.apply)
 
   private def linePrefix[_: P] = P(" ".rep.? ~ "*" ~ " ".rep.?)
 
@@ -119,6 +121,4 @@ object ContractDocParser {
   private def description[_: P] = P(!"@" ~ charUntilNewLine.!).map(s => DocumentationToken(Description, s))
 
   private def docLine[_: P] = P(linePrefix ~ (emptyLine | description | tag) ~ "\n")
-
-  private def docString[_: P] = P(" ".rep.? ~ "/*" ~ docLine.rep ~ " ".rep.? ~ "*/")
 }

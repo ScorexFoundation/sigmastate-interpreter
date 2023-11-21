@@ -1,7 +1,6 @@
 package sigmastate.lang
 
 import fastparse.Parsed
-import fastparse.Parsed.Failure
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
