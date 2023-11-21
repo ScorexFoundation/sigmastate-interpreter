@@ -71,7 +71,7 @@ class ProverBuilder(parameters: BlockchainParameters, network: Byte) extends js.
       isoStringToGroupElement.to(h),
       isoStringToGroupElement.to(u),
       isoStringToGroupElement.to(v),
-      SigmaDsl.toBigInteger(isoBigInt.to(x))
+      SigmaDsl.toBigInteger(sigma.js.Isos.isoBigInt.to(x))
     )
     this
   }
@@ -85,7 +85,7 @@ class ProverBuilder(parameters: BlockchainParameters, network: Byte) extends js.
     * as proveDlog(a) && proveDlog(b), where a and b are two group elements.
     */
   def withDLogSecret(x: js.BigInt): ProverBuilder = {
-    _builder.withDLogSecret(SigmaDsl.toBigInteger(isoBigInt.to(x)))
+    _builder.withDLogSecret(SigmaDsl.toBigInteger(sigma.js.Isos.isoBigInt.to(x)))
     this
   }
 

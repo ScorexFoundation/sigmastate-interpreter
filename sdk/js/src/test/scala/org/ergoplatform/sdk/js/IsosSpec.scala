@@ -103,13 +103,13 @@ class IsosSpec extends IsosSpecBase with sdk.generators.ObjectGenerators {
 
   property("Iso.isoBigInt") {
     forAll { (c: sigma.BigInt) =>
-      roundtrip(Isos.isoBigInt)(c)
+      roundtrip(sigma.js.Isos.isoBigInt)(c)
     }
   }
 
   property("Iso.isoBigIntToLong") {
     forAll { (c: Long) =>
-      roundtrip(Isos.isoBigIntToLong)(c)
+      roundtrip(sigma.js.Isos.isoBigIntToLong)(c)
     }
   }
 
