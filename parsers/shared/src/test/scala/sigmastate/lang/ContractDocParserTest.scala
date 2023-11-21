@@ -10,10 +10,8 @@ class ContractDocParserTest extends AnyPropSpec with ScalaCheckPropertyChecks wi
   def parse(x: String): ContractDoc = {
     ContractDocParser.parse(x) match {
       case Parsed.Success(v, _) => v
-      case f: Failure =>
-        val traced = f.extra.trace()
-        println(s"\nTRACE: ${traced.msg}")
-        f.get // force show error diagnostics
+      case Parsed.Failure(label, index, extra) =>
+        fail(s"Parsing failed at index $index: $label with trace: ${extra.trace()}")
     }
   }
 
