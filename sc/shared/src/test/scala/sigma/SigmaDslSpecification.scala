@@ -180,7 +180,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       FixedCostItem(GetVar),
       FixedCostItem(OptionGet),
       FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-      SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10),  2),
+      SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
       FixedCostItem(ValUse),
       FixedCostItem(SelectField),
       FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
@@ -1621,7 +1621,9 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Int LT, GT, NEQ") {
     val o = ExactOrdering.IntIsExactOrdering
+
     def expect(v: Boolean) = Expected(Success(v), 1768, binaryRelationCostDetails(LT, SInt), 1768, 2010 +: Seq.fill(3)(2012))
+
     val LT_cases: Seq[((Int, Int), Expected[Boolean])] = Seq(
       (Int.MinValue, Int.MinValue) -> expect(false),
       (Int.MinValue, (Int.MinValue + 1).toInt) -> expect(true),
@@ -2374,14 +2376,13 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   /** Executed a series of test cases of NEQ operation verify using two _different_
-   * data instances `x` and `y`.
-   *
-   * @param cost the expected cost of `verify` (the same for all cases)
-   */
-  def verifyNeq[A: Ordering : Arbitrary : RType]
-  (x: A, y: A, cost: Int, neqCost: Seq[CostItem] = ArraySeq.empty, newCost: Int, expectedV3Costs: Seq[Int])
-  (copy: A => A, generateCases: Boolean = true)
-  (implicit sampled: Sampled[(A, A)], evalSettings: EvalSettings) = {
+    * data instances `x` and `y`.
+    * @param cost the expected cost of `verify` (the same for all cases)
+    */
+  def verifyNeq[A: Ordering: Arbitrary: RType]
+      (x: A, y: A, cost: Int, neqCost: Seq[CostItem] = ArraySeq.empty, newCost: Int, expectedV3Costs: Seq[Int])
+      (copy: A => A, generateCases: Boolean = true)
+      (implicit sampled: Sampled[(A, A)], evalSettings: EvalSettings) = {
     val copied_x = copy(x)
     val newCostDetails = if (neqCost.isEmpty) CostDetails.ZeroCost else costNEQ(neqCost)
     def expected(v: Boolean) = Expected(Success(v), cost, newCostDetails, newCost, expectedV3Costs)
@@ -7050,14 +7051,14 @@ class SigmaDslSpecification extends SigmaDslTesting
           )
         },
         existingFeature({ (x: Coll[Box]) => x.exists({ (b: Box) => b.value > 1 }) },
-          "{ (x: Coll[Box]) => x.exists({(b: Box) => b.value > 1 }) }",
-          FuncValue(
-            Vector((1, SCollectionType(SBox))),
-            Exists(
-              ValUse(1, SCollectionType(SBox)),
-              FuncValue(Vector((3, SBox)), GT(ExtractAmount(ValUse(3, SBox)), LongConstant(1L)))
-            )
-          )),
+        "{ (x: Coll[Box]) => x.exists({(b: Box) => b.value > 1 }) }",
+        FuncValue(
+          Vector((1, SCollectionType(SBox))),
+          Exists(
+            ValUse(1, SCollectionType(SBox)),
+            FuncValue(Vector((3, SBox)), GT(ExtractAmount(ValUse(3, SBox)), LongConstant(1L)))
+          )
+        )),
         preGeneratedSamples = Some(samples))
     } else {
       def error = new java.lang.NoSuchMethodException("sigmastate.SCollection$.exist_eval(sigmastate.lang.Terms$MethodCall,sigma.Coll,scala.Function1,sigmastate.interpreter.ErgoTreeEvaluator))")
