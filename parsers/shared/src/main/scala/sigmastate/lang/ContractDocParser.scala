@@ -102,7 +102,7 @@ object ContractDocParser {
 
   def parse[_: P]: P[ContractDoc] = P(" ".rep.? ~ "/*" ~ docLine.rep ~ " ".rep.? ~ "*/").map(ContractDoc.apply)
 
-  private def linePrefix[_: P] = P(" ".rep.? ~ "*" ~ " ".rep.?)
+  private def linePrefix[_: P] = P(" ".rep.? ~ "*" ~ " ".rep.? ~ !"/")
 
   private def word[_: P] = CharsWhile(c => c != ' ')
 
