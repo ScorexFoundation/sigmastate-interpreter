@@ -244,7 +244,12 @@ trait Interpreter {
       val currCost = Evaluation.addCostChecked(context.initCost, deserializeSubstitutionCost, context.costLimit)
       val context1 = context.withInitCost(currCost).asInstanceOf[CTX]
       val (propTree, context2) = trySoftForkable[(SigmaPropValue, CTX)](whenSoftFork = (TrueSigmaProp, context1)) {
-        applyDeserializeContextJITC(context, prop)
+        // Before ErgoTree V3 the deserialization cost was not added to the total cost
+        applyDeserializeContextJITC(if (VersionContext.current.activatedVersion >= 3) {
+          context1
+        } else {
+          context
+        }, prop)
       }
 
       // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds
