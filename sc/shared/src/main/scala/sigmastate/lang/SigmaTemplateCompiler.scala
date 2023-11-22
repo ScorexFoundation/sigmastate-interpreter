@@ -9,9 +9,9 @@ import sigmastate.lang.syntax.ParserException
 class SigmaTemplateCompiler {
   def compile(source: String): ContractTemplate = {
     ContractTemplateParser.parse(source) match {
-      case Parsed.Success(value, index) =>
+      case Parsed.Success(template, index) =>
         val expr = SigmaParser(source.slice(index, source.length))
-        assemble(value, expr)
+        assemble(template, expr)
       case f: Parsed.Failure =>
         throw new ParserException(s"Syntax error: $f", Some(SourceContext.fromParserFailure(f)))
     }
