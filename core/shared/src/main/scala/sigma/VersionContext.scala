@@ -40,6 +40,8 @@ object VersionContext {
     */
   val JitActivationVersion: Byte = 2
 
+  val ExtensionVersion: Byte = 3
+
   private val _defaultContext = VersionContext(
     activatedVersion = 1/* v4.x */,
     ergoTreeVersion = 1
