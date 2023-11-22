@@ -234,7 +234,11 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
 
     {
       import SBoolean._
-      (SBoolean.typeId, Seq(MInfo(1, ToByteMethod)), true)
+      if (VersionContext.current.isEvolutionActivated) {
+        (SBoolean.typeId, Seq(MInfo(1, ToByteMethod)), true)
+      } else {
+        (SBoolean.typeId, Seq.empty[MInfo], true)
+      }
     },
     { // SBigInt inherit methods from SNumericType.methods
       // however they are not resolvable via SBigInt.typeId

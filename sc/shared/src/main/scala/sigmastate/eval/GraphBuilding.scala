@@ -2,6 +2,7 @@ package sigmastate.eval
 
 import org.ergoplatform._
 import scalan.MutableLazy
+import sigma.VersionContext
 import sigma.data.ExactIntegral.{ByteIsExactIntegral, IntIsExactIntegral, LongIsExactIntegral, ShortIsExactIntegral}
 import sigma.data.ExactOrdering.{ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering, ShortIsExactOrdering}
 import sigma.util.Extensions.ByteOps
@@ -509,7 +510,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         else
           error(s"The type of $obj is expected to be Collection to select 'size' property", obj.sourceContext.toOption)
 
-      case Select(obj, SBoolean.ToByte, _) if obj.tpe.isBoolean =>
+      case Select(obj, SBoolean.ToByte, _) if obj.tpe.isBoolean && VersionContext.current.isEvolutionActivated =>
           val bool = eval(obj.asBoolValue)
           bool.toByte
 
