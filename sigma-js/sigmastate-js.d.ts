@@ -334,6 +334,109 @@ declare module "sigmastate-js/main" {
         fromHex(hex: HexString): ReducedTransaction;
     }
 
+    /** Represents hints used by [[SigmaPropProver]] to perform operations as part of
+     * multi-signature scheme. See [EIP-11](https://github.com/ergoplatform/eips/pull/8).
+     */
+    export declare class ProverHints {
+
+    }
+
+    export declare class ProverHintsObj {
+        /** Empty bag of hints. Immutable value can be reused where necessary. */
+        empty(): ProverHints
+    }
+
+    /** Represents one secret (aka SigmaProtocolPrivateInput) used by [[SigmaPropProver]]. */
+    export declare class ProverSecret {
+        /** Public key generated from the secret.
+         * Represents proof of knowledge sigma proposition.
+         */
+        publicKey(): SigmaProp
+
+        /** Secret random number stored in this instance. */
+        secret(): bigint
+    }
+    
+    export declare class ProverSecretObj {
+        /** Creates a new [[ProverSecret]] instance for the given secret of descrete logarithm
+         * sigma protocol.
+         * @param w secret exponent value
+         */
+        dlog(w: bigint): ProverSecret
+
+        /** Creates a new [[ProverSecret]] instance for the given secret of Diffie Hellman tuple
+         * sigma protocol.
+         * @param w secret exponent value used to compute `u = g^w` and `v = h^w`, where `g` and `h` are generators
+         * @param dhtProp a [[SigmaProp]] representing public key of Diffie Hellman tuple sigma protocol, should be created using `w`
+         */
+        dht(w: bigint, dhtProp: SigmaProp): ProverSecret
+    }
+
+    /** Prover which can sign messages (generate proofs) for arbitrary sigma propositions
+     * represented by [[SigmaProp]] values.
+     *
+     * See [EIP-11](https://github.com/ergoplatform/eips/pull/8) for details of multi-signature scheme.
+     *
+     * @see SigmaPropVerifier
+     */
+    export declare class SigmaPropProver {
+        /**
+         * A method which is generating commitments for all the public keys provided.
+         * This is used as part of multi-signature scheme.
+         *
+         * Currently only keys in form of ProveDlog and ProveDiffieHellman are supported, not more complex subtrees.
+         *
+         * @param sigmaTree   - crypto-tree which is being signed
+         * @param generateFor - public keys for which commitments should be generated
+         * @return generated commitments in a form of prover hints
+         *         - private, containing secret randomness
+         *         - public, containing only commitments
+         */
+        generateCommitmentsFor(
+            sigmaTree: SigmaProp,
+            generateFor: SigmaProp[]): ProverHints
+
+        /**
+         * A method which is extracting partial proofs of secret knowledge for particular secrets with their
+         * respective public images given. Useful for distributed signature applications.
+         *
+         * See DistributedSigSpecification for examples of usage.
+         *
+         * @param sigmaTree                 - public key (in form of a sigma-tree)
+         * @param proof                     - signature for the key
+         * @param realSecretsToExtract      - public keys of secrets with real proofs
+         * @param simulatedSecretsToExtract - public keys of secrets with simulated proofs
+         * @return - bag of OtherSecretProven and OtherCommitment hints
+         */
+        hintsForMultisig(
+            sigmaTree: SigmaProp,
+            proof: Int8Array,
+            realSecretsToExtract: SigmaProp[],
+            simulatedSecretsToExtract: SigmaProp[]): ProverHints
+
+        /**
+         * Generate commitments for given crypto-tree (sigma-tree) for prover's secrets.
+         */
+        generateCommitments(sigmaTree: SigmaProp): ProverHints
+
+        /** Sign arbitrary message under a key representing a statement provable via a sigma-protocol.
+         *
+         * @param sigmaProp - public key
+         * @param message   - message to sign
+         * @param hintsBag  - additional hints for a signer (useful for distributed signing)
+         * @return - signature or error
+         */
+        signMessage(
+            sigmaProp: SigmaProp,
+            message: Int8Array,
+            hintsBag: ProverHints): Int8Array
+    }
+
+    export declare class SigmaPropProverObj {
+        /** Creates a new [[SigmaPropProver]] with the given secrets. */
+        withSecrets(secrets: ProverSecret[]): SigmaPropProver
+    }
+
     /** Represents a prover for signing Ergo transactions and messages.
      *
      * Equivalent of [[org.ergoplatform.sdk.SigmaProver]] available from JS.

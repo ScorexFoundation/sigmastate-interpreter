@@ -42,7 +42,7 @@ trait FirstProverMessage extends ProverMessage {
 /** Second message from the prover (message `z` of `SigmaProtocol`)*/
 trait SecondProverMessage extends ProverMessage
 
-trait SigmaProtocolPrivateInput[CI <: SigmaLeaf] {
+trait SigmaProtocolPrivateInput[+CI <: SigmaLeaf] {
   /** Public image generated from the secret.
     * Represents proof of knowledge proposition.
     */

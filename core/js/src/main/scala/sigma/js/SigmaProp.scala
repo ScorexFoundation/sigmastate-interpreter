@@ -1,6 +1,6 @@
 package sigma.js
 
-import sigma.data.{ProveDlog, SigmaBoolean}
+import sigma.data.{ProveDHTuple, ProveDlog, SigmaBoolean}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
@@ -17,7 +17,19 @@ object SigmaProp extends js.Object {
     * @see CryptoFacade.getASN1Encoding, GroupElement.fromPointHex, Point
     */
   def fromPointHex(pointHex: String): SigmaProp = {
-    val point = GroupElement.fromPointHex(pointHex).point
-    new SigmaProp(ProveDlog(point))
+    val ge = GroupElement.fromPointHex(pointHex)
+    dlog(ge)
+  }
+
+  /** @param publicKey a [[GroupElement]] representing public key of discrete logarithm signature protocol
+    * @return a new [[SigmaProp]] value representing public key of discrete logarithm signature protocol.
+    */
+  def dlog(publicKey: GroupElement): SigmaProp = {
+    new SigmaProp(ProveDlog(publicKey.point))
+  }
+
+  /** Construct a new [[SigmaProp]] value representing public key of Diffie Hellman signature protocol. */
+  def dht(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp = {
+    new SigmaProp(ProveDHTuple(g.point, h.point, u.point, v.point))
   }
 }
