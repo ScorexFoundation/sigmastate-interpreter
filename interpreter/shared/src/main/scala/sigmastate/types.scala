@@ -913,7 +913,13 @@ case object SBoolean extends SPrimType with SEmbeddable with SLogical with SProd
     this, ToByte, SFunc(this, SByte), 1, FixedCost(JitCost(1)))
     .withInfo(PropertyCall, "Convert true to 1 and false to 0")
 
-  protected override def getMethods() = super.getMethods() ++ Seq(ToByteMethod)
+  protected override def getMethods(): Seq[SMethod] = {
+    if (VersionContext.current.isEvolutionActivated) {
+      super.getMethods() ++ Seq(ToByteMethod)
+    } else {
+      super.getMethods()
+    }
+  }
 }
 
 /** Descriptor of ErgoTree type `Byte` - 8-bit signed integer. */
