@@ -38,7 +38,7 @@ object VersionContext {
     * - in 6.x must be 3
     * etc.
     */
-  val MaxSupportedScriptVersion: Byte = 2 // supported versions 0, 1, 2
+  val MaxSupportedScriptVersion: Byte = 3 // supported versions 0, 1, 2, 3
 
   /** The first version of ErgoTree starting from which the JIT costing interpreter is used. */
   val JitActivationVersion: Byte = 2
