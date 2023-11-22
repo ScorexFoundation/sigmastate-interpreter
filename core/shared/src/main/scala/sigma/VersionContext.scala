@@ -31,6 +31,7 @@ object VersionContext {
     * - version 3.x this value must be 0
     * - in v4.0 must be 1
     * - in v5.x must be 2
+    * - in 6.x must be 3
     * etc.
     */
   val MaxSupportedScriptVersion: Byte = 2 // supported versions 0, 1, 2
@@ -39,6 +40,11 @@ object VersionContext {
     * It must also be used for all subsequent versions (3, 4, etc).
     */
   val JitActivationVersion: Byte = 2
+
+  /**
+   * The version of ErgoTree corresponding to "evolution" (6.0) soft-fork
+   */
+  val EvolutionVersion: Byte = 3
 
   private val _defaultContext = VersionContext(
     activatedVersion = 1/* v4.x */,
