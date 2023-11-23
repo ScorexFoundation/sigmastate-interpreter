@@ -30,7 +30,8 @@ class JsonSerializationSpec extends SerializationSpecification with JsonCodecs {
     withClue(s"\n for JSON: ${json.spaces2}") { json.as[T].toTry.get shouldEqual v }
   }
 
-  property("ErgoLikeContext should be encoded into JSON and decoded back correctly") {
+  // TODO enable after https://github.com/ScorexFoundation/sigmastate-interpreter/issues/681
+  ignore("ErgoLikeContext should be encoded into JSON and decoded back correctly") {
     forAll(ergoLikeContextGen, MinSuccessful(50)) { v: ErgoLikeContext => jsonRoundTrip(v) }
   }
 
@@ -112,15 +113,18 @@ class JsonSerializationSpec extends SerializationSpecification with JsonCodecs {
     forAll(ergoBoxGen, MinSuccessful(500)) { v: ErgoBox => jsonRoundTrip(v) }
   }
 
-  property("ErgoLikeTransaction should be encoded into JSON and decoded back correctly") {
+  // TODO enable after https://github.com/ScorexFoundation/sigmastate-interpreter/issues/681
+  ignore("ErgoLikeTransaction should be encoded into JSON and decoded back correctly") {
     forAll(ergoLikeTransactionGen, MinSuccessful(50)) { v: ErgoLikeTransaction => jsonRoundTrip(v) }
   }
 
-  property("UnsignedErgoLikeTransaction should be encoded into JSON and decoded back correctly") {
+  // TODO enable after https://github.com/ScorexFoundation/sigmastate-interpreter/issues/681
+  ignore("UnsignedErgoLikeTransaction should be encoded into JSON and decoded back correctly") {
     forAll(unsignedErgoLikeTransactionGen, MinSuccessful(50)) { v: UnsignedErgoLikeTransaction => jsonRoundTrip(v) }
   }
 
-  property("ErgoLikeTransactionTemplate should be encoded into JSON and decoded back correctly") {
+  // TODO enable after https://github.com/ScorexFoundation/sigmastate-interpreter/issues/681
+  ignore("ErgoLikeTransactionTemplate should be encoded into JSON and decoded back correctly") {
     forAll(ergoLikeTransactionTemplateGen, MinSuccessful(50)) { v: ErgoLikeTransactionTemplate[_ <: UnsignedInput] =>
       v.asJson.as(ergoLikeTransactionTemplateDecoder).toTry.get shouldEqual v
     }

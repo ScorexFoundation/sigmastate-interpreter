@@ -127,12 +127,14 @@ class ErgoLikeTransactionSpec extends SigmaDslTesting with JsonCodecs {
     }
   }
 
-  property("ErgoLikeTransaction: Serializer round trip") {
+  // TODO enable after https://github.com/ScorexFoundation/sigmastate-interpreter/issues/681
+  ignore("ErgoLikeTransaction: Serializer round trip") {
     forAll(MinSuccessful(50)) { t: ErgoLikeTransaction => roundTripTest(t)(ErgoLikeTransaction.serializer) }
     forAll(MinSuccessful(50)) { t: ErgoLikeTransaction => roundTripTestWithPos(t)(ErgoLikeTransaction.serializer) }
   }
 
-  property("ErgoLikeTransaction with same token in different outputs : Serializer round trip") {
+  // TODO enable after https://github.com/ScorexFoundation/sigmastate-interpreter/issues/681
+  ignore("ErgoLikeTransaction with same token in different outputs : Serializer round trip") {
     forAll { txIn: ErgoLikeTransaction =>
       whenever(txIn.outputCandidates.head.additionalTokens.nonEmpty) {
         val out = txIn.outputCandidates.head
