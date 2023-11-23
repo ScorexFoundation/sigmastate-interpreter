@@ -41,6 +41,18 @@ object CollectionUtil {
     result
   }
 
+  /** Concatenate all the arrays in the sequence. */
+  def concatArrays[T: ClassTag](seq: Traversable[Array[T]]): Array[T] = {
+    val length: Int = seq.map(_.length).sum
+    val result: Array[T] = new Array[T](length)
+    var pos: Int = 0
+    seq.foreach { array =>
+      System.arraycopy(array, 0, result, pos, array.length)
+      pos += array.length
+    }
+    result
+  }
+
   /** Computes the deep hash code for the given array.
     *
     * This method calculates the hash code based on the array's elements and type, taking nested arrays
