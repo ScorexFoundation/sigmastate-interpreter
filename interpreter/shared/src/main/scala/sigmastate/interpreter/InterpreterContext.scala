@@ -5,10 +5,8 @@ import sigmastate.SType
 import sigmastate.Values.EvaluatedValue
 import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.serialization.SigmaSerializer
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import sigmastate.utils.{SigmaByteWriter, SigmaByteReader}
 import sigma.AnyValue
-
-import scala.collection.mutable
 
 /**
   * User-defined variables to be put into context.
@@ -35,7 +33,6 @@ object ContextExtension {
   type VarBinding = (Byte, EvaluatedValue[_ <: SType])
 
   object serializer extends SigmaSerializer[ContextExtension, ContextExtension] {
-
     override def serialize(obj: ContextExtension, w: SigmaByteWriter): Unit = {
       val size = obj.values.size
       if (size > Byte.MaxValue)
@@ -48,13 +45,13 @@ object ContextExtension {
       val extSize = r.getByte()
       if (extSize < 0)
         error(s"Negative amount of context extension values: $extSize")
-      val ext = (0 until extSize)
-        .map(_ => (r.getByte(), r.getValue().asInstanceOf[EvaluatedValue[_ <: SType]]))
-      ContextExtension(mutable.LinkedHashMap(ext:_*))
+
+      val values = (0 until extSize)
+          .map(_ => (r.getByte(), r.getValue().asInstanceOf[EvaluatedValue[_ <: SType]]))
+
+      ContextExtension(values.toMap)
     }
-
   }
-
 }
 
 

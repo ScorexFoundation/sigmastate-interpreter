@@ -129,6 +129,19 @@ object Helpers {
       case Right(b) => Right(f(b))
       case _        => this.asInstanceOf[Either[A, B1]]
     }
+
+    /** Returns a `Some` containing the `Right` value
+      * if it exists or a `None` if this is a `Left`.
+      *
+      * {{{
+      * Right(12).toOption // Some(12)
+      * Left(12).toOption  // None
+      * }}}
+      */
+    def toOption: Option[B] = source match {
+      case Right(value) => Some(value)
+      case _ => None
+    }
   }
 
   /** Decodes the given hex string into byte array and then uses
