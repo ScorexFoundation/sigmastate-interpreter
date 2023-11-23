@@ -20,6 +20,7 @@ import sigmastate.utils.Helpers
 import sigma.SigmaDslTesting
 import sigma.Extensions._
 import sigma.util.CollectionUtil.concatArrays
+import sigmastate.utils.Helpers.EitherOps  // required for Scala 2.11
 
 class ErgoLikeTransactionSpec extends SigmaDslTesting with JsonCodecs {
 
