@@ -49,10 +49,6 @@ object ContextExtension {
       val values = (0 until extSize)
           .map(_ => (r.getByte(), r.getValue().asInstanceOf[EvaluatedValue[_ <: SType]]))
 
-      // TODO v6.0: enforce ordering e.g. using the code below (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/681)
-      // if (VersionContext.current.activatedVersion > JitActivationVersion) {
-      //   ContextExtension(mutable.LinkedHashMap(values: _*))
-
       ContextExtension(values.toMap)
     }
   }
