@@ -12,6 +12,7 @@ case class CaseObjectSerialization[V <: Value[SType]](override val opDesc: Value
       case Height => r.wasUsingBlockchainContext = true
       case LastBlockUtxoRootHash => r.wasUsingBlockchainContext = true
       case MinerPubkey => r.wasUsingBlockchainContext = true
+      case _ =>
     }
 
     obj
