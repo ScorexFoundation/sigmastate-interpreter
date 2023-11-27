@@ -3,9 +3,8 @@ package sigmastate.lang
 import fastparse._
 import fastparse.NoWhitespace._
 import sigmastate.SType
-import sigmastate.Values.Constant
 
-case class ContractParam(name: String, tpe: SType, defaultValue: Option[Constant[_]])
+case class ContractParam(name: String, tpe: SType, defaultValue: Option[SType#WrappedType])
 
 case class ContractSignature(name: String, params: Seq[ContractParam])
 
@@ -20,7 +19,7 @@ object ContractSignatureParser {
 
   private def annotation[_: P] = P("@contract")
 
-  private def paramDefault[_: P] = P(" ".rep.? ~ `=` ~ " ".rep.? ~ ExprLiteral)
+  private def paramDefault[_: P] = P(" ".rep.? ~ `=` ~ " ".rep.? ~ ExprLiteral).map(s => s.asWrappedType)
 
   private def param[_: P] = P(" ".rep.? ~ Id.! ~ ":" ~ Type ~ paramDefault.?).map(s => ContractParam(s._1, s._2, s._3))
 
