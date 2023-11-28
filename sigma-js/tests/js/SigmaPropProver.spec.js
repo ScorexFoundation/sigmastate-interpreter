@@ -1,8 +1,7 @@
-const { GroupElementObj, ValueObj, ProverSecret, ProverSecretObj, SigmaPropProverObj,
-    ProverHints, ProverHintsObj
+const {
+    ProverSecretObj, SigmaPropProverObj,
+    ProverHintsObj, SigmaPropVerifierObj
 } = require("sigmastate-js/main");
-
-let pointAsn1Hex = "02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5";
 
 describe("SigmaPropProver", () => {
     let w = 0xadf47e32000fc75e2923dba482c843c7f6b684cbf2ceec5bfdf5fe6d13cabe5dn
@@ -22,5 +21,10 @@ describe("SigmaPropProver", () => {
         let signature = p.signMessage(secret.publicKey(), message, ProverHintsObj.empty())
         expect(signature).not.toBeUndefined()
         expect(signature.length).toBeGreaterThan(0)
+
+        let V = SigmaPropVerifierObj.create()
+        let ok = V.verifySignature(secret.publicKey(), message, signature)
+        expect(ok).toEqual(true)
     });
+
 });

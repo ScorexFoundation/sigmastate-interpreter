@@ -437,6 +437,37 @@ declare module "sigmastate-js/main" {
         withSecrets(secrets: ProverSecret[]): SigmaPropProver
     }
 
+    /** Verifier which can verify signature (proof) for arbitrary sigma propositions
+     * represented by [[SigmaProp]] values.
+     *
+     * See [EIP-11](https://github.com/ergoplatform/eips/pull/8) for details of multi-signature scheme.
+     *
+     * @see SigmaPropProver
+     */
+    export declare class SigmaPropVerifier {
+        /**
+         * Verify a signature on given (arbitrary) message for a given sigma proposition (public key).
+         *
+         * @param sigmaProp public key (represented as a sigma proposition)
+         * @param message   message
+         * @param signature signature for the message
+         * @return whether signature is valid or not (valid signature contains proofs for the sigma proposition)
+         */
+        verifySignature(
+            sigmaProp: SigmaProp,
+            message: Int8Array,
+            signature: Int8Array): boolean
+    }
+    export declare class SigmaPropVerifierObj {
+        /** Create a new instance of [[SigmaPropVerifier]]. */
+        create(): SigmaPropVerifier
+    }
+
+    export declare class Utils {
+        /** Convert an Int8Array to a hex string. */
+        int8ArrayToHex(arr: Int8Array): string
+    }
+
     /** Represents a prover for signing Ergo transactions and messages.
      *
      * Equivalent of [[org.ergoplatform.sdk.SigmaProver]] available from JS.

@@ -129,7 +129,7 @@ class ErgoLikeTransactionSpec extends SigmaDslTesting {
   }
 
   property("ErgoLikeTransaction with same token in different outputs : Serializer round trip") {
-    forAll { txIn: ErgoLikeTransaction =>
+    forAll(MinSuccessful(50)) { txIn: ErgoLikeTransaction =>
       whenever(txIn.outputCandidates.head.additionalTokens.nonEmpty) {
         val out = txIn.outputCandidates.head
         // clone tokenIds so that same id have different references
