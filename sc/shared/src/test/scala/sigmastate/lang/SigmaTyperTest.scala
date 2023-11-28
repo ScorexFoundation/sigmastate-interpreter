@@ -658,4 +658,14 @@ class SigmaTyperTest extends AnyPropSpec
     )
     typecheck(customEnv, "substConstants(scriptBytes, positions, newVals)") shouldBe SByteArray
   }
+
+  property("Inferred - Ascription mismatch") {
+    val code =
+      s"""{
+         |  val price: Long  = 1.toBigInt
+         |  price
+         |}""".stripMargin
+
+    typefail(env, code, 2, 22)
+  }
 }

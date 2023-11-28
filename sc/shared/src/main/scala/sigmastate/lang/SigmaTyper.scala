@@ -42,19 +42,21 @@ class SigmaTyper(val builder: SigmaBuilder,
     } yield res
     node.getOrElse(mkMethodCall(global, method, args, EmptySubst).withPropagatedSrcCtx(srcCtx))
   }
+
   /**
     * Rewrite tree to typed tree.  Checks constituent names and types.  Uses
     * the env map to resolve bound variables and their types.
     */
   def assignType(env: Map[String, SType],
                  bound: SValue,
-                 expected: Option[SType] = None): SValue = ( bound match {
+                 expected: Option[SType] = None): SValue = { val typedValue = (bound match {
     case Block(bs, res) =>
       var curEnv = env
       val bs1 = ArrayBuffer[Val]()
-      for (v @ Val(n, _, b) <- bs) {
+      for (v @ Val(n, givenTpe, b) <- bs) {
         if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}", v.sourceContext)
-        val b1 = assignType(curEnv, b)
+        val expectedTpe = if (givenTpe != NoType) Some(givenTpe) else None
+        val b1 = assignType(curEnv, b, expectedTpe)
         curEnv = curEnv + (n -> b1.tpe)
         builder.currentSrcCtx.withValue(v.sourceContext) {
           bs1 += mkVal(n, b1.tpe, b1)
@@ -518,6 +520,16 @@ class SigmaTyper(val builder: SigmaBuilder,
     v => s"Errors found while assigning types to expression $bound: $v assigned NoType")
     .withEnsuredSrcCtx(bound.sourceContext)
 
+    expected match {
+      case Some(expectedTpe) =>
+        if (expectedTpe != typedValue.tpe)
+          throw new UnexpectedType(
+            s"expression $bound was expected to have type: $expectedTpe but has type: ${typedValue.tpe}", bound.sourceContext.toOption)
+      case None => {}
+    }
+
+    typedValue
+}
   def assignConcreteCollection(cc: ConcreteCollection[SType], newItems: Seq[Value[SType]]) = {
     val types = newItems.map(_.tpe).distinct
     val tItem = if (cc.items.isEmpty) {
