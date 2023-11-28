@@ -29,8 +29,11 @@ package you want to use.
 Each subsequent module contains all the classes from the previous modules and some new
 classes thus forming a layering of modules.
 
+See TypeScript [definitions](sigmastate-js.d.ts) for the list of all exported classes,
+methods and documentation.
+
 NOTE, you only need to import only one of the modules, the one which contains all the
-classes you need.
+classes you need. This will allow optimizing the size of the final bundle.
 
 The modules are:
 - [sigma-core module](https://github.com/ScorexFoundation/sigmastate-interpreter/tree/b26930c5e7aa58b6d76dda96ab56db59825f8638/core) - contains core classes of the library
@@ -44,9 +47,14 @@ The modules are:
   - all classes from sigma-core module
   - [ErgoTree](https://github.com/ScorexFoundation/sigmastate-interpreter/blob/b26930c5e7aa58b6d76dda96ab56db59825f8638/data/js/src/main/scala/sigma/ast/js/ErgoTree.scala)
   - [Address](https://github.com/ScorexFoundation/sigmastate-interpreter/blob/b745c5fd2257abc6d4317d9761394eb0ea0f3f4e/data/js/src/main/scala/org/ergoplatform/js/Address.scala)
+  - [Expr]()
   
 - [sigma-interpreter module]() - contains classes for working with ErgoTree interpreter
   - all classes from sigma-data module
+  - [ProverHints]()
+  - [ProverSecret]()
+  - [SigmaPropProver]()
+  - [SigmaPropVerifier]()
 
 - [sigma-sdk module](https://github.com/ScorexFoundation/sigmastate-interpreter/tree/6d774a34118b6fac4e70b58c29343afb1b261460/sdk) - contains classes for working with ErgoTree interpreter
   - all classes from sigma-interpreter module
