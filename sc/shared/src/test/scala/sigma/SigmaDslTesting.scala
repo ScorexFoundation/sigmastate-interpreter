@@ -13,6 +13,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import scalan.Platform.threadSleepOrNoOp
+import sigma.VersionContext.EvolutionVersion
 import sigma.data.{CollType, OptionType, PairType, RType}
 import sigma.util.BenchmarkUtil
 import sigma.util.CollectionUtil._
@@ -447,7 +448,6 @@ class SigmaDslTesting extends AnyPropSpec
           ok shouldBe true
           val verificationCost = cost.toIntExact
           if (expectedCost.isDefined) {
-            if (verificationCost != expectedCost.get)
             assertResult(expectedCost.get,
               s"Actual verify() cost $cost != expected ${expectedCost.get}")(verificationCost)
           }
@@ -990,7 +990,7 @@ class SigmaDslTesting extends AnyPropSpec
       new Expected(ExpectedResult(value, Some(cost))) {
         override val newResults = defaultNewResults.zipWithIndex.map {
           case ((ExpectedResult(v, _), _), version) => {
-            var cost = if (activatedVersionInTests >= 3) expectedV3Costs(version) else expectedNewCost
+            var cost = if (activatedVersionInTests >= EvolutionVersion) expectedV3Costs(version) else expectedNewCost
             (ExpectedResult(v, Some(cost)), Some(expectedDetails))
           }
         }

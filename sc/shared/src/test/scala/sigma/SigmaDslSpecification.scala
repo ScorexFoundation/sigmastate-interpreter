@@ -39,6 +39,7 @@ import sigmastate.crypto.ProveDHTuple
 import sigmastate.interpreter._
 import org.scalactic.source.Position
 import sigma.VersionContext
+import sigma.VersionContext.EvolutionVersion
 import sigmastate.helpers.SigmaPPrint
 import sigmastate.exceptions.GraphBuildingException
 
@@ -5153,7 +5154,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           newVersionedResults = {
             val expectedV3Costs = 2000 +: Seq.fill(3)(2002)
             // V3 activation will have different costs due to deserialization cost
-            val costs = if (activatedVersionInTests >= 3) {
+            val costs = if (activatedVersionInTests >= EvolutionVersion) {
               expectedV3Costs
             } else {
               Seq.fill(4)(1766)
@@ -5360,7 +5361,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           newVersionedResults = {
             val expectedV3Costs = 2117 +: Seq.fill(3)(2121)
             // V3 activation will have different costs due to deserialization cost
-            val costs = if (activatedVersionInTests >= 3) {
+            val costs = if (activatedVersionInTests >= EvolutionVersion) {
               expectedV3Costs
             } else {
               Seq.fill(4)(1793)
@@ -6319,7 +6320,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           expectedDetails = CostDetails.ZeroCost,
           newCost = 1766,
           newVersionedResults = {
-            val costs = if (activatedVersionInTests >= 3) {
+            val costs = if (activatedVersionInTests >= EvolutionVersion) {
               1996 +: Seq.fill(3)(1998)
             }
             else {
@@ -6608,7 +6609,7 @@ class SigmaDslSpecification extends SigmaDslTesting
               expectedDetails = CostDetails.ZeroCost,
               newCost = 1769,
               newVersionedResults = {
-                val costs = if (activatedVersionInTests >= 3) {
+                val costs = if (activatedVersionInTests >= EvolutionVersion) {
                   2019 +: Seq.fill(3)(2021)
                 } else {
                   Seq.fill(4)(1769)
@@ -7392,7 +7393,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         Seq(
           Coll[GroupElement]() -> Expected(Success(Coll[Byte]()), 1773, CostDetails.ZeroCost, 1773,
             newVersionedResults = {
-              val costs = if (activatedVersionInTests >= 3) {
+              val costs = if (activatedVersionInTests >= EvolutionVersion) {
                 2027 +: Seq.fill(3)(2029)
               }
               else {
@@ -7453,7 +7454,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             expectedDetails = CostDetails.ZeroCost,
             newCost = 1840,
             newVersionedResults = (0 to 3).map({ version =>
-              val costs = if (activatedVersionInTests >= 3) {
+              val costs = if (activatedVersionInTests >= EvolutionVersion) {
                 2100 +: Seq.fill(3)(2104)
               }
               else {
@@ -9248,7 +9249,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           expectedDetails = CostDetails.ZeroCost,
           newCost = 1766,
           newVersionedResults = Seq.tabulate(4)({ v =>
-            val costs = if (activatedVersionInTests >= 3) {
+            val costs = if (activatedVersionInTests >= EvolutionVersion) {
               2038 +: Seq.fill(3)(2042)
             }
             else {
@@ -9828,7 +9829,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             expectedDetails = CostDetails.ZeroCost,
             newCost = 1783,
             newVersionedResults = {
-              val costs = if (activatedVersionInTests >= 3) {
+              val costs = if (activatedVersionInTests >= EvolutionVersion) {
                 2051 +: Seq.fill(3)(2055)
               }
               else {
@@ -9846,7 +9847,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             expectedDetails = CostDetails.ZeroCost,
             newCost = 1783,
             newVersionedResults = {
-              val costs = if (activatedVersionInTests >= 3) {
+              val costs = if (activatedVersionInTests >= EvolutionVersion) {
                 2051 +: Seq.fill(3)(2055)
               }
               else {
@@ -9920,7 +9921,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     if (lowerMethodCallsInTests) {
       val error = new RuntimeException("any exception")
-      val costs = if (activatedVersionInTests >= 3) {
+      val costs = if (activatedVersionInTests >= EvolutionVersion) {
         2140 +: Seq.fill(3)(2144)
       }
       else {
