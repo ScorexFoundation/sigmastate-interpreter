@@ -317,7 +317,7 @@ declare module "sigmastate-js/main" {
         ): ErgoTree;
     }
 
-    export declare class SigmaCompilerObj {
+    export declare class SigmaCompiler$ {
         static forMainnet(): SigmaCompiler;
 
         static forTestnet(): SigmaCompiler;

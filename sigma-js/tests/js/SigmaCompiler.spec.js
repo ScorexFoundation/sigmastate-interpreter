@@ -1,7 +1,7 @@
-const { Value$, SigmaCompilerObj } = require("sigmastate-js/main");
+const { Value$, SigmaCompiler$ } = require("sigmastate-js/main");
 
 describe("Smoke tests for API exporting", () => {
-  let compiler = SigmaCompilerObj.forMainnet();
+  let compiler = SigmaCompiler$.forMainnet();
 
   it("Should create SigmaCompiler", () => {
     expect(compiler).not.toBeUndefined();

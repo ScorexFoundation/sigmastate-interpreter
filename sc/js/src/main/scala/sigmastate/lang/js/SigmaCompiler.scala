@@ -45,7 +45,7 @@ class SigmaCompiler(_compiler: sigmastate.lang.SigmaCompiler) extends js.Object 
   }
 }
 
-@JSExportTopLevel("SigmaCompilerObj")
+@JSExportTopLevel("SigmaCompiler$")
 object SigmaCompiler extends js.Object {
   /** Creates a new instance of SigmaCompiler for the mainnet. */
   def forMainnet(): SigmaCompiler = create(ErgoAddressEncoder.MainnetNetworkPrefix)

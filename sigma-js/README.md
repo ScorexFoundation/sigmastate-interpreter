@@ -94,5 +94,5 @@ See examples in tests [ErgoTree.spec.js](https://github.com/ScorexFoundation/sig
 
 ### Compile ErgoScript to ErgoTree
 
-Import `SigmaCompilerObj` module and `SigmaCompiler` class, then use its methods.
+Import `SigmaCompiler$` module and `SigmaCompiler` class, then use its methods.
 See compiler tests in [SigmaCompiler.spec.js](https://github.com/ScorexFoundation/sigmastate-interpreter/blob/933acd7a3753725c8b41994c2126a20279b6809b/sigma-js/tests/js/SigmaCompiler.spec.js)
