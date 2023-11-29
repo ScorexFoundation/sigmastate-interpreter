@@ -153,7 +153,7 @@ declare module "sigmastate-js/main" {
         toPointHex(): HexString;
     }
 
-    export declare class GroupElementObj {
+    export declare class GroupElement$ {
         static fromPointHex(value: HexString): GroupElement;
     }
 
