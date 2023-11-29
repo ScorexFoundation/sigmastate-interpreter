@@ -98,7 +98,7 @@ class SigmaPropProver(override val wrappedValue: org.ergoplatform.SigmaPropProve
   }
 }
 
-@JSExportTopLevel("SigmaPropProverObj")
+@JSExportTopLevel("SigmaPropProver$")
 object SigmaPropProver extends js.Object {
   /** Creates a new [[SigmaPropProver]] with the given secrets. */
   def withSecrets(secrets: js.Array[ProverSecret]): SigmaPropProver = {

@@ -1,5 +1,5 @@
 const {
-    ProverSecretObj, SigmaPropProverObj,
+    ProverSecretObj, SigmaPropProver$,
     ProverHintsObj, SigmaPropVerifierObj
 } = require("sigmastate-js/main");
 
@@ -8,7 +8,7 @@ describe("SigmaPropProver", () => {
     let secret = ProverSecretObj.dlog(w)
     expect(secret.secret()).toEqual(w)
 
-    let p = SigmaPropProverObj.withSecrets([secret])
+    let p = SigmaPropProver$.withSecrets([secret])
     expect(p).not.toBeUndefined()
 
     it("generateCommitments", () => {

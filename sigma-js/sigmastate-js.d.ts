@@ -432,7 +432,7 @@ declare module "sigmastate-js/main" {
             hintsBag: ProverHints): Int8Array
     }
 
-    export declare class SigmaPropProverObj {
+    export declare class SigmaPropProver$ {
         /** Creates a new [[SigmaPropProver]] with the given secrets. */
         withSecrets(secrets: ProverSecret[]): SigmaPropProver
     }
