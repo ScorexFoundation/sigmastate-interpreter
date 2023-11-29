@@ -12,7 +12,7 @@ class ReducedTransaction(val _tx: sdk.ReducedTransaction) extends js.Object {
   def toHex(): String = _tx.toHex
 }
 
-@JSExportTopLevel("ReducedTransactionObj")
+@JSExportTopLevel("ReducedTransaction$")
 object ReducedTransaction extends js.Object {
   /** Creates a [[ReducedTransaction]] from serialized bytes in hex format. */
   def fromHex(hex: String): ReducedTransaction = {

@@ -20,7 +20,7 @@ class Expr(override val wrappedValue: SValue) extends JsWrapper[SValue]{
   }
 }
 
-@JSExportTopLevel("ExprObj")
+@JSExportTopLevel("Expr$")
 object Expr extends js.Object {
   /** Deserialize an expression from bytes using sigma serializer [[ValueSerializer]]. */
   def fromBytes(bytes: Int8Array): Expr = {

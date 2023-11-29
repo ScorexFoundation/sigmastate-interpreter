@@ -33,7 +33,7 @@ class SigmaPropVerifier(override val wrappedValue: org.ergoplatform.SigmaPropVer
   }
 }
 
-@JSExportTopLevel("SigmaPropVerifierObj")
+@JSExportTopLevel("SigmaPropVerifier$")
 object SigmaPropVerifier extends js.Object {
   /** Create a new instance of SigmaPropVerifier. */
   def create(): SigmaPropVerifier = {

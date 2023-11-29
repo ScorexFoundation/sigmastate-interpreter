@@ -96,7 +96,7 @@ class ProverBuilder(parameters: BlockchainParameters, network: Byte) extends js.
   }
 }
 
-@JSExportTopLevel("ProverBuilderObj")
+@JSExportTopLevel("ProverBuilder$")
 object ProverBuilder extends js.Object {
   /** Creates a new [[ProverBuilder]] instance with the given blockchain parameters
     * and network prefix.

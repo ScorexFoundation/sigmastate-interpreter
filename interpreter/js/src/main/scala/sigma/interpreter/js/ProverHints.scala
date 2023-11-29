@@ -14,7 +14,7 @@ class ProverHints(override val wrappedValue: HintsBag)
     extends JsWrapper[HintsBag] {
 }
 
-@JSExportTopLevel("ProverHintsObj")
+@JSExportTopLevel("ProverHints$")
 object ProverHints extends js.Object {
   private lazy val _empty = new ProverHints(HintsBag.empty)
 

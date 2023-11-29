@@ -1,11 +1,11 @@
 const {
-    ProverSecretObj, SigmaPropProver$,
-    ProverHintsObj, SigmaPropVerifierObj
+    ProverSecret$, SigmaPropProver$,
+    ProverHints$, SigmaPropVerifier$
 } = require("sigmastate-js/main");
 
 describe("SigmaPropProver", () => {
     let w = 0xadf47e32000fc75e2923dba482c843c7f6b684cbf2ceec5bfdf5fe6d13cabe5dn
-    let secret = ProverSecretObj.dlog(w)
+    let secret = ProverSecret$.dlog(w)
     expect(secret.secret()).toEqual(w)
 
     let p = SigmaPropProver$.withSecrets([secret])
@@ -18,11 +18,11 @@ describe("SigmaPropProver", () => {
 
     it("signMessage", () => {
         let message = Int8Array.of(1, 2, 3)
-        let signature = p.signMessage(secret.publicKey(), message, ProverHintsObj.empty())
+        let signature = p.signMessage(secret.publicKey(), message, ProverHints$.empty())
         expect(signature).not.toBeUndefined()
         expect(signature.length).toBeGreaterThan(0)
 
-        let V = SigmaPropVerifierObj.create()
+        let V = SigmaPropVerifier$.create()
         let ok = V.verifySignature(secret.publicKey(), message, signature)
         expect(ok).toEqual(true)
     });

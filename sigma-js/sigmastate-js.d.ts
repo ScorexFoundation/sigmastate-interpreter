@@ -329,7 +329,7 @@ declare module "sigmastate-js/main" {
         toHex(): HexString;
     }
 
-    export declare class ReducedTransactionObj {
+    export declare class ReducedTransaction$ {
         /** Creates a {@link ReducedTransaction} from serialized bytes in hex format. */
         fromHex(hex: HexString): ReducedTransaction;
     }
@@ -341,7 +341,7 @@ declare module "sigmastate-js/main" {
 
     }
 
-    export declare class ProverHintsObj {
+    export declare class ProverHints$ {
         /** Empty bag of hints. Immutable value can be reused where necessary. */
         empty(): ProverHints
     }
@@ -357,7 +357,7 @@ declare module "sigmastate-js/main" {
         secret(): bigint
     }
     
-    export declare class ProverSecretObj {
+    export declare class ProverSecret$ {
         /** Creates a new [[ProverSecret]] instance for the given secret of descrete logarithm
          * sigma protocol.
          * @param w secret exponent value
@@ -458,7 +458,7 @@ declare module "sigmastate-js/main" {
             message: Int8Array,
             signature: Int8Array): boolean
     }
-    export declare class SigmaPropVerifierObj {
+    export declare class SigmaPropVerifier$ {
         /** Create a new instance of [[SigmaPropVerifier]]. */
         create(): SigmaPropVerifier
     }
@@ -568,7 +568,7 @@ declare module "sigmastate-js/main" {
         build(): SigmaProver;
     }
 
-    export declare class ProverBuilderObj {
+    export declare class ProverBuilder$ {
         static create(parameters: BlockchainParameters, network: number): ProverBuilder;
     }
 

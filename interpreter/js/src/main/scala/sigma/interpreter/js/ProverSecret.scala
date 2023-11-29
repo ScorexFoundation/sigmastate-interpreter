@@ -23,7 +23,7 @@ class ProverSecret(
   def secret(): js.BigInt = Isos.isoBigInt.from(CBigInt(wrappedValue.w))
 }
 
-@JSExportTopLevel("ProverSecretObj")
+@JSExportTopLevel("ProverSecret$")
 object ProverSecret extends js.Object {
   /** Creates a new [[ProverSecret]] instance for the given secret of descrete logarithm
     * sigma protocol.
