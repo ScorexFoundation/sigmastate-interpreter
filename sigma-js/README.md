@@ -89,7 +89,7 @@ See examples in tests [Value.spec.js](https://github.com/ScorexFoundation/sigmas
 
 ### How to work with ErgoTree
 
-Import `ErgoTreeObj` module, and `ErgoTree` class then use its methods.
+Import `ErgoTree$` module, and `ErgoTree` class then use its methods.
 See examples in tests [ErgoTree.spec.js](https://github.com/ScorexFoundation/sigmastate-interpreter/blob/79df4ca171a77233947d835042ce5c82ee520469/sigma-js/tests/js/ErgoTree.spec.js)
 
 ### Compile ErgoScript to ErgoTree

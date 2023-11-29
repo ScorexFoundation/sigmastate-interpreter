@@ -145,7 +145,7 @@ declare module "sigmastate-js/main" {
         toString(): string;
     }
 
-    export declare class ErgoTreeObj {
+    export declare class ErgoTree$ {
         static fromHex(value: HexString): ErgoTree;
     }
 
@@ -160,7 +160,7 @@ declare module "sigmastate-js/main" {
     export declare class SigmaProp {
     }
 
-    export declare class SigmaPropObj {
+    export declare class SigmaProp$ {
         static fromPointHex(value: HexString): SigmaProp;
     }
 

@@ -10,7 +10,7 @@ import scala.scalajs.js.annotation.JSExportTopLevel
 class SigmaProp(val sigmaBoolean: SigmaBoolean) extends js.Object {
 }
 
-@JSExportTopLevel("SigmaPropObj")
+@JSExportTopLevel("SigmaProp$")
 object SigmaProp extends js.Object {
   /** Creates a new [[SigmaProp]] from the given hex string of public key.
     * @param pointHex  hex representation of elliptic curve point (ASN.1 encoded)

@@ -1,4 +1,4 @@
-const { Type$, Value$, SigmaPropObj, SigmaProp} = require("sigmastate-js/main");
+const { Type$, Value$, SigmaProp$, SigmaProp} = require("sigmastate-js/main");
 
 function testRange(factory, min, max) {
   expect(factory(max).data).toEqual(max);
@@ -107,8 +107,8 @@ describe("Smoke tests for Values", () => {
   });
 
   it("Value of type Coll[SigmaProp]", () => {
-    let sp1 = SigmaPropObj.fromPointHex(groupElementHex.substring(2))
-    let sp2 = SigmaPropObj.fromPointHex(sigmaPropHex.substring(4))
+    let sp1 = SigmaProp$.fromPointHex(groupElementHex.substring(2))
+    let sp2 = SigmaProp$.fromPointHex(sigmaPropHex.substring(4))
     let collV = Value$.collOf([sp1, sp2], Type$.SigmaProp)
 
     expect(collV.tpe.name).toEqual("Coll[SigmaProp]");
