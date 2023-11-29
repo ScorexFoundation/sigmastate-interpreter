@@ -84,7 +84,7 @@ See examples in tests [Type.spec.js](https://github.com/ScorexFoundation/sigmast
 
 ### How to create Sigma values
 
-Import `ValueObj` module, then use its methods.
+Import `Value$` module, then use its methods.
 See examples in tests [Value.spec.js](https://github.com/ScorexFoundation/sigmastate-interpreter/blob/933acd7a3753725c8b41994c2126a20279b6809b/sigma-js/tests/js/Value.spec.js)
 
 ### How to work with ErgoTree

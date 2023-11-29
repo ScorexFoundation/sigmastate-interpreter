@@ -1,4 +1,4 @@
-const { ValueObj, SigmaCompilerObj } = require("sigmastate-js/main");
+const { Value$, SigmaCompilerObj } = require("sigmastate-js/main");
 
 describe("Smoke tests for API exporting", () => {
   let compiler = SigmaCompilerObj.forMainnet();
@@ -21,7 +21,7 @@ describe("Smoke tests for API exporting", () => {
 
   it("SigmaCompiler should compile with named constants", () => {
     let treeWithSegregation = compiler.compile(
-        {"deadline": ValueObj.ofInt(100)},
+        {"deadline": Value$.ofInt(100)},
         true, 0, "sigmaProp(HEIGHT > deadline)");
     expect(treeWithSegregation).not.toBeUndefined();
     expect(treeWithSegregation.toHex()).toEqual(segregatedTreeHex)

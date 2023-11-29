@@ -1,4 +1,4 @@
-const {ContractTemplate, ContractTemplateObj, ValueObj} = require("sigmastate-js/main");
+const {ContractTemplate, ContractTemplateObj, Value$} = require("sigmastate-js/main");
 
 describe("Smoke tests for API exporting", () => {
     it("Should export ContractTempate object", () => {
@@ -51,9 +51,9 @@ describe("ContractTemplate", () => {
 
     it("applyTemplate", () => {
             let templateValues = {
-                "p1": ValueObj.ofByte(10),
-                "p2": ValueObj.ofByte(40),
-                "p3": ValueObj.ofByte(50)
+                "p1": Value$.ofByte(10),
+                "p2": Value$.ofByte(40),
+                "p3": Value$.ofByte(50)
             };
             let tree = template.applyTemplate(2, templateValues);
             expect(tree.toHex()).toEqual("1a1003020a02280232d1939a730073017302");
