@@ -1,4 +1,4 @@
-const { Address, AddressObj } = require("sigmastate-js/main");
+const { Address, Address$ } = require("sigmastate-js/main");
 
 describe("Smoke tests for API exporting", () => {
   it("Should export Address object", () => {
@@ -11,7 +11,7 @@ describe("Address", () => {
   let p2sStr = "JryiCXrZf5VDetH1PM7rKDX3q4sLF34AdErWJFqG87Hf5ikTDf636b35Nr7goWMdRUKA3ZPxdeqFNbQzBjhnDR9SUMYwDX1tdV8ZuGgXwQPaRVcB9"
 
   it("roundtrip for P2PK", () => {
-    let addr = AddressObj.fromString(addrStr);
+    let addr = Address$.fromString(addrStr);
     expect(addr.isP2PK()).toEqual(true)
     expect(addr.isP2S()).toEqual(false)
 
@@ -21,7 +21,7 @@ describe("Address", () => {
   });
 
   it("roundtrip for P2S", () => {
-    let addr = AddressObj.fromString(p2sStr);
+    let addr = Address$.fromString(p2sStr);
     expect(addr.isP2S()).toEqual(true)
     expect(addr.isP2PK()).toEqual(false)
 
@@ -31,14 +31,14 @@ describe("Address", () => {
   });
 
   it("toSigmaPropOpt", () => {
-    let addr = AddressObj.fromString(addrStr);
+    let addr = Address$.fromString(addrStr);
 
     expect(addr.isMainnet()).toEqual(true)
     expect(addr.toSigmaPropOpt()).not.toBeUndefined()
   });
 
   it("other properties", () => {
-    let addr = AddressObj.fromString(addrStr);
+    let addr = Address$.fromString(addrStr);
     expect(addr.toErgoTree()).not.toBeUndefined()
     expect(addr.asP2PK()).not.toBeUndefined()
     expect(addr.asP2PK().isP2PK()).toEqual(true)

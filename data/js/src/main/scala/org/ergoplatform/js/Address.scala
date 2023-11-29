@@ -101,7 +101,7 @@ abstract class Address extends js.Object {
 }
 
 /** An exported JavaScript object providing utility methods for working with Address instances. */
-@JSExportTopLevel("AddressObj")
+@JSExportTopLevel("Address$")
 object Address extends js.Object {
   /** Creates JS wrapper over given [[ErgoAddress]]. */
   def fromErgoAddress(ergoAddress: org.ergoplatform.ErgoAddress): Address = {

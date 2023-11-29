@@ -70,7 +70,7 @@ declare module "sigmastate-js/main" {
         toString(): string;
     }
 
-    export declare class AddressObj {
+    export declare class Address$ {
         /** Creates JS wrapper over given [[ErgoAddress]]. */
         static fromErgoAddress(ergoAddress: any /*org.ergoplatform.ErgoAddress*/): Address;
 
