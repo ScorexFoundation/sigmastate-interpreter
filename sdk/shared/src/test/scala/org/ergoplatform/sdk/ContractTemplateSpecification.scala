@@ -234,12 +234,11 @@ class ContractTemplateSpecification extends SerializationSpecification
       )
     )
 
-    templates.indices.foreach(i => {
+    templates.indices.foreach { i =>
       val template = templates(i)
       val applied = template.applyTemplate(Some(ergoTreeVersionInTests), templateValues(i))
       applied shouldEqual expectedErgoTree(i)
     }
-    )
   }
 
   property("applyTemplate num(parameters) < num(constants)") {

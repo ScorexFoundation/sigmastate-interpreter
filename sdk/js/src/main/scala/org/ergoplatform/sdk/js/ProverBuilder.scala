@@ -6,7 +6,6 @@ import org.ergoplatform.sdk.SecretString
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
 import Isos._
-import sigma.js.GroupElement
 import sigma.eval.SigmaDsl
 
 /** Equivalent of [[sdk.ProverBuilder]] available from JS.
