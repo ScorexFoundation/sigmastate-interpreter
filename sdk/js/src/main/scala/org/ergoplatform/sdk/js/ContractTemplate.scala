@@ -103,7 +103,7 @@ class ContractTemplate(
   }
 }
 
-@JSExportTopLevel("ContractTemplateObj")
+@JSExportTopLevel("ContractTemplate$")
 object ContractTemplate extends js.Object {
 
   /** Create a new contract template from a JSON string.

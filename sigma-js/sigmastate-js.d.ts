@@ -653,7 +653,7 @@ declare module "sigmastate-js/main" {
             paramValues: SigmaCompilerNamedConstantsMap): ErgoTree
     }
 
-    export declare class ContractTemplateObj {
+    export declare class ContractTemplate$ {
         /** Create a new contract template from a JSON string.
          *
          * @param json JSON string representing a contract template.

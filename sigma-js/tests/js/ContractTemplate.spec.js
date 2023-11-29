@@ -1,4 +1,4 @@
-const {ContractTemplate, ContractTemplateObj, Value$} = require("sigmastate-js/main");
+const {ContractTemplate, ContractTemplate$, Value$} = require("sigmastate-js/main");
 
 describe("Smoke tests for API exporting", () => {
     it("Should export ContractTempate object", () => {
@@ -41,7 +41,7 @@ describe("ContractTemplate", () => {
         "  \"expressionTree\" : \"d1939a730073017302\"\n" +
         "}";
 
-    let template = ContractTemplateObj.fromJsonString(templateJsonStr);
+    let template = ContractTemplate$.fromJsonString(templateJsonStr);
 
     it("Json encoding roundtrip", () => {
             expect(template).not.toBeUndefined();
