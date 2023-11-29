@@ -10,16 +10,17 @@ import org.ergoplatform.validation.SigmaValidationSettingsSerializer
 import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.crypto.hash.Digest32
 import scorex.util.ModifierId
-import sigmastate.Values.{EvaluatedValue, ErgoTree}
-import sigmastate.eval.Extensions._
-import sigmastate.eval.{WrapperOf, CPreHeader, _}
-import sigmastate.exceptions.SigmaException
-import sigmastate.interpreter.{ContextExtension, ProverResult}
-import sigmastate.{AvlTreeData, SType, AvlTreeFlags}
-import sigma.{Header, AnyValue, Colls, Coll, PreHeader}
-
-import scala.util.Try
-import sigmastate.utils.Helpers._  // required for Scala 2.11
+import sigma.Extensions.ArrayOps
+import sigma.ast.{ErgoTree, EvaluatedValue, SType}
+import sigma.data.{AvlTreeData, AvlTreeFlags, CBigInt, Digest32Coll, WrapperOf}
+import sigma.eval.Extensions.EvalIterableOps
+import sigma.eval.SigmaDsl
+import sigma.interpreter.{ContextExtension, ProverResult}
+import sigma.serialization.{ErgoTreeSerializer, ValueSerializer}
+import sigma.validation.SigmaValidationSettings
+import sigma.{AnyValue, Coll, Colls, Header, PreHeader, SigmaException}
+import sigmastate.eval.{CPreHeader, _}
+import sigmastate.utils.Helpers._   // required for Scala 2.11
 
 import java.math.BigInteger
 import scala.collection.mutable
