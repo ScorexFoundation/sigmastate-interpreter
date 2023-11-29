@@ -6,10 +6,6 @@ import sigma.interpreter.ContextExtension.VarBinding
 import sigma.validation.SigmaValidationSettings
 
 
-
-
-
-
 /** Base class of the context passed to verifier and prover.
   * @see [[sigmastate.interpreter.Interpreter]]
   */

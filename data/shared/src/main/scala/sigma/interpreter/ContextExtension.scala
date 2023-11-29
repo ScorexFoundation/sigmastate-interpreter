@@ -43,9 +43,9 @@ object ContextExtension {
       val extSize = r.getByte()
       if (extSize < 0)
         error(s"Negative amount of context extension values: $extSize")
-      val ext = (0 until extSize)
+      val values = (0 until extSize)
           .map(_ => (r.getByte(), r.getValue().asInstanceOf[EvaluatedValue[_ <: SType]]))
-      ContextExtension(mutable.LinkedHashMap(ext: _*))
+      ContextExtension(values.toMap)
     }
   }
 }

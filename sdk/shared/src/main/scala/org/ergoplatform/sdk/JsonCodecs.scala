@@ -11,17 +11,16 @@ import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.crypto.hash.Digest32
 import scorex.util.ModifierId
 import sigma.Extensions.ArrayOps
-import sigma.ast.{ErgoTree, SType}
+import sigma.ast.{ErgoTree, EvaluatedValue, SType}
 import sigma.data.{AvlTreeData, AvlTreeFlags, CBigInt, Digest32Coll, WrapperOf}
-import sigma.validation.SigmaValidationSettings
-import sigma.{AnyValue, Coll, Colls, Header, PreHeader, SigmaException}
-import sigma.ast.EvaluatedValue
 import sigma.eval.Extensions.EvalIterableOps
 import sigma.eval.SigmaDsl
-import sigmastate.eval._
 import sigma.interpreter.{ContextExtension, ProverResult}
 import sigma.serialization.{ErgoTreeSerializer, ValueSerializer}
-import sigmastate.utils.Helpers._  // required for Scala 2.11
+import sigma.validation.SigmaValidationSettings
+import sigma.{AnyValue, Coll, Colls, Header, PreHeader, SigmaException}
+import sigmastate.eval.{CPreHeader, _}
+import sigmastate.utils.Helpers._   // required for Scala 2.11
 
 import java.math.BigInteger
 import scala.collection.mutable
@@ -238,7 +237,7 @@ trait JsonCodecs {
 
   implicit val contextExtensionDecoder: Decoder[ContextExtension] = Decoder.instance({ cursor =>
     for {
-      values <- cursor.as[mutable.LinkedHashMap[Byte, EvaluatedValue[SType]]]
+      values <- cursor.as[Map[Byte, EvaluatedValue[SType]]]
     } yield ContextExtension(values)
   })
 
