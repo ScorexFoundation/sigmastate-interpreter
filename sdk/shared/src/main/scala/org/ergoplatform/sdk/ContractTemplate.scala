@@ -1,5 +1,6 @@
 package org.ergoplatform.sdk
 
+import cats.syntax.either._
 import debox.cfor
 import io.circe._
 import io.circe.syntax.{EncoderOps, _}
