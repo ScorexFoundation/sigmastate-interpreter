@@ -12,6 +12,11 @@ import org.ergoplatform.sdk.Parameter
 class SigmaTemplateCompiler(networkPrefix: Byte) {
   val sigmaCompiler = new SigmaCompiler(networkPrefix)
 
+  /**
+   * Compiles the provided contract source code into a [[ContractTemplate]].
+   * @param source The ErgoScript contract source code.
+   * @return The parsed contract template.
+   */
   def compile(source: String): ContractTemplate = {
     ContractParser.parse(source) match {
       case Parsed.Success(template, index) =>

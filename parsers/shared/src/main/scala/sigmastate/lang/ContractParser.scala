@@ -97,17 +97,46 @@ object ContractDoc {
   }
 }
 
+/**
+ * Represents a parsed parameter defined in a contracts signature.
+ * @param name The name of the parameter.
+ * @param tpe The type of the parameter.
+ * @param defaultValue The default value assigned to the parameter, if it exists.
+ */
 case class ContractParam(name: String, tpe: SType, defaultValue: Option[SType#WrappedType])
 
+/**
+ * Represents the signature of a contract.
+ * @param name The name of the contract.
+ * @param params The parameters for the contract.
+ */
 case class ContractSignature(name: String, params: Seq[ContractParam])
 
+/**
+ * The result of parsing a contract template.
+ * Includes the parsed docstring preceding the contract as well as the contract signature.
+ * @param docs Docstring parsed from the contract.
+ * @param signature Signature of the contract.
+ */
 case class ParsedContractTemplate(docs: ContractDoc, signature: ContractSignature)
 
+/**
+ * Parsers that handle parsing contract definitions excluding the contract body which is handled
+ * by [[SigmaParser]].
+ */
 object ContractParser {
   def parse(source: String): Parsed[ParsedContractTemplate] = fastparse.parse(source, parse(_))
 
+  /**
+   * Parse a contract up until the open brace (i.e the beginning of the contract logic).
+   */
   def parse[_: P]: P[ParsedContractTemplate] = P(Docs.parse ~ Basic.Newline ~ Signature.parse ~ WL.? ~ "=" ~ WL.? ~ &("{")).map(s => ParsedContractTemplate(s._1, s._2))
 
+  /**
+   * Parsers for contract docstrings.
+   * Contract docstrings follow similiar structure as scaladocs except only support a subset
+   * of documentation tags such as @param & @returns.
+   */
   object Docs {
 
     import DocumentationToken._
@@ -139,6 +168,10 @@ object ContractParser {
     def docLine[_: P] = P(linePrefix ~ (emptyLine | description | tag) ~ Basic.Newline)
   }
 
+  /**
+   * Parsers for contract signatures.
+   * A contract signature has essentially the same shape as a scala function signature.
+   */
   object Signature {
 
     def parse(source: String): Parsed[ContractSignature] = {
