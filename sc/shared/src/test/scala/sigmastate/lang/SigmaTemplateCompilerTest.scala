@@ -27,7 +27,7 @@ class SigmaTemplateCompilerTest extends AnyPropSpec with ScalaCheckPropertyCheck
         |@contract def contractName(p1: Int = 5, p2: String = "default string", param3: Long) = {
         |  sigmaProp(true)
         |}""".stripMargin
-    val compiler = new SigmaTemplateCompiler
+    val compiler = SigmaTemplateCompiler(0)
     val template = compiler.compile(source)
 
     template.name shouldBe "contractName"
@@ -44,7 +44,7 @@ class SigmaTemplateCompilerTest extends AnyPropSpec with ScalaCheckPropertyCheck
       None
     )
 
-    val sigmaCompiler = new SigmaCompiler(NetworkType.Mainnet.networkPrefix.toByte)
+    val sigmaCompiler = new SigmaCompiler(0.toByte)
     implicit val ir = new CompiletimeIRContext
     val result = sigmaCompiler.compile(Map.empty, "{ sigmaProp(true) }")
 

@@ -1,17 +1,18 @@
 package sigmastate.lang
 
+import sigmastate.SType
 import fastparse._
 import fastparse.NoWhitespace._
 
 /**
  * Represents a docstring line.
  */
-private case class DocumentationToken(kind: DocumentationToken.Kind, name: Option[String], body: Option[String])
+case class DocumentationToken(kind: DocumentationToken.Kind, name: Option[String], body: Option[String])
 
 /**
  * Companion object containing the classes required for describing an docstring token.
  */
-private object DocumentationToken {
+object DocumentationToken {
   def apply(kind: Kind): DocumentationToken = new DocumentationToken(kind, None, None)
 
   def apply(kind: Kind, body: String): DocumentationToken = new DocumentationToken(kind, None, Option(body))
@@ -57,15 +58,17 @@ private object DocumentationToken {
 
 /**
  * Holds values extracted from a `@param` tag line in docstrings.
- * @param name Name of the parameter.
+ *
+ * @param name        Name of the parameter.
  * @param description Description of the parameter.
  */
 case class ParameterDoc(name: String, description: String)
 
 /**
  * Contract template documentation extracted from the preceding docstring.
+ *
  * @param description Top level contract template description.
- * @param params Contract template parameters as defined in the docstring.
+ * @param params      Contract template parameters as defined in the docstring.
  */
 case class ContractDoc(description: String, params: Seq[ParameterDoc])
 
@@ -92,33 +95,64 @@ object ContractDoc {
   }
 }
 
-/** Parser for docstrings of contract templates. */
-object ContractDocParser {
-  import DocumentationToken._
+case class ContractParam(name: String, tpe: SType, defaultValue: Option[SType#WrappedType])
 
-  def parse(source: String): Parsed[ContractDoc] = {
-    fastparse.parse(source, parse(_))
+case class ContractSignature(name: String, params: Seq[ContractParam])
+
+case class ParsedContractTemplate(docs: ContractDoc, signature: ContractSignature)
+
+object ContractParser {
+  def parse(source: String): Parsed[ParsedContractTemplate] = fastparse.parse(source, parse(_))
+
+  def parse[_: P]: P[ParsedContractTemplate] = P(Docs.parse ~ "\n" ~ Signature.parse ~ " ".rep.? ~ "=" ~ " ".rep.? ~ &("{")).map(s => ParsedContractTemplate(s._1, s._2))
+
+  object Docs {
+
+    import DocumentationToken._
+
+    def parse(source: String): Parsed[ContractDoc] = {
+      fastparse.parse(source, parse(_))
+    }
+
+    def parse[_: P]: P[ContractDoc] = P(" ".rep.? ~ "/*" ~ docLine.rep ~ " ".rep.? ~ "*/").map(ContractDoc.apply)
+
+    def linePrefix[_: P] = P(" ".rep.? ~ "*" ~ " ".rep.? ~ !"/")
+
+    def word[_: P] = CharsWhile(c => c != ' ')
+
+    def charUntilNewLine[_: P] = CharsWhile(c => c != '\n')
+
+    def unsupportedTag[_: P] = P("@" ~ charUntilNewLine.?).map(_ => DocumentationToken(UnsupportedTag))
+
+    def returnTag[_: P] = P("@returns").map(_ => DocumentationToken(Return))
+
+    def paramTag[_: P] = P("@param" ~ " ".rep ~ word.! ~ " ".rep ~ charUntilNewLine.!).map(s => DocumentationToken(Param, s._1, s._2))
+
+    def tag[_: P] = P(returnTag | paramTag | unsupportedTag)
+
+    def emptyLine[_: P] = P(("" | " ".rep.?) ~ &("\n")).map(_ => DocumentationToken(EmptyLine))
+
+    def description[_: P] = P(!"@" ~ charUntilNewLine.!).map(s => DocumentationToken(Description, s))
+
+    def docLine[_: P] = P(linePrefix ~ (emptyLine | description | tag) ~ "\n")
   }
 
-  def parse[_: P]: P[ContractDoc] = P(" ".rep.? ~ "/*" ~ docLine.rep ~ " ".rep.? ~ "*/").map(ContractDoc.apply)
+  object Signature {
 
-  private def linePrefix[_: P] = P(" ".rep.? ~ "*" ~ " ".rep.? ~ !"/")
+    import SigmaParser._
 
-  private def word[_: P] = CharsWhile(c => c != ' ')
+    def parse(source: String): Parsed[ContractSignature] = {
+      fastparse.parse(source, parse(_))
+    }
 
-  private def charUntilNewLine[_: P] = CharsWhile(c => c != '\n')
+    def parse[_: P]: P[ContractSignature] = P(annotation ~ " ".rep.? ~ `def` ~ " ".rep.? ~ Id.! ~ params).map(s => ContractSignature(s._1, s._2.getOrElse(Seq())))
 
-  private def unsupportedTag[_: P] = P("@" ~ charUntilNewLine.?).map(_ => DocumentationToken(UnsupportedTag))
+    def annotation[_: P] = P("@contract")
 
-  private def returnTag[_: P] = P("@returns").map(_ => DocumentationToken(Return))
+    def paramDefault[_: P] = P(" ".rep.? ~ `=` ~ " ".rep.? ~ ExprLiteral).map(s => s.asWrappedType)
 
-  private def paramTag[_: P] = P("@param" ~ " ".rep ~ word.! ~ " ".rep ~ charUntilNewLine.!).map(s => DocumentationToken(Param, s._1, s._2))
+    def param[_: P] = P(" ".rep.? ~ Id.! ~ ":" ~ Type ~ paramDefault.?).map(s => ContractParam(s._1, s._2, s._3))
 
-  private def tag[_: P] = P(returnTag | paramTag | unsupportedTag)
-
-  private def emptyLine[_: P] = P(("" | " ".rep.?) ~ &("\n")).map(_ => DocumentationToken(EmptyLine))
-
-  private def description[_: P] = P(!"@" ~ charUntilNewLine.!).map(s => DocumentationToken(Description, s))
-
-  private def docLine[_: P] = P(linePrefix ~ (emptyLine | description | tag) ~ "\n")
+    def params[_: P] = P("(" ~ param.rep(1, ",").? ~ ")")
+  }
 }

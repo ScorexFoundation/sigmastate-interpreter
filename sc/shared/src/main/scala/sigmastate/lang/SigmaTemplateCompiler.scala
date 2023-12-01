@@ -9,20 +9,16 @@ import sigmastate.eval.CompiletimeIRContext
 import org.ergoplatform.sdk.Parameter
 
 /** Compiler which compiles Ergo contract templates into a [[ContractTemplate]]. */
-class SigmaTemplateCompiler {
+class SigmaTemplateCompiler(networkPrefix: Byte) {
+  val sigmaCompiler = new SigmaCompiler(networkPrefix)
+
   def compile(source: String): ContractTemplate = {
-    ContractTemplateParser.parse(source) match {
+    ContractParser.parse(source) match {
       case Parsed.Success(template, index) =>
         val body = source.slice(index, source.length)
-        val compiler = new SigmaCompiler(NetworkType.Mainnet.networkPrefix.toByte)
         implicit val ir = new CompiletimeIRContext
-        val result = compiler.compile(Map.empty, body)
+        val result = sigmaCompiler.compile(Map.empty, body)
         assemble(template, result.buildTree)
-        // SigmaParser(source.slice(index, source.length)) match {
-        //   case Parsed.Success(value, _) => assemble(template, value)
-        //   case f: Parsed.Failure =>
-        //     throw new ParserException(s"Contract body error: $f", Some(SourceContext.fromParserFailure(f)))
-        // }
       case f: Parsed.Failure =>
         throw new ParserException(s"Contract template syntax error: $f", Some(SourceContext.fromParserFailure(f)))
     }
@@ -34,7 +30,7 @@ class SigmaTemplateCompiler {
     val constValues =
       if (allConstValuesAreNone) None
       else Some(constValueOpts.toIndexedSeq)
-    val contractParams = parsed.signature.params.zipWithIndex.map { case(param, idx) =>
+    val contractParams = parsed.signature.params.zipWithIndex.map { case (param, idx) =>
       val desc: String = parsed.docs.params.find(docParam => docParam.name == param.name).map(_.description).getOrElse("")
       Parameter(param.name, desc, idx)
     }
@@ -43,9 +39,13 @@ class SigmaTemplateCompiler {
       name = parsed.signature.name,
       description = parsed.docs.description,
       constTypes = constTypes.toIndexedSeq,
-      constValues,
-      contractParams.toIndexedSeq,
-      expr.toSigmaProp
+      constValues = constValues,
+      parameters = contractParams.toIndexedSeq,
+      expressionTree = expr.toSigmaProp
     )
   }
+}
+
+object SigmaTemplateCompiler {
+  def apply(networkPrefix: Byte): SigmaTemplateCompiler = new SigmaTemplateCompiler(networkPrefix)
 }
