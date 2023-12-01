@@ -3,6 +3,8 @@ package sigmastate.lang
 import sigmastate.SType
 import fastparse._
 import fastparse.NoWhitespace._
+import SigmaParser._
+import sigmastate.lang.syntax.Basic
 
 /**
  * Represents a docstring line.
@@ -104,7 +106,7 @@ case class ParsedContractTemplate(docs: ContractDoc, signature: ContractSignatur
 object ContractParser {
   def parse(source: String): Parsed[ParsedContractTemplate] = fastparse.parse(source, parse(_))
 
-  def parse[_: P]: P[ParsedContractTemplate] = P(Docs.parse ~ "\n" ~ Signature.parse ~ " ".rep.? ~ "=" ~ " ".rep.? ~ &("{")).map(s => ParsedContractTemplate(s._1, s._2))
+  def parse[_: P]: P[ParsedContractTemplate] = P(Docs.parse ~ Basic.Newline ~ Signature.parse ~ WL.? ~ "=" ~ WL.? ~ &("{")).map(s => ParsedContractTemplate(s._1, s._2))
 
   object Docs {
 
@@ -116,7 +118,7 @@ object ContractParser {
 
     def parse[_: P]: P[ContractDoc] = P(" ".rep.? ~ "/*" ~ docLine.rep ~ " ".rep.? ~ "*/").map(ContractDoc.apply)
 
-    def linePrefix[_: P] = P(" ".rep.? ~ "*" ~ " ".rep.? ~ !"/")
+    def linePrefix[_: P] = P(WL.? ~ "*" ~ " ".rep.? ~ !"/")
 
     def word[_: P] = CharsWhile(c => c != ' ')
 
@@ -126,32 +128,30 @@ object ContractParser {
 
     def returnTag[_: P] = P("@returns").map(_ => DocumentationToken(Return))
 
-    def paramTag[_: P] = P("@param" ~ " ".rep ~ word.! ~ " ".rep ~ charUntilNewLine.!).map(s => DocumentationToken(Param, s._1, s._2))
+    def paramTag[_: P] = P("@param" ~ WL ~ word.! ~ WL ~ charUntilNewLine.!).map(s => DocumentationToken(Param, s._1, s._2))
 
     def tag[_: P] = P(returnTag | paramTag | unsupportedTag)
 
-    def emptyLine[_: P] = P(("" | " ".rep.?) ~ &("\n")).map(_ => DocumentationToken(EmptyLine))
+    def emptyLine[_: P] = P(("" | " ".rep.?) ~ &(Basic.Newline)).map(_ => DocumentationToken(EmptyLine))
 
     def description[_: P] = P(!"@" ~ charUntilNewLine.!).map(s => DocumentationToken(Description, s))
 
-    def docLine[_: P] = P(linePrefix ~ (emptyLine | description | tag) ~ "\n")
+    def docLine[_: P] = P(linePrefix ~ (emptyLine | description | tag) ~ Basic.Newline)
   }
 
   object Signature {
-
-    import SigmaParser._
 
     def parse(source: String): Parsed[ContractSignature] = {
       fastparse.parse(source, parse(_))
     }
 
-    def parse[_: P]: P[ContractSignature] = P(annotation ~ " ".rep.? ~ `def` ~ " ".rep.? ~ Id.! ~ params).map(s => ContractSignature(s._1, s._2.getOrElse(Seq())))
+    def parse[_: P]: P[ContractSignature] = P(annotation ~ WL.? ~ `def` ~ WL.? ~ Id.! ~ params).map(s => ContractSignature(s._1, s._2.getOrElse(Seq())))
 
     def annotation[_: P] = P("@contract")
 
-    def paramDefault[_: P] = P(" ".rep.? ~ `=` ~ " ".rep.? ~ ExprLiteral).map(s => s.asWrappedType)
+    def paramDefault[_: P] = P(WL.? ~ `=` ~ WL.? ~ ExprLiteral).map(s => s.asWrappedType)
 
-    def param[_: P] = P(" ".rep.? ~ Id.! ~ ":" ~ Type ~ paramDefault.?).map(s => ContractParam(s._1, s._2, s._3))
+    def param[_: P] = P(WL.? ~ Id.! ~ ":" ~ Type ~ paramDefault.?).map(s => ContractParam(s._1, s._2, s._3))
 
     def params[_: P] = P("(" ~ param.rep(1, ",").? ~ ")")
   }
