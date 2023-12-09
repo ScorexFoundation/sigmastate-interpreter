@@ -163,6 +163,6 @@ class CoreByteReader(val r: Reader, val maxTreeDepth: Int = CoreSerializer.MaxTr
   @inline final def wasUsingBlockchainContext: Boolean = _wasUsingBlockchainContext
 
   @inline final def wasUsingBlockchainContext_=(v: Boolean): Unit = {
-    wasUsingBlockchainContext = v
+    _wasUsingBlockchainContext = v
   }
 }
