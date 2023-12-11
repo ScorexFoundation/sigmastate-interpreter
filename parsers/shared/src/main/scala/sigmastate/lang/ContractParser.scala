@@ -117,8 +117,9 @@ case class ContractSignature(name: String, params: Seq[ContractParam])
  * Includes the parsed docstring preceding the contract as well as the contract signature.
  * @param docs Docstring parsed from the contract.
  * @param signature Signature of the contract.
+ * @param body The code of the contract.
  */
-case class ParsedContractTemplate(docs: ContractDoc, signature: ContractSignature)
+case class ParsedContractTemplate(docs: ContractDoc, signature: ContractSignature, body: String)
 
 /**
  * Parsers that handle parsing contract definitions excluding the contract body which is handled
@@ -130,7 +131,7 @@ object ContractParser {
   /**
    * Parse a contract up until the open brace (i.e the beginning of the contract logic).
    */
-  def parse[_: P]: P[ParsedContractTemplate] = P(Docs.parse ~ Basic.Newline ~ Signature.parse ~ WL.? ~ "=" ~ WL.? ~ &("{")).map(s => ParsedContractTemplate(s._1, s._2))
+  def parse[_: P]: P[ParsedContractTemplate] = P(Docs.parse ~ Basic.Newline ~ Signature.parse ~ WL.? ~ "=" ~ WL.? ~ AnyChar.rep(1).!).map(s => ParsedContractTemplate(s._1, s._2, s._3))
 
   /**
    * Parsers for contract docstrings.
