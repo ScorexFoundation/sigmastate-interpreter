@@ -90,7 +90,8 @@ case class ErgoTree private[sigma](
     root: Either[UnparsedErgoTree, SigmaPropValue],
     private val givenComplexity: Int,
     private val propositionBytes: Array[Byte],
-    private val givenDeserialize: Option[Boolean]
+    private val givenDeserialize: Option[Boolean],
+    private val givenIsUsingBlockchainContext: Option[Boolean]
 ) {
   def this(
       header: HeaderType,
@@ -99,9 +100,10 @@ case class ErgoTree private[sigma](
     this(
       header, constants, root, 0,
       propositionBytes = DefaultSerializer.serializeErgoTree(
-        ErgoTree(header, constants, root, 0, null, None)
+        ErgoTree(header, constants, root, 0, null, None, None)
       ),
-      givenDeserialize = None
+      givenDeserialize = None,
+      givenIsUsingBlockchainContext = None
     )
 
   require(isConstantSegregation || constants.isEmpty)
@@ -161,6 +163,20 @@ case class ErgoTree private[sigma](
       })
     }
     _hasDeserialize.get
+  }
+
+  private[sigma] var _isUsingBlockchainContext: Option[Boolean] = givenIsUsingBlockchainContext
+
+  /** Returns true if the tree depends on the blockchain context.
+   */
+  lazy val isUsingBlockchainContext: Boolean = {
+    if (_isUsingBlockchainContext.isEmpty) {
+      _isUsingBlockchainContext = Some(root match {
+        case Right(p) => Value.isUsingBlockchainContext(p)
+        case _ => false
+      })
+    }
+    _isUsingBlockchainContext.get
   }
 
   /** Serialized proposition expression of SigmaProp type with
