@@ -27,7 +27,7 @@ class Parameter(
     val constantIndex: Int
 ) extends js.Object
 
-@JSExportTopLevel("ParameterObj")
+@JSExportTopLevel("Parameter$")
 object Parameter extends js.Object {
   implicit val isoToSdk: sigma.data.Iso[Parameter, sdk.Parameter] =
     new sigma.data.Iso[Parameter, sdk.Parameter] {
