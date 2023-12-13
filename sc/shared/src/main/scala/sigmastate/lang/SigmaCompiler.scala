@@ -96,6 +96,12 @@ class SigmaCompiler(settings: CompilerSettings) {
     CompilerResult(env, "<no source code>", compiledGraph, compiledTree)
   }
 
+  /** Compiles the given parsed contract source. */
+  def compileParsed(env: ScriptEnv, parsedExpr: SValue)(implicit IR: IRContext): CompilerResult[IR.type] = {
+    val typed = typecheck(env, parsedExpr)
+    compileTyped(env, typed)
+  }
+
   /** Unlowering transformation, which replaces some operations with equivalent MethodCall
     * node. This replacement is only defined for some operations.
     * This is inverse to `lowering` which is performed during compilation.

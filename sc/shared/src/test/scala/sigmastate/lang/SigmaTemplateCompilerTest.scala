@@ -25,7 +25,7 @@ class SigmaTemplateCompilerTest extends AnyPropSpec with ScalaCheckPropertyCheck
         |  sigmaProp(true)
         |}""".stripMargin
     val compiler = SigmaTemplateCompiler(ErgoAddressEncoder.MainnetNetworkPrefix)
-    val template = compiler.compile(source)
+    val template = compiler.compile(Map.empty, source)
 
     template.name shouldBe "contractName"
     template.description shouldBe "This is my contracts description. Here is another line describing what it does in more detail."
@@ -63,7 +63,7 @@ class SigmaTemplateCompilerTest extends AnyPropSpec with ScalaCheckPropertyCheck
         |@contract def contractName(p1: Int = 5, p2: String = "default string") = sigmaProp(true)
         |""".stripMargin
     val compiler = SigmaTemplateCompiler(ErgoAddressEncoder.MainnetNetworkPrefix)
-    val template = compiler.compile(source)
+    val template = compiler.compile(Map.empty, source)
 
     template.name shouldBe "contractName"
     template.description shouldBe "This is my contracts description. Here is another line describing what it does in more detail."
@@ -74,7 +74,7 @@ class SigmaTemplateCompilerTest extends AnyPropSpec with ScalaCheckPropertyCheck
     template.constTypes should contain theSameElementsInOrderAs Seq(SInt, SString)
     template.constValues.get should contain theSameElementsInOrderAs IndexedSeq(
       Some(Values.IntConstant(5).asWrappedType),
-      Some(Values.StringConstant("default string").asWrappedType),
+      Some(Values.StringConstant("default string").asWrappedType)
     )
 
     val sigmaCompiler = new SigmaCompiler(ErgoAddressEncoder.MainnetNetworkPrefix)
