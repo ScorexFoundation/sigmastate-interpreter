@@ -210,6 +210,25 @@ object Value {
     c > 0
   }
 
+  /** Traverses the given expression tree and counts the number of operations
+   * which read the blockchain context. If it is non-zero, returns true. */
+  def isUsingBlockchainContext(exp: SValue): Boolean = {
+    val blockchainContextNode: PartialFunction[Any, Int] = {
+      case Height => 1
+      case LastBlockUtxoRootHash => 1
+      case MinerPubkey => 1
+      case MethodCall(_, method, _, _) =>
+        method.objType match {
+          case SContextMethods =>
+            if (SContextMethods.BlockchainContextMethodNames.contains(method.name)) 1 else 0
+          case _ => 0
+        }
+      case _ => 0
+    }
+    val c = count(blockchainContextNode)(exp)
+    c > 0
+  }
+
   def typeError(node: SValue, evalResult: Any) = {
     val tpe = node.tpe
     throw new InterpreterException(

@@ -1408,6 +1408,13 @@ case object SContextMethods extends MonoTypeMethods {
     dataInputsMethod, headersMethod, preHeaderMethod, inputsMethod, outputsMethod, heightMethod, selfMethod,
     selfBoxIndexMethod, lastBlockUtxoRootHashMethod, minerPubKeyMethod, getVarMethod
   )
+
+  /** Names of methods which provide blockchain context.
+   * This value can be reused where necessary to avoid allocations. */
+  val BlockchainContextMethodNames: IndexedSeq[String] = Array(
+    headersMethod.name, preHeaderMethod.name, heightMethod.name,
+    lastBlockUtxoRootHashMethod.name, minerPubKeyMethod.name
+  )
 }
 
 /** Type descriptor of `Header` type of ErgoTree. */

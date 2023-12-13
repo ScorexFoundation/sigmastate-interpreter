@@ -150,9 +150,15 @@ class ErgoTreeSerializer {
         val wasDeserialize_saved = r.wasDeserialize
         r.wasDeserialize = false
 
+        val wasUsingBlockchainContext_saved = r.wasUsingBlockchainContext
+        r.wasUsingBlockchainContext = false
+
         val root = ValueSerializer.deserialize(r)
         val hasDeserialize = r.wasDeserialize  // == true if there was deserialization node
         r.wasDeserialize = wasDeserialize_saved
+
+        val isUsingBlockchainContext = r.wasUsingBlockchainContext // == true if there was a node using the blockchain context
+        r.wasUsingBlockchainContext = wasUsingBlockchainContext_saved
 
         if (checkType) {
           CheckDeserializedScriptIsSigmaProp(root)
@@ -168,7 +174,7 @@ class ErgoTreeSerializer {
 
         new ErgoTree(
           h, cs, Right(root.asSigmaProp), complexity,
-          propositionBytes, Some(hasDeserialize))
+          propositionBytes, Some(hasDeserialize), Some(isUsingBlockchainContext))
       }
       catch {
         case e: ReaderPositionLimitExceeded =>
@@ -183,7 +189,7 @@ class ErgoTreeSerializer {
             r.position = startPos
             val bytes = r.getBytes(numBytes)
             val complexity = ComplexityTable.OpCodeComplexity(Constant.opCode)
-            new ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, Left(UnparsedErgoTree(bytes, ve)), complexity, bytes, None)
+            new ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, Left(UnparsedErgoTree(bytes, ve)), complexity, bytes, None, None)
           case None =>
             throw new SerializerException(
               s"Cannot handle ValidationException, ErgoTree serialized without size bit.", Some(ve))
