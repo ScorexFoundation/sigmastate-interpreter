@@ -17,7 +17,7 @@ class GroupElement(val point: Ecp) extends js.Object {
   }
 }
 
-@JSExportTopLevel("GroupElementObj")
+@JSExportTopLevel("GroupElement$")
 object GroupElement extends js.Object {
   /** Creates a new [[GroupElement]] from the given hex string (ASN.1 encoding)
     * representation of the underlying [[sigmastate.crypto.Platform.Point]].

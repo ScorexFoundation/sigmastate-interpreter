@@ -12,6 +12,7 @@ import sigma.ast.ErgoTree.{ZeroHeader, setVersionBits}
 import sigma.ast._
 import sigma.ast.syntax._
 import sigma.serialization._
+import sigma.util.CollectionUtil
 
 import scala.util.Try
 
@@ -270,12 +271,17 @@ case class ErgoAddressEncoder(networkPrefix: NetworkPrefix) {
   /** This value is be used implicitly in the methods below. */
   implicit private def ergoAddressEncoder: ErgoAddressEncoder = this
 
+  /** Converts the given [[ErgoAddress]] to array of bytes. */
+  def toBytes(address: ErgoAddress): Array[Byte] = {
+    val prefixByte      = (networkPrefix + address.addressTypePrefix).toByte
+    val withNetworkByte = prefixByte +: address.contentBytes
+    val checksum        = hash256(withNetworkByte).take(ChecksumLength)
+    CollectionUtil.concatArrays(withNetworkByte,checksum)
+  }
+
   /** Converts the given [[ErgoAddress]] to Base58 string. */
   def toString(address: ErgoAddress): String = {
-    val withNetworkByte = (networkPrefix + address.addressTypePrefix).toByte +: address.contentBytes
-
-    val checksum = hash256(withNetworkByte).take(ChecksumLength)
-    Base58.encode(withNetworkByte ++ checksum)
+    Base58.encode(toBytes(address))
   }
 
   /** Returns true if the given `addrHeadByte` is a header byte of a testnet address, false otherwise. */
@@ -286,6 +292,11 @@ case class ErgoAddressEncoder(networkPrefix: NetworkPrefix) {
 
   /** Converts the given Base58 string to [[ErgoAddress]] or an error packed in Try. */
   def fromString(addrBase58Str: String): Try[ErgoAddress] = Base58.decode(addrBase58Str).flatMap { bytes =>
+    fromBytes(bytes, addrBase58Str)
+  }
+
+  /** Converts the given Base58 string to [[ErgoAddress]] or an error packed in Try. */
+  private [ergoplatform] def fromBytes(bytes: Array[Byte], addrBase58Str: String): Try[ErgoAddress] = {
     Try {
       val headByte = bytes.head
       networkPrefix match {

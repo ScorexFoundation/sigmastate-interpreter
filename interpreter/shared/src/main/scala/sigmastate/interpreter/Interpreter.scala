@@ -382,7 +382,7 @@ trait Interpreter {
   private def checkCommitments(sp: UncheckedSigmaTree, message: Array[Byte])(implicit E: CErgoTreeEvaluator): Boolean = {
     // Perform Verifier Step 4
     val newRoot = computeCommitments(sp).get.asInstanceOf[UncheckedSigmaTree]
-    val bytes = CollectionUtil.concatArrays_v5(FiatShamirTree.toBytes(newRoot), message)
+    val bytes = CollectionUtil.concatArrays(FiatShamirTree.toBytes(newRoot), message)
     /**
       * Verifier Steps 5-6: Convert the tree to a string `s` for input to the Fiat-Shamir hash function,
       * using the same conversion as the prover in 7

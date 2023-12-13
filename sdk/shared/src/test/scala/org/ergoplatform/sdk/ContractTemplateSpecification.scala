@@ -7,7 +7,7 @@ import sigma.ast._
 import sigmastate._
 import sigmastate.helpers.NegativeTesting
 import sigma.serialization.{SerializationSpecification, SigmaSerializer}
-import sigma.ContractsTestkit
+import sigma.{ContractsTestkit, VersionContext}
 import sigma.ast.syntax.SigmaPropValue
 import sigma.ast.{SByte, SInt, SType}
 import sigma.data.CBigInt
@@ -234,9 +234,11 @@ class ContractTemplateSpecification extends SerializationSpecification
       )
     )
 
-    templates.indices.foreach(i =>
-      templates(i).applyTemplate(Some(ergoTreeVersionInTests), templateValues(i)) shouldEqual expectedErgoTree(i)
-    )
+    templates.indices.foreach { i =>
+      val template = templates(i)
+      val applied = template.applyTemplate(Some(ergoTreeVersionInTests), templateValues(i))
+      applied shouldEqual expectedErgoTree(i)
+    }
   }
 
   property("applyTemplate num(parameters) < num(constants)") {

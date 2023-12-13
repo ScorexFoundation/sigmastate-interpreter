@@ -1,6 +1,7 @@
 package sigma.js
 
-import sigma.data.RType
+import sigma.Evaluation
+import sigma.data.{Iso, RType}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
@@ -17,7 +18,7 @@ class Type(final val rtype: RType[_]) extends js.Object {
   override def toString = s"Type($rtype)"
 }
 
-@JSExportTopLevel("TypeObj")
+@JSExportTopLevel("Type$")
 object Type extends js.Object {
   /** Descriptor of ErgoScript type Byte. */
   val Byte = new Type(sigma.ByteType)
@@ -74,5 +75,10 @@ object Type extends js.Object {
     */
   def collType(elemType: Type): Type = {
     new Type(sigma.collRType(elemType.rtype))
+  }
+
+  implicit val isoToSType: Iso[Type, sigma.ast.SType] = new Iso[Type, sigma.ast.SType] {
+    override def to(x: Type): sigma.ast.SType = Evaluation.rtypeToSType(x.rtype)
+    override def from(x: sigma.ast.SType): Type = new Type(Evaluation.stypeToRType(x))
   }
 }

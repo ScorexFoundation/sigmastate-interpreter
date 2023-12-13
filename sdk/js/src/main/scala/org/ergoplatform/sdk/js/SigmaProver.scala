@@ -24,7 +24,7 @@ class SigmaProver(_prover: sdk.SigmaProver) extends js.Object {
 
   /** Returns the prover's secret key. */
   def getSecretKey(): js.BigInt =
-    isoBigInt.from(_prover.getSecretKey)
+    sigma.js.Isos.isoBigInt.from(_prover.getSecretKey)
 
   /** Returns an array of EIP-3 addresses associated with the prover's secret keys. */
   def getEip3Addresses(): js.Array[String] = {

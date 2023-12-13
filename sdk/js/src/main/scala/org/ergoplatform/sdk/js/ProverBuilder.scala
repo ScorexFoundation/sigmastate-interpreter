@@ -6,7 +6,6 @@ import org.ergoplatform.sdk.SecretString
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
 import Isos._
-import sigma.js.GroupElement
 import sigma.eval.SigmaDsl
 
 /** Equivalent of [[sdk.ProverBuilder]] available from JS.
@@ -71,7 +70,7 @@ class ProverBuilder(parameters: BlockchainParameters, network: Byte) extends js.
       isoStringToGroupElement.to(h),
       isoStringToGroupElement.to(u),
       isoStringToGroupElement.to(v),
-      SigmaDsl.toBigInteger(isoBigInt.to(x))
+      SigmaDsl.toBigInteger(sigma.js.Isos.isoBigInt.to(x))
     )
     this
   }
@@ -85,7 +84,7 @@ class ProverBuilder(parameters: BlockchainParameters, network: Byte) extends js.
     * as proveDlog(a) && proveDlog(b), where a and b are two group elements.
     */
   def withDLogSecret(x: js.BigInt): ProverBuilder = {
-    _builder.withDLogSecret(SigmaDsl.toBigInteger(isoBigInt.to(x)))
+    _builder.withDLogSecret(SigmaDsl.toBigInteger(sigma.js.Isos.isoBigInt.to(x)))
     this
   }
 
@@ -96,7 +95,7 @@ class ProverBuilder(parameters: BlockchainParameters, network: Byte) extends js.
   }
 }
 
-@JSExportTopLevel("ProverBuilderObj")
+@JSExportTopLevel("ProverBuilder$")
 object ProverBuilder extends js.Object {
   /** Creates a new [[ProverBuilder]] instance with the given blockchain parameters
     * and network prefix.

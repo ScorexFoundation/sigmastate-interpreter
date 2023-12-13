@@ -5,7 +5,7 @@ import sigma.VersionContext
 import sigma.ast.ErgoTree.{HeaderType, substConstants}
 import sigma.ast.SigmaPropConstant
 import sigma.ast.syntax._
-import sigma.data.SigmaBoolean
+import sigma.data.{CSigmaProp, SigmaBoolean}
 import sigma.kiama.rewriting.Rewriter.{everywherebu, strategy}
 import sigma.validation.ValidationException
 import sigma.ast.syntax.ValueOps
@@ -116,12 +116,15 @@ case class ErgoTree private[sigma](
   @deprecated("Use toProposition instead", "v2.1")
   lazy val proposition: SigmaPropValue = toProposition(isConstantSegregation)
 
+  /** Version of this tree (== BlockVersion - 1). */
   @inline final def version: Byte = ErgoTree.getVersion(header)
 
   @inline final def isRightParsed: Boolean = root.isRight
 
+  /** @return true, if constant segregation bit is set in the header. */
   @inline final def isConstantSegregation: Boolean = ErgoTree.isConstantSegregation(header)
 
+  /** @return true, if size bit is set in the header. */
   @inline final def hasSize: Boolean = ErgoTree.hasSize(header)
 
   private[sigma] var _bytes: Array[Byte] = propositionBytes
@@ -207,6 +210,25 @@ case class ErgoTree private[sigma](
       prop
     case Left(UnparsedErgoTree(_, error)) =>
       throw error
+  }
+
+  /** This method attempts to convert the current instance into a `SigmaBoolean`.
+    * It does so by first converting the instance to a `SigmaPropValue` using the
+    * `toProposition` method, and then checks if the resulting expression is a
+    * `SigmaPropConstant`. If it is, the method extracts the `SigmaBoolean` from the
+    * `SigmaPropConstant`. Otherwise, the method returns `None`.
+    *
+    * @note This method relies on constant segregation flag in the header to determine the
+    *       behavior of `toProposition` method.
+    *
+    * @return `Some(SigmaBoolean)` if conversion is successful, `None` otherwise.
+    */
+  def toSigmaBooleanOpt: Option[SigmaBoolean] = {
+    val prop = this.toProposition(this.isConstantSegregation)
+    prop match {
+      case SigmaPropConstant(p) => Some(p.asInstanceOf[CSigmaProp].wrappedValue)
+      case _ => None
+    }
   }
 
   /** The default equality of case class is overridden to exclude `complexity`. */

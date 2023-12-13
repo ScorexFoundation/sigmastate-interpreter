@@ -75,7 +75,7 @@ class ErgoBox private (
   override def get(identifier: RegisterId): Option[Value[SType]] = {
     identifier match {
       case ReferenceRegId =>
-        val tupleVal = (creationHeight, CollectionUtil.concatArrays_v5(transactionId.toBytes, Shorts.toByteArray(index)).toColl)
+        val tupleVal = (creationHeight, CollectionUtil.concatArrays(transactionId.toBytes, Shorts.toByteArray(index)).toColl)
         Some(Constant(tupleVal.asWrappedType, SReferenceRegType))
       case _ => super.get(identifier)
     }
@@ -182,7 +182,7 @@ object ErgoBox {
     .ensuring(_ == mandatoryRegisters.last.number + 1)
 
   val allRegisters: Seq[RegisterId] =
-    CollectionUtil.concatArrays_v5[RegisterId](
+    CollectionUtil.concatArrays[RegisterId](
       CollectionUtil.castArray(_mandatoryRegisters): Array[RegisterId],
       CollectionUtil.castArray(_nonMandatoryRegisters): Array[RegisterId]).ensuring(_.length == maxRegisters)
 
