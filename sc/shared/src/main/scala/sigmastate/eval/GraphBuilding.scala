@@ -45,7 +45,6 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
   val builder: sigmastate.lang.SigmaBuilder
   import builder._
 
-
   val okMeasureOperationTime: Boolean = false
 
   this.isInlineThunksOnForce = true  // this required for splitting of cost graph
@@ -58,16 +57,6 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
 
   /** Whether to save calcF and costF graphs in the file given by ScriptNameProp environment variable */
   var saveGraphsInFile: Boolean = false
-
-  //  /** Pass configuration which is used by default in IRContext. */
-  //  val calcPass = new DefaultPass("calcPass", Pass.defaultPassConfig.copy(constantPropagation = true))
-  //
-  //  /** Pass configuration which is used during splitting cost function out of cost graph.
-  //    * @see `RuntimeCosting.split2` */
-  //  val costPass = new DefaultPass("costPass", Pass.defaultPassConfig.copy(constantPropagation = true))
-
-  /**  To enable specific configuration uncomment one of the lines above and use it in the beginPass below. */
-  //  beginPass(costPass)
 
   /** Check the tuple type is valid.
     * In v5.x this code is taken from CheckTupleType validation rule which is no longer

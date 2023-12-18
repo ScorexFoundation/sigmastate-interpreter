@@ -63,25 +63,6 @@ trait ProgramGraphs extends AstGraphs { self: Scalan =>
       sch
     }
 
-    /** Mirror all the nodes of this graph applying transformer and performing rewriting.
-      * @param m   mirror instance to be used for mirroring of nodes
-      * @param rw  rewriter to be tried for each new created mirrored node
-      * @param t   transformer of symbols, to be used for substitution of symbols in the new nodes.
-      * @return   new graph which is not necessary clone of this graph, but should be semantically
-      *           equivalent to this graph (provided all rw rules preserve equivalence).
-      *           If rw is identity, then the resulting graph is alpha-equivalent to this graph
-      *           as long as t is bijection.
-      */
-    def transform(m: Mirror, rw: Rewriter, t: Transformer): ProgramGraph = {
-      val t0 = mapping match {
-        case Nullable(mapping) => t merge mapping
-        case _ => t
-      }
-      val t1 = m.mirrorSymbols(t0, rw, this, scheduleIds)
-      val newRoots = roots map { t1(_) }
-      new ProgramGraph(newRoots, Nullable(t1), filterNode)
-    }
-
     override def toString: String = {
       val mappingStr = if (mapping.isEmpty) "None" else mapping.toString
       val filterNodeStr = if (filterNode.isDefined) filterNode.toString else "None"
