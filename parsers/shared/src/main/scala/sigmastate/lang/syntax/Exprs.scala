@@ -25,11 +25,11 @@ trait Exprs extends Core with Types {
   // varies.
 
   // Expressions used as statements, directly within a {block}
-  object StatCtx extends WsCtx(semiInference=true, arrowTypeAscriptions=false)
+  object StatCtx extends WsCtx(semiInference=true)
   // Expressions nested within other expressions
-  object ExprCtx extends WsCtx(semiInference=false, arrowTypeAscriptions=true)
+  object ExprCtx extends WsCtx(semiInference=false)
   // Expressions directly within a `val x = ...` or `def x = ...`
-  object FreeCtx extends WsCtx(semiInference=true, arrowTypeAscriptions=true)
+  object FreeCtx extends WsCtx(semiInference=true)
 
   override def TypeExpr[_:P]: P[Value[SType]] = ExprCtx.Expr
 
@@ -38,7 +38,7 @@ trait Exprs extends Core with Types {
 
   //noinspection TypeAnnotation,ForwardReference
   /** Parsing context of expressions (see derived classes). */
-  class WsCtx(semiInference: Boolean, arrowTypeAscriptions: Boolean) {
+  class WsCtx(semiInference: Boolean) {
 
     private def OneSemiMax[_:P]: P[Unit] = if (semiInference) OneNLMax else Pass
     private def NoSemis[_:P]: P[Unit] = if (semiInference) NotNewline else Pass

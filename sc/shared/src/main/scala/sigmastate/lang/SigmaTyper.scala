@@ -46,9 +46,7 @@ class SigmaTyper(val builder: SigmaBuilder,
     * Rewrite tree to typed tree.  Checks constituent names and types.  Uses
     * the env map to resolve bound variables and their types.
     */
-  def assignType(env: Map[String, SType],
-                 bound: SValue,
-                 expected: Option[SType] = None): SValue = ( bound match {
+  def assignType(env: Map[String, SType], bound: SValue): SValue = ( bound match {
     case Block(bs, res) =>
       var curEnv = env
       val bs1 = ArrayBuffer[Val]()
@@ -212,7 +210,7 @@ class SigmaTyper(val builder: SigmaBuilder,
           if (args.length != argTypes.length)
             error(s"Invalid argument type of application $app: invalid number of arguments", app.sourceContext)
           val typedArgs = args.zip(argTypes).map {
-            case (arg, expectedType) => assignType(env, arg, Some(expectedType))
+            case (arg, expectedType) => assignType(env, arg)
           }
           val adaptedTypedArgs = (new_f, typedArgs) match {
             case (AllOfFunc.sym | AnyOfFunc.sym, _) =>

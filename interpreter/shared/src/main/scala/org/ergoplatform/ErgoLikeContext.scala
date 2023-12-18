@@ -136,7 +136,7 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
   def withTransaction(newSpendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput]): ErgoLikeContext =
     ErgoLikeContext.copy(this)(spendingTransaction = newSpendingTransaction)
 
-  override def toSigmaContext(extensions: Map[Byte, AnyValue] = Map()): sigma.Context = {
+  override def toSigmaContext(): sigma.Context = {
     import Evaluation._
 
     def contextVars(m: Map[Byte, AnyValue]): Coll[AnyValue] = {
@@ -161,7 +161,7 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
       val tVal = stypeToRType[SType](v.tpe)
       k -> toAnyValue(v.value.asWrappedType)(tVal)
     }.toMap
-    val vars = contextVars(varMap ++ extensions)
+    val vars = contextVars(varMap)
     val avlTree = CAvlTree(lastBlockUtxoRoot)
     // so selfBox is never one of the `inputs` instances
     // as result selfBoxIndex is always (erroneously) returns -1 in ErgoTree v0, v1

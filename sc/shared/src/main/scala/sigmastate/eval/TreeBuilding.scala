@@ -275,13 +275,13 @@ trait TreeBuilding extends SigmaLibrary { IR: IRContext =>
         val colTpe = col.tpe
         val method = SCollection.methods.find(_.name == m.getName).getOrElse(error(s"unknown method Coll.${m.getName}"))
         val typeSubst = (method, args) match {
-          case (mth @ SCollection.FlatMapMethod, Seq(f)) =>
+          case (_ @ SCollection.FlatMapMethod, Seq(f)) =>
             val typeSubst = Map(SCollection.tOV -> f.asFunc.tpe.tRange.asCollection.elemType)
             typeSubst
-          case (mth @ SCollection.ZipMethod, Seq(coll)) =>
+          case (_ @ SCollection.ZipMethod, Seq(coll)) =>
             val typeSubst = Map(SCollection.tOV -> coll.asCollection[SType].tpe.elemType)
             typeSubst
-          case (mth, _) => Terms.EmptySubst
+          case (_, _) => Terms.EmptySubst
         }
         val specMethod = method.withConcreteTypes(typeSubst + (SCollection.tIV -> colTpe.elemType))
         builder.mkMethodCall(col, specMethod, args.toIndexedSeq, Map())

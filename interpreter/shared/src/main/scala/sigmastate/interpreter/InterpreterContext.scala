@@ -6,7 +6,6 @@ import sigmastate.Values.EvaluatedValue
 import sigmastate.interpreter.ContextExtension.VarBinding
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteWriter, SigmaByteReader}
-import sigma.AnyValue
 
 /**
   * User-defined variables to be put into context.
@@ -33,12 +32,12 @@ object ContextExtension {
   type VarBinding = (Byte, EvaluatedValue[_ <: SType])
 
   object serializer extends SigmaSerializer[ContextExtension, ContextExtension] {
-    override def serialize(obj: ContextExtension, w: SigmaByteWriter): Unit = {
-      val size = obj.values.size
+    override def serialize(contextExtension: ContextExtension, w: SigmaByteWriter): Unit = {
+      val size = contextExtension.values.size
       if (size > Byte.MaxValue)
         error(s"Number of ContextExtension values $size exceeds ${Byte.MaxValue}.")
       w.putUByte(size)
-      obj.values.foreach { case (id, v) => w.put(id).putValue(v) }
+      contextExtension.values.foreach { case (id, v) => w.put(id).putValue(v) }
     }
 
     override def parse(r: SigmaByteReader): ContextExtension = {
@@ -111,12 +110,8 @@ trait InterpreterContext {
     * Thus, this method performs transformation from Ergo to internal Sigma representation
     * of all context data.
     *
-    * @param extensions additional context variables which will be merged with those in the
-    *                   `extension` of this instance, overriding existing bindings in case
-    *                   variable ids overlap.
-    *
     * @see sigmastate.eval.Evaluation
     */
-  def toSigmaContext(extensions: Map[Byte, AnyValue] = Map()): sigma.Context
+  def toSigmaContext(): sigma.Context
 }
 

@@ -1,6 +1,5 @@
 package sigmastate.interpreter
 
-import java.util
 import sigma.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
 import org.ergoplatform.ErgoLikeContext
 import org.ergoplatform.validation.SigmaValidationSettings
@@ -8,7 +7,7 @@ import org.ergoplatform.validation.ValidationRules._
 import sigmastate.crypto.DLogProtocol.ProveDlog
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
-import sigmastate.crypto.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage, ProveDlog}
+import sigmastate.crypto.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
 import sigmastate.crypto._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.serialization.{SigmaSerializer, ValueSerializer}
@@ -199,7 +198,6 @@ trait Interpreter {
   def fullReduction(ergoTree: ErgoTree,
                     ctx: CTX,
                     env: ScriptEnv): ReductionResult = {
-    implicit val vs: SigmaValidationSettings = ctx.validationSettings
     val context = ctx.withErgoTreeVersion(ergoTree.version).asInstanceOf[CTX]
     VersionContext.withVersions(context.activatedScriptVersion, ergoTree.version) {
       val prop = propositionFromErgoTree(ergoTree, context)

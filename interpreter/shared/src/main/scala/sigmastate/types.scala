@@ -1778,12 +1778,6 @@ case class STuple(items: IndexedSeq[SType]) extends SCollection[SAny.type] {
   import STuple._
   override val typeCode = STuple.TupleTypeCode
 
-  /** Lazily computed value representing true | false | none.
-    * 0 - none, 1 - false, 2 - true
-    */
-  @volatile
-  private var _isConstantSizeCode: Byte = 0.toByte
-
   override def elemType: SAny.type = SAny
 
   protected override def getMethods() = {

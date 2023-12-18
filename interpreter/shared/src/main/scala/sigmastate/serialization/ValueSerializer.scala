@@ -15,13 +15,9 @@ import sigmastate.utils._
 import sigmastate.utxo.ComplexityTable._
 import sigmastate.utxo._
 
-import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
-import scala.collection.mutable.{HashMap, Map}
 
 abstract class ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
-  import scala.language.implicitConversions
-  private val companion = ValueSerializer
 
   def getComplexity: Int = OpCodeComplexity.getOrElse(opCode, MinimalComplexity)
   lazy val complexity: Int = getComplexity
@@ -256,7 +252,6 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
 
   def printSerInfo(): String = {
     serializerInfo.map { case (_, s) =>
-      val ser = getSerializer(s.opCode)
       s.toString
     }.mkString("\n")
   }

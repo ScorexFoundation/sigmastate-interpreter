@@ -1,7 +1,6 @@
 package org.ergoplatform.sdk.wallet.secrets
 
 import org.ergoplatform.sdk.wallet.Constants
-import scorex.util.serialization.{Reader, Writer}
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 

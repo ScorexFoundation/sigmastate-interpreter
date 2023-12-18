@@ -36,7 +36,6 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
   import Context._
   import GroupElement._
   import Header._
-  import Liftables._
   import PreHeader._
   import SigmaDslBuilder._
   import SigmaProp._
@@ -173,7 +172,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
       case ThunkForce(Def(ThunkDef(root, sch))) if sch.isEmpty => root
 
       // Rule: l.isValid op Thunk {... root} => (l op TrivialSigma(root)).isValid
-      case ApplyBinOpLazy(op, SigmaM.isValid(l), Def(ThunkDef(root, sch))) if root.elem == BooleanElement =>
+      case ApplyBinOpLazy(op, SigmaM.isValid(l), Def(ThunkDef(root, _))) if root.elem == BooleanElement =>
         // don't need new Thunk because sigma logical ops always strict
         val r = asRep[SigmaProp](sigmaDslBuilder.sigmaProp(asRep[Boolean](root)))
         val res = if (op == And)
@@ -630,9 +629,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         checkTupleType(IR)(eTuple)
         eTuple match {
           case pe: PairElem[a,b] =>
-            assert(fieldIndex == 1 || fieldIndex == 2, s"Invalid field index $fieldIndex of the pair ${tup}: $pe")
-            implicit val ea = pe.eFst
-            implicit val eb = pe.eSnd
+            assert(fieldIndex == 1 || fieldIndex == 2, s"Invalid field index $fieldIndex of the pair $tup: $pe")
             val pair = asRep[(a,b)](tup)
             val res = if (fieldIndex == 1) pair._1 else pair._2
             res

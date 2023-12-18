@@ -17,7 +17,6 @@ import debox.cfor
 import sigmastate.exceptions.SerializerException
 import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
-import fastparse.{Parsed, parse}
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.serialization.DataSerializer
 import sigmastate.serialization.ErgoTreeSerializer
