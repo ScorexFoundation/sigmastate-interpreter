@@ -82,9 +82,6 @@ trait ProgramGraphs extends AstGraphs { self: Scalan =>
       new ProgramGraph(newRoots, Nullable(t1), filterNode)
     }
 
-    /** Remove transformer component of the graph. */
-    def withoutContext = ProgramGraph(roots, Nullable.None, filterNode)
-
     override def toString: String = {
       val mappingStr = if (mapping.isEmpty) "None" else mapping.toString
       val filterNodeStr = if (filterNode.isDefined) filterNode.toString else "None"
@@ -92,11 +89,4 @@ trait ProgramGraphs extends AstGraphs { self: Scalan =>
     }
   }
 
-  object ProgramGraph {
-    def transform[A](s: Ref[A], rw: Rewriter = NoRewriting, t: MapTransformer = MapTransformer.empty()): Ref[A] = {
-      val g = ProgramGraph(List(s), Nullable.None, Nullable.None)
-      val g1 = g.transform(DefaultMirror, rw, t)
-      g1.roots(0).asInstanceOf[Ref[A]]
-    }
-  }
 }
