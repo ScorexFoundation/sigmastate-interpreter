@@ -4,8 +4,9 @@ import org.ergoplatform.ErgoBox
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, TestContractSpec}
 import scorex.crypto.hash
 import sigmastate.helpers.CompilerTestingCommons
-import sigma.{Box, Context, Coll}
-import sigmastate.eval.Extensions
+import sigma.{Box, Coll, Context}
+import sigmastate.{SByte, SCollection}
+import sigmastate.Values.{ByteArrayConstant, CollectionConstant}
 
 class DummyExamplesSpecification extends CompilerTestingCommons { suite =>
   implicit lazy val IR = new TestingIRContext
@@ -92,9 +93,9 @@ class DummyExamplesSpecification extends CompilerTestingCommons { suite =>
 
     val res = in.runDsl(
       Map(
-        0.toByte -> Extensions.toAnyValue(dummyPath),
-        1.toByte -> Extensions.toAnyValue(dummyBytes),
-        2.toByte -> Extensions.toAnyValue(dummyBytes)
+        0.toByte -> CollectionConstant[SCollection[SByte.type]](dummyPath, SCollection(SByte)),
+        1.toByte -> ByteArrayConstant(dummyBytes),
+        2.toByte -> ByteArrayConstant(dummyBytes)
       )
     )
 

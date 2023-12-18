@@ -3,7 +3,7 @@ package org.ergoplatform.dsl
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 
 import scala.collection.mutable
-import sigmastate.interpreter.{CostedProverResult, ProverResult}
+import sigmastate.interpreter.{ContextExtension, CostedProverResult, ProverResult}
 
 import scala.collection.mutable.ArrayBuffer
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
@@ -14,8 +14,8 @@ import org.ergoplatform.{ErgoBox, ErgoLikeContext}
 import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition, Token}
 import sigmastate.{AvlTreeData, SType}
 import sigmastate.Values.{ErgoTree, EvaluatedValue}
-import sigmastate.eval.{CSigmaProp, Evaluation, IRContext, CAnyValue}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, CompilerTestingCommons}
+import sigmastate.eval.{CAnyValue, CSigmaProp, Evaluation, IRContext}
+import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.lang.Terms.ValueOps
 import sigma.{AnyValue, SigmaProp}
@@ -44,16 +44,13 @@ case class TestContractSpec(testSuite: CompilerTestingCommons)(implicit val IR: 
     val pubKey: SigmaProp = CSigmaProp(prover.dlogSecrets.head.publicImage)
 
     import SType.AnyOps
-    def prove(inBox: InputBox, extensions: Map[Byte, AnyValue] = Map()): Try[CostedProverResult] = {
+    def prove(inBox: InputBox, extensions: Map[Byte, EvaluatedValue[_ <: SType]] = Map()): Try[CostedProverResult] = {
       val boxToSpend = inBox.utxoBox
       val propSpec: PropositionSpec = boxToSpend.propSpec
-      val bindings = extensions.mapValues { case v: CAnyValue[a] =>
-        IR.builder.mkConstant(v.value.asWrappedType, Evaluation.rtypeToSType(v.tA))
-      }
       val ctx = inBox.toErgoContext
       val env = propSpec.scriptSpec.env + (ScriptNameProp -> (propSpec.name + "_prove"))
       val prop = propSpec.ergoTree
-      val p = bindings.foldLeft(prover) { (p, b) => p.withContextExtender(b._1, b._2) }
+      val p = extensions.foldLeft(prover) { (p, b) => p.withContextExtender(b._1, b._2) }
       val proof = p.prove(env, prop, ctx, testSuite.fakeMessage)
       proof
     }
@@ -92,8 +89,8 @@ case class TestContractSpec(testSuite: CompilerTestingCommons)(implicit val IR: 
               .withErgoTreeVersion(testSuite.ergoTreeVersionInTests)
       ctx
     }
-    def runDsl(extensions: Map[Byte, AnyValue] = Map()): SigmaProp = {
-      val ctx = toErgoContext.toSigmaContext(extensions)
+    def runDsl(extensions: Map[Byte, EvaluatedValue[_ <: SType]] = Map()): SigmaProp = {
+      val ctx = toErgoContext.withExtension(ContextExtension(extensions)).toSigmaContext()
       val res = utxoBox.propSpec.dslSpec(ctx)
       res
     }

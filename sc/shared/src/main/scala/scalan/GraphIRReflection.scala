@@ -26,10 +26,10 @@ object GraphIRReflection {
         mkMethod(clazz, "filter", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
           obj.asInstanceOf[ctx.WOption[Any]].filter(args(0).asInstanceOf[ctx.Ref[Any => Boolean]])
         },
-        mkMethod(clazz, "get", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "get", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[ctx.WOption[_]].get
         },
-        mkMethod(clazz, "isDefined", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "isDefined", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[ctx.WOption[_]].isDefined
         },
         mkMethod(clazz, "getOrElse", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>

@@ -4,6 +4,7 @@ import org.ergoplatform._
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, TestContractSpec}
 import sigmastate.helpers.CompilerTestingCommons
 import sigma.Context
+import sigmastate.Values.ByteArrayConstant
 import sigmastate.eval.Extensions._
 
 class ExecuteFromExamplesSpecification extends CompilerTestingCommons { suite =>
@@ -55,7 +56,7 @@ class ExecuteFromExamplesSpecification extends CompilerTestingCommons { suite =>
     tx.outBox(20, contract.aliceSignature)
 
     val in = tx.inputs(0)
-    val vars = Map(1.toByte -> toAnyValue(alice.pubKey.propBytes))
+    val vars = Map(1.toByte -> ByteArrayConstant(alice.pubKey.propBytes))
     val res = in.runDsl(vars)
     res shouldBe alice.pubKey
 
