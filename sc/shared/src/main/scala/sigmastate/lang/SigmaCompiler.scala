@@ -53,7 +53,7 @@ case class CompilerResult[Ctx <: IRContext](
   */
 class SigmaCompiler private(settings: CompilerSettings) {
   /** Constructs an instance for the given network type and with default settings. */
-  private def this(networkPrefix: Byte) = this(
+  def this(networkPrefix: Byte) = this(
     CompilerSettings(networkPrefix, TransformingSigmaBuilder, lowerMethodCalls = true)
   )
 

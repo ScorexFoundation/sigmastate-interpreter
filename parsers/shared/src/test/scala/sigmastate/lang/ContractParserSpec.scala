@@ -3,8 +3,7 @@ package sigmastate.lang
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import sigmastate.Values._
-import sigmastate._
+import sigma.ast._
 
 class ContractParserSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers {
   property("parses docstring") {

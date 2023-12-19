@@ -1,11 +1,11 @@
 package sigmastate.lang
 
-import sigmastate.SType
 import fastparse._
 import fastparse.NoWhitespace._
 import SigmaParser._
-import sigmastate.Values.SValue
-import sigmastate.lang.syntax.Basic
+import sigma.ast.SType
+import sigma.ast.syntax.SValue
+import sigmastate.lang.parsers.Basic
 
 /**
  * Represents a docstring line.

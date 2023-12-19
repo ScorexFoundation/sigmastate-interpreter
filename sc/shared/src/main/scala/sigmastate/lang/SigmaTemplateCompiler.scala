@@ -2,12 +2,12 @@ package sigmastate.lang
 
 import fastparse.Parsed
 import org.ergoplatform.sdk.ContractTemplate
-import sigmastate.Values.SValue
-import sigmastate.lang.syntax.ParserException
-import org.ergoplatform.sdk.NetworkType
 import sigmastate.eval.CompiletimeIRContext
 import org.ergoplatform.sdk.Parameter
+import sigma.ast.SourceContext
+import sigma.ast.syntax.SValue
 import sigmastate.interpreter.Interpreter.ScriptEnv
+import sigmastate.lang.parsers.ParserException
 
 /** Compiler which compiles Ergo contract templates into a [[ContractTemplate]]. */
 class SigmaTemplateCompiler(networkPrefix: Byte) {

@@ -5,7 +5,7 @@ import org.ergoplatform.sdk.Parameter
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import sigmastate.{SInt, SLong, SString, Values}
+import sigma.ast.{IntConstant, SInt, SLong, SString, StringConstant}
 import sigmastate.eval.CompiletimeIRContext
 
 class SigmaTemplateCompilerTest extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers {
@@ -36,8 +36,8 @@ class SigmaTemplateCompilerTest extends AnyPropSpec with ScalaCheckPropertyCheck
     )
     template.constTypes should contain theSameElementsInOrderAs Seq(SInt, SString, SLong)
     template.constValues.get should contain theSameElementsInOrderAs IndexedSeq(
-      Some(Values.IntConstant(5).asWrappedType),
-      Some(Values.StringConstant("default string").asWrappedType),
+      Some(IntConstant(5).asWrappedType),
+      Some(StringConstant("default string").asWrappedType),
       None
     )
 
@@ -73,8 +73,8 @@ class SigmaTemplateCompilerTest extends AnyPropSpec with ScalaCheckPropertyCheck
     )
     template.constTypes should contain theSameElementsInOrderAs Seq(SInt, SString)
     template.constValues.get should contain theSameElementsInOrderAs IndexedSeq(
-      Some(Values.IntConstant(5).asWrappedType),
-      Some(Values.StringConstant("default string").asWrappedType)
+      Some(IntConstant(5).asWrappedType),
+      Some(StringConstant("default string").asWrappedType)
     )
 
     val sigmaCompiler = new SigmaCompiler(ErgoAddressEncoder.MainnetNetworkPrefix)
