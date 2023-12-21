@@ -93,7 +93,7 @@ This library is
 on Maven repository and can be added to the SBT configuration of Scala project.
 
 ```scala
-libraryDependencies += "org.scorexfoundation" %% "sigma-state" % "5.0.6"
+libraryDependencies += "org.scorexfoundation" %% "sigma-state" % "6.0.0"
 ```
 
 ## Repository Organization
