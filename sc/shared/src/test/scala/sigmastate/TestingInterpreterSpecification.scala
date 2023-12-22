@@ -9,6 +9,7 @@ import sigmastate.lang.Terms._
 import org.ergoplatform._
 import org.scalatest.BeforeAndAfterAll
 import scorex.util.encode.Base58
+import sigma.VersionContext.EvolutionVersion
 import sigma.util.Extensions.IntOps
 import sigmastate.crypto.CryptoConstants
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
@@ -200,6 +201,21 @@ class TestingInterpreterSpecification extends CompilerTestingCommons
         |  val arr = Coll(1, 2, 3)
         |  arr.filter {(i: Int) => i < 3} == Coll(1, 2)
         |}""".stripMargin)
+  }
+
+  property("Evaluate boolean casting ops") {
+    val source =
+      """
+        |{
+        | val bool: Boolean = true
+        | bool.toByte == 1.toByte && false.toByte == 0.toByte
+        |}
+        |""".stripMargin
+    if (activatedVersionInTests < EvolutionVersion) {
+      an [sigmastate.exceptions.MethodNotFound] should be thrownBy testEval(source)
+    } else {
+      testEval(source)
+    }
   }
 
   property("Evaluate numeric casting ops") {
