@@ -1,8 +1,8 @@
 package sigmastate.interpreter
 
+import sigma.data.{SigmaBoolean, SigmaLeaf}
 import java.math.BigInteger
-import sigmastate.{NodePosition, SigmaLeaf, UncheckedTree}
-import sigmastate.Values.SigmaBoolean
+import sigmastate.{NodePosition, UncheckedTree}
 import sigmastate.crypto.FirstProverMessage
 import sigmastate.crypto.VerifierMessage.Challenge
 

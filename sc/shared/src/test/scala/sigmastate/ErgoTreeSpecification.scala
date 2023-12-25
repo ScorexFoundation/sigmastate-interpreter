@@ -1,26 +1,28 @@
-package sigmastate
+package sigma
 
 import org.ergoplatform.settings.ErgoAlgos
-import org.ergoplatform.validation.{ValidationException, ValidationRules}
-import org.ergoplatform.{ErgoAddressEncoder, ErgoBox, ErgoLikeContext, Self}
-import sigma.data.RType.asType
-import sigma.data.{Nullable, RType}
-import sigma.VersionContext
-import sigmastate.SCollection.{SByteArray, checkValidFlatmap}
-import sigmastate.Values._
+import org.ergoplatform.{ErgoAddressEncoder, ErgoBox, ErgoLikeContext}
 import sigma.VersionContext._
-import sigmastate.eval.{CostingBox, Evaluation, Profiler}
-import sigmastate.exceptions.{CostLimitException, InterpreterException}
+import sigma.ast.SCollection.SByteArray
+import sigma.ast._
+import sigma.ast.syntax.{SValue, SigmaPropValue, TrueSigmaProp}
+import sigma.data.RType.asType
+import sigma.data.{CBox, Nullable, RType, TrivialProp}
+import sigma.validation.ValidationException
+import sigma.validation.ValidationRules.CheckTypeCode
+import ErgoTree.HeaderType
+import SCollectionMethods.checkValidFlatmap
+import sigmastate.eval.CProfiler
 import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}
-import sigmastate.interpreter.{ErgoTreeEvaluator, EvalSettings}
 import sigmastate.interpreter.Interpreter.ReductionResult
-import sigmastate.lang.{CompilerSettings, SourceContext}
-import sigmastate.lang.Terms._
-import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigmastate.interpreter.CErgoTreeEvaluator
+import sigma.ast.syntax._
+import sigma.eval.EvalSettings
+import sigma.exceptions.{CostLimitException, InterpreterException}
+import sigmastate.lang.CompilerSettings
+import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigmastate.Plus
 import sigmastate.utils.Helpers.TryOps
-import sigmastate.utxo._
-import sigma._
-import sigma.{ContractsTestkit, SigmaDslTesting}
 
 
 /** Regression tests with ErgoTree related test vectors.
@@ -46,7 +48,6 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
       Block(Seq(), null),
       ValNode("x", SInt, null),
       ApplyTypes(null, Seq()),
-      TaggedVariableNode(1, SByte),
       ValDef(1, null),
       ValUse(1, SInt),
       BlockValue(IndexedSeq(), null)
@@ -59,15 +60,15 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
 
   property("ErgoTree.toProposition") {
     val t1 = new ErgoTree(
-      16.toByte,
+      HeaderType @@ 16.toByte,
       Array(IntConstant(1)),
       Right(BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), IntConstant(1))))
     )
 
     val t = new ErgoTree(
-      16.toByte,
+      HeaderType @@ 16.toByte,
       Array(IntConstant(1)),
-      Left(UnparsedErgoTree(t1.bytes, ValidationException("", ValidationRules.CheckTypeCode, Seq())))
+      Left(UnparsedErgoTree(t1.bytes, ValidationException("", CheckTypeCode, Seq())))
     )
     assertExceptionThrown(
       t.toProposition(true),
@@ -78,7 +79,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
   property("ErgoTree.template") {
     {
       val t = new ErgoTree(
-        16.toByte,
+        HeaderType @@ 16.toByte,
         Array(IntConstant(1)),
         Right(BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), IntConstant(1))))
       )
@@ -93,7 +94,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
 
   property("ErgoTree.bytes") {
     val t = new ErgoTree(
-      16.toByte,
+      HeaderType @@ 16.toByte,
       Array(IntConstant(1)),
       Right(BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), IntConstant(1))))
     )
@@ -111,7 +112,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
     Value.hasDeserialize(EQ(const, dc)) shouldBe true
     Value.hasDeserialize(Plus(Plus(const, dc), dr)) shouldBe true
     val t = new ErgoTree(
-      16.toByte,
+      HeaderType @@ 16.toByte,
       Array(IntConstant(1)),
       Right(BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), IntConstant(1))))
     )
@@ -121,7 +122,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
   property("ErgoTree.hasDeserialize") {
     {
       val t = new ErgoTree(
-        0.toByte,
+        HeaderType @@ 0.toByte,
         Array[Constant[SType]](),
         Right(TrueSigmaProp))
       t._hasDeserialize shouldBe None
@@ -130,7 +131,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
 
     {
       val t = new ErgoTree(
-        16.toByte,
+        HeaderType @@ 16.toByte,
         Array(IntConstant(1)),
         Right(BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), DeserializeContext(1.toByte, SInt))))
       )
@@ -139,15 +140,113 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
     }
   }
 
+  property("ErgoTree.isUsingBlockchainContext") {
+    {
+      val t = new ErgoTree(
+        HeaderType @@ 0.toByte,
+        Array[Constant[SType]](),
+        Right(TrueSigmaProp))
+      t._isUsingBlockchainContext shouldBe None
+      t.isUsingBlockchainContext shouldBe false
+    }
+
+    {
+      val t = new ErgoTree(
+        HeaderType @@ 16.toByte,
+        Array(IntConstant(1)),
+        Right(BoolToSigmaProp(GT(Height, ConstantPlaceholder(0, SInt))))
+      )
+      t._isUsingBlockchainContext shouldBe None
+      t.isUsingBlockchainContext shouldBe true
+    }
+
+    {
+      val t = new ErgoTree(
+        HeaderType @@ 16.toByte,
+        Vector(),
+        Right(OptionIsDefined(IR.builder.mkMethodCall(
+          LastBlockUtxoRootHash, SAvlTreeMethods.getMethod,
+          IndexedSeq(ExtractId(GetVarBox(22: Byte).get), GetVarByteArray(23: Byte).get)).asOption[SByteArray]))
+      )
+      t._isUsingBlockchainContext shouldBe None
+      t.isUsingBlockchainContext shouldBe true
+    }
+
+    {
+      val t = new ErgoTree(
+        HeaderType @@ 16.toByte,
+        Vector(),
+        Right(BoolToSigmaProp(EQ(MinerPubkey, ErgoLikeContextTesting.dummyPubkey)))
+      )
+      t._isUsingBlockchainContext shouldBe None
+      t.isUsingBlockchainContext shouldBe true
+    }
+
+    {
+      val t = new ErgoTree(
+        HeaderType @@ 16.toByte,
+        Vector(),
+        Right(OptionIsDefined(IR.builder.mkMethodCall(
+          Context, SContextMethods.headersMethod, Vector()).asOption[SByteArray]))
+      )
+      t._isUsingBlockchainContext shouldBe None
+      t.isUsingBlockchainContext shouldBe true
+    }
+
+    {
+      val t = new ErgoTree(
+        HeaderType @@ 16.toByte,
+        Vector(),
+        Right(OptionIsDefined(IR.builder.mkMethodCall(
+          Context, SContextMethods.preHeaderMethod, Vector()).asOption[SByteArray]))
+      )
+      t._isUsingBlockchainContext shouldBe None
+      t.isUsingBlockchainContext shouldBe true
+    }
+
+    {
+      val t = new ErgoTree(
+        HeaderType @@ 16.toByte,
+        Vector(),
+        Right(OptionIsDefined(IR.builder.mkMethodCall(
+          Context, SContextMethods.heightMethod, Vector()).asOption[SByteArray]))
+      )
+      t._isUsingBlockchainContext shouldBe None
+      t.isUsingBlockchainContext shouldBe true
+    }
+
+    {
+      val t = new ErgoTree(
+        HeaderType @@ 16.toByte,
+        Vector(),
+        Right(OptionIsDefined(IR.builder.mkMethodCall(
+          Context, SContextMethods.lastBlockUtxoRootHashMethod, Vector()).asOption[SByteArray]))
+      )
+      t._isUsingBlockchainContext shouldBe None
+      t.isUsingBlockchainContext shouldBe true
+    }
+
+    {
+      val t = new ErgoTree(
+        HeaderType @@ 16.toByte,
+        Vector(),
+        Right(OptionIsDefined(IR.builder.mkMethodCall(
+          Context, SContextMethods.minerPubKeyMethod, Vector()).asOption[SByteArray]))
+      )
+      t._isUsingBlockchainContext shouldBe None
+      t.isUsingBlockchainContext shouldBe true
+    }
+  }
+
   property("ErgoTree equality") {
     val t1 = new ErgoTree(
-      16.toByte,
+      HeaderType @@ 16.toByte,
       Array(IntConstant(1)),
       Right(BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), IntConstant(1))))
     )
-    val t2 = new ErgoTree(16.toByte, Array(IntConstant(1)), Right(TrueSigmaProp))
-    val t3 = new ErgoTree(16.toByte, Array(IntConstant(1)), Right(TrueSigmaProp))
-    val t4 = new ErgoTree(16.toByte, Vector(), Right(TrueSigmaProp))
+    val t2 = new ErgoTree(HeaderType @@ 16.toByte, Array(IntConstant(1)), Right(TrueSigmaProp))
+    val t3 = new ErgoTree(HeaderType @@ 16.toByte, Array(IntConstant(1)), Right(TrueSigmaProp))
+    val t4 = new ErgoTree(HeaderType @@ 16.toByte, Vector(), Right(TrueSigmaProp))
     val t5 = new ErgoTree(ErgoTree.DefaultHeader, Vector(), Right(TrueSigmaProp))
     assert(t1 != t2)
     assert(t2 == t3)
@@ -228,14 +327,14 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
     { // SNumericType.typeId is erroneously shadowed by SGlobal.typeId
       // this should be preserved in v3.x and fixed in v4.0
       (SNumericType.typeId,  Seq(
-        MInfo(methodId = 1, SGlobal.groupGeneratorMethod),
-        MInfo(2, SGlobal.xorMethod)
+        MInfo(methodId = 1, SGlobalMethods.groupGeneratorMethod),
+        MInfo(2, SGlobalMethods.xorMethod)
       ), true)
     },
 
     { // SBigInt inherit methods from SNumericType.methods
       // however they are not resolvable via SBigInt.typeId
-      import SNumericType._
+      import SNumericTypeMethods._
       (SBigInt.typeId,  Seq(
         MInfo(methodId = 1, ToByteMethod, isResolvableFromIds = false),
         MInfo(2, ToShortMethod, isResolvableFromIds = false),
@@ -246,7 +345,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
         MInfo(7, ToBitsMethod, isResolvableFromIds = false)
       ), true)
     },
-    { import SGroupElement._
+    { import SGroupElementMethods._
       (SGroupElement.typeId,  Seq(
         MInfo(2, GetEncodedMethod),
         MInfo(3, ExponentiateMethod),
@@ -254,13 +353,13 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
         MInfo(5, NegateMethod)
       ), true)
     },
-    { import SSigmaProp._
+    { import SSigmaPropMethods._
       (SSigmaProp.typeId,  Seq(
         MInfo(1, PropBytesMethod),
         MInfo(2, IsProvenMethod)  // TODO v5.x (3h): this method must be removed (see https://github.com/ScorexFoundation/sigmastate-interpreter/pull/800)
       ), true)
     },
-    { import SBox._
+    { import SBoxMethods._
       (SBox.typeId,  Seq(
         MInfo(1, ValueMethod),
         MInfo(2, PropositionBytesMethod),
@@ -274,7 +373,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
         .zipWithIndex
         .map { case (m,i) => MInfo((8 + i + 1).toByte, m) }, true)
     },
-    { import SAvlTree._
+    { import SAvlTreeMethods._
       (SAvlTree.typeId,  Seq(
         MInfo(1, digestMethod),
         MInfo(2, enabledOperationsMethod),
@@ -293,7 +392,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
         MInfo(15, updateDigestMethod)
       ), true)
     },
-    { import SHeader._
+    { import SHeaderMethods._
       (SHeader.typeId,  Seq(
         MInfo(1, idMethod), MInfo(2, versionMethod), MInfo(3, parentIdMethod),
         MInfo(4, ADProofsRootMethod), MInfo(5, stateRootMethod), MInfo(6, transactionsRootMethod),
@@ -302,14 +401,14 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
         MInfo(13, powNonceMethod), MInfo(14, powDistanceMethod), MInfo(15, votesMethod)
       ), true)
     },
-    { import SPreHeader._
+    { import SPreHeaderMethods._
       (SPreHeader.typeId,  Seq(
         MInfo(1, versionMethod), MInfo(2, parentIdMethod), MInfo(3, timestampMethod),
         MInfo(4, nBitsMethod), MInfo(5, heightMethod), MInfo(6, minerPkMethod),
         MInfo(7, votesMethod)
       ), true)
     },
-    { import SContext._
+    { import SContextMethods._
       (SContext.typeId, Seq(
         MInfo(1, dataInputsMethod), MInfo(2, headersMethod), MInfo(3, preHeaderMethod),
         MInfo(4, inputsMethod), MInfo(5, outputsMethod), MInfo(6, heightMethod),
@@ -317,12 +416,12 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
         MInfo(10, minerPubKeyMethod), MInfo(11, getVarMethod)
       ), true)
     },
-    { import SGlobal._
+    { import SGlobalMethods._
       (SGlobal.typeId, Seq(
         MInfo(1, groupGeneratorMethod), MInfo(2, xorMethod)
         ), true)
     },
-    { import SCollection._
+    { import SCollectionMethods._
       (SCollection.typeId, Seq(
         MInfo(1, SizeMethod),
         MInfo(2, GetOrElseMethod),
@@ -364,7 +463,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
         */
       ), true)
     },
-    { import SOption._
+    { import SOptionMethods._
       (SOption.typeId, Seq(
         MInfo(2, IsDefinedMethod),
         MInfo(3, GetMethod),
@@ -384,7 +483,8 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
         case Some(tyDesc) =>
           assert(canHaveMethods, s"Type $tyDesc should NOT have methods")
 
-          tyDesc.methods.length shouldBe methods.length
+          val mc = MethodsContainer(tyDesc.typeId)
+          mc.methods.length shouldBe methods.length
           for (expectedMethod <- methods) {
             if (expectedMethod.isResolvableFromIds) {
 
@@ -608,11 +708,11 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
   }
 
   property("checkValidFlatmap") {
-    implicit val E = ErgoTreeEvaluator.forProfiling(new Profiler, evalSettings)
+    implicit val E = CErgoTreeEvaluator.forProfiling(new CProfiler, evalSettings)
     def mkLambda(t: SType, mkBody: SValue => SValue) = {
       MethodCall(
         ValUse(1, SCollectionType(t)),
-        SCollection.getMethodByName("flatMap").withConcreteTypes(
+        SCollectionMethods.getMethodByName("flatMap").withConcreteTypes(
           Map(STypeVar("IV") -> t, STypeVar("OV") -> SByte)
         ),
         Vector(FuncValue(Vector((3, t)), mkBody(ValUse(3, t)))),
@@ -625,7 +725,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
       (SBox, x => ExtractBytes(x.asBox)),
       (SBox, x => ExtractBytesWithNoRef(x.asBox)),
       (SSigmaProp, x => SigmaPropBytes(x.asSigmaProp)),
-      (SBox, x => MethodCall(x, SBox.getMethodByName("id"), Vector(), Map()))
+      (SBox, x => MethodCall(x, SBoxMethods.getMethodByName("id"), Vector(), Map()))
     ).map { case (t, f) => mkLambda(t, f) }
 
     validLambdas.foreach { l =>
@@ -643,7 +743,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
         // invalid MC like `boxes.flatMap(b => b.id, 10)`
         MethodCall(
           ValUse(1, SBox),
-          SCollection.getMethodByName("flatMap").withConcreteTypes(
+          SCollectionMethods.getMethodByName("flatMap").withConcreteTypes(
             Map(STypeVar("IV") -> SBox, STypeVar("OV") -> SByte)
           ),
           Vector(
@@ -655,7 +755,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
         // invalid MC like `boxes.flatMap((b,_) => b.id)`
         MethodCall(
           ValUse(1, SBox),
-          SCollection.getMethodByName("flatMap").withConcreteTypes(
+          SCollectionMethods.getMethodByName("flatMap").withConcreteTypes(
             Map(STypeVar("IV") -> SBox, STypeVar("OV") -> SByte)
           ),
           Vector(
@@ -680,25 +780,25 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
     val addr = ErgoAddressEncoder.Mainnet.fromString("Fo6oijFP2JM87ac7w").getOrThrow
     val tree = addr.script
     tree shouldBe new ErgoTree(
-      16.toByte,
+      HeaderType @@ 16.toByte,
       Vector(TrueLeaf),
       Right(BoolToSigmaProp(BoolToSigmaProp(ConstantPlaceholder(0, SBoolean)).asBoolValue))
     )
 
     def createCtx: ErgoLikeContext = ErgoLikeContextTesting
-        .dummy(CostingBox(fakeSelf), VersionContext.current.activatedVersion)
+        .dummy(fakeSelf, VersionContext.current.activatedVersion)
         .withErgoTreeVersion(tree.version)
 
     VersionContext.withVersions(activatedVersion = 1, tree.version) {
       // v4.x behavior
-      val res = ErgoTreeEvaluator.evalToCrypto(createCtx, tree, evalSettings)
+      val res = CErgoTreeEvaluator.evalToCrypto(createCtx, tree, evalSettings)
       res shouldBe ReductionResult(TrivialProp(true), 3)
     }
 
     VersionContext.withVersions(activatedVersion = 2, tree.version) {
       // v5.0 behavior
       assertExceptionThrown(
-        ErgoTreeEvaluator.evalToCrypto(createCtx, tree, evalSettings),
+        CErgoTreeEvaluator.evalToCrypto(createCtx, tree, evalSettings),
         exceptionLike[ClassCastException]()
       )
     }
@@ -716,7 +816,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
       val addr = ErgoAddressEncoder.Mainnet.fromString("Fo6oijFP2JM87ac7w").getOrThrow
       val tree = addr.script
       tree shouldBe new ErgoTree(
-        16.toByte,
+        HeaderType @@ 16.toByte,
         Vector(TrueLeaf),
         Right(BoolToSigmaProp(BoolToSigmaProp(ConstantPlaceholder(0, SBoolean)).asBoolValue))
       )
@@ -726,7 +826,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
       val addr = ErgoAddressEncoder.Mainnet.fromString("3ehvg9kjzVt2ep6VkYbsNZBXVoFjQA3b26LTmCwvE9vTUEU2TG1uKdqh7sb1a23G1HLkXa6rv4NUcR5Ucghp8CTuBnUxJB4qYq61GYNDFmCHdoZJq32vUVJ7Jsq4cFE7zp9ddFnchb8EN2Qkaa9rqzmruj4iKjLu8MMJ3V8ns1tpRF8eSp2KSjPuMYt6ZHysFNGoMt4dQ2P45YoCXbgiJtzcADgjMnr5bkpqKMx2ZEaAUWoZfHN8DUwvNawSCr2yHieHKbWujxeGuPUuGPAdJHQRcC47xpBj7rKExxGE6T117vAAzSwc98UG3CC8Lb8UeoE7WWi9LCTdXqJpJFrwb8Zqc9HnqSVRvAxeaKgcueX36absXAxpqpAGUcH8YwYoeVmSYLsQKQbUAVrFe73eJyRtgxpcVEqrs4rBZ3KeDJUe5J2NJTNYKoUFcruqqu4N1XUFCECWXANsE9TLoQNyqDgNRcnHE4t8nw6THPJXQWCTBHK6mHvkVcj6SvGinvVGfMpeuA8MF1FFtZJTMnM31cuMBexK3m5mDxsbamJngQiPrcyVqK4smDpdiqhds7APGJbwKTHgst2u1P6").getOrThrow
       val tree = addr.script
       tree match {
-        case ErgoTree(_, _, Right(BlockValueWithInvalidBoolToSigmaProp(_)), _, _, _) =>
+        case ErgoTree(_, _, Right(BlockValueWithInvalidBoolToSigmaProp(_)), _, _, _, _) =>
       }
     }
 
@@ -739,7 +839,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
       val addr = ErgoAddressEncoder.Mainnet.fromString("bpn7HXccD8wzY3x8XbymfBCh71aeci1FyM7JJgVx6mVY3vxznf2Pom7gtEgQBxr9UZb8cn9Z6GiXEjV7mB7ypRfH9Qpf3eCsd8qoEGmvsFqW2GyEvxgYWnJGd8QYTYZLBgGkSFcAeerLLDZwS1bos5oV4atMLnPDUJ6bH2EFFwVRdTAQKxaVMAhNtNYZxAcYtWhaYBJqYZM8ne3hGFrkWNTgNy7NxEDQ5LpBEM3rq6EqUENAGhH6THDL7RyU8AMkpr2vhosqEeqp4yXJmK887vU4qbnGGrMLX4w5GrgL9zLk41Vm6vzEUVLvp8XQJ8CULwkHNiKkNHRLeTk6BG4hwJsFoUSJJNWgsfputm8pEbaTuKfNG5u4NFmZ3YLfGsrqpr62c95QuNuD3g3FaoBUhxigkfNhKwFFtpKKsYerJvvp2Suh2eVRptFsCN15pjdkveUakhFsAo9j9YwhYVjjPpCWZgB8Wme8iZLRVfopSuDVdiqGsnmpJcuccmPsebgXPz3XvyjQazYE7WnR3Jrr1mRWHVEnJb3UU89JVPDpJPP1jUaSqmkKCkrPj3WMMQTDg17WW2DkhGKsb").getOrThrow
       val tree = addr.script
       tree match {
-        case ErgoTree(_, _, Right(BlockValueWithInvalidBoolToSigmaProp(_)), _, _, _) =>
+        case ErgoTree(_, _, Right(BlockValueWithInvalidBoolToSigmaProp(_)), _, _, _, _) =>
       }
     }
 
@@ -748,7 +848,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
       // 4503b5d77cb74b4354771b835cd61e9d5257022a8efff0fddfac249e0c25b492
       val addr = ErgoAddressEncoder.Mainnet.fromString("28JURWHTHwTnXJt5F38").getOrThrow
       val tree = addr.script
-      tree shouldBe new ErgoTree(16.toByte, Vector(),
+      tree shouldBe new ErgoTree(HeaderType @@ 16.toByte, Vector(),
         Right(BoolToSigmaProp(
           CreateProveDlog(OptionGet(ExtractRegisterAs(Self, ErgoBox.R4, SOption(SGroupElement)))).asBoolValue)
         ))
@@ -763,7 +863,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
       val addr = ErgoAddressEncoder.Mainnet.fromString("9drgw9DeDxHwdwYWT11yrYD3qCN3fzgnjA3eS5ZXEkR2Rrpd2x58R3HFViGAs93hYFqroBGShW5DG6h2tU7PqDURegny88hEhNKfLpWKBHpLMmfDwZwTM75MuYKXkmtyUmiMRAfGAVVjaSqThddra5ykZ4UrG8kgqkHSBTxtibVPmNff8Fx7Fy5q82xsZ95RFpjGkAX1QgtirHc3JP6QDZfHUFPx2gnyT9pDpYrKWEhjK8Ake779PoYqGzrL5gtuHyLqsC3WtLFMvP3QNfVtwPaqeCLEmjFmWYU6MV1A8fTJxGWDByiCMnva9wDgZgLh8wrSwttEGE9XHiZaWxWNWqVM8Ypn8aW8x8mKSjxQjF1BNxV41JTeGEMFDvY2HaNYgGbQhBbrTXFq9cvxuzPgXHtfwcbb2kiytr3YBCz8eNmbzp73LSKzRk4AFaTiTdFSSWJe72uLAurQTQBTzAzVgPptGWfrhMWmHCkN5qXQMpUQWNsCzwqRHeZzpSMVtWTyrBCGsbyuPitbukdLHZ8Wee7DtCy8j4Gkhewrwn23jVQu1ApN4uGAFEa29AL26bsMGD7tdu1StE9CKRVzbfEknaReqv6").getOrThrow
       val tree = addr.script
       tree match {
-        case ErgoTree(_, _, Right(BlockValueWithInvalidBoolToSigmaProp(_)), _, _, _) =>
+        case ErgoTree(_, _, Right(BlockValueWithInvalidBoolToSigmaProp(_)), _, _, _, _) =>
       }
       val lines = SigmaPPrint.tokenize(tree, 150, 300)
       if (printDebugInfo) {

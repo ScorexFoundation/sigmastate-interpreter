@@ -3,7 +3,7 @@ package sigmastate.utxo.examples
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, TestContractSpec}
 import sigmastate.helpers.CompilerTestingCommons
 import sigma.Context
-import sigmastate.Values.IntConstant
+import sigma.ast.IntConstant
 
 class RevenueSharingExamplesSpecification extends CompilerTestingCommons { suite =>
   implicit lazy val IR = new TestingIRContext

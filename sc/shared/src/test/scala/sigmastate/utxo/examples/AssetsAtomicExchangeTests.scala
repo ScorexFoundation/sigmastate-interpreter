@@ -1,18 +1,18 @@
 package sigmastate.utxo.examples
 
-import org.ergoplatform.{ErgoBox, Height, Outputs, Self}
+import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.R4
 import sigmastate.helpers.CompilerTestingCommons
 import org.ergoplatform.dsl.ContractSyntax.Token
 import org.ergoplatform.dsl.TestContractSpec
 import scorex.crypto.hash.Blake2b256
-import sigmastate.SCollection.SByteArray
-import sigmastate._
-import sigmastate.Values.{BlockValue, ByteArrayConstant, LongConstant, ShortConstant, ValDef, ValUse, Value}
-import sigmastate.eval.{CSigmaProp, Digest32Coll}
+import sigma.ast.SCollection.SByteArray
+import sigma.ast._
+import sigma.ast.syntax._
+import sigma.data.{CSigmaProp, Digest32Coll, TrivialProp}
+import sigma.ast.{BlockValue, ByteArrayConstant, LongConstant, ValDef, ValUse, Value}
 import sigmastate.eval.Extensions._
-import sigmastate.lang.Terms.ValueOps
-import sigmastate.utxo._
+import sigma.ast.syntax.ValueOps
 
 /** An example of an atomic ergo <=> asset exchange.
   * Let's assume that Alice is willing to buy 60 assets of type "token1" for 100 ergo coins, and Bob

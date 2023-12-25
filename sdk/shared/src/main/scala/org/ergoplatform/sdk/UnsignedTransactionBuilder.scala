@@ -7,11 +7,12 @@ import org.ergoplatform.sdk.BoxSelection.InputBoxesValidator
 import org.ergoplatform.sdk.Extensions.HeaderOps
 import org.ergoplatform.sdk.wallet.{AssetUtils, TokensMap}
 import scorex.util.{ModifierId, bytesToId}
-import sigmastate.eval.Extensions.ArrayOps
+import sigma.Extensions.ArrayOps
 import sigmastate.utils.Extensions.ModifierIdOps
 import sigma.Coll
 import sigma.Extensions.CollBytesOps
 import sigma.PreHeader
+import sigma.data.Digest32CollRType
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Try
@@ -87,7 +88,7 @@ class UnsignedTransactionBuilder(val ctx: BlockchainContext) {
     val changeAddress = getDefined(_changeAddress, "Change address is not defined")
     val inputBoxesSeq = boxesToSpend.map(eb => eb.box)
     val requestedToBurn = _tokensToBurn.fold(IndexedSeq.empty[ErgoToken])(_.toIndexedSeq)
-    val burnTokens = Iso.isoErgoTokenSeqToLinkedMap.to(requestedToBurn).toMap
+    val burnTokens = SdkIsos.isoErgoTokenSeqToLinkedMap.to(requestedToBurn).toMap
     val rewardDelay = ctx.networkType match {
       case NetworkType.Mainnet => BlockchainParameters.MinerRewardDelay_Mainnet
       case NetworkType.Testnet => BlockchainParameters.MinerRewardDelay_Testnet

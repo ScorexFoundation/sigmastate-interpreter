@@ -1,21 +1,20 @@
 package org.ergoplatform.dsl
 
 import org.ergoplatform.ErgoBox.{BoxId, NonMandatoryRegisterId, TokenId}
-import sigmastate.interpreter.{CostedProverResult, ProverResult}
-import sigma.data.RType
+import sigma.interpreter.{CostedProverResult, ProverResult}
+import sigma.data.{CSigmaDslBuilder, RType}
 import org.ergoplatform.{ErgoBox, ErgoLikeContext}
-import sigma.{AnyValue, Coll, SigmaDslBuilder, SigmaProp}
-import sigmastate.Values.{ErgoTree, EvaluatedValue}
-import sigmastate.eval.{CostingSigmaDslBuilder, IRContext}
+import sigma.{Coll, SigmaDslBuilder, SigmaProp}
+import sigmastate.eval.IRContext
 
 import scala.util.Try
 import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition, Token}
-import sigmastate.SType
+import sigma.ast.{ErgoTree, EvaluatedValue, SType}
 
 import scala.language.implicitConversions
 
 trait ContractSpec {
-  val dsl: SigmaDslBuilder = CostingSigmaDslBuilder
+  val dsl: SigmaDslBuilder = CSigmaDslBuilder
   val Colls = dsl.Colls
 
   implicit def Coll[T](items: Array[T])(implicit cT: RType[T]): Coll[T] = Colls.fromArray(items)

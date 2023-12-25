@@ -1,17 +1,19 @@
 package sigmastate
 
-import java.math.BigInteger
-import sigmastate.Values.{ErgoTree, SigmaBoolean, SigmaPropConstant}
-import sigmastate.crypto.DLogProtocol.{FirstDLogProverMessage, ProveDlog}
-import sigmastate.crypto.VerifierMessage.Challenge
-import sigmastate.crypto.{FirstDHTupleProverMessage, FirstProverMessage, ProveDHTuple}
-import sigmastate.interpreter.{ErgoTreeEvaluator, NamedDesc, OperationCostInfo}
-import sigmastate.interpreter.ErgoTreeEvaluator.fixedCostOp
-import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.serialization.SigmaSerializer
-import sigmastate.utils.SigmaByteWriter
 import debox.cfor
-import sigmastate.crypto.GF2_192_Poly
+import sigma.data.{CAND, COR, CTHRESHOLD, ProveDHTuple, ProveDlog, SigmaBoolean, SigmaLeaf}
+import sigma.ast.ErgoTree.ZeroHeader
+import sigma.ast.{ErgoTree, FixedCost, JitCost, NamedDesc, OperationCostInfo, SigmaPropConstant}
+import sigma.eval.ErgoTreeEvaluator
+import sigmastate.crypto.DLogProtocol.FirstDLogProverMessage
+import sigmastate.crypto.VerifierMessage.Challenge
+import sigmastate.crypto.{FirstDHTupleProverMessage, FirstProverMessage, GF2_192_Poly}
+import sigmastate.interpreter.CErgoTreeEvaluator.fixedCostOp
+import sigmastate.interpreter.CErgoTreeEvaluator
+import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigma.serialization.{SigmaByteWriter, SigmaSerializer}
+
+import java.math.BigInteger
 import scala.language.existentials
 
 object ConjectureType extends Enumeration {
@@ -255,7 +257,7 @@ object FiatShamirTree {
         case _: UncheckedDiffieHellmanTuple | _: UnprovenDiffieHellmanTuple => ToBytes_DHT
       }
       fixedCostOp(costInfo) {
-        val propTree = ErgoTree.withSegregation(SigmaPropConstant(l.proposition))
+        val propTree = ErgoTree.withSegregation(ZeroHeader, SigmaPropConstant(l.proposition))
         val propBytes = DefaultSerializer.serializeErgoTree(propTree)
         val commitmentBytes = l.commitmentOpt.get.bytes
         w.put(leafPrefix)

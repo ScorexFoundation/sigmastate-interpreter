@@ -3,33 +3,34 @@ package org.ergoplatform.dsl
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 
 import scala.collection.mutable
-import sigmastate.interpreter.{ContextExtension, CostedProverResult, ProverResult}
-
+import sigma.interpreter.{CostedProverResult, ProverResult}
 import scala.collection.mutable.ArrayBuffer
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
-import sigma.data.Nullable
+import sigma.data.{AvlTreeData, CAnyValue, CSigmaProp, Nullable}
 
 import scala.util.Try
 import org.ergoplatform.{ErgoBox, ErgoLikeContext}
 import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition, Token}
-import sigmastate.{AvlTreeData, SType}
-import sigmastate.Values.{ErgoTree, EvaluatedValue}
-import sigmastate.eval.{CAnyValue, CSigmaProp, Evaluation, IRContext}
+import sigma.ast.{ErgoTree, SType}
+import sigma.ast.EvaluatedValue
+import sigma.interpreter.ContextExtension
+import sigmastate.eval.IRContext
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
-import sigmastate.lang.Terms.ValueOps
-import sigma.{AnyValue, SigmaProp}
+import sigma.ast.syntax.ValueOps
+import sigma.{AnyValue, Evaluation, SigmaProp}
+import ErgoTree.ZeroHeader
 
 case class TestContractSpec(testSuite: CompilerTestingCommons)(implicit val IR: IRContext) extends ContractSpec {
 
   case class TestPropositionSpec(name: String, dslSpec: Proposition, scriptSpec: ErgoScript) extends PropositionSpec {
     lazy val ergoTree: ErgoTree = {
       val value = testSuite.compile(scriptSpec.env, scriptSpec.code)
-      val headerFlags = scriptSpec.scriptVersion match {
-        case Some(version) => ErgoTree.headerWithVersion(version)
+      val header = scriptSpec.scriptVersion match {
+        case Some(version) => ErgoTree.headerWithVersion(ZeroHeader, version)
         case None => testSuite.ergoTreeHeaderInTests
       }
-      val tree: ErgoTree = ErgoTree.fromProposition(headerFlags, value.asSigmaProp)
+      val tree: ErgoTree = ErgoTree.fromProposition(header, value.asSigmaProp)
       tree
     }
   }

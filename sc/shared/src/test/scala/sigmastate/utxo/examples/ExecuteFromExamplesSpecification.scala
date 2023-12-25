@@ -4,8 +4,7 @@ import org.ergoplatform._
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, TestContractSpec}
 import sigmastate.helpers.CompilerTestingCommons
 import sigma.Context
-import sigmastate.Values.ByteArrayConstant
-import sigmastate.eval.Extensions._
+import sigma.ast.ByteArrayConstant
 
 class ExecuteFromExamplesSpecification extends CompilerTestingCommons { suite =>
   implicit lazy val IR = new TestingIRContext

@@ -3,10 +3,9 @@ package sigmastate.utxo.examples
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, TestContractSpec}
 import scorex.crypto.hash
+import sigma.ast.{ByteArrayConstant, CollectionConstant, SByte, SCollection}
 import sigmastate.helpers.CompilerTestingCommons
 import sigma.{Box, Coll, Context}
-import sigmastate.{SByte, SCollection}
-import sigmastate.Values.{ByteArrayConstant, CollectionConstant}
 
 class DummyExamplesSpecification extends CompilerTestingCommons { suite =>
   implicit lazy val IR = new TestingIRContext
