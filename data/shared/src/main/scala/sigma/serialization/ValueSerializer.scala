@@ -249,6 +249,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
 
   def printSerInfo(): String = {
     serializerInfo.map { case (_, s) =>
+      getSerializer(s.opCode) // sanity check to make sure only resolvable serializers got printed
       s.toString
     }.mkString("\n")
   }
