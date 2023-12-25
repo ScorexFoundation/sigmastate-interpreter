@@ -1,6 +1,6 @@
 package sigma
 
-import VersionContext.JitActivationVersion
+import VersionContext.{EvolutionVersion, JitActivationVersion}
 
 import scala.util.DynamicVariable
 
@@ -21,6 +21,10 @@ case class VersionContext(activatedVersion: Byte, ergoTreeVersion: Byte) {
   /** @return true, if the activated script version of Ergo protocol on the network is
    * greater than v1. */
   def isJitActivated: Boolean = activatedVersion >= JitActivationVersion
+
+  /** @return true, if the activated script version of Ergo protocol on the network is
+   * including Evolution update. */
+  def isEvolutionActivated: Boolean = activatedVersion >= EvolutionVersion
 }
 
 object VersionContext {

@@ -202,6 +202,14 @@ class TestingInterpreterSpecification extends CompilerTestingCommons
         |}""".stripMargin)
   }
 
+  property("Evaluate boolean casting ops") {
+    testEval(
+      """{
+        | val bool: Boolean = true
+        | bool.toByte == 1.toByte && false.toByte == 0.toByte
+        }""".stripMargin)
+  }
+
   property("Evaluate numeric casting ops") {
     def testWithCasting(castSuffix: String): Unit = {
       testEval(s"OUTPUTS.size.toByte.$castSuffix == 0.$castSuffix")

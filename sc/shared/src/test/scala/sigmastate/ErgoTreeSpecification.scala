@@ -219,7 +219,6 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
   // The following table should be made dependent on HF activation
   val methods = Table(
     ("typeId",        "methods",               "CanHaveMethods"),
-    (SBoolean.typeId, Seq.empty[MInfo], true),
     (SByte.typeId,    Seq.empty[MInfo], false),
     (SShort.typeId,   Seq.empty[MInfo], false),
     (SInt.typeId,     Seq.empty[MInfo], false),
@@ -233,6 +232,10 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
       ), true)
     },
 
+    {
+      import SBoolean._
+      (SBoolean.typeId, Seq(MInfo(1, ToByteMethod)), true)
+    },
     { // SBigInt inherit methods from SNumericType.methods
       // however they are not resolvable via SBigInt.typeId
       import SNumericType._

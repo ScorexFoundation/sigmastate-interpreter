@@ -509,6 +509,10 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         else
           error(s"The type of $obj is expected to be Collection to select 'size' property", obj.sourceContext.toOption)
 
+      case Select(obj, SBoolean.ToByte, _) if obj.tpe.isBoolean =>
+          val bool = eval(obj.asBoolValue)
+          bool.toByte
+
       // Rule: proof.isProven --> IsValid(proof)
       case Select(p, SSigmaProp.IsProven, _) if p.tpe == SSigmaProp =>
         eval(SigmaPropIsProven(p.asSigmaProp))

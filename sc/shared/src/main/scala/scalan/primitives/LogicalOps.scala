@@ -29,6 +29,11 @@ trait LogicalOps extends Base { self: Scalan =>
     override def applySeq(x: Boolean): Int = if (x) 1 else 0
   }
 
+  /** Boolean to Byte conversion unary operation. */
+  val BooleanToByte = new UnOp[Boolean, Byte]("ToByte") {
+    override def applySeq(x: Boolean): Byte = if (x) 1.toByte else 0.toByte
+  }
+
   /** Extension methods over `Ref[Boolean]`. */
   implicit class RepBooleanOps(value: Ref[Boolean]) {
     def &&(y: Ref[Boolean]): Ref[Boolean] = And(value, y)
@@ -40,6 +45,7 @@ trait LogicalOps extends Base { self: Scalan =>
 
     def unary_!() : Ref[Boolean] = Not(value)
     def toInt: Ref[Int] = BooleanToInt(value)
+    def toByte: Ref[Byte] = BooleanToByte(value)
   }
 
 
