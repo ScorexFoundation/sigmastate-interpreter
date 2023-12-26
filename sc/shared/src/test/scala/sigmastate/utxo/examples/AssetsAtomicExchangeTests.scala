@@ -13,7 +13,6 @@ import sigma.data.{CSigmaProp, Digest32Coll, TrivialProp}
 import sigma.ast.{BlockValue, ByteArrayConstant, LongConstant, ValDef, ValUse, Value}
 import sigmastate.eval.Extensions._
 import sigma.ast.syntax.ValueOps
-import sigma.eval.Extensions.toAnyValue
 
 /** An example of an atomic ergo <=> asset exchange.
   * Let's assume that Alice is willing to buy 60 assets of type "token1" for 100 ergo coins, and Bob
@@ -141,7 +140,7 @@ class AssetsAtomicExchangeTests extends CompilerTestingCommons { suite =>
 
     // ASSERT
     val input0 = spendingTx.inputs(0)
-    val buyerExt = Map(Byte.MaxValue -> toAnyValue(0.toShort))
+    val buyerExt = Map(Byte.MaxValue -> ShortConstant(0.toShort))
     val res = input0.runDsl(buyerExt)
     res shouldBe CSigmaProp(TrivialProp.TrueProp)
 
@@ -149,7 +148,7 @@ class AssetsAtomicExchangeTests extends CompilerTestingCommons { suite =>
     contract.verifier.verify(input0, buyerProof) shouldBe true
 
     val input1 = spendingTx.inputs(1)
-    val sellerExt = Map(Byte.MaxValue -> toAnyValue(1.toShort))
+    val sellerExt = Map(Byte.MaxValue -> ShortConstant(1.toShort))
     val res1 = input1.runDsl(sellerExt)
     res1 shouldBe CSigmaProp(TrivialProp.TrueProp)
     val sellerProof = contract.tokenSeller.prove(input1, sellerExt).get

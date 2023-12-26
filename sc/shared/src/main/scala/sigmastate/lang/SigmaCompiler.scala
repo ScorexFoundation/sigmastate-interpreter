@@ -35,9 +35,7 @@ case class CompilerSettings(
 /** Result of ErgoScript source code compilation.
   * @param env compiler environment used to compile the code
   * @param code ErgoScript source code
-  * @param calcF  graph obtained by using old AOT costing based compiler
   * @param compiledGraph graph obtained by using new [[GraphBuilding]]
-  * @param calcTree ErgoTree expression obtained from calcF graph.
   * @param buildTree ErgoTree expression obtained from graph created by [[GraphBuilding]]
   */
 case class CompilerResult[Ctx <: IRContext](
@@ -149,7 +147,7 @@ class SigmaCompiler private(settings: CompilerSettings) {
 object SigmaCompiler {
   /** Force initialization of reflection before any instance of SigmaCompiler is used. */
   val _ = (InterpreterReflection, GraphIRReflection)
-  
+
   /** Constructs an instance for the given settings. */
   def apply(settings: CompilerSettings): SigmaCompiler =
     new SigmaCompiler(settings)

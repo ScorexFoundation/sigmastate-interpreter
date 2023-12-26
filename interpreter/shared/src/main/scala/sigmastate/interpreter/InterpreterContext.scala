@@ -1,10 +1,8 @@
 package sigmastate.interpreter
 
-import sigma.AnyValue
 import sigma.interpreter.ContextExtension
 import sigma.interpreter.ContextExtension.VarBinding
 import sigma.validation.SigmaValidationSettings
-
 
 /** Base class of the context passed to verifier and prover.
   * @see [[sigmastate.interpreter.Interpreter]]
@@ -62,12 +60,8 @@ trait InterpreterContext {
     * Thus, this method performs transformation from Ergo to internal Sigma representation
     * of all context data.
     *
-    * @param extensions additional context variables which will be merged with those in the
-    *                   `extension` of this instance, overriding existing bindings in case
-    *                   variable ids overlap.
-    *
     * @see sigmastate.eval.Evaluation
     */
-  def toSigmaContext(extensions: Map[Byte, AnyValue] = Map()): sigma.Context
+  def toSigmaContext(): sigma.Context
 }
 

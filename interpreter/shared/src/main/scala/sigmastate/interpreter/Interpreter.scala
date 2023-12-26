@@ -204,7 +204,6 @@ trait Interpreter {
   def fullReduction(ergoTree: ErgoTree,
                     ctx: CTX,
                     env: ScriptEnv): ReductionResult = {
-    implicit val vs: SigmaValidationSettings = ctx.validationSettings
     val context = ctx.withErgoTreeVersion(ergoTree.version).asInstanceOf[CTX]
     VersionContext.withVersions(context.activatedScriptVersion, ergoTree.version) {
       val prop = propositionFromErgoTree(ergoTree, context)

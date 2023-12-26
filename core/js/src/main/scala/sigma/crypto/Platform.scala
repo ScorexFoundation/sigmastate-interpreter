@@ -2,7 +2,6 @@ package sigma.crypto
 
 import sigma.data.RType
 import scorex.util.encode.Base16
-import sigmastate._
 import sigma.Coll
 import sigma._
 import sigma.ast._

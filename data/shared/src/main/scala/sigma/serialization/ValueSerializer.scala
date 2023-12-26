@@ -15,8 +15,6 @@ import sigma.utils.SparseArrayContainer
 import scala.collection.mutable
 
 abstract class ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
-  import scala.language.implicitConversions
-  private val companion = ValueSerializer
 
   def getComplexity: Int = OpCodeComplexity.getOrElse(opCode, MinimalComplexity)
   lazy val complexity: Int = getComplexity
@@ -251,7 +249,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
 
   def printSerInfo(): String = {
     serializerInfo.map { case (_, s) =>
-      val ser = getSerializer(s.opCode)
+      getSerializer(s.opCode) // sanity check to make sure only resolvable serializers got printed
       s.toString
     }.mkString("\n")
   }
