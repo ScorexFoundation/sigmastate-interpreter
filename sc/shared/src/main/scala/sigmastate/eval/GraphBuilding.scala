@@ -510,7 +510,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         else
           error(s"The type of $obj is expected to be Collection to select 'size' property", obj.sourceContext.toOption)
 
-      case Select(obj, SBoolean.ToByte, _) if obj.tpe.isBoolean && VersionContext.current.isEvolutionActivated =>
+      case Select(obj, SBoolean.ToByte, _) if obj.tpe.isBoolean && VersionContext.current.isV6SoftForkActivated =>
           val bool = eval(obj.asBoolValue)
           bool.toByte
 

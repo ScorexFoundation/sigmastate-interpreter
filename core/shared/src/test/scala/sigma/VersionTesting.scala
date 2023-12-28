@@ -6,11 +6,11 @@ import scala.util.DynamicVariable
 
 trait VersionTesting {
 
-  /** Tests run for both version 2 & version 3 */
+  /** Tests run for all supported versions starting from 0. */
   protected val activatedVersions: Seq[Byte] =
     (0 to VersionContext.MaxSupportedScriptVersion).map(_.toByte).toArray[Byte]
 
-  private[sigma] val _currActivatedVersion = new DynamicVariable[Byte](3) // v6.x by default
+  private[sigma] val _currActivatedVersion = new DynamicVariable[Byte](2) // v5.x by default
 
   /** Current activated version used in tests. */
   def activatedVersionInTests: Byte = _currActivatedVersion.value

@@ -9,7 +9,7 @@ import sigmastate.lang.Terms._
 import org.ergoplatform._
 import org.scalatest.BeforeAndAfterAll
 import scorex.util.encode.Base58
-import sigma.VersionContext.EvolutionVersion
+import sigma.VersionContext.V6SoftForkVersion
 import sigma.util.Extensions.IntOps
 import sigmastate.crypto.CryptoConstants
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
@@ -211,8 +211,8 @@ class TestingInterpreterSpecification extends CompilerTestingCommons
         | bool.toByte == 1.toByte && false.toByte == 0.toByte
         |}
         |""".stripMargin
-    if (activatedVersionInTests < EvolutionVersion) {
-      an [sigmastate.exceptions.MethodNotFound] should be thrownBy testEval(source)
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      assertExceptionThrown(testEval(source), rootCauseLike[sigmastate.exceptions.MethodNotFound]("Cannot find method 'toByte'"))
     } else {
       testEval(source)
     }

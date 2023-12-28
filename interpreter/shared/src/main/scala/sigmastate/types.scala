@@ -914,7 +914,7 @@ case object SBoolean extends SPrimType with SEmbeddable with SLogical with SProd
     .withInfo(PropertyCall, "Convert true to 1 and false to 0")
 
   protected override def getMethods(): Seq[SMethod] = {
-    if (VersionContext.current.isEvolutionActivated) {
+    if (VersionContext.current.isV6SoftForkActivated) {
       super.getMethods() ++ Seq(ToByteMethod)
     } else {
       super.getMethods()

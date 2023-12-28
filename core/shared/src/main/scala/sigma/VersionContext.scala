@@ -1,6 +1,6 @@
 package sigma
 
-import VersionContext.{EvolutionVersion, JitActivationVersion}
+import VersionContext.{V6SoftForkVersion, JitActivationVersion}
 
 import scala.util.DynamicVariable
 
@@ -24,7 +24,7 @@ case class VersionContext(activatedVersion: Byte, ergoTreeVersion: Byte) {
 
   /** @return true, if the activated script version of Ergo protocol on the network is
    * including Evolution update. */
-  def isEvolutionActivated: Boolean = activatedVersion >= EvolutionVersion
+  def isV6SoftForkActivated: Boolean = activatedVersion >= V6SoftForkVersion
 }
 
 object VersionContext {
@@ -46,7 +46,7 @@ object VersionContext {
   /**
    * The version of ErgoTree corresponding to "evolution" (6.0) soft-fork
    */
-  val EvolutionVersion: Byte = 3
+  val V6SoftForkVersion: Byte = 3
 
   private val _defaultContext = VersionContext(
     activatedVersion = 1/* v4.x */,

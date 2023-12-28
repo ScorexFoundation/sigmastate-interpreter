@@ -234,7 +234,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
 
     {
       import SBoolean._
-      if (VersionContext.current.isEvolutionActivated) {
+      if (VersionContext.current.isV6SoftForkActivated) {
         (SBoolean.typeId, Seq(MInfo(1, ToByteMethod)), true)
       } else {
         (SBoolean.typeId, Seq.empty[MInfo], true)
