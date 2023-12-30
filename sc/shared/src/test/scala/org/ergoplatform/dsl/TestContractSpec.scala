@@ -168,7 +168,6 @@ case class TestContractSpec(testSuite: CompilerTestingCommons)(implicit val IR: 
 
   case class BBlockCandidate(height: Int) extends BlockCandidate {
     def newTransaction() = MockTransaction(this)
-//    def onTopOf(chain: ChainBlock*)
   }
 
   def candidateBlock(height: Int): BlockCandidate = BBlockCandidate(height)

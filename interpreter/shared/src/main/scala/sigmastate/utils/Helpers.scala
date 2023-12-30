@@ -3,15 +3,10 @@ package sigmastate.utils
 import debox.cfor
 import io.circe.Decoder
 import org.ergoplatform.settings.ErgoAlgos
-import sigma.data.{CAnyValue, OverloadHack, RType}
-import scorex.utils.Ints
 import sigma.crypto.EcPointType
-import sigma.{Coll, Colls, Environment, GroupElement}
+import sigma.{Coll, Colls, GroupElement}
 import sigma.eval.SigmaDsl
 
-import java.util
-import java.util.concurrent.locks.Lock
-import scala.reflect.ClassTag
 import scala.util.{Either, Failure, Right, Success, Try}
 
 object Helpers {
@@ -57,14 +52,6 @@ object Helpers {
     }
     target
   }
-
-  /** Optimized hashCode for array of bytes when it represents some hash thus it have
-    * enough randomness and we can use only first 4 bytes.
-    * @param id result of some hash function
-    */
-  @inline final def safeIdHashCode(id: Array[Byte]): Int =
-    if (id != null && id.length >= 4) Ints.fromBytes(id(0), id(1), id(2), id(3))
-    else java.util.Arrays.hashCode(id)
 
   implicit class TryOps[+A](val source: Try[A]) extends AnyVal {
     def fold[B](onError: Throwable => B, onSuccess: A => B) = source match {
@@ -133,27 +120,6 @@ object Helpers {
   def decodeBytes(base16String: String): Coll[Byte] = {
     val bytes = ErgoAlgos.decodeUnsafe(base16String)
     Colls.fromArray(bytes)
-  }
-
-  /**
-    * Executes the given block with a reentrant mutual exclusion Lock with the same basic
-    * behavior and semantics as the implicit monitor lock accessed using synchronized
-    * methods and statements in Java.
-    *
-    * Note, using this method has an advantage of having this method in a stack trace in case of
-    * an exception in the block.
-    * @param l lock object which should be acquired by the current thread before block can start executing
-    * @param block block of code which will be executed retaining the lock
-    * @return the value produced by the block
-    */
-  def withReentrantLock[A](l: Lock)(block: => A): A = {
-    l.lock()
-    val res = try
-      block
-    finally {
-      l.unlock()
-    }
-    res
   }
 
 }
