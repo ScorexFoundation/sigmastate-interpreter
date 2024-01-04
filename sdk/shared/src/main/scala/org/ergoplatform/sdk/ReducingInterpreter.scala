@@ -31,7 +31,7 @@ class ReducingInterpreter(params: BlockchainParameters) extends ErgoLikeInterpre
     * @return data object containing enough data to sign a transaction without Context.
     */
   def reduce(env: ScriptEnv, ergoTree: ErgoTree, context: CTX): ReducedInputData = {
-    val initCost = ergoTree.complexity + context.initCost
+    val initCost = context.initCost
     val remainingLimit = context.costLimit - initCost
     if (remainingLimit <= 0)
       throw new CostLimitException(initCost,

@@ -3,7 +3,6 @@ package sigma.ast
 import scorex.util.encode.Base16
 import sigma.VersionContext
 import sigma.ast.ErgoTree.{HeaderType, substConstants}
-import sigma.ast.SigmaPropConstant
 import sigma.ast.syntax._
 import sigma.data.{CSigmaProp, SigmaBoolean}
 import sigma.kiama.rewriting.Rewriter.{everywherebu, strategy}
@@ -63,13 +62,6 @@ case class UnparsedErgoTree(bytes: mutable.WrappedArray[Byte], error: Validation
   *                         instead of some Constant nodes. Otherwise, it may not contain placeholders.
   *                         It is possible to have both constants and placeholders in the tree, but for every placeholder
   *                         there should be a constant in `constants` array.
-  * @param givenComplexity  structural complexity of the tree or 0 if is not specified at construction time.
-  *                         Access to this private value is provided via `complexity` property.
-  *                         In case of 0, the complexity is computed using ErgoTree deserializer, which can do this.
-  *                         When specified it should be computed as the sum of complexity values taken
-  *                         from ComplexityTable for all tree nodes. It approximates the time needed to process
-  *                         the tree by sigma compiler to obtain cost formula. Overly complex trees can thus
-  *                         be rejected even before compiler starts working.
   * @param propositionBytes original bytes of this tree from which it has been deserialized.
   *                         If null then the bytes are not provided, and will be lazily generated when `bytes`
   *                         method is called.
@@ -88,7 +80,6 @@ case class ErgoTree private[sigma](
     header: HeaderType,
     constants: IndexedSeq[Constant[SType]],
     root: Either[UnparsedErgoTree, SigmaPropValue],
-    private val givenComplexity: Int,
     private val propositionBytes: Array[Byte],
     private val givenDeserialize: Option[Boolean],
     private val givenIsUsingBlockchainContext: Option[Boolean]
@@ -98,9 +89,9 @@ case class ErgoTree private[sigma](
       constants: IndexedSeq[Constant[SType]],
       root: Either[UnparsedErgoTree, SigmaPropValue]) =
     this(
-      header, constants, root, 0,
+      header, constants, root,
       propositionBytes = DefaultSerializer.serializeErgoTree(
-        ErgoTree(header, constants, root, 0, null, None, None)
+        ErgoTree(header, constants, root, null, None, None)
       ),
       givenDeserialize = None,
       givenIsUsingBlockchainContext = None
@@ -139,19 +130,6 @@ case class ErgoTree private[sigma](
 
   /** Hexadecimal encoded string of ErgoTree.bytes. */
   final def bytesHex: String = Base16.encode(bytes)
-
-  private var _complexity: Int = givenComplexity
-
-  /** Structural complexity estimation of this tree.
-    *
-    * @see ComplexityTable
-    */
-  lazy val complexity: Int = {
-    if (_complexity == 0) {
-      _complexity = DefaultSerializer.deserializeErgoTree(bytes).complexity
-    }
-    _complexity
-  }
 
   private[sigma] var _hasDeserialize: Option[Boolean] = givenDeserialize
 
