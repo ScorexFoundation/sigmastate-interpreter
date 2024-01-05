@@ -4,21 +4,23 @@ import fastparse.Parsed
 import fastparse.Parsed.Success
 import sigma.kiama.rewriting.Rewriter.{everywherebu, rewrite, rule}
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
-import org.ergoplatform.Global
-import sigmastate.Values.{SValue, Value}
+import scalan.GraphIRReflection
+import sigma.ast.{Exponentiate, MultiplyGroup, SCollectionMethods, SGlobalMethods, SGroupElementMethods, Value, Xor}
 import sigmastate.eval.IRContext
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
-import sigmastate.lang.Terms.MethodCall
-import sigmastate.lang.syntax.ParserException
-import sigmastate.utxo._
-import sigmastate.{Exponentiate, MultiplyGroup, SCollection, SGlobal, SGroupElement, SType, STypeVar, Xor}
+import sigma.ast.SigmaPredef.PredefinedFuncRegistry
+import sigma.ast.MethodCall
+import sigmastate.lang.parsers.ParserException
+import sigma.ast._
+import sigma.ast.syntax.SValue
+import SCollectionMethods.{ExistsMethod, ForallMethod, MapMethod}
+import sigmastate.InterpreterReflection
 
 /**
   * @param networkPrefix    network prefix to decode an ergo address from string (PK op)
   * @param builder          used to create ErgoTree nodes
   * @param lowerMethodCalls if true, then MethodCall nodes are lowered to ErgoTree nodes
-  *                         when [[sigmastate.SMethod.irInfo.irBuilder]] is defined. For
+  *                         when [[sigma.ast.SMethod.irInfo.irBuilder]] is defined. For
   *                         example, in the `coll.map(x => x+1)` code, the `map` method
   *                         call can be lowered to MapCollection node.
   *                         The lowering if preferable, because it is more compact (1 byte
@@ -33,9 +35,7 @@ case class CompilerSettings(
 /** Result of ErgoScript source code compilation.
   * @param env compiler environment used to compile the code
   * @param code ErgoScript source code
-  * @param calcF  graph obtained by using old AOT costing based compiler
   * @param compiledGraph graph obtained by using new [[GraphBuilding]]
-  * @param calcTree ErgoTree expression obtained from calcF graph.
   * @param buildTree ErgoTree expression obtained from graph created by [[GraphBuilding]]
   */
 case class CompilerResult[Ctx <: IRContext](
@@ -49,7 +49,7 @@ case class CompilerResult[Ctx <: IRContext](
 /** Compiler which compiles ErgoScript source code into ErgoTree.
   * @param settings compilation parameters \
   */
-class SigmaCompiler(settings: CompilerSettings) {
+class SigmaCompiler private(settings: CompilerSettings) {
   /** Constructs an instance for the given network type and with default settings. */
   def this(networkPrefix: Byte) = this(
     CompilerSettings(networkPrefix, TransformingSigmaBuilder, lowerMethodCalls = true)
@@ -96,6 +96,12 @@ class SigmaCompiler(settings: CompilerSettings) {
     CompilerResult(env, "<no source code>", compiledGraph, compiledTree)
   }
 
+  /** Compiles the given parsed contract source. */
+  def compileParsed(env: ScriptEnv, parsedExpr: SValue)(implicit IR: IRContext): CompilerResult[IR.type] = {
+    val typed = typecheck(env, parsedExpr)
+    compileTyped(env, typed)
+  }
+
   /** Unlowering transformation, which replaces some operations with equivalent MethodCall
     * node. This replacement is only defined for some operations.
     * This is inverse to `lowering` which is performed during compilation.
@@ -104,9 +110,9 @@ class SigmaCompiler(settings: CompilerSettings) {
     import SCollection._
     val r = rule[Any]({
       case MultiplyGroup(l, r) =>
-        MethodCall(l, SGroupElement.MultiplyMethod, Vector(r), Map())
+        MethodCall(l, SGroupElementMethods.MultiplyMethod, Vector(r), Map())
       case Exponentiate(l, r) =>
-        MethodCall(l, SGroupElement.ExponentiateMethod, Vector(r), Map())
+        MethodCall(l, SGroupElementMethods.ExponentiateMethod, Vector(r), Map())
       case ForAll(xs, p) =>
         MethodCall(xs, ForallMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType)), Vector(p), Map())
       case Exists(xs, p) =>
@@ -117,21 +123,21 @@ class SigmaCompiler(settings: CompilerSettings) {
           Vector(f), Map())
       case Fold(xs, z, op) =>
         MethodCall(xs,
-          SCollection.FoldMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType, tOV -> z.tpe)),
+          SCollectionMethods.FoldMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType, tOV -> z.tpe)),
           Vector(z, op), Map())
       case Slice(xs, from, until) =>
         MethodCall(xs,
-          SCollection.SliceMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType)),
+          SCollectionMethods.SliceMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType)),
           Vector(from, until), Map())
       case Append(xs, ys) =>
         MethodCall(xs,
-          SCollection.AppendMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType)),
+          SCollectionMethods.AppendMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType)),
           Vector(ys), Map())
       case Xor(l, r) =>
-        MethodCall(Global, SGlobal.xorMethod, Vector(l, r), Map())
+        MethodCall(Global, SGlobalMethods.xorMethod, Vector(l, r), Map())
       case ByIndex(xs, index, Some(default)) =>
         MethodCall(xs,
-          SCollection.GetOrElseMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType)),
+          SCollectionMethods.GetOrElseMethod.withConcreteTypes(Map(tIV -> xs.tpe.elemType)),
           Vector(index, default), Map())
     })
     rewrite(everywherebu(r))(expr)
@@ -139,6 +145,14 @@ class SigmaCompiler(settings: CompilerSettings) {
 }
 
 object SigmaCompiler {
+  /** Force initialization of reflection before any instance of SigmaCompiler is used. */
+  val _ = (InterpreterReflection, GraphIRReflection)
+
+  /** Constructs an instance for the given settings. */
   def apply(settings: CompilerSettings): SigmaCompiler =
     new SigmaCompiler(settings)
+
+  /** Constructs an instance for the given network type. */
+  def apply(networkPrefix: Byte): SigmaCompiler =
+    new SigmaCompiler(networkPrefix)
 }

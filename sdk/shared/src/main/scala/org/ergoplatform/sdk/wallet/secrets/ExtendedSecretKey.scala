@@ -1,13 +1,10 @@
 package org.ergoplatform.sdk.wallet.secrets
 
+import sigma.crypto.{BigIntegers, CryptoConstants, CryptoFacade}
+import sigma.data.ProveDlog
 import java.math.BigInteger
-import sigmastate.crypto.BigIntegers
-import sigmastate.crypto.DLogProtocol
 import sigmastate.crypto.DLogProtocol.DLogProverInput
-import sigmastate.crypto.CryptoConstants
-import sigmastate.crypto.CryptoFacade
-import sigmastate.serialization.SigmaSerializer
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import sigma.serialization.{SigmaByteReader, SigmaByteWriter, SigmaSerializer}
 
 /**
   * Secret, its chain code and path in key tree.
@@ -23,7 +20,7 @@ final class ExtendedSecretKey(/*private[secrets]*/ val keyBytes: Array[Byte],
 
   override def privateInput: DLogProverInput = DLogProverInput(BigIntegers.fromUnsignedByteArray(keyBytes))
 
-  def publicImage: DLogProtocol.ProveDlog = privateInput.publicImage
+  def publicImage: ProveDlog = privateInput.publicImage
 
   def child(idx: Int): ExtendedSecretKey = ExtendedSecretKey.deriveChildSecretKey(this, idx)
 

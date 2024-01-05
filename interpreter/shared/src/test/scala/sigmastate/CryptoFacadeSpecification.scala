@@ -5,7 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import scorex.util.encode.Base16
-import sigmastate.crypto.CryptoFacade
+import sigma.crypto.CryptoFacade
 
 import java.math.BigInteger
 

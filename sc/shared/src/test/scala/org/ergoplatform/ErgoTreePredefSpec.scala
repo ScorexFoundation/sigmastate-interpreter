@@ -8,18 +8,18 @@ import org.scalacheck.Gen
 import scorex.crypto.hash.Blake2b256
 import scorex.util.Random
 import sigma.Colls
+import sigma.ast._
+import sigma.ast.syntax.CollectionConstant
+import sigma.data.{AvlTreeData, Digest32Coll, ProveDlog, TrivialProp}
 import sigma.util.BenchmarkUtil.measure
-import sigmastate.Values.{ByteArrayConstant, CollectionConstant, ErgoTree, IntConstant, SigmaPropConstant}
 import sigmastate._
-import sigmastate.crypto.DLogProtocol.{DLogProverInput, ProveDlog}
+import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.interpreter.{ContextExtension, ProverResult}
-import sigmastate.lang.Terms.ValueOps
-import sigmastate.serialization.ValueSerializer
-import sigmastate.utxo.{ByIndex, ExtractCreationInfo, SelectField}
-import sigmastate.eval.Digest32Coll
+import sigma.ast.syntax.ValueOps
+import sigma.interpreter.{ContextExtension, ProverResult}
+import sigma.serialization.ValueSerializer
 import sigmastate.utils.Helpers._
 
 import scala.util.Try
@@ -92,7 +92,9 @@ class ErgoTreePredefSpec extends CompilerTestingCommons with CompilerCrossVersio
       // unable to satisfy R4 conditions
       checkSpending(remaining(height), height, prop, R4Prop(false)).isFailure shouldBe true
       // incorrect new script
-      checkSpending(remaining(height), height, TrivialProp.TrueProp, R4Prop(true)).isFailure shouldBe true
+      checkSpending(remaining(height), height,
+        ErgoTree.fromProposition(TrivialProp.TrueProp),
+        R4Prop(true)).isFailure shouldBe true
       // collect less coins then possible
       checkSpending(remaining(height) + 1, height, prop, R4Prop(true)).isSuccess shouldBe true
       // collect more coins then possible
@@ -188,7 +190,8 @@ class ErgoTreePredefSpec extends CompilerTestingCommons with CompilerCrossVersio
       createRewardTx(currentRate, height, correctProp).isSuccess shouldBe true
       createRewardTx(currentRate, height, incorrectDelay).isFailure shouldBe true
       createRewardTx(currentRate, height, incorrectPk).isFailure shouldBe true
-      createRewardTx(currentRate, height, minerPk).isFailure shouldBe true
+      createRewardTx(currentRate, height,
+        ErgoTree.fromSigmaBoolean(minerPk)).isFailure shouldBe true
     }
 
     def createRewardTx(emissionAmount: Long, nextHeight: Int, minerProp: ErgoTree): Try[ErgoLikeTransaction] = {

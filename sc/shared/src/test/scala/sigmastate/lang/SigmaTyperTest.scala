@@ -6,19 +6,20 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import sigma.Colls
-import sigmastate.SCollection._
-import sigmastate.Values._
+import sigma.ast.SCollection._
+import sigma.ast._
+import sigma.ast.syntax.{SValue, SigmaPropValue, SigmaPropValueOps}
+import sigma.crypto.CryptoConstants
+import sigma.data.ProveDlog
 import sigmastate._
-import sigmastate.crypto.CryptoConstants
-import sigmastate.crypto.DLogProtocol.{DLogProverInput, ProveDlog}
-import sigmastate.exceptions.TyperException
+import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.SigmaPredef._
-import sigmastate.lang.Terms._
-import sigmastate.lang.syntax.ParserException
-import sigmastate.serialization.ErgoTreeSerializer
-import sigmastate.serialization.generators.ObjectGenerators
-import sigmastate.utxo.{Append, ExtractCreationInfo}
+import SigmaPredef._
+import sigmastate.lang.parsers.ParserException
+import sigma.serialization.ErgoTreeSerializer
+import sigma.serialization.generators.ObjectGenerators
+import sigma.ast.Select
+import sigma.exceptions.TyperException
 
 class SigmaTyperTest extends AnyPropSpec
   with ScalaCheckPropertyChecks with Matchers with LangTests with ObjectGenerators {
@@ -638,7 +639,7 @@ class SigmaTyperTest extends AnyPropSpec
 
   property("substConst") {
     def script(pk: ProveDlog): SigmaPropValue =
-      AND(EQ(IntConstant(1), IntConstant(1)), SigmaPropConstant(pk).isProven).toSigmaProp
+      AND(EQ(IntConstant(1), IntConstant(1)), SigmaPropIsProven(SigmaPropConstant(pk))).toSigmaProp
 
     val pk1 = DLogProverInput.random().publicImage
     val pk2 = DLogProverInput.random().publicImage

@@ -1,48 +1,42 @@
 package special.sigma
 
-import java.math.BigInteger
+import org.ergoplatform.ErgoBox.AdditionalRegisters
 import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
+import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
-import sigma.data.{ExactIntegral, ExactNumeric, ExactOrdering, RType}
+import org.scalatest.BeforeAndAfterAll
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigma.util.Extensions._
-import sigmastate.utils.Extensions._
-import sigmastate.SCollection._
-import sigmastate.Values.IntConstant
+import scorex.util.ModifierId
+import sigma.Extensions.{ArrayOps, CollOps}
+import sigma.ast.SCollection._
+import sigma.ast._
+import sigma.ast.syntax._
+import sigma.data.RType._
+import sigma.data._
+import sigma.util.Extensions.{BooleanOps, IntOps, LongOps}
+import sigma.{VersionContext, ast, data, _}
+import ErgoTree.{HeaderType, ZeroHeader}
+import sigma.eval.{CostDetails, EvalSettings, Profiler, SigmaDsl, TracedCost}
 import sigmastate._
-import sigmastate.crypto.DLogProtocol._
-import sigmastate.Values._
-import sigmastate.lang.Terms.Apply
-import sigmastate.eval.Extensions._
+import sigmastate.eval.Extensions.AvlTreeOps
+import sigma.eval.Extensions.{ByteExt, IntExt, LongExt, ShortExt}
+import OrderingOps._
 import sigmastate.eval._
-import sigmastate.lang.Terms.{MethodCall, PropertyCall}
-import sigmastate.utxo._
-import sigma._
-import sigma.Extensions._
-import sigmastate.serialization.OpCodes.OpCode
+import sigmastate.helpers.TestingHelpers._
+import sigmastate.interpreter._
+import sigma.ast.{Apply, MethodCall, PropertyCall}
+import sigma.exceptions.InvalidType
+import sigma.serialization.ValueCodes.OpCode
+import sigmastate.utils.Extensions._
 import sigmastate.utils.Helpers
 import sigmastate.utils.Helpers._
-import sigmastate.helpers.TestingHelpers._
 
-import scala.util.{Failure, Success, Try}
-import OrderingOps._
-import org.ergoplatform.ErgoBox.AdditionalRegisters
-import org.scalacheck.Arbitrary._
-import org.scalacheck.Gen.frequency
-import org.scalatest.{BeforeAndAfterAll, Tag}
-import sigma.data.RType._
-import scorex.util.ModifierId
-import sigmastate.crypto.ProveDHTuple
-import sigmastate.interpreter._
-import org.scalactic.source.Position
-import sigma.VersionContext
-import sigmastate.helpers.SigmaPPrint
-import sigmastate.exceptions.GraphBuildingException
-
+import java.math.BigInteger
 import scala.collection.compat.immutable.ArraySeq
+import scala.util.{Failure, Success}
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to
   * the evaluation of the corresponding ErgoScript operation.
@@ -86,7 +80,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   implicit override val generatorDrivenConfig = PropertyCheckConfiguration(minSuccessful = 30)
 
-  val evalSettingsInTests = ErgoTreeEvaluator.DefaultEvalSettings.copy(
+  val evalSettingsInTests = CErgoTreeEvaluator.DefaultEvalSettings.copy(
     isMeasureOperationTime = true,
     isMeasureScriptTime = true,
     isLogEnabled = false, // don't commit the `true` value (travis log is too high)
@@ -97,7 +91,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       */
     costTracingEnabled = true,
 
-    profilerOpt = Some(ErgoTreeEvaluator.DefaultProfiler),
+    profilerOpt = Some(CErgoTreeEvaluator.DefaultProfiler),
     isTestRun = true
   )
 
@@ -180,7 +174,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       FixedCostItem(GetVar),
       FixedCostItem(OptionGet),
       FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-      SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10),  2),
+      ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10),  2),
       FixedCostItem(ValUse),
       FixedCostItem(SelectField),
       FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
@@ -674,7 +668,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(GetVar),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
         FixedCostItem(ValUse),
         FixedCostItem(LogicalNot),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -1066,7 +1060,6 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Byte methods equivalence (new features)") {
     lazy val toBytes = newFeature((x: Byte) => x.toBytes, "{ (x: Byte) => x.toBytes }")
-    lazy val toBits = newFeature((x: Byte) => x.toBits, "{ (x: Byte) => x.toBits }")
     lazy val toAbs = newFeature((x: Byte) => x.toAbs, "{ (x: Byte) => x.toAbs }")
     lazy val compareTo = newFeature(
       (x: (Byte, Byte)) => x._1.compareTo(x._2),
@@ -1081,7 +1074,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     "{ (x: (Byte, Byte)) => (x._1 & x._2).toByteExact }")
 
     forAll { x: Byte =>
-      Seq(toBytes, toBits, toAbs).foreach(f => f.checkEquality(x))
+      Seq(toBytes, toAbs).foreach(f => f.checkEquality(x))
     }
 
     forAll { x: (Byte, Byte) =>
@@ -1371,7 +1364,6 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Short methods equivalence (new features)") {
     lazy val toBytes = newFeature((x: Short) => x.toBytes, "{ (x: Short) => x.toBytes }")
-    lazy val toBits = newFeature((x: Short) => x.toBits, "{ (x: Short) => x.toBits }")
     lazy val toAbs = newFeature((x: Short) => x.toAbs, "{ (x: Short) => x.toAbs }")
 
     lazy val compareTo = newFeature((x: (Short, Short)) => x._1.compareTo(x._2),
@@ -1386,7 +1378,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     "{ (x: (Short, Short)) => x._1 & x._2 }")
 
     forAll { x: Short =>
-      Seq(toBytes, toBits, toAbs).foreach(_.checkEquality(x))
+      Seq(toBytes, toAbs).foreach(_.checkEquality(x))
     }
     forAll { x: (Short, Short) =>
       Seq(compareTo, bitOr, bitAnd).foreach(_.checkEquality(x))
@@ -1675,7 +1667,6 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Int methods equivalence (new features)") {
     lazy val toBytes = newFeature((x: Int) => x.toBytes, "{ (x: Int) => x.toBytes }")
-    lazy val toBits = newFeature((x: Int) => x.toBits, "{ (x: Int) => x.toBits }")
     lazy val toAbs = newFeature((x: Int) => x.toAbs, "{ (x: Int) => x.toAbs }")
     lazy val compareTo = newFeature((x: (Int, Int)) => x._1.compareTo(x._2),
       "{ (x: (Int, Int)) => x._1.compareTo(x._2) }")
@@ -1689,7 +1680,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     "{ (x: (Int, Int)) => x._1 & x._2 }")
 
     forAll { x: Int =>
-      Seq(toBytes, toBits, toAbs).foreach(_.checkEquality(x))
+      Seq(toBytes, toAbs).foreach(_.checkEquality(x))
     }
     forAll { x: (Int, Int) =>
       Seq(compareTo, bitOr, bitAnd).foreach(_.checkEquality(x))
@@ -1995,9 +1986,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("Long methods equivalence (new features)") {
     lazy val toBytes = newFeature((x: Long) => x.toBytes, "{ (x: Long) => x.toBytes }")
-    lazy val toBits = newFeature((x: Long) => x.toBits, "{ (x: Long) => x.toBits }")
     lazy val toAbs = newFeature((x: Long) => x.toAbs, "{ (x: Long) => x.toAbs }")
-
     lazy val compareTo = newFeature((x: (Long, Long)) => x._1.compareTo(x._2),
       "{ (x: (Long, Long)) => x._1.compareTo(x._2) }")
 
@@ -2010,7 +1999,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     "{ (x: (Long, Long)) => x._1 & x._2 }")
 
     forAll { x: Long =>
-      Seq(toBytes, toBits, toAbs).foreach(_.checkEquality(x))
+      Seq(toBytes, toAbs).foreach(_.checkEquality(x))
     }
     forAll { x: (Long, Long) =>
       Seq(compareTo, bitOr, bitAnd).foreach(_.checkEquality(x))
@@ -2309,7 +2298,6 @@ class SigmaDslSpecification extends SigmaDslTesting
       FuncValue(Vector((1, SBigInt)), Downcast(ValUse(1, SBigInt), SLong)))
 
     lazy val toBytes = newFeature((x: BigInt) => x.toBytes, "{ (x: BigInt) => x.toBytes }")
-    lazy val toBits = newFeature((x: BigInt) => x.toBits, "{ (x: BigInt) => x.toBits }")
     lazy val toAbs = newFeature((x: BigInt) => x.toAbs, "{ (x: BigInt) => x.toAbs }")
 
     lazy val compareTo = newFeature((x: (BigInt, BigInt)) => x._1.compareTo(x._2),
@@ -2322,7 +2310,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     "{ (x: (BigInt, BigInt)) => x._1 & x._2 }")
 
     forAll { x: BigInt =>
-      Seq(toByte, toShort, toInt, toLong, toBytes, toBits, toAbs).foreach(_.checkEquality(x))
+      Seq(toByte, toShort, toInt, toLong, toBytes, toAbs).foreach(_.checkEquality(x))
     }
     forAll { x: (BigInt, BigInt) =>
       Seq(compareTo, bitOr, bitAnd).foreach(_.checkEquality(x))
@@ -2354,7 +2342,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   property("NEQ of pre-defined types") {
     verifyNeq(ge1, ge2, 1783, Array[CostItem](FixedCostItem(NamedDesc("EQ_GroupElement"), FixedCost(JitCost(172)))), 1783)(_.asInstanceOf[CGroupElement].copy())
     verifyNeq(t1, t2, 1767, Array[CostItem](FixedCostItem(NamedDesc("EQ_AvlTree"), FixedCost(JitCost(6)))), 1767)(_.asInstanceOf[CAvlTree].copy())
-    verifyNeq(b1, b2, 1767, Array[CostItem](), 1767)(_.asInstanceOf[CostingBox].copy())
+    verifyNeq(b1, b2, 1767, Array[CostItem](), 1767)(_.asInstanceOf[CBox].copy())
     verifyNeq(preH1, preH2, 1766, Array[CostItem](FixedCostItem(NamedDesc("EQ_PreHeader"), FixedCost(JitCost(4)))), 1766)(_.asInstanceOf[CPreHeader].copy())
     verifyNeq(h1, h2, 1767, Array[CostItem](FixedCostItem(NamedDesc("EQ_Header"), FixedCost(JitCost(6)))), 1767)(_.asInstanceOf[CHeader].copy())
   }
@@ -2504,14 +2492,14 @@ class SigmaDslSpecification extends SigmaDslTesting
     )
     val collNeqCost2 = Array(
       FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
-      SeqCostItem(NamedDesc("EQ_COA_Box"), PerItemCost(JitCost(15), JitCost(5), 1), 0)
+      ast.SeqCostItem(NamedDesc("EQ_COA_Box"), PerItemCost(JitCost(15), JitCost(5), 1), 0)
     )
     implicit val evalSettings = suite.evalSettings.copy(isMeasureOperationTime = false)
     verifyNeq(Coll[Byte](), Coll(1.toByte), 1766, collNeqCost1, 1766)(cloneColl(_))
     verifyNeq(Coll[Byte](0, 1), Coll(1.toByte, 1.toByte), 1768,
       Array(
         FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
-        SeqCostItem(NamedDesc("EQ_COA_Byte"), PerItemCost(JitCost(15), JitCost(2), 128), 1)),
+        ast.SeqCostItem(NamedDesc("EQ_COA_Byte"), PerItemCost(JitCost(15), JitCost(2), 128), 1)),
       1768
     )(cloneColl(_))
 
@@ -2519,7 +2507,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyNeq(Coll[Short](0), Coll(1.toShort), 1768,
       Array(
         FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
-        SeqCostItem(NamedDesc("EQ_COA_Short"), PerItemCost(JitCost(15), JitCost(2), 96), 1)),
+        ast.SeqCostItem(NamedDesc("EQ_COA_Short"), PerItemCost(JitCost(15), JitCost(2), 96), 1)),
       1768
     )(cloneColl(_))
 
@@ -2527,7 +2515,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyNeq(Coll[Int](0), Coll(1), 1768,
       Array(
         FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
-        SeqCostItem(NamedDesc("EQ_COA_Int"), PerItemCost(JitCost(15), JitCost(2), 64), 1)),
+        ast.SeqCostItem(NamedDesc("EQ_COA_Int"), PerItemCost(JitCost(15), JitCost(2), 64), 1)),
       1768
     )(cloneColl(_))
 
@@ -2535,7 +2523,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyNeq(Coll[Long](0), Coll(1.toLong), 1768,
       Array(
         FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
-        SeqCostItem(NamedDesc("EQ_COA_Long"), PerItemCost(JitCost(15), JitCost(2), 48), 1)),
+        ast.SeqCostItem(NamedDesc("EQ_COA_Long"), PerItemCost(JitCost(15), JitCost(2), 48), 1)),
       1768
     )(cloneColl(_))
 
@@ -2544,7 +2532,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyNeq(Coll[BigInt](0.toBigInt), Coll(1.toBigInt), 1768,
       Array(
         FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
-        SeqCostItem(NamedDesc("EQ_COA_BigInt"), PerItemCost(JitCost(15), JitCost(7), 5), 1)),
+        ast.SeqCostItem(NamedDesc("EQ_COA_BigInt"), PerItemCost(JitCost(15), JitCost(7), 5), 1)),
       1768
     )(cloneColl(_))
 
@@ -2553,7 +2541,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyNeq(Coll[GroupElement](ge1), Coll(ge2), 1768,
       Array(
         FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
-        SeqCostItem(NamedDesc("EQ_COA_GroupElement"), PerItemCost(JitCost(15), JitCost(5), 1), 1)),
+        ast.SeqCostItem(NamedDesc("EQ_COA_GroupElement"), PerItemCost(JitCost(15), JitCost(5), 1), 1)),
       1768
     )(cloneColl(_))
 
@@ -2562,7 +2550,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyNeq(Coll[AvlTree](t1), Coll(t2), 1768,
       Array(
         FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
-        SeqCostItem(NamedDesc("EQ_COA_AvlTree"), PerItemCost(JitCost(15), JitCost(5), 2), 1)),
+        ast.SeqCostItem(NamedDesc("EQ_COA_AvlTree"), PerItemCost(JitCost(15), JitCost(5), 2), 1)),
       1768
     )(cloneColl(_))
 
@@ -2583,7 +2571,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       verifyNeq(Coll[Box](b1), Coll(b2), 1768,
         Array(
           FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
-          SeqCostItem(NamedDesc("EQ_COA_Box"), PerItemCost(JitCost(15), JitCost(5), 1), 1)),
+          ast.SeqCostItem(NamedDesc("EQ_COA_Box"), PerItemCost(JitCost(15), JitCost(5), 1), 1)),
         1768
       )(cloneColl(_), generateCases = false)
     }
@@ -2593,7 +2581,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyNeq(Coll[PreHeader](preH1), Coll(preH2), 1768,
       Array(
         FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
-        SeqCostItem(NamedDesc("EQ_COA_PreHeader"), PerItemCost(JitCost(15), JitCost(3), 1), 1)),
+        ast.SeqCostItem(NamedDesc("EQ_COA_PreHeader"), PerItemCost(JitCost(15), JitCost(3), 1), 1)),
       1768
     )(cloneColl(_))
 
@@ -2602,7 +2590,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyNeq(Coll[Header](h1), Coll(h2), 1768,
       Array(
         FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
-        SeqCostItem(NamedDesc("EQ_COA_Header"), PerItemCost(JitCost(15), JitCost(5), 1), 1)),
+        ast.SeqCostItem(NamedDesc("EQ_COA_Header"), PerItemCost(JitCost(15), JitCost(5), 1), 1)),
       1768
     )(cloneColl(_))
   }
@@ -2619,13 +2607,13 @@ class SigmaDslSpecification extends SigmaDslTesting
     val nestedNeq2 = Array(
       FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
       FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
-      SeqCostItem(NamedDesc("EQ_Coll"), PerItemCost(JitCost(10), JitCost(2), 1), 1)
+      ast.SeqCostItem(NamedDesc("EQ_Coll"), PerItemCost(JitCost(10), JitCost(2), 1), 1)
     )
     val nestedNeq3 = Array(
       FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
       FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
-      SeqCostItem(NamedDesc("EQ_COA_Int"), PerItemCost(JitCost(15), JitCost(2), 64), 1),
-      SeqCostItem(NamedDesc("EQ_Coll"), PerItemCost(JitCost(10), JitCost(2), 1), 1)
+      ast.SeqCostItem(NamedDesc("EQ_COA_Int"), PerItemCost(JitCost(15), JitCost(2), 64), 1),
+      ast.SeqCostItem(NamedDesc("EQ_Coll"), PerItemCost(JitCost(10), JitCost(2), 1), 1)
     )
     verifyNeq(Coll[Coll[Int]](), Coll(Coll[Int]()), 1766, nestedNeq1, 1766)(cloneColl(_))
     verifyNeq(Coll(Coll[Int]()), Coll(Coll[Int](1)), 1767, nestedNeq2, 1767)(cloneColl(_))
@@ -2641,8 +2629,8 @@ class SigmaDslSpecification extends SigmaDslTesting
       FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
       FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))),
       FixedCostItem(NamedDesc("EQ_BigInt"), FixedCost(JitCost(5))),
-      SeqCostItem(NamedDesc("EQ_Coll"), PerItemCost(JitCost(10), JitCost(2), 1), 1),
-      SeqCostItem(NamedDesc("EQ_Coll"), PerItemCost(JitCost(10), JitCost(2), 1), 1)
+      ast.SeqCostItem(NamedDesc("EQ_Coll"), PerItemCost(JitCost(10), JitCost(2), 1), 1),
+      ast.SeqCostItem(NamedDesc("EQ_Coll"), PerItemCost(JitCost(10), JitCost(2), 1), 1)
     )
     val nestedNeq5 = Array(
       FixedCostItem(NamedDesc("MatchType"), FixedCost(JitCost(1))),
@@ -2651,9 +2639,9 @@ class SigmaDslSpecification extends SigmaDslTesting
       FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
       FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))),
       FixedCostItem(NamedDesc("EQ_BigInt"), FixedCost(JitCost(5))),
-      SeqCostItem(NamedDesc("EQ_Coll"), PerItemCost(JitCost(10), JitCost(2), 1), 1),
-      SeqCostItem(NamedDesc("EQ_Coll"), PerItemCost(JitCost(10), JitCost(2), 1), 1),
-      SeqCostItem(NamedDesc("EQ_Coll"), PerItemCost(JitCost(10), JitCost(2), 1), 1)
+      ast.SeqCostItem(NamedDesc("EQ_Coll"), PerItemCost(JitCost(10), JitCost(2), 1), 1),
+      ast.SeqCostItem(NamedDesc("EQ_Coll"), PerItemCost(JitCost(10), JitCost(2), 1), 1),
+      ast.SeqCostItem(NamedDesc("EQ_Coll"), PerItemCost(JitCost(10), JitCost(2), 1), 1)
     )
     val nestedNeq6 = Array(
       FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
@@ -2669,9 +2657,9 @@ class SigmaDslSpecification extends SigmaDslTesting
       FixedCostItem(NamedDesc("EQ_Tuple"), FixedCost(JitCost(4))),
       FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))),
       FixedCostItem(NamedDesc("EQ_BigInt"), FixedCost(JitCost(5))),
-      SeqCostItem(NamedDesc("EQ_Coll"), PerItemCost(JitCost(10), JitCost(2), 1), 2),
-      SeqCostItem(NamedDesc("EQ_Coll"), PerItemCost(JitCost(10), JitCost(2), 1), 1),
-      SeqCostItem(NamedDesc("EQ_Coll"), PerItemCost(JitCost(10), JitCost(2), 1), 1)
+      ast.SeqCostItem(NamedDesc("EQ_Coll"), PerItemCost(JitCost(10), JitCost(2), 1), 2),
+      ast.SeqCostItem(NamedDesc("EQ_Coll"), PerItemCost(JitCost(10), JitCost(2), 1), 1),
+      ast.SeqCostItem(NamedDesc("EQ_Coll"), PerItemCost(JitCost(10), JitCost(2), 1), 1)
     )
     verifyNeq(Coll(Coll((1, 10.toBigInt))), Coll(Coll((1, 11.toBigInt))), 1770, nestedNeq4, 1770)(cloneColl(_))
     verifyNeq(Coll(Coll(Coll((1, 10.toBigInt)))), Coll(Coll(Coll((1, 11.toBigInt)))), 1771, nestedNeq5, 1771)(cloneColl(_))
@@ -2695,7 +2683,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   property("GroupElement.getEncoded equivalence") {
     verifyCases(
     {
-      def success[T](v: T) = Expected(Success(v), 1790, methodCostDetails(SGroupElement.GetEncodedMethod, 250), 1790)
+      def success[T](v: T) = Expected(Success(v), 1790, methodCostDetails(SGroupElementMethods.GetEncodedMethod, 250), 1790)
       Seq(
         (ge1, success(Helpers.decodeBytes(ge1str))),
         (ge2, success(Helpers.decodeBytes(ge2str))),
@@ -2710,7 +2698,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       "{ (x: GroupElement) => x.getEncoded }",
       FuncValue(
         Vector((1, SGroupElement)),
-        MethodCall(ValUse(1, SGroupElement), SGroupElement.getMethodByName("getEncoded"), Vector(), Map())
+        MethodCall(ValUse(1, SGroupElement), SGroupElementMethods.getMethodByName("getEncoded"), Vector(), Map())
       )))
   }
 
@@ -2720,7 +2708,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       val costDetails = TracedCost(
         traceBase ++ Array(
           FixedCostItem(PropertyCall),
-          FixedCostItem(MethodDesc(SGroupElement.GetEncodedMethod), FixedCost(JitCost(250))),
+          FixedCostItem(MethodDesc(SGroupElementMethods.GetEncodedMethod), FixedCost(JitCost(250))),
           FixedCostItem(DecodePoint),
           FixedCostItem(ValUse),
           FixedCostItem(NamedDesc("EQ_GroupElement"), FixedCost(JitCost(172)))
@@ -2743,7 +2731,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         DecodePoint(
           MethodCall.typed[Value[SCollection[SByte.type]]](
             ValUse(1, SGroupElement),
-            SGroupElement.getMethodByName("getEncoded"),
+            SGroupElementMethods.getMethodByName("getEncoded"),
             Vector(),
             Map()
           )
@@ -2756,7 +2744,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   property("GroupElement.negate equivalence") {
     verifyCases(
     {
-      def success[T](v: T) = Expected(Success(v), 1785, methodCostDetails(SGroupElement.NegateMethod, 45), 1785)
+      def success[T](v: T) = Expected(Success(v), 1785, methodCostDetails(SGroupElementMethods.NegateMethod, 45), 1785)
       Seq(
         (ge1, success(Helpers.decodeGroupElement("02358d53f01276211f92d0aefbd278805121d4ff6eb534b777af1ee8abae5b2056"))),
         (ge2, success(Helpers.decodeGroupElement("03dba7b94b111f3894e2f9120b577da595ec7d58d488485adf73bf4e153af63575"))),
@@ -2769,7 +2757,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     "{ (x: GroupElement) => x.negate }",
     FuncValue(
       Vector((1, SGroupElement)),
-      MethodCall(ValUse(1, SGroupElement), SGroupElement.getMethodByName("negate"), Vector(), Map())
+      MethodCall(ValUse(1, SGroupElement), SGroupElementMethods.getMethodByName("negate"), Vector(), Map())
     )))
   }
 
@@ -2822,7 +2810,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           FixedCostItem(MethodCall),
           FixedCostItem(ValUse),
           FixedCostItem(SelectField),
-          FixedCostItem(SGroupElement.ExponentiateMethod, FixedCost(JitCost(900)))
+          FixedCostItem(SGroupElementMethods.ExponentiateMethod, FixedCost(JitCost(900)))
         )
       )
       verifyCases(cases(1873, costDetails),
@@ -2836,7 +2824,7 @@ class SigmaDslSpecification extends SigmaDslTesting
                 ValUse(1, STuple(Vector(SGroupElement, SBigInt))),
                 1.toByte
               ),
-              SGroupElement.getMethodByName("exp"),
+              SGroupElementMethods.getMethodByName("exp"),
               Vector(
                 SelectField.typed[Value[SBigInt.type]](
                   ValUse(1, STuple(Vector(SGroupElement, SBigInt))),
@@ -2868,7 +2856,7 @@ class SigmaDslSpecification extends SigmaDslTesting
                 FixedCostItem(MethodCall),
                 FixedCostItem(ValUse),
                 FixedCostItem(SelectField),
-                FixedCostItem(SGroupElement.MultiplyMethod, FixedCost(JitCost(40)))
+                FixedCostItem(SGroupElementMethods.MultiplyMethod, FixedCost(JitCost(40)))
               )
           )
         )
@@ -2908,7 +2896,7 @@ class SigmaDslSpecification extends SigmaDslTesting
                 ValUse(1, SPair(SGroupElement, SGroupElement)),
                 1.toByte
               ),
-              SGroupElement.getMethodByName("multiply"),
+              SGroupElementMethods.getMethodByName("multiply"),
               Vector(
                 SelectField.typed[Value[SGroupElement.type]](
                   ValUse(1, SPair(SGroupElement, SGroupElement)),
@@ -2927,7 +2915,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         Vector((1, SAvlTree)),
         MethodCall(
           ValUse(1, SAvlTree),
-          SAvlTree.getMethodByName(propName),
+          SAvlTreeMethods.getMethodByName(propName),
           Vector(),
           Map()
         )
@@ -2935,7 +2923,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     }
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 1767, methodCostDetails(SAvlTree.digestMethod, 15), 1767)
+        def success[T](v: T) = Expected(Success(v), 1767, methodCostDetails(SAvlTreeMethods.digestMethod, 15), 1767)
         Seq(
           (t1, success(Helpers.decodeBytes("000183807f66b301530120ff7fc6bd6601ff01ff7f7d2bedbbffff00187fe89094"))),
           (t2, success(Helpers.decodeBytes("ff000d937f80ffd731ed802d24358001ff8080ff71007f00ad37e0a7ae43fff95b"))),
@@ -2948,7 +2936,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 1765, methodCostDetails(SAvlTree.enabledOperationsMethod, 15), 1765)
+        def success[T](v: T) = Expected(Success(v), 1765, methodCostDetails(SAvlTreeMethods.enabledOperationsMethod, 15), 1765)
         Seq(
           (t1, success(6.toByte)),
           (t2, success(0.toByte)),
@@ -2961,7 +2949,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 1765, methodCostDetails(SAvlTree.keyLengthMethod, 15), 1765)
+        def success[T](v: T) = Expected(Success(v), 1765, methodCostDetails(SAvlTreeMethods.keyLengthMethod, 15), 1765)
         Seq(
           (t1, success(1)),
           (t2, success(32)),
@@ -2974,7 +2962,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T, newCost: Int) = Expected(Success(v), newCost, methodCostDetails(SAvlTree.valueLengthOptMethod, 15), newCost)
+        def success[T](v: T, newCost: Int) = Expected(Success(v), newCost, methodCostDetails(SAvlTreeMethods.valueLengthOptMethod, 15), newCost)
         Seq(
           (t1, success(Some(1), 1766)),
           (t2, success(Some(64), 1766)),
@@ -2987,7 +2975,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 1765, methodCostDetails(SAvlTree.isInsertAllowedMethod, 15), 1765)
+        def success[T](v: T) = Expected(Success(v), 1765, methodCostDetails(SAvlTreeMethods.isInsertAllowedMethod, 15), 1765)
         Seq(
           (t1, success(false)),
           (t2, success(false)),
@@ -3000,7 +2988,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 1765, methodCostDetails(SAvlTree.isUpdateAllowedMethod, 15), 1765)
+        def success[T](v: T) = Expected(Success(v), 1765, methodCostDetails(SAvlTreeMethods.isUpdateAllowedMethod, 15), 1765)
         Seq(
           (t1, success(true)),
           (t2, success(false)),
@@ -3013,7 +3001,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     verifyCases(
       {
-        def success[T](v: T) = Expected(Success(v), 1765, methodCostDetails(SAvlTree.isRemoveAllowedMethod, 15), 1765)
+        def success[T](v: T) = Expected(Success(v), 1765, methodCostDetails(SAvlTreeMethods.isRemoveAllowedMethod, 15), 1765)
         Seq(
           (t1, success(true)),
           (t2, success(false)),
@@ -3055,7 +3043,7 @@ class SigmaDslSpecification extends SigmaDslTesting
               ),
               1.toByte
             ),
-            SAvlTree.getMethodByName("contains"),
+            SAvlTreeMethods.getMethodByName("contains"),
             Vector(
               SelectField.typed[Value[SCollection[SByte.type]]](
                 ValUse(3, STuple(Vector(SCollectionType(SByte), SCollectionType(SByte)))),
@@ -3099,7 +3087,7 @@ class SigmaDslSpecification extends SigmaDslTesting
               ),
               1.toByte
             ),
-            SAvlTree.getMethodByName("get"),
+            SAvlTreeMethods.getMethodByName("get"),
             Vector(
               SelectField.typed[Value[SCollection[SByte.type]]](
                 ValUse(3, STuple(Vector(SCollectionType(SByte), SCollectionType(SByte)))),
@@ -3162,7 +3150,7 @@ class SigmaDslSpecification extends SigmaDslTesting
               ),
               1.toByte
             ),
-            SAvlTree.getMethodByName("getMany"),
+            SAvlTreeMethods.getMethodByName("getMany"),
             Vector(
               SelectField.typed[Value[SCollection[SCollection[SByte.type]]]](
                 ValUse(3, STuple(Vector(SCollectionType(SCollectionType(SByte)), SCollectionType(SByte)))),
@@ -3188,7 +3176,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             ValUse(1, STuple(Vector(SAvlTree, SCollectionType(SByte)))),
             1.toByte
           ),
-          SAvlTree.getMethodByName("updateDigest"),
+          SAvlTreeMethods.getMethodByName("updateDigest"),
           Vector(
             SelectField.typed[Value[SCollection[SByte.type]]](
               ValUse(1, STuple(Vector(SAvlTree, SCollectionType(SByte)))),
@@ -3205,7 +3193,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         Vector((1, STuple(Vector(SAvlTree, SByte)))),
         MethodCall.typed[Value[SAvlTree.type]](
           SelectField.typed[Value[SAvlTree.type]](ValUse(1, STuple(Vector(SAvlTree, SByte))), 1.toByte),
-          SAvlTree.getMethodByName("updateOperations"),
+          SAvlTreeMethods.getMethodByName("updateOperations"),
           Vector(
             SelectField.typed[Value[SByte.type]](ValUse(1, STuple(Vector(SAvlTree, SByte))), 2.toByte)
           ),
@@ -3248,7 +3236,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           FixedCostItem(GetVar),
           FixedCostItem(OptionGet),
           FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-          SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+          ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
           FixedCostItem(ValUse),
           FixedCostItem(SelectField),
           FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -3259,12 +3247,12 @@ class SigmaDslSpecification extends SigmaDslTesting
           FixedCostItem(SelectField),
           FixedCostItem(ValUse),
           FixedCostItem(SelectField),
-          SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 456),
-          SeqCostItem(NamedDesc("LookupAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 3),
-          SeqCostItem(NamedDesc("LookupAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 3),
-          SeqCostItem(NamedDesc("LookupAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 3),
-          SeqCostItem(NamedDesc("LookupAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 3),
-          SeqCostItem(NamedDesc("LookupAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 3)
+          ast.SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 456),
+          ast.SeqCostItem(NamedDesc("LookupAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 3),
+          ast.SeqCostItem(NamedDesc("LookupAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 3),
+          ast.SeqCostItem(NamedDesc("LookupAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 3),
+          ast.SeqCostItem(NamedDesc("LookupAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 3),
+          ast.SeqCostItem(NamedDesc("LookupAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 3)
         )
       )
 
@@ -3295,7 +3283,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           FixedCostItem(GetVar),
           FixedCostItem(OptionGet),
           FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-          SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+          ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
           FixedCostItem(ValUse),
           FixedCostItem(SelectField),
           FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -3306,8 +3294,8 @@ class SigmaDslSpecification extends SigmaDslTesting
           FixedCostItem(SelectField),
           FixedCostItem(ValUse),
           FixedCostItem(SelectField),
-          SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), i),
-          SeqCostItem(NamedDesc("LookupAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 1)
+          ast.SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), i),
+          ast.SeqCostItem(NamedDesc("LookupAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 1)
         )
       )
 
@@ -3323,7 +3311,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           FixedCostItem(MethodCall),
           FixedCostItem(ValUse),
           FixedCostItem(SelectField),
-          FixedCostItem(SAvlTree.updateDigestMethod, FixedCost(JitCost(40)))
+          FixedCostItem(SAvlTreeMethods.updateDigestMethod, FixedCost(JitCost(40)))
         )
       )
 
@@ -3339,7 +3327,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           FixedCostItem(MethodCall),
           FixedCostItem(ValUse),
           FixedCostItem(SelectField),
-          FixedCostItem(SAvlTree.updateOperationsMethod, FixedCost(JitCost(45)))
+          FixedCostItem(SAvlTreeMethods.updateOperationsMethod, FixedCost(JitCost(45)))
         )
       )
 
@@ -3473,7 +3461,7 @@ class SigmaDslSpecification extends SigmaDslTesting
               ),
               1.toByte
             ),
-            SAvlTree.getMethodByName("insert"),
+            SAvlTreeMethods.getMethodByName("insert"),
             Vector(
               SelectField.typed[Value[SCollection[STuple]]](
                 ValUse(
@@ -3501,7 +3489,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       FixedCostItem(GetVar),
       FixedCostItem(OptionGet),
       FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-      SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+      ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
       FixedCostItem(ValUse),
       FixedCostItem(SelectField),
       FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -3512,14 +3500,14 @@ class SigmaDslSpecification extends SigmaDslTesting
       FixedCostItem(SelectField),
       FixedCostItem(ValUse),
       FixedCostItem(SelectField),
-      FixedCostItem(SAvlTree.isInsertAllowedMethod, FixedCost(JitCost(15)))
+      FixedCostItem(SAvlTreeMethods.isInsertAllowedMethod, FixedCost(JitCost(15)))
     )
     val costDetails1 = TracedCost(testTraceBase)
     val costDetails2 = TracedCost(
       testTraceBase ++ Array(
-        SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 70),
-        SeqCostItem(NamedDesc("InsertIntoAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 1),
-        FixedCostItem(SAvlTree.updateDigestMethod, FixedCost(JitCost(40)))
+        ast.SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 70),
+        ast.SeqCostItem(NamedDesc("InsertIntoAvlTree"), PerItemCost(JitCost(40), JitCost(10), 1), 1),
+        FixedCostItem(SAvlTreeMethods.updateDigestMethod, FixedCost(JitCost(40)))
       )
     )
 
@@ -3611,7 +3599,7 @@ class SigmaDslSpecification extends SigmaDslTesting
               ),
               1.toByte
             ),
-            SAvlTree.getMethodByName("update"),
+            SAvlTreeMethods.getMethodByName("update"),
             Vector(
               SelectField.typed[Value[SCollection[STuple]]](
                 ValUse(
@@ -3639,7 +3627,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       FixedCostItem(GetVar),
       FixedCostItem(OptionGet),
       FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-      SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+      ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
       FixedCostItem(ValUse),
       FixedCostItem(SelectField),
       FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -3650,20 +3638,20 @@ class SigmaDslSpecification extends SigmaDslTesting
       FixedCostItem(SelectField),
       FixedCostItem(ValUse),
       FixedCostItem(SelectField),
-      FixedCostItem(SAvlTree.isUpdateAllowedMethod, FixedCost(JitCost(15)))
+      FixedCostItem(SAvlTreeMethods.isUpdateAllowedMethod, FixedCost(JitCost(15)))
     )
     val costDetails1 = TracedCost(testTraceBase)
     val costDetails2 = TracedCost(
       testTraceBase ++ Array(
-        SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 111),
-        SeqCostItem(NamedDesc("UpdateAvlTree"), PerItemCost(JitCost(120), JitCost(20), 1), 1),
-        FixedCostItem(SAvlTree.updateDigestMethod, FixedCost(JitCost(40)))
+        ast.SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 111),
+        ast.SeqCostItem(NamedDesc("UpdateAvlTree"), PerItemCost(JitCost(120), JitCost(20), 1), 1),
+        FixedCostItem(SAvlTreeMethods.updateDigestMethod, FixedCost(JitCost(40)))
       )
     )
     val costDetails3 = TracedCost(
       testTraceBase ++ Array(
-        SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 111),
-        SeqCostItem(NamedDesc("UpdateAvlTree"), PerItemCost(JitCost(120), JitCost(20), 1), 1)
+        ast.SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 111),
+        ast.SeqCostItem(NamedDesc("UpdateAvlTree"), PerItemCost(JitCost(120), JitCost(20), 1), 1)
       )
     )
 
@@ -3746,7 +3734,7 @@ class SigmaDslSpecification extends SigmaDslTesting
               ValUse(1, STuple(Vector(SAvlTree, STuple(Vector(SByteArray2, SByteArray))))),
               1.toByte
             ),
-            SAvlTree.getMethodByName("remove"),
+            SAvlTreeMethods.getMethodByName("remove"),
             Vector(
               SelectField.typed[Value[SCollection[SCollection[SByte.type]]]](
                 ValUse(3, STuple(Vector(SByteArray2, SByteArray))),
@@ -3768,7 +3756,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       FixedCostItem(GetVar),
       FixedCostItem(OptionGet),
       FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-      SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+      ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
       FixedCostItem(ValUse),
       FixedCostItem(SelectField),
       FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -3779,31 +3767,31 @@ class SigmaDslSpecification extends SigmaDslTesting
       FixedCostItem(SelectField),
       FixedCostItem(ValUse),
       FixedCostItem(SelectField),
-      FixedCostItem(SAvlTree.isRemoveAllowedMethod, FixedCost(JitCost(15)))
+      FixedCostItem(SAvlTreeMethods.isRemoveAllowedMethod, FixedCost(JitCost(15)))
     )
     val costDetails1 = TracedCost(
       testTraceBase ++ Array(
-        SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 436),
-        SeqCostItem(NamedDesc("RemoveAvlTree"), PerItemCost(JitCost(100), JitCost(15), 1), 3),
-        SeqCostItem(NamedDesc("RemoveAvlTree"), PerItemCost(JitCost(100), JitCost(15), 1), 3),
-        FixedCostItem(SAvlTree.digestMethod, FixedCost(JitCost(15))),
-        FixedCostItem(SAvlTree.updateDigestMethod, FixedCost(JitCost(40)))
+        ast.SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 436),
+        ast.SeqCostItem(NamedDesc("RemoveAvlTree"), PerItemCost(JitCost(100), JitCost(15), 1), 3),
+        ast.SeqCostItem(NamedDesc("RemoveAvlTree"), PerItemCost(JitCost(100), JitCost(15), 1), 3),
+        FixedCostItem(SAvlTreeMethods.digestMethod, FixedCost(JitCost(15))),
+        FixedCostItem(SAvlTreeMethods.updateDigestMethod, FixedCost(JitCost(40)))
       )
     )
     val costDetails2 = TracedCost(
       testTraceBase ++ Array(
-        SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 140),
-        SeqCostItem(NamedDesc("RemoveAvlTree"), PerItemCost(JitCost(100), JitCost(15), 1), 1),
-        FixedCostItem(SAvlTree.digestMethod, FixedCost(JitCost(15))),
-        FixedCostItem(SAvlTree.updateDigestMethod, FixedCost(JitCost(40)))
+        ast.SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 140),
+        ast.SeqCostItem(NamedDesc("RemoveAvlTree"), PerItemCost(JitCost(100), JitCost(15), 1), 1),
+        FixedCostItem(SAvlTreeMethods.digestMethod, FixedCost(JitCost(15))),
+        FixedCostItem(SAvlTreeMethods.updateDigestMethod, FixedCost(JitCost(40)))
       )
     )
     val costDetails3 = TracedCost(testTraceBase)
     val costDetails4 = TracedCost(
       testTraceBase ++ Array(
-        SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 140),
-        SeqCostItem(NamedDesc("RemoveAvlTree"), PerItemCost(JitCost(100), JitCost(15), 1), 1),
-        FixedCostItem(SAvlTree.digestMethod, FixedCost(JitCost(15)))
+        ast.SeqCostItem(NamedDesc("CreateAvlVerifier"), PerItemCost(JitCost(110), JitCost(20), 64), 140),
+        ast.SeqCostItem(NamedDesc("RemoveAvlTree"), PerItemCost(JitCost(100), JitCost(15), 1), 1),
+        FixedCostItem(SAvlTreeMethods.digestMethod, FixedCost(JitCost(15)))
       )
     )
 
@@ -4047,8 +4035,8 @@ class SigmaDslSpecification extends SigmaDslTesting
         b1 -> Expected(Success(Coll[(Coll[Byte], Long)](
           (Helpers.decodeBytes("6e789ab7b2fffff12280a6cd01557f6fb22b7f80ff7aff8e1f7f15973d7f0001"), 10000000L),
           (Helpers.decodeBytes("a3ff007f00057600808001ff8f8000019000ffdb806fff7cc0b6015eb37fa600"), 500L)
-          ).map(identity)), 1772, methodCostDetails(SBox.tokensMethod, 15), 1772),
-        b2 -> Expected(Success(Coll[(Coll[Byte], Long)]().map(identity)), 1766, methodCostDetails(SBox.tokensMethod, 15), 1766)
+          ).map(identity)), 1772, methodCostDetails(SBoxMethods.tokensMethod, 15), 1772),
+        b2 -> Expected(Success(Coll[(Coll[Byte], Long)]().map(identity)), 1766, methodCostDetails(SBoxMethods.tokensMethod, 15), 1766)
       ),
       existingFeature({ (x: Box) => x.tokens },
         "{ (x: Box) => x.tokens }",
@@ -4056,7 +4044,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           Vector((1, SBox)),
           MethodCall.typed[Value[SCollection[STuple]]](
             ValUse(1, SBox),
-            SBox.getMethodByName("tokens"),
+            SBoxMethods.getMethodByName("tokens"),
             Vector(),
             Map()
           )
@@ -4096,7 +4084,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(GetVar),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
         FixedCostItem(ValUse),
         FixedCostItem(CompanionDesc(ExtractRegisterAs), FixedCost(JitCost(50))),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -4114,7 +4102,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(GetVar),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
         FixedCostItem(ValUse),
         FixedCostItem(CompanionDesc(ExtractRegisterAs), FixedCost(JitCost(50))),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -4169,14 +4157,14 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(GetVar),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
         FixedCostItem(ValUse),
         FixedCostItem(CompanionDesc(ExtractRegisterAs), FixedCost(JitCost(50))),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(CompanionDesc(OptionIsDefined), FixedCost(JitCost(10))),
         FixedCostItem(CompanionDesc(If), FixedCost(JitCost(10))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
         FixedCostItem(ValUse),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -4198,14 +4186,14 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(GetVar),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
         FixedCostItem(ValUse),
         FixedCostItem(CompanionDesc(ExtractRegisterAs), FixedCost(JitCost(50))),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(CompanionDesc(OptionIsDefined), FixedCost(JitCost(10))),
         FixedCostItem(CompanionDesc(If), FixedCost(JitCost(10))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
         FixedCostItem(ValUse),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -4230,14 +4218,14 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(GetVar),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
         FixedCostItem(ValUse),
         FixedCostItem(CompanionDesc(ExtractRegisterAs), FixedCost(JitCost(50))),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(CompanionDesc(OptionIsDefined), FixedCost(JitCost(10))),
         FixedCostItem(CompanionDesc(If), FixedCost(JitCost(10))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
         FixedCostItem(ValUse),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -4481,11 +4469,11 @@ class SigmaDslSpecification extends SigmaDslTesting
     val tA = RType[A]
     val typeName = tA.name
     val stypeA = Evaluation.rtypeToSType(tA)
-    val typeCompanion = stypeA.asInstanceOf[STypeCompanion]
+    val m = MethodsContainer.getMethod(stypeA, propName).get
     existingFeature(scalaFunc,
       s"{ (x: $typeName) => x.$propName }",
       FuncValue(Vector((1, stypeA)),
-        MethodCall(ValUse(1, stypeA), typeCompanion.getMethodByName(propName), Vector(), Map() )
+        MethodCall(ValUse(1, stypeA), m, Vector(), Map() )
       ))
   }
 
@@ -4493,35 +4481,35 @@ class SigmaDslSpecification extends SigmaDslTesting
 
 
     verifyCases(
-      Seq((preH1, Expected(Success(0.toByte), cost = 1765, methodCostDetails(SPreHeader.versionMethod, 10), 1765))),
+      Seq((preH1, Expected(Success(0.toByte), cost = 1765, methodCostDetails(SPreHeaderMethods.versionMethod, 10), 1765))),
       existingPropTest("version", { (x: PreHeader) => x.version }))
 
     verifyCases(
       Seq((preH1, Expected(Success(
         Helpers.decodeBytes("7fff7fdd6f62018bae0001006d9ca888ff7f56ff8006573700a167f17f2c9f40")),
-        cost = 1766, methodCostDetails(SPreHeader.parentIdMethod, 10), 1766))),
+        cost = 1766, methodCostDetails(SPreHeaderMethods.parentIdMethod, 10), 1766))),
       existingPropTest("parentId", { (x: PreHeader) => x.parentId }))
 
     verifyCases(
-      Seq((preH1, Expected(Success(6306290372572472443L), cost = 1765, methodCostDetails(SPreHeader.timestampMethod, 10), 1765))),
+      Seq((preH1, Expected(Success(6306290372572472443L), cost = 1765, methodCostDetails(SPreHeaderMethods.timestampMethod, 10), 1765))),
       existingPropTest("timestamp", { (x: PreHeader) => x.timestamp }))
 
     verifyCases(
-      Seq((preH1, Expected(Success(-3683306095029417063L), cost = 1765, methodCostDetails(SPreHeader.nBitsMethod, 10), 1765))),
+      Seq((preH1, Expected(Success(-3683306095029417063L), cost = 1765, methodCostDetails(SPreHeaderMethods.nBitsMethod, 10), 1765))),
       existingPropTest("nBits", { (x: PreHeader) => x.nBits }))
 
     verifyCases(
-      Seq((preH1, Expected(Success(1), cost = 1765, methodCostDetails(SPreHeader.heightMethod, 10), 1765))),
+      Seq((preH1, Expected(Success(1), cost = 1765, methodCostDetails(SPreHeaderMethods.heightMethod, 10), 1765))),
       existingPropTest("height", { (x: PreHeader) => x.height }))
 
     verifyCases(
       Seq((preH1, Expected(Success(
         Helpers.decodeGroupElement("026930cb9972e01534918a6f6d6b8e35bc398f57140d13eb3623ea31fbd069939b")),
-        cost = 1782, methodCostDetails(SPreHeader.minerPkMethod, 10), 1782))),
+        cost = 1782, methodCostDetails(SPreHeaderMethods.minerPkMethod, 10), 1782))),
       existingPropTest("minerPk", { (x: PreHeader) => x.minerPk }))
 
     verifyCases(
-      Seq((preH1, Expected(Success(Helpers.decodeBytes("ff8087")), cost = 1766, methodCostDetails(SPreHeader.votesMethod,10), 1766))),
+      Seq((preH1, Expected(Success(Helpers.decodeBytes("ff8087")), cost = 1766, methodCostDetails(SPreHeaderMethods.votesMethod,10), 1766))),
       existingPropTest("votes", { (x: PreHeader) => x.votes }))
   }
 
@@ -4529,90 +4517,90 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyCases(
       Seq((h1, Expected(Success(
         Helpers.decodeBytes("957f008001808080ffe4ffffc8f3802401df40006aa05e017fa8d3f6004c804a")),
-        cost = 1766, methodCostDetails(SHeader.idMethod, 10), 1766))),
+        cost = 1766, methodCostDetails(SHeaderMethods.idMethod, 10), 1766))),
       existingPropTest("id", { (x: Header) => x.id }))
 
     verifyCases(
-      Seq((h1, Expected(Success(0.toByte), cost = 1765, methodCostDetails(SHeader.versionMethod, 10), 1765))),
+      Seq((h1, Expected(Success(0.toByte), cost = 1765, methodCostDetails(SHeaderMethods.versionMethod, 10), 1765))),
       existingPropTest("version", { (x: Header) => x.version }))
 
     verifyCases(
       Seq((h1, Expected(Success(
         Helpers.decodeBytes("0180dd805b0000ff5400b997fd7f0b9b00de00fb03c47e37806a8186b94f07ff")),
-        cost = 1766, methodCostDetails(SHeader.parentIdMethod, 10), 1766))),
+        cost = 1766, methodCostDetails(SHeaderMethods.parentIdMethod, 10), 1766))),
       existingPropTest("parentId", { (x: Header) => x.parentId }))
 
     verifyCases(
       Seq((h1, Expected(Success(
         Helpers.decodeBytes("01f07f60d100ffb970c3007f60ff7f24d4070bb8fffa7fca7f34c10001ffe39d")),
-        cost = 1766, methodCostDetails(SHeader.ADProofsRootMethod, 10), 1766))),
+        cost = 1766, methodCostDetails(SHeaderMethods.ADProofsRootMethod, 10), 1766))),
       existingPropTest("ADProofsRoot", { (x: Header) => x.ADProofsRoot}))
 
     verifyCases(
-      Seq((h1, Expected(Success(CAvlTree(createAvlTreeData())), cost = 1765, methodCostDetails(SHeader.stateRootMethod, 10), 1765))),
+      Seq((h1, Expected(Success(CAvlTree(createAvlTreeData())), cost = 1765, methodCostDetails(SHeaderMethods.stateRootMethod, 10), 1765))),
       existingPropTest("stateRoot", { (x: Header) => x.stateRoot }))
 
     verifyCases(
       Seq((h1, Expected(Success(
         Helpers.decodeBytes("804101ff01000080a3ffbd006ac080098df132a7017f00649311ec0e00000100")),
-        cost = 1766, methodCostDetails(SHeader.transactionsRootMethod, 10), 1766))),
+        cost = 1766, methodCostDetails(SHeaderMethods.transactionsRootMethod, 10), 1766))),
       existingPropTest("transactionsRoot", { (x: Header) => x.transactionsRoot }))
 
     verifyCases(
-      Seq((h1, Expected(Success(1L), cost = 1765, methodCostDetails(SHeader.timestampMethod, 10), 1765))),
+      Seq((h1, Expected(Success(1L), cost = 1765, methodCostDetails(SHeaderMethods.timestampMethod, 10), 1765))),
       existingPropTest("timestamp", { (x: Header) => x.timestamp }))
 
     verifyCases(
-      Seq((h1, Expected(Success(-1L), cost = 1765, methodCostDetails(SHeader.nBitsMethod, 10), 1765))),
+      Seq((h1, Expected(Success(-1L), cost = 1765, methodCostDetails(SHeaderMethods.nBitsMethod, 10), 1765))),
       existingPropTest("nBits", { (x: Header) => x.nBits }))
 
     verifyCases(
-      Seq((h1, Expected(Success(1), cost = 1765, methodCostDetails(SHeader.heightMethod, 10), 1765))),
+      Seq((h1, Expected(Success(1), cost = 1765, methodCostDetails(SHeaderMethods.heightMethod, 10), 1765))),
       existingPropTest("height", { (x: Header) => x.height }))
 
     verifyCases(
       Seq((h1, Expected(Success(
         Helpers.decodeBytes("e57f80885601b8ff348e01808000bcfc767f2dd37f0d01015030ec018080bc62")),
-        cost = 1766, methodCostDetails(SHeader.extensionRootMethod, 10), 1766))),
+        cost = 1766, methodCostDetails(SHeaderMethods.extensionRootMethod, 10), 1766))),
       existingPropTest("extensionRoot", { (x: Header) => x.extensionRoot }))
 
     verifyCases(
       Seq((h1, Expected(Success(
         Helpers.decodeGroupElement("039bdbfa0b49cc6bef58297a85feff45f7bbeb500a9d2283004c74fcedd4bd2904")),
-        cost = 1782, methodCostDetails(SHeader.minerPkMethod, 10), 1782))),
+        cost = 1782, methodCostDetails(SHeaderMethods.minerPkMethod, 10), 1782))),
       existingPropTest("minerPk", { (x: Header) => x.minerPk }))
 
     verifyCases(
       Seq((h1, Expected(Success(
         Helpers.decodeGroupElement("0361299207fa392231e23666f6945ae3e867b978e021d8d702872bde454e9abe9c")),
-        cost = 1782, methodCostDetails(SHeader.powOnetimePkMethod, 10), 1782))),
+        cost = 1782, methodCostDetails(SHeaderMethods.powOnetimePkMethod, 10), 1782))),
       existingPropTest("powOnetimePk", { (x: Header) => x.powOnetimePk }))
 
     verifyCases(
       Seq((h1, Expected(Success(
         Helpers.decodeBytes("7f4f09012a807f01")),
-        cost = 1766, methodCostDetails(SHeader.powNonceMethod, 10), 1766))),
+        cost = 1766, methodCostDetails(SHeaderMethods.powNonceMethod, 10), 1766))),
       existingPropTest("powNonce", { (x: Header) => x.powNonce }))
 
     verifyCases(
       Seq((h1, Expected(Success(
         CBigInt(new BigInteger("-e24990c47e15ed4d0178c44f1790cc72155d516c43c3e8684e75db3800a288", 16))),
-        cost = 1765, methodCostDetails(SHeader.powDistanceMethod, 10), 1765))),
+        cost = 1765, methodCostDetails(SHeaderMethods.powDistanceMethod, 10), 1765))),
       existingPropTest("powDistance", { (x: Header) => x.powDistance }))
 
     verifyCases(
       Seq((h1, Expected(Success(
         Helpers.decodeBytes("7f0180")),
-        cost = 1766, methodCostDetails(SHeader.votesMethod, 10), 1766))),
+        cost = 1766, methodCostDetails(SHeaderMethods.votesMethod, 10), 1766))),
       existingPropTest("votes", { (x: Header) => x.votes }))
   }
 
   def contextData() = {
-    val input = CostingBox(
+    val input = CBox(
       new ErgoBox(
         80946L,
         new ErgoTree(
-          16.toByte,
+          HeaderType @@ 16.toByte,
           Vector(
             SigmaPropConstant(
               CSigmaProp(
@@ -4638,11 +4626,11 @@ class SigmaDslSpecification extends SigmaDslTesting
       )
     )
 
-    val dataBox = CostingBox(
+    val dataBox = CBox(
       new ErgoBox(
         -1L,
         new ErgoTree(
-          0.toByte,
+          HeaderType @@ 0.toByte,
           Vector(),
           Right(SigmaPropConstant(CSigmaProp(ProveDlog(Helpers.decodeECPoint("02af645874c3b53465a5e9d820eb207d6001258c3b708f0d31d7c2e342833dce64")))))
         ),
@@ -4690,7 +4678,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       Helpers.decodeBytes("01ff13")
     )
 
-    val ctx = CostingDataContext(
+    val ctx = CContext(
       _dataInputs = Coll[Box](dataBox),
       headers = Coll[Header](header),
       preHeader = CPreHeader(
@@ -4704,11 +4692,11 @@ class SigmaDslSpecification extends SigmaDslTesting
       ),
       inputs = Coll[Box](input),
       outputs = Coll[Box](
-        CostingBox(
+        CBox(
           new ErgoBox(
             1000000L,
             new ErgoTree(
-              16.toByte,
+              HeaderType @@ 16.toByte,
               Vector(
                 SigmaPropConstant(
                   CSigmaProp(
@@ -4741,11 +4729,11 @@ class SigmaDslSpecification extends SigmaDslTesting
             11
           )
         ),
-        CostingBox(
+        CBox(
           new ErgoBox(
             2769336982721999022L,
             new ErgoTree(
-              0.toByte,
+              HeaderType @@ 0.toByte,
               Vector(),
               Right(SigmaPropConstant(CSigmaProp(ProveDlog(Helpers.decodeECPoint("02d13e1a8c31f32194761adc1cdcbaa746b3e049e682bba9308d8ee84576172991")))))
             ),
@@ -4783,19 +4771,19 @@ class SigmaDslSpecification extends SigmaDslTesting
     (input, dataBox, header, ctx, ctx2, ctx3)
   }
 
-  def ctxWithRegsInOutput(ctx: CostingDataContext, regs: AdditionalRegisters) = {
+  def ctxWithRegsInOutput(ctx: CContext, regs: AdditionalRegisters) = {
     ctx.copy(
       outputs = Coll({
-        val box = ctx.outputs(0).asInstanceOf[CostingBox]
+        val box = ctx.outputs(0).asInstanceOf[CBox]
         box.copy(ebox = copyBox(box.ebox)(additionalRegisters = regs))
       })
     )
   }
 
-  def ctxWithRegsInDataInput(ctx: CostingDataContext, regs: AdditionalRegisters) = {
+  def ctxWithRegsInDataInput(ctx: CContext, regs: AdditionalRegisters) = {
     ctx.copy(
       _dataInputs = Coll({
-        val box = ctx.dataInputs(0).asInstanceOf[CostingBox]
+        val box = ctx.dataInputs(0).asInstanceOf[CBox]
         box.copy(ebox = copyBox(box.ebox)(additionalRegisters = regs))
       })
     )
@@ -4809,7 +4797,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     val testTraceBase = traceBase ++ Array(
       FixedCostItem(PropertyCall),
-      FixedCostItem(SContext.dataInputsMethod, FixedCost(JitCost(15))),
+      FixedCostItem(SContextMethods.dataInputsMethod, FixedCost(JitCost(15))),
       FixedCostItem(Constant),
       FixedCostItem(ByIndex)
     )
@@ -4827,7 +4815,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           ByIndex(
             MethodCall.typed[Value[SCollection[SBox.type]]](
               ValUse(1, SContext),
-              SContext.getMethodByName("dataInputs"),
+              SContextMethods.getMethodByName("dataInputs"),
               Vector(),
               Map()
             ),
@@ -4852,7 +4840,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             ByIndex(
               MethodCall.typed[Value[SCollection[SBox.type]]](
                 ValUse(1, SContext),
-                SContext.getMethodByName("dataInputs"),
+                SContextMethods.getMethodByName("dataInputs"),
                 Vector(),
                 Map()
               ),
@@ -4919,7 +4907,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(Inputs),
         FixedCostItem(FuncValue),
-        SeqCostItem(CompanionDesc(MapCollection), PerItemCost(JitCost(20), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(MapCollection), PerItemCost(JitCost(20), JitCost(1), 10), 1),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(ExtractAmount)))
@@ -4933,7 +4921,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(Inputs),
         FixedCostItem(MethodCall),
         FixedCostItem(FuncValue),
-        SeqCostItem(MethodDesc(SCollection.MapMethod), PerItemCost(JitCost(20), JitCost(1), 10), 1),
+        ast.SeqCostItem(MethodDesc(SCollectionMethods.MapMethod), PerItemCost(JitCost(20), JitCost(1), 10), 1),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(ExtractAmount)
@@ -4954,7 +4942,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             Array((1, SContext)),
             MethodCall.typed[Value[SCollection[SLong.type]]](
               Inputs,
-              SCollection.getMethodByName("map").withConcreteTypes(
+              SCollectionMethods.getMethodByName("map").withConcreteTypes(
                 Map(STypeVar("IV") -> SBox, STypeVar("OV") -> SLong)
               ),
               Vector(FuncValue(Array((3, SBox)), ExtractAmount(ValUse(3, SBox)))),
@@ -4975,9 +4963,9 @@ class SigmaDslSpecification extends SigmaDslTesting
         if (lowerMethodCallsInTests)
           Array(
             FixedCostItem(FuncValue),
-            SeqCostItem(CompanionDesc(MapCollection), PerItemCost(JitCost(20), JitCost(1), 10), 1),
+            ast.SeqCostItem(CompanionDesc(MapCollection), PerItemCost(JitCost(20), JitCost(1), 10), 1),
             FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-            SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+            ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
             FixedCostItem(ValUse),
             FixedCostItem(ExtractAmount),
             FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -4988,9 +4976,9 @@ class SigmaDslSpecification extends SigmaDslTesting
           Array(
             FixedCostItem(MethodCall),
             FixedCostItem(FuncValue),
-            SeqCostItem(MethodDesc(SCollection.MapMethod), PerItemCost(JitCost(20), JitCost(1), 10), 1),
+            ast.SeqCostItem(MethodDesc(SCollectionMethods.MapMethod), PerItemCost(JitCost(20), JitCost(1), 10), 1),
             FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-            SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+            ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
             FixedCostItem(ValUse),
             FixedCostItem(ExtractAmount),
             FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -5025,7 +5013,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             Array((1, SContext)),
             MethodCall.typed[Value[SCollection[STuple]]](
               Inputs,
-              SCollection.getMethodByName("map").withConcreteTypes(
+              SCollectionMethods.getMethodByName("map").withConcreteTypes(
                 Map(STypeVar("IV") -> SBox, STypeVar("OV") -> SPair(SLong, SLong))
               ),
               Vector(
@@ -5082,7 +5070,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     val selfCostDetails = TracedCost(
       traceBase ++ Array(
         FixedCostItem(PropertyCall),
-        FixedCostItem(SContext.selfBoxIndexMethod, FixedCost(JitCost(20)))
+        FixedCostItem(SContextMethods.selfBoxIndexMethod, FixedCost(JitCost(20)))
       )
     )
     verifyCases(
@@ -5103,7 +5091,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           Vector((1, SContext)),
           MethodCall.typed[Value[SInt.type]](
             ValUse(1, SContext),
-            SContext.getMethodByName("selfBoxIndex"),
+            SContextMethods.getMethodByName("selfBoxIndex"),
             Vector(),
             Map()
           )
@@ -5122,16 +5110,16 @@ class SigmaDslSpecification extends SigmaDslTesting
     }
 
     verifyCases(
-      Seq(ctx -> Expected(Success(ctx.LastBlockUtxoRootHash), cost = 1766, methodCostDetails(SContext.lastBlockUtxoRootHashMethod, 15), 1766)),
+      Seq(ctx -> Expected(Success(ctx.LastBlockUtxoRootHash), cost = 1766, methodCostDetails(SContextMethods.lastBlockUtxoRootHashMethod, 15), 1766)),
       existingPropTest("LastBlockUtxoRootHash", { (x: Context) => x.LastBlockUtxoRootHash }),
       preGeneratedSamples = Some(samples))
 
     val isUpdateAllowedCostDetails = TracedCost(
       traceBase ++ Array(
         FixedCostItem(PropertyCall),
-        FixedCostItem(SContext.lastBlockUtxoRootHashMethod, FixedCost(JitCost(15))),
+        FixedCostItem(SContextMethods.lastBlockUtxoRootHashMethod, FixedCost(JitCost(15))),
         FixedCostItem(PropertyCall),
-        FixedCostItem(SAvlTree.isUpdateAllowedMethod, FixedCost(JitCost(15)))
+        FixedCostItem(SAvlTreeMethods.isUpdateAllowedMethod, FixedCost(JitCost(15)))
       )
     )
     verifyCases(
@@ -5144,11 +5132,11 @@ class SigmaDslSpecification extends SigmaDslTesting
           MethodCall.typed[Value[SBoolean.type]](
             MethodCall.typed[Value[SAvlTree.type]](
               ValUse(1, SContext),
-              SContext.getMethodByName("LastBlockUtxoRootHash"),
+              SContextMethods.getMethodByName("LastBlockUtxoRootHash"),
               Vector(),
               Map()
             ),
-            SAvlTree.getMethodByName("isUpdateAllowed"),
+            SAvlTreeMethods.getMethodByName("isUpdateAllowed"),
             Vector(),
             Map()
           )
@@ -5156,7 +5144,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       preGeneratedSamples = Some(samples))
 
     verifyCases(
-      Seq(ctx -> Expected(Success(ctx.minerPubKey), cost = 1767, methodCostDetails(SContext.minerPubKeyMethod, 20), 1767)),
+      Seq(ctx -> Expected(Success(ctx.minerPubKey), cost = 1767, methodCostDetails(SContextMethods.minerPubKeyMethod, 20), 1767)),
       existingPropTest("minerPubKey", { (x: Context) => x.minerPubKey }),
       preGeneratedSamples = Some(samples))
 
@@ -5213,10 +5201,10 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(GetVar),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
         FixedCostItem(ValUse),
         FixedCostItem(PropertyCall),
-        FixedCostItem(SContext.dataInputsMethod, FixedCost(JitCost(15))),
+        FixedCostItem(SContextMethods.dataInputsMethod, FixedCost(JitCost(15))),
         FixedCostItem(Constant),
         FixedCostItem(ByIndex),
         FixedCostItem(ExtractRegisterAs),
@@ -5260,7 +5248,7 @@ class SigmaDslSpecification extends SigmaDslTesting
                 ByIndex(
                   MethodCall.typed[Value[SCollection[SBox.type]]](
                     ValUse(1, SContext),
-                    SContext.getMethodByName("dataInputs"),
+                    SContextMethods.getMethodByName("dataInputs"),
                     Vector(),
                     Map()
                   ),
@@ -5332,7 +5320,7 @@ class SigmaDslSpecification extends SigmaDslTesting
                 ByIndex(
                   MethodCall.typed[Value[SCollection[SBox.type]]](
                     ValUse(1, SContext),
-                    SContext.getMethodByName("dataInputs"),
+                    SContextMethods.getMethodByName("dataInputs"),
                     Vector(),
                     Map()
                   ),
@@ -5374,7 +5362,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(GetVar),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
         FixedCostItem(Outputs),
         FixedCostItem(Constant),
         FixedCostItem(ByIndex),
@@ -5385,7 +5373,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(ValUse),
         FixedCostItem(OptionIsDefined),
         FixedCostItem(If),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
         FixedCostItem(ValUse),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -5409,7 +5397,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(GetVar),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
         FixedCostItem(Outputs),
         FixedCostItem(Constant),
         FixedCostItem(ByIndex),
@@ -5420,7 +5408,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(ValUse),
         FixedCostItem(OptionIsDefined),
         FixedCostItem(If),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
         FixedCostItem(ValUse),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -5442,7 +5430,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(GetVar),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
         FixedCostItem(Outputs),
         FixedCostItem(Constant),
         FixedCostItem(ByIndex),
@@ -5543,7 +5531,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(GetVar),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
         FixedCostItem(Outputs),
         FixedCostItem(Constant),
         FixedCostItem(ByIndex),
@@ -5554,7 +5542,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(ValUse),
         FixedCostItem(OptionIsDefined),
         FixedCostItem(If),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
         FixedCostItem(ValUse),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -5581,7 +5569,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(GetVar),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
         FixedCostItem(Outputs),
         FixedCostItem(Constant),
         FixedCostItem(ByIndex),
@@ -5592,7 +5580,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(ValUse),
         FixedCostItem(OptionIsDefined),
         FixedCostItem(If),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
         FixedCostItem(ValUse),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -5616,7 +5604,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(GetVar),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
         FixedCostItem(Outputs),
         FixedCostItem(Constant),
         FixedCostItem(ByIndex),
@@ -5627,7 +5615,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(ValUse),
         FixedCostItem(OptionIsDefined),
         FixedCostItem(If),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
         FixedCostItem(ValUse),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -5649,7 +5637,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(GetVar),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
         FixedCostItem(Outputs),
         FixedCostItem(Constant),
         FixedCostItem(ByIndex),
@@ -5772,10 +5760,10 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(GetVar),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
         FixedCostItem(ValUse),
         FixedCostItem(PropertyCall),
-        FixedCostItem(SContext.dataInputsMethod, FixedCost(JitCost(15))),
+        FixedCostItem(SContextMethods.dataInputsMethod, FixedCost(JitCost(15))),
         FixedCostItem(Constant),
         FixedCostItem(ByIndex),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -5785,7 +5773,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(ValUse),
         FixedCostItem(OptionIsDefined),
         FixedCostItem(If),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
         FixedCostItem(ValUse),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -5809,10 +5797,10 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(GetVar),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
         FixedCostItem(ValUse),
         FixedCostItem(PropertyCall),
-        FixedCostItem(SContext.dataInputsMethod, FixedCost(JitCost(15))),
+        FixedCostItem(SContextMethods.dataInputsMethod, FixedCost(JitCost(15))),
         FixedCostItem(Constant),
         FixedCostItem(ByIndex),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -5822,7 +5810,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(ValUse),
         FixedCostItem(OptionIsDefined),
         FixedCostItem(If),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
         FixedCostItem(ValUse),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -5843,10 +5831,10 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(GetVar),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
         FixedCostItem(ValUse),
         FixedCostItem(PropertyCall),
-        FixedCostItem(SContext.dataInputsMethod, FixedCost(JitCost(15))),
+        FixedCostItem(SContextMethods.dataInputsMethod, FixedCost(JitCost(15))),
         FixedCostItem(Constant),
         FixedCostItem(ByIndex),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -5856,7 +5844,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(ValUse),
         FixedCostItem(OptionIsDefined),
         FixedCostItem(If),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
         FixedCostItem(ValUse),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -5878,10 +5866,10 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(GetVar),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
         FixedCostItem(ValUse),
         FixedCostItem(PropertyCall),
-        FixedCostItem(SContext.dataInputsMethod, FixedCost(JitCost(15))),
+        FixedCostItem(SContextMethods.dataInputsMethod, FixedCost(JitCost(15))),
         FixedCostItem(Constant),
         FixedCostItem(ByIndex),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -5959,7 +5947,7 @@ class SigmaDslSpecification extends SigmaDslTesting
               ByIndex(
                 MethodCall.typed[Value[SCollection[SBox.type]]](
                   ValUse(1, SContext),
-                  SContext.getMethodByName("dataInputs"),
+                  SContextMethods.getMethodByName("dataInputs"),
                   Vector(),
                   Map()
                 ),
@@ -6000,10 +5988,10 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(GetVar),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
         FixedCostItem(ValUse),
         FixedCostItem(PropertyCall),
-        FixedCostItem(SContext.dataInputsMethod, FixedCost(JitCost(15))),
+        FixedCostItem(SContextMethods.dataInputsMethod, FixedCost(JitCost(15))),
         FixedCostItem(Constant),
         FixedCostItem(ByIndex),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -6013,7 +6001,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(ValUse),
         FixedCostItem(OptionIsDefined),
         FixedCostItem(If),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
         FixedCostItem(ValUse),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -6040,10 +6028,10 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(GetVar),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
         FixedCostItem(ValUse),
         FixedCostItem(PropertyCall),
-        FixedCostItem(SContext.dataInputsMethod, FixedCost(JitCost(15))),
+        FixedCostItem(SContextMethods.dataInputsMethod, FixedCost(JitCost(15))),
         FixedCostItem(Constant),
         FixedCostItem(ByIndex),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -6053,7 +6041,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(ValUse),
         FixedCostItem(OptionIsDefined),
         FixedCostItem(If),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
         FixedCostItem(ValUse),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -6077,10 +6065,10 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(GetVar),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
         FixedCostItem(ValUse),
         FixedCostItem(PropertyCall),
-        FixedCostItem(SContext.dataInputsMethod, FixedCost(JitCost(15))),
+        FixedCostItem(SContextMethods.dataInputsMethod, FixedCost(JitCost(15))),
         FixedCostItem(Constant),
         FixedCostItem(ByIndex),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -6090,7 +6078,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(ValUse),
         FixedCostItem(OptionIsDefined),
         FixedCostItem(If),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
         FixedCostItem(ValUse),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -6112,10 +6100,10 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(GetVar),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
         FixedCostItem(ValUse),
         FixedCostItem(PropertyCall),
-        FixedCostItem(SContext.dataInputsMethod, FixedCost(JitCost(15))),
+        FixedCostItem(SContextMethods.dataInputsMethod, FixedCost(JitCost(15))),
         FixedCostItem(Constant),
         FixedCostItem(ByIndex),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -6192,7 +6180,7 @@ class SigmaDslSpecification extends SigmaDslTesting
               ByIndex(
                 MethodCall.typed[Value[SCollection[SBox.type]]](
                   ValUse(1, SContext),
-                  SContext.getMethodByName("dataInputs"),
+                  SContextMethods.getMethodByName("dataInputs"),
                   Vector(),
                   Map()
                 ),
@@ -6237,7 +6225,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("xorOf equivalence") {
-    def costDetails(i: Int) = TracedCost(traceBase :+ SeqCostItem(CompanionDesc(XorOf), PerItemCost(JitCost(20), JitCost(5), 32), i))
+    def costDetails(i: Int) = TracedCost(traceBase :+ ast.SeqCostItem(CompanionDesc(XorOf), PerItemCost(JitCost(20), JitCost(5), 32), i))
     verifyCases(
       {
         def successNew[T](v: T, c: Int, newV: T, cd: CostDetails) = Expected(
@@ -6395,7 +6383,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(Global),
         FixedCostItem(PropertyCall),
-        FixedCostItem(SGlobal.groupGeneratorMethod, FixedCost(JitCost(10)))
+        FixedCostItem(SGlobalMethods.groupGeneratorMethod, FixedCost(JitCost(10)))
       )
     )
     verifyCases(
@@ -6411,7 +6399,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         Vector((1, SInt)),
         MethodCall.typed[Value[SGroupElement.type]](
           Global,
-          SGlobal.getMethodByName("groupGenerator"),
+          SGlobalMethods.getMethodByName("groupGenerator"),
           Vector(),
           Map()
         )
@@ -6430,7 +6418,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           Vector((1, SInt)),
           MethodCall.typed[Value[SGroupElement.type]](
             Global,
-            SGlobal.getMethodByName("groupGenerator"),
+            SGlobalMethods.getMethodByName("groupGenerator"),
             Vector(),
             Map()
           )
@@ -6468,7 +6456,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         Exponentiate(
           MethodCall.typed[Value[SGroupElement.type]](
             Global,
-            SGlobal.getMethodByName("groupGenerator"),
+            SGlobalMethods.getMethodByName("groupGenerator"),
             Vector(),
             Map()
           ),
@@ -6486,7 +6474,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             FixedCostItem(SelectField),
             FixedCostItem(ValUse),
             FixedCostItem(SelectField),
-            SeqCostItem(CompanionDesc(Xor), PerItemCost(JitCost(10), JitCost(2), 128), i)
+            ast.SeqCostItem(CompanionDesc(Xor), PerItemCost(JitCost(10), JitCost(2), 128), i)
           )
         )
       else
@@ -6503,7 +6491,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             FixedCostItem(SelectField),
             FixedCostItem(ValUse),
             FixedCostItem(SelectField),
-            SeqCostItem(CompanionDesc(Xor), PerItemCost(JitCost(10), JitCost(2), 128), i)
+            ast.SeqCostItem(CompanionDesc(Xor), PerItemCost(JitCost(10), JitCost(2), 128), i)
           )
         )
     }
@@ -6554,7 +6542,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             Array((1, SPair(SByteArray, SByteArray))),
             MethodCall.typed[Value[SCollection[SByte.type]]](
               Global,
-              SGlobal.getMethodByName("xor"),
+              SGlobalMethods.getMethodByName("xor"),
               Vector(
                 SelectField.typed[Value[SCollection[SByte.type]]](
                   ValUse(1, SPair(SByteArray, SByteArray)),
@@ -6573,11 +6561,11 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   def sampleCollBoxes = genSamples[Coll[Box]](collOfN[Box](5, arbitrary[Box]), MinSuccessful(20))
 
-  def create_b1 = CostingBox(
+  def create_b1 = CBox(
     new ErgoBox(
       1L,
       new ErgoTree(
-        0.toByte,
+        HeaderType @@ 0.toByte,
         Vector(),
         Right(
           SigmaPropConstant(
@@ -6609,11 +6597,11 @@ class SigmaDslSpecification extends SigmaDslTesting
     )
   )
 
-  def create_b2 = CostingBox(
+  def create_b2 = CBox(
     new ErgoBox(
       1000000000L,
       new ErgoTree(
-        0.toByte,
+        HeaderType @@ 0.toByte,
         Vector(),
         Right(BoolToSigmaProp(OR(ConcreteCollection(Array(FalseLeaf, AND(ConcreteCollection(Array(FalseLeaf, FalseLeaf), SBoolean))), SBoolean))))
       ),
@@ -6633,13 +6621,13 @@ class SigmaDslSpecification extends SigmaDslTesting
     val costDetails = TracedCost(
       traceBase ++ Array(
         FixedCostItem(FuncValue),
-        SeqCostItem(CompanionDesc(Filter), PerItemCost(JitCost(20), JitCost(1), 10), 0)
+        ast.SeqCostItem(CompanionDesc(Filter), PerItemCost(JitCost(20), JitCost(1), 10), 0)
       )
     )
     val costDetails2 = TracedCost(
       traceBase ++ Array(
         FixedCostItem(FuncValue),
-        SeqCostItem(CompanionDesc(Filter), PerItemCost(JitCost(20), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(Filter), PerItemCost(JitCost(20), JitCost(1), 10), 1),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(ExtractAmount),
@@ -6650,7 +6638,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     val costDetails3 = TracedCost(
       traceBase ++ Array(
         FixedCostItem(FuncValue),
-        SeqCostItem(CompanionDesc(Filter), PerItemCost(JitCost(20), JitCost(1), 10), 2),
+        ast.SeqCostItem(CompanionDesc(Filter), PerItemCost(JitCost(20), JitCost(1), 10), 2),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(ExtractAmount),
@@ -6693,7 +6681,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       traceBase ++ Array(
         FixedCostItem(MethodCall),
         FixedCostItem(FuncValue),
-        SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 0)
+        ast.SeqCostItem(MethodDesc(SCollectionMethods.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 0)
       )
     )
     val costDetails2 = TracedCost(
@@ -6703,7 +6691,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(ExtractScriptBytes),
-        SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 135)
+        ast.SeqCostItem(MethodDesc(SCollectionMethods.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 135)
       )
     )
     val costDetails3 = TracedCost(
@@ -6716,7 +6704,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(ExtractScriptBytes),
-        SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 147)
+        ast.SeqCostItem(MethodDesc(SCollectionMethods.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 147)
       )
     )
     verifyCases(
@@ -6737,7 +6725,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         Vector((1, SCollectionType(SBox))),
         MethodCall.typed[Value[SCollection[SByte.type]]](
           ValUse(1, SCollectionType(SBox)),
-          SCollection.getMethodByName("flatMap").withConcreteTypes(
+          SCollectionMethods.getMethodByName("flatMap").withConcreteTypes(
             Map(STypeVar("IV") -> SBox, STypeVar("OV") -> SByte)
           ),
           Vector(FuncValue(Vector((3, SBox)), ExtractScriptBytes(ValUse(3, SBox)))),
@@ -6755,7 +6743,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       traceBase ++ Array(
         FixedCostItem(MethodCall),
         FixedCostItem(ValUse),
-        SeqCostItem(MethodDesc(SCollection.ZipMethod), PerItemCost(JitCost(10), JitCost(1), 10), zipElements)
+        ast.SeqCostItem(MethodDesc(SCollectionMethods.ZipMethod), PerItemCost(JitCost(10), JitCost(1), 10), zipElements)
       )
     )
 
@@ -6774,7 +6762,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         Vector((1, SCollectionType(SBox))),
         MethodCall.typed[Value[SCollection[STuple]]](
           ValUse(1, SCollectionType(SBox)),
-          SCollection.getMethodByName("zip").withConcreteTypes(
+          SCollectionMethods.getMethodByName("zip").withConcreteTypes(
             Map(STypeVar("IV") -> SBox, STypeVar("OV") -> SBox)
           ),
           Vector(ValUse(1, SCollectionType(SBox))),
@@ -6811,7 +6799,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     def costDetails(indicesCount: Int) = TracedCost(
       traceBase ++ Array(
         FixedCostItem(PropertyCall),
-        SeqCostItem(MethodDesc(SCollection.IndicesMethod), PerItemCost(JitCost(20), JitCost(2), 16), indicesCount)
+        ast.SeqCostItem(MethodDesc(SCollectionMethods.IndicesMethod), PerItemCost(JitCost(20), JitCost(2), 16), indicesCount)
       )
     )
     verifyCases(
@@ -6829,7 +6817,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         Vector((1, SCollectionType(SBox))),
         MethodCall.typed[Value[SCollection[SInt.type]]](
           ValUse(1, SCollectionType(SBox)),
-          SCollection.getMethodByName("indices").withConcreteTypes(Map(STypeVar("IV") -> SBox)),
+          SCollectionMethods.getMethodByName("indices").withConcreteTypes(Map(STypeVar("IV") -> SBox)),
           Vector(),
           Map()
         )
@@ -6845,13 +6833,13 @@ class SigmaDslSpecification extends SigmaDslTesting
     val costDetails1 = TracedCost(
       traceBase ++ Array(
         FixedCostItem(FuncValue),
-        SeqCostItem(CompanionDesc(ForAll), PerItemCost(JitCost(3), JitCost(1), 10), 0)
+        ast.SeqCostItem(CompanionDesc(ForAll), PerItemCost(JitCost(3), JitCost(1), 10), 0)
       )
     )
     val costDetails2 = TracedCost(
       traceBase ++ Array(
         FixedCostItem(FuncValue),
-        SeqCostItem(CompanionDesc(ForAll), PerItemCost(JitCost(3), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(ForAll), PerItemCost(JitCost(3), JitCost(1), 10), 1),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(ExtractAmount),
@@ -6862,7 +6850,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     val costDetails3 = TracedCost(
       traceBase ++ Array(
         FixedCostItem(FuncValue),
-        SeqCostItem(CompanionDesc(ForAll), PerItemCost(JitCost(3), JitCost(1), 10), 2),
+        ast.SeqCostItem(CompanionDesc(ForAll), PerItemCost(JitCost(3), JitCost(1), 10), 2),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(ExtractAmount),
@@ -6900,7 +6888,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           Array((1, SCollectionType(SBox))),
           MethodCall.typed[Value[SBoolean.type]](
             ValUse(1, SCollectionType(SBox)),
-            SCollection.getMethodByName("forall").withConcreteTypes(Map(STypeVar("IV") -> SBox)),
+            SCollectionMethods.getMethodByName("forall").withConcreteTypes(Map(STypeVar("IV") -> SBox)),
             Vector(FuncValue(Array((3, SBox)), GT(ExtractAmount(ValUse(3, SBox)), LongConstant(1L)))),
             Map()
           )
@@ -6916,13 +6904,13 @@ class SigmaDslSpecification extends SigmaDslTesting
     val costDetails1 = TracedCost(
       traceBase ++ Array(
         FixedCostItem(FuncValue),
-        SeqCostItem(CompanionDesc(Exists), PerItemCost(JitCost(3), JitCost(1), 10), 0)
+        ast.SeqCostItem(CompanionDesc(Exists), PerItemCost(JitCost(3), JitCost(1), 10), 0)
       )
     )
     val costDetails2 = TracedCost(
       traceBase ++ Array(
         FixedCostItem(FuncValue),
-        SeqCostItem(CompanionDesc(Exists), PerItemCost(JitCost(3), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(Exists), PerItemCost(JitCost(3), JitCost(1), 10), 1),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(ExtractAmount),
@@ -6933,7 +6921,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     val costDetails3 = TracedCost(
       traceBase ++ Array(
         FixedCostItem(FuncValue),
-        SeqCostItem(CompanionDesc(Exists), PerItemCost(JitCost(3), JitCost(1), 10), 2),
+        ast.SeqCostItem(CompanionDesc(Exists), PerItemCost(JitCost(3), JitCost(1), 10), 2),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(ExtractAmount),
@@ -6976,7 +6964,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           Array((1, SCollectionType(SBox))),
           MethodCall.typed[Value[SBoolean.type]](
             ValUse(1, SCollectionType(SBox)),
-            SCollection.getMethodByName("exists").withConcreteTypes(Map(STypeVar("IV") -> SBox)),
+            SCollectionMethods.getMethodByName("exists").withConcreteTypes(Map(STypeVar("IV") -> SBox)),
             Vector(FuncValue(Array((3, SBox)), GT(ExtractAmount(ValUse(3, SBox)), LongConstant(1L)))),
             Map()
           )
@@ -6990,13 +6978,13 @@ class SigmaDslSpecification extends SigmaDslTesting
     val costDetails1 = TracedCost(
       traceBase ++ Array(
         FixedCostItem(FuncValue),
-        SeqCostItem(CompanionDesc(Exists), PerItemCost(JitCost(3), JitCost(1), 10), 0)
+        ast.SeqCostItem(CompanionDesc(Exists), PerItemCost(JitCost(3), JitCost(1), 10), 0)
       )
     )
     val costDetails2 = TracedCost(
       traceBase ++ Array(
         FixedCostItem(FuncValue),
-        SeqCostItem(CompanionDesc(Exists), PerItemCost(JitCost(3), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(Exists), PerItemCost(JitCost(3), JitCost(1), 10), 1),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(Constant),
@@ -7008,7 +6996,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     val costDetails3 = TracedCost(
       traceBase ++ Array(
         FixedCostItem(FuncValue),
-        SeqCostItem(CompanionDesc(Exists), PerItemCost(JitCost(3), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(Exists), PerItemCost(JitCost(3), JitCost(1), 10), 1),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(Constant),
@@ -7022,7 +7010,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     val costDetails4 = TracedCost(
       traceBase ++ Array(
         FixedCostItem(FuncValue),
-        SeqCostItem(CompanionDesc(Exists), PerItemCost(JitCost(3), JitCost(1), 10), 2),
+        ast.SeqCostItem(CompanionDesc(Exists), PerItemCost(JitCost(3), JitCost(1), 10), 2),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(Constant),
@@ -7082,7 +7070,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           Array((1, SCollectionType(SBigInt))),
           MethodCall.typed[Value[SBoolean.type]](
             ValUse(1, SCollectionType(SBigInt)),
-            SCollection.getMethodByName("exists").withConcreteTypes(Map(STypeVar("IV") -> SBigInt)),
+            SCollectionMethods.getMethodByName("exists").withConcreteTypes(Map(STypeVar("IV") -> SBigInt)),
             Vector(
               FuncValue(
                 Array((3, SBigInt)),
@@ -7104,13 +7092,13 @@ class SigmaDslSpecification extends SigmaDslTesting
     val costDetails1 = TracedCost(
       traceBase ++ Array(
         FixedCostItem(FuncValue),
-        SeqCostItem(CompanionDesc(ForAll), PerItemCost(JitCost(3), JitCost(1), 10), 0)
+        ast.SeqCostItem(CompanionDesc(ForAll), PerItemCost(JitCost(3), JitCost(1), 10), 0)
       )
     )
     val costDetails2 = TracedCost(
       traceBase ++ Array(
         FixedCostItem(FuncValue),
-        SeqCostItem(CompanionDesc(ForAll), PerItemCost(JitCost(3), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(ForAll), PerItemCost(JitCost(3), JitCost(1), 10), 1),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(Constant),
@@ -7122,7 +7110,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     val costDetails3 = TracedCost(
       traceBase ++ Array(
         FixedCostItem(FuncValue),
-        SeqCostItem(CompanionDesc(ForAll), PerItemCost(JitCost(3), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(ForAll), PerItemCost(JitCost(3), JitCost(1), 10), 1),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(Constant),
@@ -7136,7 +7124,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     val costDetails4 = TracedCost(
       traceBase ++ Array(
         FixedCostItem(FuncValue),
-        SeqCostItem(CompanionDesc(ForAll), PerItemCost(JitCost(3), JitCost(1), 10), 2),
+        ast.SeqCostItem(CompanionDesc(ForAll), PerItemCost(JitCost(3), JitCost(1), 10), 2),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(Constant),
@@ -7197,7 +7185,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             Array((1, SCollectionType(SBigInt))),
             MethodCall.typed[Value[SBoolean.type]](
               ValUse(1, SCollectionType(SBigInt)),
-              SCollection.getMethodByName("forall").withConcreteTypes(Map(STypeVar("IV") -> SBigInt)),
+              SCollectionMethods.getMethodByName("forall").withConcreteTypes(Map(STypeVar("IV") -> SBigInt)),
               Vector(
                 FuncValue(
                   Array((3, SBigInt)),
@@ -7225,7 +7213,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       traceBase ++ Array(
         FixedCostItem(MethodCall),
         FixedCostItem(FuncValue),
-        SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 0)
+        ast.SeqCostItem(MethodDesc(SCollectionMethods.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 0)
       )
     )
     val costDetails1 = TracedCost(
@@ -7233,8 +7221,8 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(MethodCall),
         FixedCostItem(FuncValue),
         FixedCostItem(NamedDesc("MatchSingleArgMethodCall"), FixedCost(JitCost(30))),
-        SeqCostItem(NamedDesc("CheckFlatmapBody"), PerItemCost(JitCost(20), JitCost(20), 1), 1),
-        SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 0)
+        ast.SeqCostItem(NamedDesc("CheckFlatmapBody"), PerItemCost(JitCost(20), JitCost(20), 1), 1),
+        ast.SeqCostItem(MethodDesc(SCollectionMethods.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 0)
       )
     )
     val costDetails2 = TracedCost(
@@ -7244,12 +7232,12 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(PropertyCall),
-        FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(JitCost(250))),
+        FixedCostItem(SGroupElementMethods.GetEncodedMethod, FixedCost(JitCost(250))),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(PropertyCall),
-        FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(JitCost(250))),
-        SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 66)
+        FixedCostItem(SGroupElementMethods.GetEncodedMethod, FixedCost(JitCost(250))),
+        ast.SeqCostItem(MethodDesc(SCollectionMethods.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 66)
       )
     )
     val costDetails3 = TracedCost(
@@ -7259,16 +7247,16 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(PropertyCall),
-        FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(JitCost(250))),
+        FixedCostItem(SGroupElementMethods.GetEncodedMethod, FixedCost(JitCost(250))),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(PropertyCall),
-        FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(JitCost(250))),
+        FixedCostItem(SGroupElementMethods.GetEncodedMethod, FixedCost(JitCost(250))),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(PropertyCall),
-        FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(JitCost(250))),
-        SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 99)
+        FixedCostItem(SGroupElementMethods.GetEncodedMethod, FixedCost(JitCost(250))),
+        ast.SeqCostItem(MethodDesc(SCollectionMethods.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 99)
       )
     )
     val costDetails4 = TracedCost(
@@ -7278,16 +7266,16 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(PropertyCall),
-        FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(JitCost(250))),
+        FixedCostItem(SGroupElementMethods.GetEncodedMethod, FixedCost(JitCost(250))),
         FixedCostItem(PropertyCall),
-        SeqCostItem(MethodDesc(SCollection.IndicesMethod), PerItemCost(JitCost(20), JitCost(2), 16), 33),
+        ast.SeqCostItem(MethodDesc(SCollectionMethods.IndicesMethod), PerItemCost(JitCost(20), JitCost(2), 16), 33),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(PropertyCall),
-        FixedCostItem(SGroupElement.GetEncodedMethod, FixedCost(JitCost(250))),
+        FixedCostItem(SGroupElementMethods.GetEncodedMethod, FixedCost(JitCost(250))),
         FixedCostItem(PropertyCall),
-        SeqCostItem(MethodDesc(SCollection.IndicesMethod), PerItemCost(JitCost(20), JitCost(2), 16), 33),
-        SeqCostItem(MethodDesc(SCollection.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 66)
+        ast.SeqCostItem(MethodDesc(SCollectionMethods.IndicesMethod), PerItemCost(JitCost(20), JitCost(2), 16), 33),
+        ast.SeqCostItem(MethodDesc(SCollectionMethods.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 66)
       )
     )
 
@@ -7324,7 +7312,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           Vector((1, SCollectionType(SGroupElement))),
           MethodCall.typed[Value[SCollection[SByte.type]]](
             ValUse(1, SCollectionType(SGroupElement)),
-            SCollection.getMethodByName("flatMap").withConcreteTypes(
+            SCollectionMethods.getMethodByName("flatMap").withConcreteTypes(
               Map(STypeVar("IV") -> SGroupElement, STypeVar("OV") -> SByte)
             ),
             Vector(
@@ -7332,7 +7320,7 @@ class SigmaDslSpecification extends SigmaDslTesting
                 Vector((3, SGroupElement)),
                 MethodCall.typed[Value[SCollection[SByte.type]]](
                   ValUse(3, SGroupElement),
-                  SGroupElement.getMethodByName("getEncoded"),
+                  SGroupElementMethods.getMethodByName("getEncoded"),
                   Vector(),
                   Map()
                 )
@@ -7366,7 +7354,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           Array((1, SCollectionType(SGroupElement))),
           MethodCall.typed[Value[SCollection[SInt.type]]](
             ValUse(1, SCollectionType(SGroupElement)),
-            SCollection.getMethodByName("flatMap").withConcreteTypes(
+            SCollectionMethods.getMethodByName("flatMap").withConcreteTypes(
               Map(STypeVar("IV") -> SGroupElement, STypeVar("OV") -> SInt)
             ),
             Vector(
@@ -7375,11 +7363,11 @@ class SigmaDslSpecification extends SigmaDslTesting
                 MethodCall.typed[Value[SCollection[SInt.type]]](
                   MethodCall.typed[Value[SCollection[SByte.type]]](
                     ValUse(3, SGroupElement),
-                    SGroupElement.getMethodByName("getEncoded"),
+                    SGroupElementMethods.getMethodByName("getEncoded"),
                     Vector(),
                     Map()
                   ),
-                  SCollection.getMethodByName("indices").withConcreteTypes(Map(STypeVar("IV") -> SByte)),
+                  SCollectionMethods.getMethodByName("indices").withConcreteTypes(Map(STypeVar("IV") -> SByte)),
                   Vector(),
                   Map()
                 )
@@ -7402,7 +7390,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(GetVar),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -7416,7 +7404,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(ValUse),
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
-        SeqCostItem(MethodDesc(SCollection.PatchMethod), PerItemCost(JitCost(30), JitCost(2), 10), i)
+        ast.SeqCostItem(MethodDesc(SCollectionMethods.PatchMethod), PerItemCost(JitCost(30), JitCost(2), 10), i)
       )
     )
 
@@ -7472,7 +7460,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             ),
             MethodCall.typed[Value[SCollection[SInt.type]]](
               ValUse(3, SCollectionType(SInt)),
-              SCollection.getMethodByName("patch").withConcreteTypes(Map(STypeVar("IV") -> SInt)),
+              SCollectionMethods.getMethodByName("patch").withConcreteTypes(Map(STypeVar("IV") -> SInt)),
               Vector(
                 SelectField.typed[Value[SInt.type]](ValUse(4, SPair(SInt, SInt)), 1.toByte),
                 ValUse(3, SCollectionType(SInt)),
@@ -7494,7 +7482,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(GetVar),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -7505,7 +7493,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(SelectField),
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
-        SeqCostItem(MethodDesc(SCollection.UpdatedMethod), PerItemCost(JitCost(20), JitCost(1), 10), i)
+        ast.SeqCostItem(MethodDesc(SCollectionMethods.UpdatedMethod), PerItemCost(JitCost(20), JitCost(1), 10), i)
       )
     )
     verifyCases(
@@ -7544,7 +7532,7 @@ class SigmaDslSpecification extends SigmaDslTesting
                 ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
                 1.toByte
               ),
-              SCollection.getMethodByName("updated").withConcreteTypes(Map(STypeVar("IV") -> SInt)),
+              SCollectionMethods.getMethodByName("updated").withConcreteTypes(Map(STypeVar("IV") -> SInt)),
               Vector(
                 SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 1.toByte),
                 SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 2.toByte)
@@ -7571,7 +7559,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(GetVar),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -7582,7 +7570,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(SelectField),
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
-        SeqCostItem(MethodDesc(SCollection.UpdateManyMethod), PerItemCost(JitCost(20), JitCost(2), 10), i)
+        ast.SeqCostItem(MethodDesc(SCollectionMethods.UpdateManyMethod), PerItemCost(JitCost(20), JitCost(2), 10), i)
       )
     )
     verifyCases(
@@ -7632,7 +7620,7 @@ class SigmaDslSpecification extends SigmaDslTesting
                 ValUse(1, SPair(SCollectionType(SInt), SPair(SCollectionType(SInt), SCollectionType(SInt)))),
                 1.toByte
               ),
-              SCollection.getMethodByName("updateMany").withConcreteTypes(Map(STypeVar("IV") -> SInt)),
+              SCollectionMethods.getMethodByName("updateMany").withConcreteTypes(Map(STypeVar("IV") -> SInt)),
               Vector(
                 SelectField.typed[Value[SCollection[SInt.type]]](
                   ValUse(3, SPair(SCollectionType(SInt), SCollectionType(SInt))),
@@ -7688,7 +7676,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
         FixedCostItem(FuncValue),
-        SeqCostItem(CompanionDesc(Fold), PerItemCost(JitCost(3), JitCost(1), 10), 0)
+        ast.SeqCostItem(CompanionDesc(Fold), PerItemCost(JitCost(3), JitCost(1), 10), 0)
       )
     )
     val costDetails2 = TracedCost(
@@ -7697,7 +7685,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
         FixedCostItem(FuncValue),
-        SeqCostItem(CompanionDesc(Fold), PerItemCost(JitCost(3), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(Fold), PerItemCost(JitCost(3), JitCost(1), 10), 1),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
@@ -7713,7 +7701,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
         FixedCostItem(FuncValue),
-        SeqCostItem(CompanionDesc(Fold), PerItemCost(JitCost(3), JitCost(1), 10), 2),
+        ast.SeqCostItem(CompanionDesc(Fold), PerItemCost(JitCost(3), JitCost(1), 10), 2),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
@@ -7736,7 +7724,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
         FixedCostItem(FuncValue),
-        SeqCostItem(CompanionDesc(Fold), PerItemCost(JitCost(3), JitCost(1), 10), 3),
+        ast.SeqCostItem(CompanionDesc(Fold), PerItemCost(JitCost(3), JitCost(1), 10), 3),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
@@ -7805,7 +7793,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             Array((1, SPair(SByteArray, SInt))),
             MethodCall.typed[Value[SInt.type]](
               SelectField.typed[Value[SCollection[SByte.type]]](ValUse(1, SPair(SByteArray, SInt)), 1.toByte),
-              SCollection.getMethodByName("fold").withConcreteTypes(Map(STypeVar("IV") -> SByte, STypeVar("OV") -> SInt)),
+              SCollectionMethods.getMethodByName("fold").withConcreteTypes(Map(STypeVar("IV") -> SByte, STypeVar("OV") -> SInt)),
               Vector(
                 SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SByteArray, SInt)), 2.toByte),
                 FuncValue(
@@ -7835,7 +7823,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
         FixedCostItem(FuncValue),
-        SeqCostItem(CompanionDesc(Fold), PerItemCost(JitCost(3), JitCost(1), 10), 0)
+        ast.SeqCostItem(CompanionDesc(Fold), PerItemCost(JitCost(3), JitCost(1), 10), 0)
       )
     )
     val costDetails2 = TracedCost(
@@ -7844,9 +7832,9 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
         FixedCostItem(FuncValue),
-        SeqCostItem(CompanionDesc(Fold), PerItemCost(JitCost(3), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(Fold), PerItemCost(JitCost(3), JitCost(1), 10), 1),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
         TypeBasedCostItem(Upcast, SInt),
@@ -7869,9 +7857,9 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
         FixedCostItem(FuncValue),
-        SeqCostItem(CompanionDesc(Fold), PerItemCost(JitCost(3), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(Fold), PerItemCost(JitCost(3), JitCost(1), 10), 1),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
         TypeBasedCostItem(Upcast, SInt),
@@ -7892,9 +7880,9 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
         FixedCostItem(FuncValue),
-        SeqCostItem(CompanionDesc(Fold), PerItemCost(JitCost(3), JitCost(1), 10), 2),
+        ast.SeqCostItem(CompanionDesc(Fold), PerItemCost(JitCost(3), JitCost(1), 10), 2),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
         TypeBasedCostItem(Upcast, SInt),
@@ -7910,7 +7898,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(ValUse),
         TypeBasedCostItem(ArithOp.Plus, SInt),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
         TypeBasedCostItem(Upcast, SInt),
@@ -7933,9 +7921,9 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
         FixedCostItem(FuncValue),
-        SeqCostItem(CompanionDesc(Fold), PerItemCost(JitCost(3), JitCost(1), 10), 2),
+        ast.SeqCostItem(CompanionDesc(Fold), PerItemCost(JitCost(3), JitCost(1), 10), 2),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
         TypeBasedCostItem(Upcast, SInt),
@@ -7951,7 +7939,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(ValUse),
         TypeBasedCostItem(ArithOp.Plus, SInt),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
         TypeBasedCostItem(Upcast, SInt),
@@ -7972,9 +7960,9 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
         FixedCostItem(FuncValue),
-        SeqCostItem(CompanionDesc(Fold), PerItemCost(JitCost(3), JitCost(1), 10), 3),
+        ast.SeqCostItem(CompanionDesc(Fold), PerItemCost(JitCost(3), JitCost(1), 10), 3),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
         TypeBasedCostItem(Upcast, SInt),
@@ -7990,7 +7978,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(ValUse),
         TypeBasedCostItem(ArithOp.Plus, SInt),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
         TypeBasedCostItem(Upcast, SInt),
@@ -8004,7 +7992,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(If),
         FixedCostItem(ValUse),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 2),
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
         TypeBasedCostItem(Upcast, SInt),
@@ -8083,7 +8071,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             Array((1, SPair(SByteArray, SInt))),
             MethodCall.typed[Value[SInt.type]](
               SelectField.typed[Value[SCollection[SByte.type]]](ValUse(1, SPair(SByteArray, SInt)), 1.toByte),
-              SCollection.getMethodByName("fold").withConcreteTypes(Map(STypeVar("IV") -> SByte, STypeVar("OV") -> SInt)),
+              SCollectionMethods.getMethodByName("fold").withConcreteTypes(Map(STypeVar("IV") -> SByte, STypeVar("OV") -> SInt)),
               Vector(
                 SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SByteArray, SInt)), 2.toByte),
                 FuncValue(
@@ -8127,7 +8115,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(GetVar),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -8140,7 +8128,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(SelectField)
       )
       ++ Array.fill(i)(FixedCostItem(NamedDesc("EQ_Prim"), FixedCost(JitCost(3))))
-      :+ SeqCostItem(MethodDesc(SCollection.IndexOfMethod), PerItemCost(JitCost(20), JitCost(10), 2), i)
+      :+ ast.SeqCostItem(MethodDesc(SCollectionMethods.IndexOfMethod), PerItemCost(JitCost(20), JitCost(10), 2), i)
     )
     verifyCases(
       // (coll, (elem: Byte, from: Int))
@@ -8189,7 +8177,7 @@ class SigmaDslSpecification extends SigmaDslTesting
                 ValUse(1, SPair(SByteArray, SPair(SByte, SInt))),
                 1.toByte
               ),
-              SCollection.getMethodByName("indexOf").withConcreteTypes(Map(STypeVar("IV") -> SByte)),
+              SCollectionMethods.getMethodByName("indexOf").withConcreteTypes(Map(STypeVar("IV") -> SByte)),
               Vector(
                 SelectField.typed[Value[SByte.type]](ValUse(3, SPair(SByte, SInt)), 1.toByte),
                 SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SByte, SInt)), 2.toByte)
@@ -8247,7 +8235,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(GetVar),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -8268,7 +8256,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             FixedCostItem(SelectField),
             FixedCostItem(ValUse),
             FixedCostItem(SelectField),
-            FixedCostItem(SCollection.GetOrElseMethod, FixedCost(JitCost(30)))
+            FixedCostItem(SCollectionMethods.GetOrElseMethod, FixedCost(JitCost(30)))
           )
         )
     )
@@ -8333,7 +8321,7 @@ class SigmaDslSpecification extends SigmaDslTesting
                   ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
                   1.toByte
                 ),
-                SCollection.getMethodByName("getOrElse").withConcreteTypes(Map(STypeVar("IV") -> SInt)),
+                SCollectionMethods.getMethodByName("getOrElse").withConcreteTypes(Map(STypeVar("IV") -> SInt)),
                 Vector(
                   SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 1.toByte),
                   SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 2.toByte)
@@ -8407,13 +8395,13 @@ class SigmaDslSpecification extends SigmaDslTesting
         if (lowerMethodCallsInTests)
           Array(
             FixedCostItem(FuncValue),
-            SeqCostItem(CompanionDesc(MapCollection), PerItemCost(JitCost(20), JitCost(1), 10), i)
+            ast.SeqCostItem(CompanionDesc(MapCollection), PerItemCost(JitCost(20), JitCost(1), 10), i)
           )
         else
           Array(
             FixedCostItem(MethodCall),
             FixedCostItem(FuncValue),
-            SeqCostItem(MethodDesc(SCollection.MapMethod), PerItemCost(JitCost(20), JitCost(1), 10), i)
+            ast.SeqCostItem(MethodDesc(SCollectionMethods.MapMethod), PerItemCost(JitCost(20), JitCost(1), 10), i)
           )
         )
       ++ repeatPlusChunk(i)
@@ -8445,7 +8433,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             Array((1, SCollectionType(SInt))),
             MethodCall.typed[Value[SCollection[SInt.type]]](
               ValUse(1, SCollectionType(SInt)),
-              SCollection.getMethodByName("map").withConcreteTypes(
+              SCollectionMethods.getMethodByName("map").withConcreteTypes(
                 Map(STypeVar("IV") -> SInt, STypeVar("OV") -> SInt)
               ),
               Vector(
@@ -8461,13 +8449,13 @@ class SigmaDslSpecification extends SigmaDslTesting
     val costDetails1 = TracedCost(
       traceBase ++ Array(
         FixedCostItem(FuncValue),
-        SeqCostItem(CompanionDesc(MapCollection), PerItemCost(JitCost(20), JitCost(1), 10), 0)
+        ast.SeqCostItem(CompanionDesc(MapCollection), PerItemCost(JitCost(20), JitCost(1), 10), 0)
       )
     )
     val costDetails2 = TracedCost(
       traceBase ++ Array(
         FixedCostItem(FuncValue),
-        SeqCostItem(CompanionDesc(MapCollection), PerItemCost(JitCost(20), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(MapCollection), PerItemCost(JitCost(20), JitCost(1), 10), 1),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(Constant),
@@ -8481,7 +8469,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     val costDetails3 = TracedCost(
       traceBase ++ Array(
         FixedCostItem(FuncValue),
-        SeqCostItem(CompanionDesc(MapCollection), PerItemCost(JitCost(20), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(MapCollection), PerItemCost(JitCost(20), JitCost(1), 10), 1),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(Constant),
@@ -8495,7 +8483,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     val costDetails4 = TracedCost(
       traceBase ++ Array(
         FixedCostItem(FuncValue),
-        SeqCostItem(CompanionDesc(MapCollection), PerItemCost(JitCost(20), JitCost(1), 10), 2),
+        ast.SeqCostItem(CompanionDesc(MapCollection), PerItemCost(JitCost(20), JitCost(1), 10), 2),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(Constant),
@@ -8563,7 +8551,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         traceBase ++
         Array(
           FixedCostItem(FuncValue),
-          SeqCostItem(CompanionDesc(Filter), PerItemCost(JitCost(20), JitCost(1), 10), i)
+          ast.SeqCostItem(CompanionDesc(Filter), PerItemCost(JitCost(20), JitCost(1), 10), i)
         ) ++
         gtChunk
       )
@@ -8617,7 +8605,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         traceBase ++
         Array(
           FixedCostItem(FuncValue),
-          SeqCostItem(CompanionDesc(Filter), PerItemCost(JitCost(20), JitCost(1), 10), i)
+          ast.SeqCostItem(CompanionDesc(Filter), PerItemCost(JitCost(20), JitCost(1), 10), i)
         ) ++
         repeatLeftBranch(i)
       )
@@ -8626,7 +8614,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       traceBase ++
       Array(
         FixedCostItem(FuncValue),
-        SeqCostItem(CompanionDesc(Filter), PerItemCost(JitCost(20), JitCost(1), 10), 3)
+        ast.SeqCostItem(CompanionDesc(Filter), PerItemCost(JitCost(20), JitCost(1), 10), 3)
       ) ++
       repeatLeftBranch(2) ++
       rightBranch
@@ -8635,7 +8623,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       traceBase ++
       Array(
         FixedCostItem(FuncValue),
-        SeqCostItem(CompanionDesc(Filter), PerItemCost(JitCost(20), JitCost(1), 10), 5)
+        ast.SeqCostItem(CompanionDesc(Filter), PerItemCost(JitCost(20), JitCost(1), 10), 5)
       ) ++
       leftBranch ++
       rightBranch ++
@@ -8679,7 +8667,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(GetVar),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
@@ -8689,7 +8677,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(SelectField),
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
-        SeqCostItem(CompanionDesc(Slice), PerItemCost(JitCost(10), JitCost(2), 100), i)
+        ast.SeqCostItem(CompanionDesc(Slice), PerItemCost(JitCost(10), JitCost(2), 100), i)
       )
     )
     val samples = genSamples(collWithRangeGen, DefaultMinSuccessful)
@@ -8762,7 +8750,7 @@ class SigmaDslSpecification extends SigmaDslTesting
                   ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
                   1.toByte
                 ),
-                SCollection.getMethodByName("slice").withConcreteTypes(Map(STypeVar("IV") -> SInt)),
+                SCollectionMethods.getMethodByName("slice").withConcreteTypes(Map(STypeVar("IV") -> SInt)),
                 Vector(
                   SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 1.toByte),
                   SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 2.toByte)
@@ -8781,7 +8769,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(SelectField),
         FixedCostItem(ValUse),
         FixedCostItem(SelectField),
-        SeqCostItem(CompanionDesc(Append), PerItemCost(JitCost(20), JitCost(2), 100), i)
+        ast.SeqCostItem(CompanionDesc(Append), PerItemCost(JitCost(20), JitCost(2), 100), i)
       )
     )
     if (lowerMethodCallsInTests) {
@@ -8831,7 +8819,7 @@ class SigmaDslSpecification extends SigmaDslTesting
                 ValUse(1, SPair(SCollectionType(SInt), SCollectionType(SInt))),
                 1.toByte
               ),
-              SCollection.getMethodByName("append").withConcreteTypes(Map(STypeVar("IV") -> SInt)),
+              SCollectionMethods.getMethodByName("append").withConcreteTypes(Map(STypeVar("IV") -> SInt)),
               Vector(
                 SelectField.typed[Value[SCollection[SInt.type]]](
                   ValUse(1, SPair(SCollectionType(SInt), SCollectionType(SInt))),
@@ -8857,14 +8845,14 @@ class SigmaDslSpecification extends SigmaDslTesting
       traceBase ++ Array(
         FixedCostItem(MethodCall),
         FixedCostItem(FuncValue),
-        FixedCostItem(SOption.FilterMethod, FixedCost(JitCost(20)))
+        FixedCostItem(SOptionMethods.FilterMethod, FixedCost(JitCost(20)))
       )
     )
     val costDetails5 = TracedCost(
       traceBase ++ Array(
         FixedCostItem(MethodCall),
         FixedCostItem(FuncValue),
-        FixedCostItem(SOption.FilterMethod, FixedCost(JitCost(20))),
+        FixedCostItem(SOptionMethods.FilterMethod, FixedCost(JitCost(20))),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(Constant),
@@ -8875,14 +8863,14 @@ class SigmaDslSpecification extends SigmaDslTesting
       traceBase ++ Array(
         FixedCostItem(MethodCall),
         FixedCostItem(FuncValue),
-        FixedCostItem(SOption.MapMethod, FixedCost(JitCost(20)))
+        FixedCostItem(SOptionMethods.MapMethod, FixedCost(JitCost(20)))
       )
     )
     val costDetails7 = TracedCost(
       traceBase ++ Array(
         FixedCostItem(MethodCall),
         FixedCostItem(FuncValue),
-        FixedCostItem(SOption.MapMethod, FixedCost(JitCost(20))),
+        FixedCostItem(SOptionMethods.MapMethod, FixedCost(JitCost(20))),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(Constant),
@@ -8925,7 +8913,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           Vector((1, SOption(SLong))),
           MethodCall.typed[Value[SOption[SLong.type]]](
             ValUse(1, SOption(SLong)),
-            SOption.getMethodByName("filter").withConcreteTypes(Map(STypeVar("T") -> SLong)),
+            SOptionMethods.getMethodByName("filter").withConcreteTypes(Map(STypeVar("T") -> SLong)),
             Vector(FuncValue(Vector((3, SLong)), EQ(ValUse(3, SLong), LongConstant(1L)))),
             Map()
           )
@@ -8943,7 +8931,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           Vector((1, SOption(SLong))),
           MethodCall.typed[Value[SOption[SLong.type]]](
             ValUse(1, SOption(SLong)),
-            SOption.getMethodByName("map").withConcreteTypes(
+            SOptionMethods.getMethodByName("map").withConcreteTypes(
               Map(STypeVar("T") -> SLong, STypeVar("R") -> SLong)
             ),
             Vector(
@@ -8962,14 +8950,14 @@ class SigmaDslSpecification extends SigmaDslTesting
       traceBase ++ Array(
         FixedCostItem(MethodCall),
         FixedCostItem(FuncValue),
-        FixedCostItem(SOption.FilterMethod, FixedCost(JitCost(20)))
+        FixedCostItem(SOptionMethods.FilterMethod, FixedCost(JitCost(20)))
       )
     )
     val costDetails2 = TracedCost(
       traceBase ++ Array(
         FixedCostItem(MethodCall),
         FixedCostItem(FuncValue),
-        FixedCostItem(SOption.FilterMethod, FixedCost(JitCost(20))),
+        FixedCostItem(SOptionMethods.FilterMethod, FixedCost(JitCost(20))),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(Constant),
@@ -8982,7 +8970,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       traceBase ++ Array(
         FixedCostItem(MethodCall),
         FixedCostItem(FuncValue),
-        FixedCostItem(SOption.FilterMethod, FixedCost(JitCost(20))),
+        FixedCostItem(SOptionMethods.FilterMethod, FixedCost(JitCost(20))),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(Constant),
@@ -9008,7 +8996,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           Array((1, SOption(SLong))),
           MethodCall.typed[Value[SOption[SLong.type]]](
             ValUse(1, SOption(SLong)),
-            SOption.getMethodByName("filter").withConcreteTypes(Map(STypeVar("T") -> SLong)),
+            SOptionMethods.getMethodByName("filter").withConcreteTypes(Map(STypeVar("T") -> SLong)),
             Vector(
               FuncValue(
                 Array((3, SLong)),
@@ -9027,14 +9015,14 @@ class SigmaDslSpecification extends SigmaDslTesting
       traceBase ++ Array(
         FixedCostItem(MethodCall),
         FixedCostItem(FuncValue),
-        FixedCostItem(SOption.MapMethod, FixedCost(JitCost(20)))
+        FixedCostItem(SOptionMethods.MapMethod, FixedCost(JitCost(20)))
       )
     )
     val costDetails5 = TracedCost(
       traceBase ++ Array(
         FixedCostItem(MethodCall),
         FixedCostItem(FuncValue),
-        FixedCostItem(SOption.MapMethod, FixedCost(JitCost(20))),
+        FixedCostItem(SOptionMethods.MapMethod, FixedCost(JitCost(20))),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(Constant),
@@ -9047,7 +9035,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       traceBase ++ Array(
         FixedCostItem(MethodCall),
         FixedCostItem(FuncValue),
-        FixedCostItem(SOption.MapMethod, FixedCost(JitCost(20))),
+        FixedCostItem(SOptionMethods.MapMethod, FixedCost(JitCost(20))),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(Constant),
@@ -9073,7 +9061,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           Array((1, SOption(SLong))),
           MethodCall.typed[Value[SOption[SLong.type]]](
             ValUse(1, SOption(SLong)),
-            SOption.getMethodByName("map").withConcreteTypes(
+            SOptionMethods.getMethodByName("map").withConcreteTypes(
               Map(STypeVar("T") -> SLong, STypeVar("R") -> SLong)
             ),
             Vector(
@@ -9185,7 +9173,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("blake2b256 benchmark: to estimate timeout") {
     val cases = (1 to 10).map { i =>
-      val block = Colls.fromArray(Array.fill(ErgoTreeEvaluator.DataBlockSize * i)(0.toByte))
+      val block = Colls.fromArray(Array.fill(CErgoTreeEvaluator.DataBlockSize * i)(0.toByte))
       block
     }
     benchmarkCases(cases,
@@ -9197,8 +9185,8 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("blake2b256, sha256 equivalence") {
-    def costDetailsBlake(i: Int) = TracedCost(traceBase :+ SeqCostItem(CompanionDesc(CalcBlake2b256), PerItemCost(JitCost(20), JitCost(7), 128), i))
-    def costDetailsSha(i: Int) = TracedCost(traceBase :+ SeqCostItem(CompanionDesc(CalcSha256), PerItemCost(JitCost(80), JitCost(8), 64), i))
+    def costDetailsBlake(i: Int) = TracedCost(traceBase :+ ast.SeqCostItem(CompanionDesc(CalcBlake2b256), PerItemCost(JitCost(20), JitCost(7), 128), i))
+    def costDetailsSha(i: Int) = TracedCost(traceBase :+ ast.SeqCostItem(CompanionDesc(CalcSha256), PerItemCost(JitCost(80), JitCost(8), 64), i))
 
     verifyCases(
       Seq(
@@ -9269,7 +9257,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(Constant),
         TypeBasedCostItem(ArithOp.Minus, SInt),
         FixedCostItem(ValUse),
-        SeqCostItem(CompanionDesc(AtLeast), PerItemCost(JitCost(20), JitCost(3), 5), i)
+        ast.SeqCostItem(CompanionDesc(AtLeast), PerItemCost(JitCost(20), JitCost(3), 5), i)
       )
     )
 
@@ -9333,11 +9321,11 @@ class SigmaDslSpecification extends SigmaDslTesting
       FixedCostItem(SelectField)
     )
 
-    val costDetails1 = TracedCost(testTraceBase :+ SeqCostItem(CompanionDesc(SigmaAnd), PerItemCost(JitCost(10), JitCost(2), 1), 2))
+    val costDetails1 = TracedCost(testTraceBase :+ ast.SeqCostItem(CompanionDesc(SigmaAnd), PerItemCost(JitCost(10), JitCost(2), 1), 2))
     val costDetails2 = TracedCost(
       testTraceBase ++ Array(
         FixedCostItem(BoolToSigmaProp),
-        SeqCostItem(CompanionDesc(SigmaAnd), PerItemCost(JitCost(10), JitCost(2), 1), 2)
+        ast.SeqCostItem(CompanionDesc(SigmaAnd), PerItemCost(JitCost(10), JitCost(2), 1), 2)
       )
     )
 
@@ -9415,7 +9403,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       FixedCostItem(SelectField)
     )
 
-    val costDetails1 = TracedCost(testTraceBase :+ SeqCostItem(CompanionDesc(SigmaOr), PerItemCost(JitCost(10), JitCost(2), 1), 2))
+    val costDetails1 = TracedCost(testTraceBase :+ ast.SeqCostItem(CompanionDesc(SigmaOr), PerItemCost(JitCost(10), JitCost(2), 1), 2))
     verifyCases(
       {
         def success[T](v: T, newCost: Int) = Expected(Success(v), newCost, costDetails1, newCost)
@@ -9462,7 +9450,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     val costDetails2 = TracedCost(
       testTraceBase ++ Array(
         FixedCostItem(BoolToSigmaProp),
-        SeqCostItem(CompanionDesc(SigmaOr), PerItemCost(JitCost(10), JitCost(2), 1), 2)
+        ast.SeqCostItem(CompanionDesc(SigmaOr), PerItemCost(JitCost(10), JitCost(2), 1), 2)
       )
     )
     verifyCases(
@@ -9524,7 +9512,7 @@ class SigmaDslSpecification extends SigmaDslTesting
               "0008980204cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b04419702cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b04419602cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b0441"
             )
           ), cost = 1780, newDetails(18), expectedNewCost = 1780),
-          CSigmaProp(COR(Array(pk, dht, and, or, threshold))) -> Expected(Success(
+          CSigmaProp(data.COR(Array(pk, dht, and, or, threshold))) -> Expected(Success(
             Helpers.decodeBytes(
               "00089705cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b04419602cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b04419702cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b0441980204cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b04419702cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b04419602cd039d0b1e46c21540d033143440d2fb7dd5d650cf89981c99ee53c6e0374d2b1b6fce03c046fccb95549910767d0543f5e8ce41d66ae6a8720a46f4049cac3b3d26dafb023479c9c3b86a0d3c8be3db0a2d186788e9af1db76d55f3dad127d15185d83d0303d7898641cb6653585a8e1dabfa7f665e61e0498963e329e6e3744bd764db2d72037ae057d89ec0b46ff8e9ff4c37e85c12acddb611c3f636421bef1542c11b0441"
             )
@@ -9556,7 +9544,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("allOf equivalence") {
-    def costDetails(i: Int) = TracedCost(traceBase :+ SeqCostItem(CompanionDesc(AND), PerItemCost(JitCost(10), JitCost(5), 32), i))
+    def costDetails(i: Int) = TracedCost(traceBase :+ ast.SeqCostItem(CompanionDesc(AND), PerItemCost(JitCost(10), JitCost(5), 32), i))
     verifyCases(
       Seq(
         (Coll[Boolean]()                   -> Expected(Success(true), 1765, costDetails(0), 1765)),
@@ -9577,7 +9565,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   }
 
   property("anyOf equivalence") {
-    def costDetails(i: Int) = TracedCost(traceBase :+ SeqCostItem(CompanionDesc(OR), PerItemCost(JitCost(5), JitCost(5), 64), i))
+    def costDetails(i: Int) = TracedCost(traceBase :+ ast.SeqCostItem(CompanionDesc(OR), PerItemCost(JitCost(5), JitCost(5), 64), i))
     verifyCases(
       Seq(
         (Coll[Boolean]()                   -> Expected(Success(false), 1764, costDetails(0), 1764)),
@@ -9654,14 +9642,14 @@ class SigmaDslSpecification extends SigmaDslTesting
 
   property("substConstants equivalence") {
     // tree without constant segregation
-    val t1 = ErgoTree(ErgoTree.DefaultHeader, Vector(), TrueSigmaProp)
+    val t1 = ErgoTree(ErgoTree.ZeroHeader, Vector(), TrueSigmaProp)
     // tree with constant segregation, but without constants
-    val t2 = ErgoTree(ErgoTree.ConstantSegregationHeader, Vector(), TrueSigmaProp)
+    val t2 = ErgoTree(ErgoTree.setConstantSegregation(ZeroHeader), Vector(), TrueSigmaProp)
     // tree with one segregated constant
-    val t3 = ErgoTree(ErgoTree.ConstantSegregationHeader, Vector(TrueSigmaProp), ConstantPlaceholder(0, SSigmaProp))
+    val t3 = ErgoTree(ErgoTree.setConstantSegregation(ZeroHeader), Vector(TrueSigmaProp), ConstantPlaceholder(0, SSigmaProp))
     // tree with one segregated constant of different type
     val t4 = ErgoTree(
-      ErgoTree.ConstantSegregationHeader,
+      ErgoTree.setConstantSegregation(ZeroHeader),
       Vector(IntConstant(10)),
       BoolToSigmaProp(EQ(ConstantPlaceholder(0, SInt), IntConstant(20))))
     def costDetails(i: Int) = TracedCost(
@@ -9673,7 +9661,7 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(ConcreteCollection),
         FixedCostItem(Constant),
         FixedCostItem(BoolToSigmaProp),
-        SeqCostItem(CompanionDesc(SubstConstants), PerItemCost(JitCost(100), JitCost(100), 1), i)
+        ast.SeqCostItem(CompanionDesc(SubstConstants), PerItemCost(JitCost(100), JitCost(100), 1), i)
       )
     )
     verifyCases(
@@ -9745,22 +9733,22 @@ class SigmaDslSpecification extends SigmaDslTesting
         FixedCostItem(GetVar),
         FixedCostItem(OptionGet),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
-        SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
+        ast.SeqCostItem(CompanionDesc(BlockValue), PerItemCost(JitCost(1), JitCost(1), 10), 1),
         FixedCostItem(ValUse),
         FixedCostItem(PropertyCall),
-        FixedCostItem(SContext.headersMethod, FixedCost(JitCost(15))),
+        FixedCostItem(SContextMethods.headersMethod, FixedCost(JitCost(15))),
         FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
         FixedCostItem(ValUse),
         FixedCostItem(PropertyCall),
-        SeqCostItem(MethodDesc(SCollection.IndicesMethod), PerItemCost(JitCost(20), JitCost(2), 16), 1),
+        ast.SeqCostItem(MethodDesc(SCollectionMethods.IndicesMethod), PerItemCost(JitCost(20), JitCost(2), 16), 1),
         FixedCostItem(Constant),
         FixedCostItem(ValUse),
         FixedCostItem(SizeOf),
         FixedCostItem(Constant),
         TypeBasedCostItem(ArithOp.Minus, SInt),
-        SeqCostItem(CompanionDesc(Slice), PerItemCost(JitCost(10), JitCost(2), 100), 0),
+        ast.SeqCostItem(CompanionDesc(Slice), PerItemCost(JitCost(10), JitCost(2), 100), 0),
         FixedCostItem(FuncValue),
-        SeqCostItem(CompanionDesc(ForAll), PerItemCost(JitCost(3), JitCost(1), 10), 0)
+        ast.SeqCostItem(CompanionDesc(ForAll), PerItemCost(JitCost(3), JitCost(1), 10), 0)
       )
     )
 
@@ -9811,7 +9799,7 @@ class SigmaDslSpecification extends SigmaDslTesting
                 List(),
                 MethodCall.typed[Value[SCollection[SHeader.type]]](
                   ValUse(1, SContext),
-                  SContext.getMethodByName("headers"),
+                  SContextMethods.getMethodByName("headers"),
                   Vector(),
                   Map()
                 )
@@ -9821,7 +9809,7 @@ class SigmaDslSpecification extends SigmaDslTesting
               Slice(
                 MethodCall.typed[Value[SCollection[SInt.type]]](
                   ValUse(3, SCollectionType(SHeader)),
-                  SCollection.getMethodByName("indices").withConcreteTypes(Map(STypeVar("IV") -> SHeader)),
+                  SCollectionMethods.getMethodByName("indices").withConcreteTypes(Map(STypeVar("IV") -> SHeader)),
                   Vector(),
                   Map()
                 ),
@@ -9842,7 +9830,7 @@ class SigmaDslSpecification extends SigmaDslTesting
                         Array((6, SHeader)),
                         MethodCall.typed[Value[SCollection[SByte.type]]](
                           ValUse(6, SHeader),
-                          SHeader.getMethodByName("parentId"),
+                          SHeaderMethods.getMethodByName("parentId"),
                           Vector(),
                           Map()
                         )
@@ -9858,7 +9846,7 @@ class SigmaDslSpecification extends SigmaDslTesting
                         Array((6, SHeader)),
                         MethodCall.typed[Value[SCollection[SByte.type]]](
                           ValUse(6, SHeader),
-                          SHeader.getMethodByName("id"),
+                          SHeaderMethods.getMethodByName("id"),
                           Vector(),
                           Map()
                         )
@@ -9921,7 +9909,7 @@ class SigmaDslSpecification extends SigmaDslTesting
                       ValUse(3, SPair(SByteArray, SByteArray)),
                       1.toByte
                     ),
-                    SCollection.getMethodByName("zip").withConcreteTypes(
+                    SCollectionMethods.getMethodByName("zip").withConcreteTypes(
                       Map(STypeVar("IV") -> SByte, STypeVar("OV") -> SByte)
                     ),
                     Vector(
@@ -9961,7 +9949,7 @@ class SigmaDslSpecification extends SigmaDslTesting
                 ValUse(1, SPair(SByteArray2, SByteArray)),
                 1.toByte
               ),
-              SCollection.getMethodByName("fold").withConcreteTypes(Map(STypeVar("IV") -> SCollection(SByte), STypeVar("OV") -> SCollection(SByte))),
+              SCollectionMethods.getMethodByName("fold").withConcreteTypes(Map(STypeVar("IV") -> SCollection(SByte), STypeVar("OV") -> SCollection(SByte))),
               Vector(
                 SelectField.typed[Value[SCollection[SByte.type]]](
                   ValUse(1, SPair(SByteArray2, SByteArray)),
@@ -9975,7 +9963,7 @@ class SigmaDslSpecification extends SigmaDslTesting
                         ValUse(3, SPair(SByteArray, SByteArray)),
                         1.toByte
                       ),
-                      SCollection.getMethodByName("zip").withConcreteTypes(
+                      SCollectionMethods.getMethodByName("zip").withConcreteTypes(
                         Map(STypeVar("IV") -> SByte, STypeVar("OV") -> SByte)
                       ),
                       Vector(
@@ -9986,7 +9974,7 @@ class SigmaDslSpecification extends SigmaDslTesting
                       ),
                       Map()
                     ),
-                    SCollection.getMethodByName("map").withConcreteTypes(
+                    SCollectionMethods.getMethodByName("map").withConcreteTypes(
                       Map(STypeVar("IV") -> SPair(SByte, SByte), STypeVar("OV") -> SByte)
                     ),
                     Vector(
@@ -10031,12 +10019,12 @@ class SigmaDslSpecification extends SigmaDslTesting
     // TODO v6.0: Add support of SFunc in TypeSerializer (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/847)
     assertExceptionThrown(
       f.verifyCase(Coll[Int](), Expected(Success(Coll[Int]()), 0)),
-      exceptionLike[MatchError]("(SInt$) => SInt$ (of class sigmastate.SFunc)")
+      exceptionLike[MatchError]("(SInt$) => SInt$ (of class sigma.ast.SFunc)")
     )
   }
 
   override protected def afterAll(): Unit = {
-    printDebug(ErgoTreeEvaluator.DefaultProfiler.generateReport)
+    printDebug(CErgoTreeEvaluator.DefaultProfiler.generateReport)
     printDebug("==========================================================")
     printDebug(Interpreter.verifySignatureProfiler.generateReport)
     printDebug("==========================================================")

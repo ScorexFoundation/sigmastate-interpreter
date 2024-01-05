@@ -1,5 +1,7 @@
 package org.ergoplatform.sdk.js
 
+import sigma.js.GroupElement
+
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
 

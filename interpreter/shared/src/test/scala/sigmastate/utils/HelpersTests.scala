@@ -1,11 +1,11 @@
 package sigmastate.utils
 
-import sigmastate.serialization.generators.ObjectGenerators
+import sigma.serialization.generators.ObjectGenerators
 import Helpers._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import sigmastate.eval.Extensions.ArrayOps
+import sigma.Extensions.ArrayOps
 
 class HelpersTests extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers with ObjectGenerators {
   property("xorU") {

@@ -4,17 +4,17 @@ package org.ergoplatform.sdk
 import java.math.BigInteger
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen
-import sigma.data.RType
-import sigmastate.SCollection.SByteArray
-import sigmastate.SType.AnyOps
-import sigmastate.Values.SigmaBoolean
-import sigmastate._
-import sigmastate.eval.Extensions._
-import sigmastate.eval.{Evaluation, _}
-import sigmastate.crypto.CryptoConstants.EcPointType
-import sigmastate.exceptions.SerializerException
-import sigma.{AvlTree, Box, Colls}
-import sigmastate.serialization.SerializationSpecification
+import sigma.data.{CAnyValue, RType, SigmaBoolean, TupleColl}
+import sigma.ast._
+import sigma.ast.SCollection.SByteArray
+import sigma.ast.SType.AnyOps
+import sigma.crypto.EcPointType
+import sigma.serialization.SerializerException
+import sigma.util.Extensions.{BigIntegerOps, EcpOps, SigmaBooleanOps}
+import sigma.Extensions.ArrayOps
+import sigma.eval.SigmaDsl
+import sigma.{AvlTree, Box, Colls, Evaluation}
+import sigma.serialization.SerializationSpecification
 
 import scala.annotation.nowarn
 import scala.reflect.ClassTag
@@ -51,8 +51,9 @@ class DataJsonEncoderSpecification extends SerializationSpecification {
 
   def testTuples[T <: SType](tpe: T) = {
     implicit val wWrapped: Gen[T#WrappedType]      = wrappedTypeGen(tpe)
-    implicit val tag     : ClassTag[T#WrappedType] = tpe.classTag[T#WrappedType]
-    implicit val tAny    : RType[Any]              = sigma.AnyType
+    val tT = Evaluation.stypeToRType(tpe)
+    @nowarn implicit val tag     : ClassTag[T#WrappedType] = tT.classTag
+    @nowarn implicit val tAny    : RType[Any]              = sigma.AnyType
     forAll { in: (T#WrappedType, T#WrappedType) =>
       val (x,y) = (in._1, in._2)
       roundtrip[SType]((x, y).asWrappedType, STuple(tpe, tpe))
@@ -63,8 +64,8 @@ class DataJsonEncoderSpecification extends SerializationSpecification {
 
   @nowarn def testAnyValue[T <: SType](tpe: T) = {
     implicit val wWrapped = wrappedTypeGen(tpe)
-    implicit val tag = tpe.classTag[T#WrappedType]
     implicit val tT = Evaluation.stypeToRType(tpe)
+    implicit val tag = tT.classTag
     implicit val tAny = sigma.AnyType
     forAll { in: T#WrappedType =>
       val x = CAnyValue(in)
@@ -91,9 +92,9 @@ class DataJsonEncoderSpecification extends SerializationSpecification {
     forAll { x: Boolean => roundtrip[SBoolean.type](x, SBoolean) }
     forAll { x: Long => roundtrip[SLong.type](x, SLong) }
     forAll { x: String => roundtrip[SString.type](x, SString) }
-    forAll { x: BigInteger => roundtrip[SBigInt.type](x, SBigInt) }
-    forAll { x: EcPointType => roundtrip[SGroupElement.type](x, SGroupElement) }
-    forAll { x: SigmaBoolean => roundtrip[SSigmaProp.type](x, SSigmaProp) }
+    forAll { x: BigInteger => roundtrip[SBigInt.type](x.toBigInt, SBigInt) }
+    forAll { x: EcPointType => roundtrip[SGroupElement.type](x.toGroupElement, SGroupElement) }
+    forAll { x: SigmaBoolean => roundtrip[SSigmaProp.type](x.toSigmaProp, SSigmaProp) }
     forAll { x: AvlTree => roundtrip[SAvlTree.type](x, SAvlTree) }
     forAll { x: Array[Byte] => roundtrip[SByteArray](x.toColl, SByteArray) }
     forAll { x: Box => roundtrip[SBox.type](x, SBox) }
@@ -183,8 +184,9 @@ class DataJsonEncoderSpecification extends SerializationSpecification {
 
   def testEncodeError[T <: SType](tpe: T) = {
     implicit val wWrapped = wrappedTypeGen(tpe)
-    implicit val tag = tpe.classTag[T#WrappedType]
-    implicit val tAny = sigma.AnyType
+    val tT = Evaluation.stypeToRType(tpe)
+    @nowarn implicit val tag = tT.classTag
+    @nowarn implicit val tAny = sigma.AnyType
     forAll { x: T#WrappedType =>
       an[SerializerException] should be thrownBy {
         DataJsonEncoder.encode(TupleColl(x, x, x).asWrappedType, STuple(tpe, tpe, tpe))

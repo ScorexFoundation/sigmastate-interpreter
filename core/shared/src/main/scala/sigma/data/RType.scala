@@ -48,12 +48,6 @@ case class PrimitiveType[A](
   override def name: String = classTag.toString()
 }
 
-case class StringType() extends RType[String] {
-  override def classTag: ClassTag[String] = ClassTag[String](classOf[String])
-
-  override def name: String = "String"
-}
-
 /** Descriptor of descriptor to represent type of RType[_] instances.
   * This describes any possible descriptor, disregarding its underlying type.
   * Thus the underlying type is assumed to be Any. */

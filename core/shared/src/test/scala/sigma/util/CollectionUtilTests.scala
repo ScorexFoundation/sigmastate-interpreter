@@ -21,18 +21,18 @@ class CollectionUtilTests extends BaseTests {
   test("concatArrays") {
     val xs = Array[Byte](1,2,3)
     val ys = Array[Byte](4,5,6)
-    val zs = concatArrays(xs, ys)
+    val zs = concatArrays_v4(xs, ys)
     assertResult(Array[Byte](1, 2, 3, 4, 5, 6))(zs)
 
     val pairs = xs.zip(ys)
     // this reproduces the problem which takes place in v3.x, v4.x (ErgoTree v0, v1)
-    an[Throwable] should be thrownBy(concatArrays(pairs, pairs))
+    an[Throwable] should be thrownBy(concatArrays_v4(pairs, pairs))
 
     // and this is the fix in v5.0
-    concatArrays_v5(pairs, pairs) shouldBe Array((1, 4), (2, 5), (3, 6), (1, 4), (2, 5), (3, 6))
+    concatArrays(pairs, pairs) shouldBe Array((1, 4), (2, 5), (3, 6), (1, 4), (2, 5), (3, 6))
 
     val xOpts = xs.map(Option(_))
-    concatArrays_v5(xOpts, xOpts) shouldBe Array(Some(1), Some(2), Some(3), Some(1), Some(2), Some(3))
+    concatArrays(xOpts, xOpts) shouldBe Array(Some(1), Some(2), Some(3), Some(1), Some(2), Some(3))
   }
 
   def joinSeqs(l: Seq[Int], r: Seq[Int]) =

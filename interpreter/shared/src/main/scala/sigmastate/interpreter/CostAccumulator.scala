@@ -1,7 +1,7 @@
 package sigmastate.interpreter
 
-import sigmastate.JitCost
-import sigmastate.exceptions.CostLimitException
+import sigma.ast.JitCost
+import sigma.exceptions.CostLimitException
 
 /** Encapsulate simple monotonic (add only) counter with reset. */
 class CostCounter(val initialCost: JitCost) {

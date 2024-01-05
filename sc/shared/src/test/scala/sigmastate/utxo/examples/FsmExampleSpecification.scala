@@ -6,16 +6,17 @@ import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigma.Colls
-import sigmastate.SCollection.SByteArray
-import sigmastate.Values._
+import sigma.ast.SCollection.SByteArray
+import sigma.ast._
 import sigmastate._
-import sigmastate.eval._
-import sigmastate.lang.Terms._
+import sigma.ast.syntax._
+import sigma.data.{AvlTreeData, AvlTreeFlags}
+import sigma.eval.Extensions.SigmaBooleanOps
+import sigma.eval.SigmaDsl
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.serialization.ValueSerializer
-import sigmastate.utxo._
+import sigma.serialization.ValueSerializer
 
 
 class FsmExampleSpecification extends CompilerTestingCommons
@@ -48,10 +49,10 @@ class FsmExampleSpecification extends CompilerTestingCommons
 
     val prover = new ContextEnrichingTestProvingInterpreter
 
-    val script1 = prover.dlogSecrets.head.publicImage.toSigmaProp
-    val script2 = prover.dhSecrets.head.publicImage.toSigmaProp
+    val script1 = prover.dlogSecrets.head.publicImage.toSigmaPropValue
+    val script2 = prover.dhSecrets.head.publicImage.toSigmaPropValue
     val script3 = SigmaAnd(script1, script2)
-    val script4 = prover.dlogSecrets.tail.head.publicImage.toSigmaProp //a script to leave FSM
+    val script4 = prover.dlogSecrets.tail.head.publicImage.toSigmaPropValue //a script to leave FSM
 
     val script1Hash = hash.Blake2b256(ValueSerializer.serialize(script1))
     val script2Hash = hash.Blake2b256(ValueSerializer.serialize(script2))
@@ -89,7 +90,7 @@ class FsmExampleSpecification extends CompilerTestingCommons
     val isMember = OptionIsDefined(
       IR.builder.mkMethodCall(
         OptionGet(ExtractRegisterAs[SAvlTree.type](Self, fsmDescRegister)),
-        SAvlTree.getMethod,
+        SAvlTreeMethods.getMethod,
         IndexedSeq(Append(
           ConcreteCollection.fromItems[SByte.type](
             OptionGet(ExtractRegisterAs[SByte.type](Self, currentStateRegister)),

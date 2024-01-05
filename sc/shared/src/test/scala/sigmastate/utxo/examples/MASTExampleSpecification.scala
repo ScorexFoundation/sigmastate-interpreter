@@ -4,17 +4,19 @@ import org.ergoplatform._
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigmastate.SCollection.SByteArray
-import sigmastate.Values._
+import sigma.ast.{SAvlTree, SBoolean, SLong}
+import sigma.ast.SCollection.SByteArray
+import sigma.data.{AvlTreeData, AvlTreeFlags}
+import sigma.ast._
 import sigmastate._
-import sigmastate.eval.Extensions.ArrayOps
+import sigma.Extensions.ArrayOps
+import sigma.ast.syntax.{GetVarByteArray, OptionValueOps}
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
-import sigmastate.lang.Terms._
+import sigma.ast.syntax._
+import sigma.eval.SigmaDsl
 import sigmastate.interpreter.Interpreter._
-import sigmastate.serialization.ValueSerializer
-import sigmastate.utxo._
-import sigmastate.eval._
+import sigma.serialization.ValueSerializer
 
 import scala.util.Random
 
@@ -96,7 +98,7 @@ class MASTExampleSpecification extends CompilerTestingCommons
     val merklePathToScript = OptionIsDefined(
       IR.builder.mkMethodCall(
         ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
-        SAvlTree.getMethod,
+        SAvlTreeMethods.getMethod,
         IndexedSeq(
           CalcBlake2b256(GetVarByteArray(scriptId).get),
           GetVarByteArray(proofId).get)).asOption[SByteArray]
@@ -113,7 +115,7 @@ class MASTExampleSpecification extends CompilerTestingCommons
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(selfBox),
-      createTransaction(testBox(1, recipientProposition, 0)),
+      createTransaction(testBox(1, ErgoTree.fromSigmaBoolean(recipientProposition), 0)),
       self = selfBox, activatedVersionInTests)
 
     avlProver.performOneOperation(Lookup(knownSecretTreeKey))

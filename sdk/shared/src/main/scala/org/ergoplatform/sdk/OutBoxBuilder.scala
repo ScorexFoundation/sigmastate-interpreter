@@ -2,11 +2,11 @@ package org.ergoplatform.sdk
 
 import org.ergoplatform.ErgoBox.TokenId
 import org.ergoplatform.sdk.JavaHelpers.collRType
-import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, SigmaConstants}
+import org.ergoplatform.{ErgoBox, ErgoBoxCandidate}
 import sigma.Colls
-import sigma.data.RType
-import sigmastate.SType
-import sigmastate.Values.{Constant, ErgoTree, EvaluatedValue}
+import sigma.ast.{ErgoTree, SType}
+import sigma.data.{RType, SigmaConstants}
+import sigma.ast.{Constant, EvaluatedValue}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -69,7 +69,7 @@ object OutBoxBuilder {
     require(nRegs <= nonMandatoryRegisters.length,
       s"Too many additional registers $nRegs. Max allowed ${nonMandatoryRegisters.length}")
     implicit val TokenIdRType: RType[TokenId] = collRType(sigma.ByteType).asInstanceOf[RType[TokenId]]
-    val ts = Colls.fromItems(tokens.map(Iso.isoErgoTokenToPair.to(_)): _*)
+    val ts = Colls.fromItems(tokens.map(SdkIsos.isoErgoTokenToPair.to(_)): _*)
     val rs = registers.zipWithIndex.map { case (c, i) =>
       val id = ErgoBox.nonMandatoryRegisters(i)
       id -> c.asInstanceOf[EvaluatedValue[_ <: SType]]

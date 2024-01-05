@@ -45,7 +45,7 @@ class CollOverArray[@specialized A](val toArray: Array[A], val builder: CollBuil
       // in v5.0 and above this fixes the ClassCastException problem
       safeConcatArrays_v5(toArray, other.toArray)(tA.classTag)
     } else {
-      CollectionUtil.concatArrays(toArray, other.toArray)
+      CollectionUtil.concatArrays_v4(toArray, other.toArray)
     }
     builder.fromArray(result)
   }

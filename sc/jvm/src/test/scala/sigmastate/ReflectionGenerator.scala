@@ -34,7 +34,7 @@ object ReflectionGenerator {
     "sigma.",
     "sigma.",
     "special.wrappers.",
-    "sigmastate.Values.",
+    "sigma.ast.",
     "sigmastate.lang.Terms.",
     "sigmastate.interpreter.",
     "sigmastate.utxo.",

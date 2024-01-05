@@ -5,8 +5,7 @@ import org.ergoplatform._
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Remove}
 import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigmastate.{AvlTreeData, AvlTreeFlags, Values}
-import sigmastate.Values.{ErgoTree, LongConstant}
+import sigma.ast.{ErgoTree, LongConstant, TrueLeaf}
 import sigmastate.eval._
 import sigmastate.helpers.{BlockchainState, CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, ErgoTransactionValidator}
 import sigmastate.helpers.TestingHelpers._
@@ -16,7 +15,10 @@ import scala.collection.mutable
 import scala.util.{Random, Try}
 import scorex.util._
 import sigma.Colls
-import sigmastate.interpreter.ContextExtension
+import sigma.data.{AvlTreeData, AvlTreeFlags}
+import ErgoTree.ZeroHeader
+import sigma.eval.Extensions.SigmaBooleanOps
+import sigma.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.utxo.blockchain.BlockchainSimulationTestingCommons.{FullBlock, ValidationState}
 
@@ -45,7 +47,7 @@ trait BlockchainSimulationTestingCommons extends CompilerTestingCommons {
                               propOpt: Option[ErgoTree] = None,
                               extension: ContextExtension = ContextExtension.empty): FullBlock = {
     val prop: ErgoTree = propOpt.getOrElse(
-      mkTestErgoTree(prover.dlogSecrets.head.publicImage.toSigmaProp))
+      mkTestErgoTree(prover.dlogSecrets.head.publicImage.toSigmaPropValue))
     val minerPubkey = prover.dlogSecrets.head.publicImage.pkBytes
 
     val boxesToSpend = state.boxesReader.randomBoxes(30 + height)
@@ -155,8 +157,8 @@ object BlockchainSimulationTestingCommons extends CompilerTestingCommons {
         val boxes = (1 to 50).map(_ =>
           testBox(10,
             ErgoTree.fromProposition(
-              ErgoTree.headerWithVersion(scriptVersion),
-              Values.TrueLeaf.toSigmaProp),
+              ErgoTree.headerWithVersion(ZeroHeader, scriptVersion),
+              TrueLeaf.toSigmaProp),
             i, Seq(), Map(), txId))
         createTransaction(boxes)
       },

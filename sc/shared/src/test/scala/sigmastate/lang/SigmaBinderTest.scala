@@ -1,17 +1,18 @@
 package sigmastate.lang
 
-import org.ergoplatform.{Height, Inputs, Outputs, Self}
 import org.ergoplatform.ErgoAddressEncoder._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import sigmastate.Values._
+import sigma.ast.{NoType, SBoolean, SBox, SCollection, SFunc, SInt, SLong, STuple}
+import sigma.ast._
+import sigma.ast.syntax.SValue
 import sigmastate._
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
-import sigmastate.lang.Terms._
-import sigmastate.exceptions.BinderException
-import sigmastate.eval._
+import SigmaPredef.PredefinedFuncRegistry
+import sigma.ast.syntax._
+import sigma.eval.SigmaDsl
+import sigma.exceptions.BinderException
 
 class SigmaBinderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers with LangTests {
   import StdSigmaBuilder._
@@ -167,7 +168,7 @@ class SigmaBinderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Mat
 
   property("predefined primitives") {
     bind(env, "{ (box: Box) => box.value }") shouldBe Lambda(IndexedSeq("box" -> SBox), NoType, Select(Ident("box"), "value"))
-    bind(env, "{ (box: Box) => box.propositionBytes }") shouldBe Lambda(IndexedSeq("box" -> SBox), NoType, Select(Ident("box"), SBox.PropositionBytes))
+    bind(env, "{ (box: Box) => box.propositionBytes }") shouldBe Lambda(IndexedSeq("box" -> SBox), NoType, Select(Ident("box"), SBoxMethods.PropositionBytes))
     bind(env, "{ (box: Box) => box.bytes }") shouldBe Lambda(IndexedSeq("box" -> SBox), NoType, Select(Ident("box"), "bytes"))
     bind(env, "{ (box: Box) => box.id }") shouldBe Lambda(IndexedSeq("box" -> SBox), NoType, Select(Ident("box"), "id"))
   }

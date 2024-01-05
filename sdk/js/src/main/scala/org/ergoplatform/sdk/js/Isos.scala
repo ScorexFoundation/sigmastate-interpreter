@@ -1,60 +1,37 @@
 package org.ergoplatform.sdk.js
 
 import org.ergoplatform.ErgoBox._
-import org.ergoplatform.sdk.JavaHelpers.UniversalConverter
-import org.ergoplatform.sdk.{Iso, ExtendedInputBox}
-import org.ergoplatform.sdk.wallet.protocol.context
 import org.ergoplatform._
-import sigma.data.RType
+import org.ergoplatform.sdk.ExtendedInputBox
+import org.ergoplatform.sdk.JavaHelpers.UniversalConverter
+import org.ergoplatform.sdk.wallet.protocol.context
 import scorex.crypto.authds.ADKey
 import scorex.util.ModifierId
 import scorex.util.encode.Base16
-import sigmastate.Values.{Constant, GroupElementConstant}
-import sigmastate.eval.Extensions.ArrayOps
-import sigmastate.eval.{CBigInt, Digest32Coll, Evaluation, CAvlTree, CGroupElement, CPreHeader, CHeader}
+import sigma.Extensions.CollBytesOps
+import sigma.ast.syntax.GroupElementConstant
+import sigma.ast.{Constant, GroupElementConstant, SType}
+import sigma.data.Iso.{isoStringToArray, isoStringToColl}
+import sigma.data.{CBigInt, CGroupElement, Digest32Coll, Digest32CollRType, Iso}
+import sigma.interpreter.{ContextExtension, ProverResult}
+import sigma.js.{AvlTree, GroupElement}
+import sigma.serialization.{ErgoTreeSerializer, ValueSerializer}
+import sigma.{Coll, Colls}
+import sigmastate.eval.{CHeader, CPreHeader}
 import sigmastate.fleetSdkCommon.distEsmTypesBoxesMod.Box
 import sigmastate.fleetSdkCommon.distEsmTypesCommonMod.HexString
 import sigmastate.fleetSdkCommon.distEsmTypesRegistersMod.NonMandatoryRegisters
 import sigmastate.fleetSdkCommon.distEsmTypesTokenMod.TokenAmount
-import sigmastate.fleetSdkCommon.distEsmTypesTransactionsMod.{UnsignedTransaction, SignedTransaction}
-import sigmastate.fleetSdkCommon.{distEsmTypesProverResultMod => proverResultMod, distEsmTypesContextExtensionMod => contextExtensionMod, distEsmTypesInputsMod => inputsMod, distEsmTypesBoxesMod => boxesMod, distEsmTypesCommonMod => commonMod, distEsmTypesRegistersMod => registersMod, distEsmTypesTokenMod => tokenMod}
-import sigmastate.interpreter.{ContextExtension, ProverResult}
-import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
-import sigmastate.{AvlTreeData, AvlTreeFlags, SType}
-import sigma.{Coll, Colls}
-import sigma.Extensions.CollBytesOps
+import sigmastate.fleetSdkCommon.distEsmTypesTransactionsMod.{SignedTransaction, UnsignedTransaction}
+import sigmastate.fleetSdkCommon.{distEsmTypesBoxesMod => boxesMod, distEsmTypesCommonMod => commonMod, distEsmTypesContextExtensionMod => contextExtensionMod, distEsmTypesInputsMod => inputsMod, distEsmTypesProverResultMod => proverResultMod, distEsmTypesRegistersMod => registersMod, distEsmTypesTokenMod => tokenMod}
 
 import java.math.BigInteger
 import scala.collection.immutable.ListMap
-import scala.reflect.ClassTag
 import scala.scalajs.js
-import scala.scalajs.js.JSConverters.JSRichOption
 import scala.scalajs.js.Object
 
 /** Definitions of isomorphisms. */
 object Isos {
-  /** Conversion between `Value` and `Constant[SType]`. */
-  implicit val isoValueToConstant: Iso[Value, Constant[SType]] = new Iso[Value, Constant[SType]] {
-    override def to(x: Value): Constant[SType] =
-      Constant(x.runtimeData.asInstanceOf[SType#WrappedType], Evaluation.rtypeToSType(x.tpe.rtype))
-
-    override def from(x: Constant[SType]): Value = {
-      val rtype = Evaluation.stypeToRType(x.tpe)
-      val jsvalue = Value.fromRuntimeData(x.value, rtype)
-      new Value(jsvalue, new Type(rtype))
-    }
-  }
-
-  val isoStringToArray: Iso[String, Array[Byte]] = new Iso[String, Array[Byte]] {
-    override def to(x: String): Array[Byte] = Base16.decode(x).get
-    override def from(x: Array[Byte]): String = Base16.encode(x)
-  }
-
-  val isoStringToColl: Iso[String, Coll[Byte]] = new Iso[String, Coll[Byte]] {
-    override def to(x: String): Coll[Byte] = Colls.fromArray(Base16.decode(x).get)
-    override def from(x: Coll[Byte]): String = x.toHex
-  }
-
   val isoStringToGroupElement: Iso[String, sigma.GroupElement] = new Iso[String, sigma.GroupElement] {
     override def to(x: String): sigma.GroupElement = {
       val bytes = Base16.decode(x).get
@@ -93,31 +70,6 @@ object Isos {
     }
   }
 
-  implicit val isoAvlTree: Iso[AvlTree, sigma.AvlTree] = new Iso[AvlTree, sigma.AvlTree] {
-    override def to(x: AvlTree): sigma.AvlTree = {
-      CAvlTree(
-        AvlTreeData(
-          digest = isoStringToArray.to(x.digest).toColl,
-          treeFlags = AvlTreeFlags(x.insertAllowed, x.updateAllowed, x.removeAllowed),
-          x.keyLength,
-          valueLengthOpt = isoUndefOr(Iso.identityIso[Int]).to(x.valueLengthOpt),
-        ),
-      )
-    }
-    override def from(x: sigma.AvlTree): AvlTree = {
-      val tree = x.asInstanceOf[CAvlTree]
-      val data = tree.treeData
-      new AvlTree(
-        digest = isoStringToColl.from(tree.digest),
-        insertAllowed = data.treeFlags.insertAllowed,
-        updateAllowed = data.treeFlags.updateAllowed,
-        removeAllowed = data.treeFlags.removeAllowed,
-        keyLength = data.keyLength,
-        valueLengthOpt = isoUndefOr(Iso.identityIso[Int]).from(data.valueLengthOpt),
-      )
-    }
-  }
-
   implicit val isoHeader: Iso[Header, sigma.Header] = new Iso[Header, sigma.Header] {
     override def to(a: Header): sigma.Header = {
       CHeader(
@@ -125,16 +77,16 @@ object Isos {
         version = a.version,
         parentId = isoStringToColl.to(a.parentId),
         ADProofsRoot = isoStringToColl.to(a.ADProofsRoot),
-        stateRoot = isoAvlTree.to(a.stateRoot),
+        stateRoot = AvlTree.isoAvlTree.to(a.stateRoot),
         transactionsRoot = isoStringToColl.to(a.transactionsRoot),
-        timestamp = isoBigIntToLong.to(a.timestamp),
-        nBits = isoBigIntToLong.to(a.nBits),
+        timestamp = sigma.js.Isos.isoBigIntToLong.to(a.timestamp),
+        nBits = sigma.js.Isos.isoBigIntToLong.to(a.nBits),
         height = a.height,
         extensionRoot = isoStringToColl.to(a.extensionRoot),
         minerPk = isoGroupElement.to(a.minerPk),
         powOnetimePk = isoGroupElement.to(a.powOnetimePk),
         powNonce = isoStringToColl.to(a.powNonce),
-        powDistance = isoBigInt.to(a.powDistance),
+        powDistance = sigma.js.Isos.isoBigInt.to(a.powDistance),
         votes = isoStringToColl.to(a.votes)
       )
     }
@@ -145,16 +97,16 @@ object Isos {
         version = header.version,
         parentId = isoStringToColl.from(header.parentId),
         ADProofsRoot = isoStringToColl.from(header.ADProofsRoot),
-        stateRoot = isoAvlTree.from(header.stateRoot),
+        stateRoot = AvlTree.isoAvlTree.from(header.stateRoot),
         transactionsRoot = isoStringToColl.from(header.transactionsRoot),
-        timestamp = isoBigIntToLong.from(header.timestamp),
-        nBits = isoBigIntToLong.from(header.nBits),
+        timestamp = sigma.js.Isos.isoBigIntToLong.from(header.timestamp),
+        nBits = sigma.js.Isos.isoBigIntToLong.from(header.nBits),
         height = header.height,
         extensionRoot = isoStringToColl.from(header.extensionRoot),
         minerPk = isoGroupElement.from(header.minerPk),
         powOnetimePk = isoGroupElement.from(header.powOnetimePk),
         powNonce = isoStringToColl.from(header.powNonce),
-        powDistance = isoBigInt.from(header.powDistance),
+        powDistance = sigma.js.Isos.isoBigInt.from(header.powDistance),
         votes = isoStringToColl.from(header.votes)
       )
     }
@@ -165,8 +117,8 @@ object Isos {
       CPreHeader(
         version = a.version,
         parentId = isoStringToColl.to(a.parentId),
-        timestamp = isoBigIntToLong.to(a.timestamp),
-        nBits = isoBigIntToLong.to(a.nBits),
+        timestamp = sigma.js.Isos.isoBigIntToLong.to(a.timestamp),
+        nBits = sigma.js.Isos.isoBigIntToLong.to(a.nBits),
         height = a.height,
         minerPk = isoGroupElement.to(a.minerPk),
         votes = isoStringToColl.to(a.votes)
@@ -177,8 +129,8 @@ object Isos {
       new PreHeader(
         version = header.version,
         parentId = isoStringToColl.from(header.parentId),
-        timestamp = isoBigIntToLong.from(header.timestamp),
-        nBits = isoBigIntToLong.from(header.nBits),
+        timestamp = sigma.js.Isos.isoBigIntToLong.from(header.timestamp),
+        nBits = sigma.js.Isos.isoBigIntToLong.from(header.nBits),
         height = header.height,
         minerPk = isoGroupElement.from(header.minerPk),
         votes = isoStringToColl.from(header.votes)
@@ -197,8 +149,8 @@ object Isos {
         dataInputCost = a.dataInputCost,
         outputCost = a.outputCost,
         maxBlockCost = a.maxBlockCost,
-        softForkStartingHeight = Isos.isoUndefOr[Int, Int](Iso.identityIso).to(a.softForkStartingHeight),
-        softForkVotesCollected = Isos.isoUndefOr[Int, Int](Iso.identityIso).to(a.softForkVotesCollected),
+        softForkStartingHeight = sigma.js.Isos.isoUndefOr[Int, Int](Iso.identityIso).to(a.softForkStartingHeight),
+        softForkVotesCollected = sigma.js.Isos.isoUndefOr[Int, Int](Iso.identityIso).to(a.softForkVotesCollected),
         blockVersion = a.blockVersion
       )
     }
@@ -212,8 +164,8 @@ object Isos {
         dataInputCost = b.dataInputCost,
         outputCost = b.outputCost,
         maxBlockCost = b.maxBlockCost,
-        softForkStartingHeight = Isos.isoUndefOr[Int, Int](Iso.identityIso).from(b.softForkStartingHeight),
-        softForkVotesCollected = Isos.isoUndefOr[Int, Int](Iso.identityIso).from(b.softForkVotesCollected),
+        softForkStartingHeight = sigma.js.Isos.isoUndefOr[Int, Int](Iso.identityIso).from(b.softForkStartingHeight),
+        softForkVotesCollected = sigma.js.Isos.isoUndefOr[Int, Int](Iso.identityIso).from(b.softForkVotesCollected),
         blockVersion = b.blockVersion
       )
     }
@@ -222,7 +174,7 @@ object Isos {
   implicit val isoBlockchainStateContext: Iso[BlockchainStateContext, context.BlockchainStateContext] = new Iso[BlockchainStateContext, context.BlockchainStateContext] {
     override def to(a: BlockchainStateContext): context.BlockchainStateContext = {
       context.CBlockchainStateContext(
-        sigmaLastHeaders = isoArrayToColl(isoHeader).to(a.sigmaLastHeaders),
+        sigmaLastHeaders = sigma.js.Isos.isoArrayToColl(isoHeader).to(a.sigmaLastHeaders),
         previousStateDigest = isoStringToColl.to(a.previousStateDigest),
         sigmaPreHeader = isoPreHeader.to(a.sigmaPreHeader)
       )
@@ -230,7 +182,7 @@ object Isos {
 
     override def from(b: context.BlockchainStateContext): BlockchainStateContext = {
       new BlockchainStateContext(
-        sigmaLastHeaders = isoArrayToColl(isoHeader).from(b.sigmaLastHeaders),
+        sigmaLastHeaders = sigma.js.Isos.isoArrayToColl(isoHeader).from(b.sigmaLastHeaders),
         previousStateDigest = isoStringToColl.from(b.previousStateDigest),
         sigmaPreHeader = isoPreHeader.from(b.sigmaPreHeader)
       )
@@ -295,22 +247,6 @@ object Isos {
     override def from(x: DataInput): inputsMod.DataInput = inputsMod.DataInput(x.boxId.convertTo[boxesMod.BoxId])
   }
 
-  implicit val isoBigInt: Iso[js.BigInt, sigma.BigInt] = new Iso[js.BigInt, sigma.BigInt] {
-    override def to(x: js.BigInt): sigma.BigInt = {
-      CBigInt(new BigInteger(x.toString(10)))
-    }
-    override def from(x: sigma.BigInt): js.BigInt = {
-      val bi = x.asInstanceOf[CBigInt].wrappedValue
-      val s = bi.toString(10)
-      js.BigInt(s)
-    }
-  }
-
-  implicit val isoBigIntToLong: Iso[js.BigInt, Long] = new Iso[js.BigInt, Long] {
-    override def to(x: js.BigInt): Long = java.lang.Long.parseLong(x.toString(10))
-    override def from(x: Long): js.BigInt = js.BigInt(x.toString)
-  }
-
   implicit val isoAmount: Iso[commonMod.Amount, Long] = new Iso[commonMod.Amount, Long] {
     override def to(x: commonMod.Amount): Long = x.asInstanceOf[Any] match {
       case s: String => BigInt(s).toLong
@@ -328,28 +264,13 @@ object Isos {
         tokenMod.TokenAmount[commonMod.Amount](isoAmount.from(x._2), x._1.toHex)
     }
 
-  implicit def isoUndefOr[A, B](implicit iso: Iso[A, B]): Iso[js.UndefOr[A], Option[B]] = new Iso[js.UndefOr[A], Option[B]] {
-    override def to(x: js.UndefOr[A]): Option[B] = x.toOption.map(iso.to)
-    override def from(x: Option[B]): js.UndefOr[A] = x.map(iso.from).orUndefined
-  }
-
-  implicit def isoArrayToColl[A, B](iso: Iso[A, B])(implicit ctA: ClassTag[A], tB: RType[B]): Iso[js.Array[A], Coll[B]] = new Iso[js.Array[A], Coll[B]] {
-    override def to(x: js.Array[A]): Coll[B] = Colls.fromArray(x.map(iso.to).toArray(tB.classTag))
-    override def from(x: Coll[B]): js.Array[A] = js.Array(x.toArray.map(iso.from):_*)
-  }
-
-  implicit def isoArrayToIndexed[A, B](iso: Iso[A, B])(implicit cB: ClassTag[B]): Iso[js.Array[A], IndexedSeq[B]] = new Iso[js.Array[A], IndexedSeq[B]] {
-    override def to(x: js.Array[A]): IndexedSeq[B] = x.map(iso.to).toArray(cB).toIndexedSeq
-    override def from(x: IndexedSeq[B]): js.Array[A] = js.Array(x.map(iso.from):_*)
-  }
-
   val isoTokenArray: Iso[js.Array[tokenMod.TokenAmount[commonMod.Amount]], Coll[Token]] =
     new Iso[js.Array[tokenMod.TokenAmount[commonMod.Amount]], Coll[Token]] {
       override def to(x: js.Array[tokenMod.TokenAmount[commonMod.Amount]]): Coll[Token] = {
-        isoArrayToColl(isoToken).to(x)
+        sigma.js.Isos.isoArrayToColl(isoToken).to(x)
       }
       override def from(x: Coll[Token]): js.Array[tokenMod.TokenAmount[commonMod.Amount]] = {
-        isoArrayToColl(isoToken).from(x)
+        sigma.js.Isos.isoArrayToColl(isoToken).from(x)
       }
     }
 
@@ -484,17 +405,17 @@ object Isos {
     new Iso[UnsignedTransaction, UnsignedErgoLikeTransaction] {
       override def to(a: UnsignedTransaction): UnsignedErgoLikeTransaction = {
         new UnsignedErgoLikeTransaction(
-          inputs = isoArrayToIndexed(isoUnsignedInput).to(a.inputs),
-          dataInputs = isoArrayToIndexed(isoDataInput).to(a.dataInputs),
-          outputCandidates = isoArrayToIndexed(isoBoxCandidate).to(a.outputs),
+          inputs = sigma.js.Isos.isoArrayToIndexed(isoUnsignedInput).to(a.inputs),
+          dataInputs = sigma.js.Isos.isoArrayToIndexed(isoDataInput).to(a.dataInputs),
+          outputCandidates = sigma.js.Isos.isoArrayToIndexed(isoBoxCandidate).to(a.outputs),
         )
       }
 
       override def from(b: UnsignedErgoLikeTransaction): UnsignedTransaction = {
         UnsignedTransaction(
-          inputs = isoArrayToIndexed(isoUnsignedInput).from(b.inputs),
-          dataInputs = isoArrayToIndexed(isoDataInput).from(b.dataInputs),
-          outputs = isoArrayToIndexed(isoBoxCandidate).from(b.outputCandidates)
+          inputs = sigma.js.Isos.isoArrayToIndexed(isoUnsignedInput).from(b.inputs),
+          dataInputs = sigma.js.Isos.isoArrayToIndexed(isoDataInput).from(b.dataInputs),
+          outputs = sigma.js.Isos.isoArrayToIndexed(isoBoxCandidate).from(b.outputCandidates)
         )
       }
     }
@@ -503,16 +424,16 @@ object Isos {
     new Iso[SignedTransaction, ErgoLikeTransaction] {
       override def to(a: SignedTransaction): ErgoLikeTransaction = {
         new ErgoLikeTransaction(
-          inputs = isoArrayToIndexed(isoSignedInput).to(a.inputs),
-          dataInputs = isoArrayToIndexed(isoDataInput).to(a.dataInputs),
-          outputCandidates = isoArrayToIndexed(isoBox).to(a.outputs),
+          inputs = sigma.js.Isos.isoArrayToIndexed(isoSignedInput).to(a.inputs),
+          dataInputs = sigma.js.Isos.isoArrayToIndexed(isoDataInput).to(a.dataInputs),
+          outputCandidates = sigma.js.Isos.isoArrayToIndexed(isoBox).to(a.outputs),
         )
       }
 
       override def from(tx: ErgoLikeTransaction): SignedTransaction = {
-        val inputs = isoArrayToIndexed(isoSignedInput).from(tx.inputs)
-        val dataInputs = isoArrayToIndexed(isoDataInput).from(tx.dataInputs)
-        val outputs = isoArrayToIndexed(isoBox).from(tx.outputs)
+        val inputs = sigma.js.Isos.isoArrayToIndexed(isoSignedInput).from(tx.inputs)
+        val dataInputs = sigma.js.Isos.isoArrayToIndexed(isoDataInput).from(tx.dataInputs)
+        val outputs = sigma.js.Isos.isoArrayToIndexed(isoBox).from(tx.outputs)
         SignedTransaction(dataInputs, tx.id, inputs, outputs)
       }
     }

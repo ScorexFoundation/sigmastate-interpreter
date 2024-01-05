@@ -2,7 +2,6 @@ package org.ergoplatform.sdk
 
 import debox.cfor
 
-import java.util
 
 /**
   * Encapsulates secret array of characters (char[]) with proper equality.

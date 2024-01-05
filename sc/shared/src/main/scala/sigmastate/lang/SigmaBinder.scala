@@ -2,14 +2,15 @@ package sigmastate.lang
 
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform._
+import sigma.ast.NoType
 import sigma.data.Nullable
 import sigma.kiama.rewriting.CallbackRewriter
-import sigmastate.Values._
-import sigmastate._
+import sigma.ast._
+import sigma.ast.syntax.SValue
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
-import sigmastate.lang.Terms._
-import sigmastate.exceptions.{BinderException, InvalidArguments}
+import SigmaPredef.PredefinedFuncRegistry
+import sigma.ast.syntax._
+import sigma.exceptions.{BinderException, InvalidArguments}
 
 object SrcCtxCallbackRewriter extends CallbackRewriter {
   override def rewriting[T](oldTerm: T, newTerm: T): T = (oldTerm, newTerm) match {

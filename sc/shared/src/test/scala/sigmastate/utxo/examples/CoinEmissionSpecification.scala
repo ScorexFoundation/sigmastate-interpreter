@@ -3,15 +3,14 @@ package sigmastate.utxo.examples
 import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
 import sigma.Colls
-import sigmastate.Values.{BlockValue, ErgoTree, IntConstant, LongConstant, ValDef, ValUse}
+import sigma.ast.syntax.OptionValueOps
+import sigma.ast._
 import sigmastate._
-import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting}
-import sigmastate.interpreter.ContextExtension
+import sigma.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.lang.Terms._
-import sigmastate.utxo._
+import sigma.ast.syntax._
 import sigmastate.utxo.blockchain.BlockchainSimulationTestingCommons._
 
 /**
@@ -167,7 +166,7 @@ block 1600 in 1622 ms, 30000000000 coins remain, defs: 61661
                                    height: Int): ErgoLikeTransaction = {
       assert(state.state.currentHeight == height - 1)
       val ut = if (emissionBox.value > s.oneEpochReduction) {
-        val minerBox = new ErgoBoxCandidate(emissionAtHeight(height), minerProp, height, Colls.emptyColl, Map())
+        val minerBox = new ErgoBoxCandidate(emissionAtHeight(height), ErgoTree.fromSigmaBoolean(minerProp), height, Colls.emptyColl, Map())
         val newEmissionBox: ErgoBoxCandidate =
           new ErgoBoxCandidate(emissionBox.value - minerBox.value, tree, height, Colls.emptyColl, Map(register -> IntConstant(height)))
 
@@ -176,8 +175,8 @@ block 1600 in 1622 ms, 30000000000 coins remain, defs: 61661
           IndexedSeq(newEmissionBox, minerBox)
         )
       } else {
-        val minerBox1 = new ErgoBoxCandidate(emissionBox.value - 1, minerProp, height, Colls.emptyColl, Map(register -> IntConstant(height)))
-        val minerBox2 = new ErgoBoxCandidate(1, minerProp, height, Colls.emptyColl, Map(register -> IntConstant(height)))
+        val minerBox1 = new ErgoBoxCandidate(emissionBox.value - 1, ErgoTree.fromSigmaBoolean(minerProp), height, Colls.emptyColl, Map(register -> IntConstant(height)))
+        val minerBox2 = new ErgoBoxCandidate(1, ErgoTree.fromSigmaBoolean(minerProp), height, Colls.emptyColl, Map(register -> IntConstant(height)))
         UnsignedErgoLikeTransaction(
           IndexedSeq(new UnsignedInput(emissionBox.id)),
           IndexedSeq(minerBox1, minerBox2)

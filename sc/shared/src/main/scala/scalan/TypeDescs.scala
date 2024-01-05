@@ -3,7 +3,6 @@ package scalan
 import scala.language.implicitConversions
 import scala.annotation.implicitNotFound
 import scala.collection.immutable.ListMap
-import sigma.data.RType._
 
 import scala.collection.mutable
 import debox.cfor

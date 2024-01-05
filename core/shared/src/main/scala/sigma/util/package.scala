@@ -25,6 +25,6 @@ package object util {
   final def safeConcatArrays_v5[A](arr1: Array[A], arr2: Array[A])
       (implicit tA: ClassTag[A]): Array[A] = {
     checkLength[A](arr1.length + arr2.length)
-    CollectionUtil.concatArrays_v5(arr1, arr2)
+    CollectionUtil.concatArrays(arr1, arr2)
   }
 }

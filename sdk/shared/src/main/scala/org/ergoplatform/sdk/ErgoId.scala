@@ -2,8 +2,6 @@ package org.ergoplatform.sdk
 
 import scorex.utils.Ints
 
-import java.util
-
 object ErgoId {
   /** Creates a new ErgoId decoding it from the given hex string. */
   def create(base16Str: String) = new ErgoId(JavaHelpers.decodeStringToBytes(base16Str))
@@ -17,7 +15,7 @@ class ErgoId(val _idBytes: Array[Byte]) {
   /** Extracts underlying byte array with id bytes. */
   def getBytes = _idBytes
 
-  override def hashCode =
+  override def hashCode: Int =
     if (_idBytes != null && _idBytes.length >= 4) Ints.fromByteArray(_idBytes)
     else java.util.Arrays.hashCode(_idBytes)
 

@@ -1,5 +1,10 @@
 package sigma.util
 
+import debox.{cfor, Buffer => DBuffer}
+import sigma.crypto.{CryptoFacade, Ecp}
+import sigma.data._
+import sigma.{AvlTree, GroupElement, SigmaProp}
+
 import java.math.BigInteger
 import java.nio.ByteBuffer
 
@@ -211,6 +216,14 @@ object Extensions {
       else
         throw new ArithmeticException("BigInteger out of 256 bit range");
     }
+
+    /** Converts `x` to [[sigma.BigInt]] */
+    def toBigInt: sigma.BigInt = CBigInt(x)
+  }
+
+  implicit class BigIntOps(val x: sigma.BigInt) extends AnyVal {
+    /** Converts `x` to [[java.math.BigInteger]] */
+    def toBigInteger: BigInteger = x.asInstanceOf[CBigInt].wrappedValue
   }
 
   implicit class OptionOps[T](val opt: Option[T]) extends AnyVal {
@@ -268,5 +281,67 @@ object Extensions {
       assert(cond(self), msg(self))
       self
     }
+  }
+
+  implicit class EcpOps(val source: Ecp) extends AnyVal {
+    /** Extracts [[sigma.GroupElement]] from the Ecp instance. */
+    def toGroupElement: GroupElement = CGroupElement(source)
+
+    /** Shortened String representation of `source` GroupElement. */
+    def showECPoint: String = {
+      if (source.toGroupElement.isIdentity) {
+        "IDENTITY"
+      }
+      else {
+        CryptoFacade.showPoint(source)
+      }
+    }
+  }
+
+  implicit class GroupElementOps(val source: GroupElement) extends AnyVal {
+    def toECPoint: Ecp = source.asInstanceOf[CGroupElement].wrappedValue
+    /** Shortened String representation of `source` GroupElement. */
+    def showToString: String = toECPoint.showECPoint
+  }
+
+  implicit class DBufferOps[A](val buf: DBuffer[A]) extends AnyVal {
+    /** Sum all values in `buf` using the given Numeric. */
+    def sumAll(implicit n: Numeric[A]): A = {
+      val limit     = buf.length
+      var result: A = n.zero
+      cfor(0)(_ < limit, _ + 1) { i =>
+        result = n.plus(result, buf.elems(i))
+      }
+      result
+    }
+  }
+
+  implicit class SigmaBooleanOps(val sb: SigmaBoolean) extends AnyVal {
+    /** Wraps SigmaBoolean into SigmaProp. */
+    def toSigmaProp: SigmaProp = CSigmaProp(sb)
+
+    /** Human readable string representation of the proposition. */
+    def showToString: String = sb match {
+      case ProveDlog(v) =>
+        s"ProveDlog(${v.showECPoint})"
+      case ProveDHTuple(gv, hv, uv, vv) =>
+        s"ProveDHTuple(${gv.showECPoint}, ${hv.showECPoint}, ${uv.showECPoint}, ${vv.showECPoint})"
+      case _ => sb.toString
+    }
+  }
+
+  implicit class SigmaPropOps(val sb: SigmaProp) extends AnyVal {
+    /** Extracts [[sigma.SigmaBoolean]] from the SigmaProp instance. */
+    def toSigmaBoolean: SigmaBoolean = sb.asInstanceOf[CSigmaProp].wrappedValue
+  }
+
+  implicit class AvlTreeDataOps(val treeData: AvlTreeData) extends AnyVal {
+    /** Wrap [[sigma.AvlTreeData]] to [[sigma.AvlTree]]. */
+    def toAvlTree: AvlTree= CAvlTree(treeData)
+  }
+
+  implicit class CoreAvlTreeOps(val tree: AvlTree) extends AnyVal {
+    /** Extracts [[sigma.AvlTreeData]] from the AvlTree instance. */
+    def toAvlTreeData: AvlTreeData = tree.asInstanceOf[CAvlTree].wrappedValue
   }
 }

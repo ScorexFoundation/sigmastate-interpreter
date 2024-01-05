@@ -4,26 +4,23 @@ import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
 import org.ergoplatform.settings.ErgoAlgos
 import pprint.{PPrinter, Tree}
-import sigma.data.{CollType, PrimitiveType}
+import sigma.ast.SCollection.{SBooleanArray, SByteArray, SByteArray2}
+import sigma.ast._
+import sigma.crypto.EcPointType
+import sigma.data.{AvlTreeData, AvlTreeFlags, CollType, PrimitiveType, TrivialProp}
+import sigma.serialization.GroupElementSerializer
 import sigma.{Coll, GroupElement}
-import sigmastate.SCollection._
-import sigmastate.Values.{ConstantNode, ErgoTree, FuncValue, ValueCompanion}
+import sigma.ast.{ConstantNode, FuncValue, ValueCompanion}
 import sigmastate._
-import sigmastate.crypto.CryptoConstants.EcPointType
 import sigmastate.crypto.GF2_192_Poly
-import sigmastate.interpreter.{CompanionDesc, FixedCostItem, MethodDesc}
-import sigmastate.lang.Terms
-import sigmastate.lang.Terms.MethodCall
-import sigmastate.serialization.GroupElementSerializer
-import sigmastate.utxo.SelectField
-
+import sigma.ast.MethodCall
 import java.math.BigInteger
 import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 
-/** Pretty-printer customized to print [[sigmastate.Values.Value]] instances
+/** Pretty-printer customized to print [[sigma.ast.Value]] instances
   * into a valid Scala code (can be cut-and-pasted).*/
 object SigmaPPrint extends PPrinter {
   override def showFieldNames = false
@@ -211,11 +208,11 @@ object SigmaPPrint extends PPrinter {
       Tree.Literal(s"FuncValue.AddToEnvironmentDesc")
     case MethodDesc(method) =>
       Tree.Apply("MethodDesc", Seq(methodLiteral(method)).iterator)
-    case sigmastate.SGlobal =>
+    case SGlobal =>
       Tree.Literal(s"SGlobal")
-    case sigmastate.SCollection =>
+    case SCollection =>
       Tree.Literal(s"SCollection")
-    case sigmastate.SOption =>
+    case SOption =>
       Tree.Literal(s"SOption")
     case t: STypeCompanion if t.isInstanceOf[SType] =>
       Tree.Literal(s"S${t.typeName}")
@@ -247,7 +244,7 @@ object SigmaPPrint extends PPrinter {
     case mc @ MethodCall(obj, method, args, typeSubst) =>
       val objType = apply(method.objType).plainText
       val methodTemplate = method.objType.getMethodByName(method.name)
-      val methodT = Terms.unifyTypeLists(methodTemplate.stype.tDom, obj.tpe +: args.map(_.tpe)) match {
+      val methodT = unifyTypeLists(methodTemplate.stype.tDom, obj.tpe +: args.map(_.tpe)) match {
         case Some(subst) if subst.nonEmpty =>
           val getMethod = s"""$objType.getMethodByName("${method.name}").withConcreteTypes"""
           Tree.Apply(getMethod, treeifySeq(Seq(subst)))

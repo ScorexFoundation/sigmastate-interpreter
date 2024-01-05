@@ -58,8 +58,6 @@ trait Tuples extends Base { self: Scalan =>
     case Tup(a, b) => (a, b)
     case _ => p.elem match {
       case pe: PairElem[_, _] =>
-        implicit val eA = pe.eFst
-        implicit val eB = pe.eSnd
         if (cachePairs) {
           if (!tuplesCache.containsKey(p)) {
             tuplesCache.put(p, (First(p), Second(p)))
@@ -74,8 +72,6 @@ trait Tuples extends Base { self: Scalan =>
   }
 
   implicit def zipPair[A, B](p: (Ref[A], Ref[B])): Ref[(A, B)] = {
-    implicit val ea = p._1.elem
-    implicit val eb = p._2.elem
     Tup(p._1, p._2)
   }
 

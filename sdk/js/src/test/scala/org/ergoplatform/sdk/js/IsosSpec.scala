@@ -2,52 +2,30 @@ package org.ergoplatform.sdk.js
 
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, BoxId, TokenId}
 import org.ergoplatform._
-import org.ergoplatform.sdk.wallet.protocol.context.{BlockchainStateContext, CBlockchainStateContext}
-import org.ergoplatform.sdk.{ExtendedInputBox, Iso}
-import org.scalacheck.{Arbitrary, Gen}
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.propspec.AnyPropSpec
-import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import sigmastate.SType
-import sigmastate.Values.Constant
-import sigmastate.interpreter.{ContextExtension, ProverResult}
-import sigmastate.serialization.generators.ObjectGenerators
-import sigma.{Coll, Colls, GroupElement}
+import org.ergoplatform.sdk.ExtendedInputBox
+import org.ergoplatform.sdk.wallet.protocol.context.BlockchainStateContext
+import org.scalacheck.Arbitrary
+import sigma.ast.{Constant, SType}
+import sigma.data.Iso
+import sigma.interpreter.{ContextExtension, ProverResult}
+import sigma.js.AvlTree
+import sigma.{Coll, GroupElement}
 
 import scala.scalajs.js
 
-class IsosSpec  extends AnyPropSpec with Matchers with ObjectGenerators with ScalaCheckPropertyChecks{
-
-  lazy val extendedInputBoxGen: Gen[ExtendedInputBox] = for {
-    box <- ergoBoxGen
-    extension <- contextExtensionGen
-  } yield ExtendedInputBox(box, extension)
-
-  lazy val blockchainStateContextGen: Gen[BlockchainStateContext] = for {
-    stateRoot <- avlTreeGen
-    headers <- headersGen(stateRoot)
-    preHeader <- preHeaderGen(headers.headOption.map(_.id).getOrElse(modifierIdBytesGen.sample.get))
-  } yield CBlockchainStateContext(
-      sigmaLastHeaders = Colls.fromItems(headers:_*),
-      previousStateDigest = stateRoot.digest,
-      sigmaPreHeader = preHeader
-    )
-
-  def roundtrip[A,B](iso: Iso[A,B])(b: B): Unit = {
-    iso.to(iso.from(b)) shouldBe b
-  }
+class IsosSpec extends IsosSpecBase with sdk.generators.ObjectGenerators {
 
   override implicit val generatorDrivenConfig: PropertyCheckConfiguration = PropertyCheckConfiguration(minSuccessful = 30)
 
   property("Iso.isoStringToArray") {
     forAll() { (bytes: Array[Byte]) =>
-      roundtrip(Isos.isoStringToArray)(bytes)
+      roundtrip(Iso.isoStringToArray)(bytes)
     }
   }
 
   property("Iso.isoStringToColl") {
     forAll() { (bytes: Coll[Byte]) =>
-      roundtrip(Isos.isoStringToColl)(bytes)
+      roundtrip(Iso.isoStringToColl)(bytes)
     }
   }
 
@@ -71,7 +49,7 @@ class IsosSpec  extends AnyPropSpec with Matchers with ObjectGenerators with Sca
 
   property("Iso.avlTree") {
     forAll { (c: sigma.AvlTree) =>
-      roundtrip(Isos.isoAvlTree)(c)
+      roundtrip(AvlTree.isoAvlTree)(c)
     }
   }
 
@@ -125,13 +103,13 @@ class IsosSpec  extends AnyPropSpec with Matchers with ObjectGenerators with Sca
 
   property("Iso.isoBigInt") {
     forAll { (c: sigma.BigInt) =>
-      roundtrip(Isos.isoBigInt)(c)
+      roundtrip(sigma.js.Isos.isoBigInt)(c)
     }
   }
 
   property("Iso.isoBigIntToLong") {
     forAll { (c: Long) =>
-      roundtrip(Isos.isoBigIntToLong)(c)
+      roundtrip(sigma.js.Isos.isoBigIntToLong)(c)
     }
   }
 
@@ -156,7 +134,7 @@ class IsosSpec  extends AnyPropSpec with Matchers with ObjectGenerators with Sca
 
   property("Iso.isoUndefOr") {
     forAll { opt: Option[Long] =>
-      roundtrip(Isos.isoUndefOr(Iso.identityIso[Long]))(opt)
+      roundtrip(sigma.js.Isos.isoUndefOr(Iso.identityIso[Long]))(opt)
     }
   }
 
@@ -195,4 +173,11 @@ class IsosSpec  extends AnyPropSpec with Matchers with ObjectGenerators with Sca
       roundtrip(Isos.isoSignedTransaction)(tx)
     }
   }
+
+  property("Iso.isoContractTemplate") {
+    forAll(contractTemplateGen) { (tx: sdk.ContractTemplate) =>
+      roundtrip(ContractTemplate.isoToSdk)(tx)
+    }
+  }
+
 }

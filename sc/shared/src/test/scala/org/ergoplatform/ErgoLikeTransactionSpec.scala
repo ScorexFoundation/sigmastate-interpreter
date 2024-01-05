@@ -5,16 +5,17 @@ import org.ergoplatform.ErgoBox.TokenId
 import org.ergoplatform.sdk.JsonCodecs
 import org.ergoplatform.settings.ErgoAlgos
 import scorex.util.encode.Base16
-import scorex.util.{Random, ModifierId}
-import sigmastate.SCollection.SByteArray
-import sigmastate.{SSigmaProp, TrivialProp, SType, SPair, SInt}
-import sigmastate.Values._
-import sigmastate.interpreter.{ContextExtension, ProverResult}
-import sigmastate.serialization.SigmaSerializer
-import sigmastate.eval._
-import sigmastate.eval.Extensions._
-import sigmastate._
-import sigmastate.SType._
+import scorex.util.{ModifierId, Random}
+import sigma.Extensions._
+import sigma.SigmaDslTesting
+import sigma.ast.SCollection.SByteArray
+import sigma.ast.SType._
+import sigma.ast.syntax.{ErgoBoxCandidateRType, TrueSigmaProp}
+import sigma.ast._
+import sigma.data.{CSigmaProp, Digest32Coll, TrivialProp}
+import sigma.eval.Extensions.{EvalCollOps, EvalIterableOps}
+import sigma.interpreter.{ContextExtension, ProverResult}
+import sigma.serialization.SigmaSerializer
 import sigmastate.helpers.TestingHelpers.copyTransaction
 import sigmastate.utils.Helpers
 import sigma.SigmaDslTesting
@@ -28,7 +29,7 @@ class ErgoLikeTransactionSpec extends SigmaDslTesting with JsonCodecs {
     val token2 = "a3ff007f00057600808001ff8f8000019000ffdb806fff7cc0b6015eb37fa600"
     val b1 = new ErgoBoxCandidate(
       10L,
-      ErgoTree(ErgoTree.DefaultHeader, Vector(), TrueSigmaProp),
+      ErgoTree(ErgoTree.ZeroHeader, Vector(), TrueSigmaProp),
       100,
       Coll(
         (Digest32Coll @@@ (ErgoAlgos.decodeUnsafe(token1).toColl)) -> 10000000L,
@@ -37,7 +38,7 @@ class ErgoLikeTransactionSpec extends SigmaDslTesting with JsonCodecs {
     )
     val b1_clone = new ErgoBoxCandidate(
       10L,
-      ErgoTree(ErgoTree.DefaultHeader, Vector(), TrueSigmaProp),
+      ErgoTree(ErgoTree.ZeroHeader, Vector(), TrueSigmaProp),
       100,
       Coll(
         Digest32Coll @@ (ErgoAlgos.decodeUnsafe(token1).toColl) -> 10000000L,

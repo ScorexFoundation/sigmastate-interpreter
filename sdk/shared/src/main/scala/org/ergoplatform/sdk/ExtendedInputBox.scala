@@ -2,7 +2,7 @@ package org.ergoplatform.sdk
 
 import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, UnsignedInput}
 import scorex.util.ModifierId
-import sigmastate.interpreter.ContextExtension
+import sigma.interpreter.ContextExtension
 
 /** Input ErgoBox paired with context variables (aka ContextExtensions).
  *
