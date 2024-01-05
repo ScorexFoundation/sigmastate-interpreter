@@ -140,17 +140,6 @@ class CoreByteReader(val r: Reader, val maxTreeDepth: Int = CoreSerializer.MaxTr
     positionLmt = v
   }
 
-  private var _complexity: Int = 0
-  /** Helper property which is used to accumulate complexity during parsing. */
-  @inline final def complexity: Int = _complexity
-  @inline final def complexity_=(v: Int): Unit = {
-    _complexity = v
-  }
-
-  @inline final def addComplexity(delta: Int): Unit = {
-    _complexity += delta
-  }
-
   private var _wasDeserialize: Boolean = false
   /** Helper property which is used to track deserialization operations during parsing. */
   @inline final def wasDeserialize: Boolean = _wasDeserialize

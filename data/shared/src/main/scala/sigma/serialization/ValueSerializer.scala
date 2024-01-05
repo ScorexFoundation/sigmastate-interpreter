@@ -9,15 +9,11 @@ import sigma.util.Extensions.toUByte
 import sigma.serialization.ValueCodes.OpCode
 import sigma.serialization.transformers._
 import sigma.serialization.trees.{QuadrupleSerializer, Relation2Serializer}
-import ComplexityTable._
 import sigma.utils.SparseArrayContainer
 
 import scala.collection.mutable
 
 abstract class ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
-
-  def getComplexity: Int = OpCodeComplexity.getOrElse(opCode, MinimalComplexity)
-  lazy val complexity: Int = getComplexity
 
   def opDesc: ValueCompanion
   /** Code of the corresponding tree node (Value.opCode) which is used to lookup this serizalizer
@@ -391,13 +387,11 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     val firstByte = toUByte(r.peekByte())
     val v = if (firstByte <= LastConstantCode) {
       // look ahead byte tell us this is going to be a Constant
-      r.addComplexity(constantSerializer.complexity)
       constantSerializer.deserialize(r)
     }
     else {
       val opCode = r.getByte().asInstanceOf[OpCode]
       val ser = getSerializer(opCode)
-      r.addComplexity(ser.complexity)
       ser.parse(r)
     }
     r.level = r.level - 1

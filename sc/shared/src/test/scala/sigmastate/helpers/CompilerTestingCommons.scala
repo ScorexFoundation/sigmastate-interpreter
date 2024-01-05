@@ -23,8 +23,6 @@ import sigma.serialization.SigmaSerializer
 import sigmastate.CompilerTestsBase
 import sigmastate.eval.{CContext, IRContext}
 
-import scala.language.implicitConversions
-import scala.reflect.ClassTag
 import scala.util.DynamicVariable
 
 trait CompilerTestingCommons extends TestingCommons
@@ -134,9 +132,7 @@ trait CompilerTestingCommons extends TestingCommons
       (implicit IR: IRContext,
                 evalSettings: EvalSettings,
                 compilerSettings: CompilerSettings): CompiledFunc[A, B] = {
-    val tA = RType[A]
     val f = (in: A) => {
-      implicit val cA: ClassTag[A] = tA.classTag
       val sigmaCtx = createContexts(in, bindings)
       val accumulator = new CostAccumulator(
         initialCost = JitCost(0),

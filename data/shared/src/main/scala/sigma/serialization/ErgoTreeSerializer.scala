@@ -1,7 +1,7 @@
 package sigma.serialization
 
 import org.ergoplatform.validation.ValidationRules.{CheckDeserializedScriptIsSigmaProp, CheckHeaderSizeBit}
-import sigma.ast.{ComplexityTable, Constant, DeserializationSigmaBuilder, ErgoTree, SType, SubstConstants, UnparsedErgoTree}
+import sigma.ast.{Constant, DeserializationSigmaBuilder, ErgoTree, SType, SubstConstants, UnparsedErgoTree}
 import sigma.ast.syntax.ValueOps
 import sigma.ast.ErgoTree.{EmptyConstants, HeaderType}
 import sigma.util.safeNewArray
@@ -135,9 +135,7 @@ class ErgoTreeSerializer {
   private[sigma] def deserializeErgoTree(r: SigmaByteReader, maxTreeSizeBytes: Int, checkType: Boolean): ErgoTree = {
     val startPos = r.position
     val previousPositionLimit = r.positionLimit
-    val previousComplexity = r.complexity
     r.positionLimit = r.position + maxTreeSizeBytes
-    r.complexity = 0
     val (h, sizeOpt) = deserializeHeaderAndSize(r)
     val bodyPos = r.position
     val tree = try {
@@ -165,15 +163,13 @@ class ErgoTreeSerializer {
         }
 
         r.constantStore = previousConstantStore
-        val complexity = r.complexity
-
         // now we know the end position of propositionBytes, read them all at once into array
         val treeSize = r.position - startPos
         r.position = startPos
         val propositionBytes = r.getBytes(treeSize)
 
         new ErgoTree(
-          h, cs, Right(root.asSigmaProp), complexity,
+          h, cs, Right(root.asSigmaProp),
           propositionBytes, Some(hasDeserialize), Some(isUsingBlockchainContext))
       }
       catch {
@@ -188,8 +184,7 @@ class ErgoTreeSerializer {
             val numBytes = bodyPos - startPos + treeSize
             r.position = startPos
             val bytes = r.getBytes(numBytes)
-            val complexity = ComplexityTable.OpCodeComplexity(Constant.opCode)
-            new ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, Left(UnparsedErgoTree(bytes, ve)), complexity, bytes, None, None)
+            new ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, Left(UnparsedErgoTree(bytes, ve)), bytes, None, None)
           case None =>
             throw new SerializerException(
               s"Cannot handle ValidationException, ErgoTree serialized without size bit.", Some(ve))
@@ -197,7 +192,6 @@ class ErgoTreeSerializer {
     }
     finally {
       r.positionLimit = previousPositionLimit
-      r.complexity = previousComplexity
     }
     tree
   }

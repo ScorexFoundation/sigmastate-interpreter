@@ -217,7 +217,7 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification
   property("SigmaProp.propBytes vs ErgoTree.serializer equivalence") {
     forAll(MinSuccessful(100)) { sp: SigmaProp =>
       val propBytes = sp.propBytes
-      val ergoTree = new ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, Right(sp.toSigmaBoolean.toSigmaPropValue), 0, null, None, None)
+      val ergoTree = new ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, Right(sp.toSigmaBoolean.toSigmaPropValue), null, None, None)
       val treeBytes = DefaultSerializer.serializeErgoTree(ergoTree)
       treeBytes shouldBe propBytes.toArray
     }

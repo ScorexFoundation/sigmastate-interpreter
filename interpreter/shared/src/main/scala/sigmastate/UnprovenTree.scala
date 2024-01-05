@@ -9,12 +9,10 @@ import sigmastate.crypto.DLogProtocol.FirstDLogProverMessage
 import sigmastate.crypto.VerifierMessage.Challenge
 import sigmastate.crypto.{FirstDHTupleProverMessage, FirstProverMessage, GF2_192_Poly}
 import sigmastate.interpreter.CErgoTreeEvaluator.fixedCostOp
-import sigmastate.interpreter.CErgoTreeEvaluator
 import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigma.serialization.{SigmaByteWriter, SigmaSerializer}
 
 import java.math.BigInteger
-import scala.language.existentials
 
 object ConjectureType extends Enumeration {
   val AndConjecture = Value(0)

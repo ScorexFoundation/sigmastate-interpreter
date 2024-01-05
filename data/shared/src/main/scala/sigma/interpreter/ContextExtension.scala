@@ -4,8 +4,6 @@ import sigma.ast.{EvaluatedValue, SType}
 import sigma.interpreter.ContextExtension.VarBinding
 import sigma.serialization.{SigmaByteReader, SigmaByteWriter, SigmaSerializer}
 
-import scala.collection.mutable
-
 /**
   * User-defined variables to be put into context.
   * Each variable is identified by `id: Byte` and can be accessed from a script

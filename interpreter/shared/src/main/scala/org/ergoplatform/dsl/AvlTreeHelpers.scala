@@ -6,7 +6,7 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigma.AvlTree
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert}
 import sigma.data.CSigmaDslBuilder.Colls
-import sigma.data.{AvlTreeData, AvlTreeFlags, CAvlTree, CSigmaDslBuilder}
+import sigma.data.{AvlTreeData, AvlTreeFlags, CAvlTree}
 
 object AvlTreeHelpers {
 

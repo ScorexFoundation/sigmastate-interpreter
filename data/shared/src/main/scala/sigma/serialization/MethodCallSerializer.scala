@@ -1,7 +1,7 @@
 package sigma.serialization
 
 import sigma.ast.syntax._
-import sigma.ast.{ComplexityTable, MethodCall, SContextMethods, SMethod, SType, STypeSubst, Value, ValueCompanion}
+import sigma.ast.{MethodCall, SContextMethods, SMethod, SType, STypeSubst, Value, ValueCompanion}
 import sigma.util.safeNewArray
 import SigmaByteWriter._
 import debox.cfor
@@ -25,8 +25,6 @@ case class MethodCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value[S
     w.putValues(mc.args, argsInfo, argsItemInfo)
   }
 
-  override def getComplexity: Int = 0  // because we add it explicitly in parse below
-
   /** The SMethod instances in STypeCompanions may have type STypeIdent in methods types,
     * but a valid ErgoTree should have SMethod instances specialized for specific types
     * of `obj` and `args` using `specializeFor`.
@@ -45,8 +43,6 @@ case class MethodCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value[S
     val obj = r.getValue()
     val args = r.getValues()
     val method = SMethod.fromIds(typeId, methodId)
-    val complexity = ComplexityTable.MethodCallComplexity.getOrElse((typeId, methodId), ComplexityTable.MinimalComplexity)
-    r.addComplexity(complexity)
     val nArgs = args.length
 
     val types: Seq[SType] =
