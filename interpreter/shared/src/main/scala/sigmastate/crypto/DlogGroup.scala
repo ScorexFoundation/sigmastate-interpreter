@@ -82,7 +82,7 @@ trait DlogGroup {
 
     // if the given element is the identity, get a new random element
     while ( {
-      CryptoFacade.isInfinityPoint(randGen)
+      CryptoFacade.isIdentity(randGen)
     }) randGen = createRandomElement()
 
     randGen

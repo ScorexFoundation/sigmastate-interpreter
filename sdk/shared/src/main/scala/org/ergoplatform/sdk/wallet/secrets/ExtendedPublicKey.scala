@@ -53,8 +53,8 @@ object ExtendedPublicKey {
         .hashHmacSHA512(parentKey.chainCode, parentKey.keyBytes ++ Index.serializeIndex(idx))
         .splitAt(CryptoFacade.SecretKeyLength)
     val childKeyProtoDecoded = BigIntegers.fromUnsignedByteArray(childKeyProto)
-    val childKey = CryptoFacade.multiplyPoints(DLogProverInput(childKeyProtoDecoded).publicImage.value, parentKey.key.value)
-    if (childKeyProtoDecoded.compareTo(CryptoConstants.groupOrder) >= 0 || CryptoFacade.isInfinityPoint(childKey)) {
+    val childKey = CryptoFacade.multiplyElements(DLogProverInput(childKeyProtoDecoded).publicImage.value, parentKey.key.value)
+    if (childKeyProtoDecoded.compareTo(CryptoConstants.groupOrder) >= 0 || CryptoFacade.isIdentity(childKey)) {
       deriveChildPublicKey(parentKey, idx + 1)
     } else {
       new ExtendedPublicKey(CryptoFacade.getASN1Encoding(childKey, true), childChainCode, parentKey.path.extended(idx))

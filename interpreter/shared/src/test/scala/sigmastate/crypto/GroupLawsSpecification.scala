@@ -91,16 +91,16 @@ class GroupLawsSpecification extends AnyPropSpec with ScalaCheckPropertyChecks w
 //  }
 
   property("check test vectors") {
-    CryptoFacade.multiplyPoints(p1, p2) shouldBe
+    CryptoFacade.multiplyElements(p1, p2) shouldBe
       Helpers.decodeECPoint("03de5e9c2806c05cd45a57d18c469743f42a0d2c84370b6662eb39d8a2990abed8")
 
-    CryptoFacade.exponentiatePoint(p1, group.order) shouldBe
+    CryptoFacade.exponentiateElement(p1, group.order) shouldBe
       Helpers.decodeECPoint("000000000000000000000000000000000000000000000000000000000000000000")
 
-    CryptoFacade.exponentiatePoint(p1, group.order.add(BigInteger.ONE)) shouldBe
+    CryptoFacade.exponentiateElement(p1, group.order.add(BigInteger.ONE)) shouldBe
       Helpers.decodeECPoint("0381c5275b1d50c39a0c36c4561c3a37bff1d87e37a9ad69eab029e426c0b1a8ac")
 
-    CryptoFacade.negatePoint(p1) shouldBe
+    CryptoFacade.inverse(p1) shouldBe
       Helpers.decodeECPoint("0281c5275b1d50c39a0c36c4561c3a37bff1d87e37a9ad69eab029e426c0b1a8ac")
   }
 }

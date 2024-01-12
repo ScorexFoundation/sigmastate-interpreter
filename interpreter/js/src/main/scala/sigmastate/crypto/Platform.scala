@@ -1,6 +1,5 @@
 package sigmastate.crypto
 
-import sigma.data.RType
 import scorex.util.encode.Base16
 import sigmastate._
 import sigma.Coll
@@ -72,7 +71,7 @@ object Platform {
     * @see [[CryptoFacade.getASN1Encoding]]
     */
   def getASN1Encoding(p: Ecp, compressed: Boolean): Array[Byte] = {
-    val hex = if (isInfinityPoint(p)) "00"  // to ensure equality with Java implementation
+    val hex = if (isIdentity(p)) "00"  // to ensure equality with Java implementation
               else p.point.toHex(compressed)
     Base16.decode(hex).get
   }
@@ -85,44 +84,44 @@ object Platform {
     *
     * @return a new ECPoint instance representing the same point, but with normalized coordinates
     */
-  def normalizePoint(p: Ecp): Ecp = new Ecp(CryptoFacadeJs.normalizePoint(p.point))
+  def normalize(e: Ecp): Ecp = new Ecp(CryptoFacadeJs.normalizePoint(e.point))
 
-  /** Return simplified string representation of the point (used only for debugging) */
-  def showPoint(p: Ecp): String = CryptoFacadeJs.showPoint(p.point)
+  /** Return simplified string representation of the element (used only for debugging) */
+  def showElement(e: Ecp): String = CryptoFacadeJs.showPoint(e.point)
 
-  /** Multiply two points.
+  /** Multiply two elements.
     *
-    * @param p1 first point
-    * @param p2 second point
-    * @return group multiplication (p1 * p2)
+    * @param e1 first element
+    * @param e2 second element
+    * @return group multiplication (e1 * e2)
     */
-  def multiplyPoints(p1: Ecp, p2: Ecp): Ecp = new Ecp(CryptoFacadeJs.addPoint(p1.point, p2.point))
+  def multiplyElements(e1: Ecp, e2: Ecp): Ecp = new Ecp(CryptoFacadeJs.addPoint(e1.point, e2.point))
 
   /** Exponentiate a point p.
     * The implementation mimics the Java implementation of `AbstractECMultiplier.multiply`
     * from BouncyCastle library.
     *
-    * @param p point to exponentiate
+    * @param e element to exponentiate
     * @param n exponent
-    * @return p to the power of n (`p^n`) i.e. `p + p + ... + p` (n times)
+    * @return e to the power of n (`e^n`) i.e. `e + e + ... + e` (n times)
     */
-  def exponentiatePoint(p: Ecp, n: BigInteger): Ecp = {
+  def exponentiateElement(e: Ecp, n: BigInteger): Ecp = {
     val sign = n.signum()
-    if (sign == 0 || isInfinityPoint(p)) {
+    if (sign == 0 || isIdentity(e)) {
       val ctx = new CryptoContextJs()
       return new Ecp(ctx.getInfinity())
     }
     val scalar = Convert.bigIntegerToBigInt(n.abs())
-    val positive = CryptoFacadeJs.multiplyPoint(p.point, scalar)
+    val positive = CryptoFacadeJs.multiplyPoint(e.point, scalar)
     val result = if (sign > 0) positive else CryptoFacadeJs.negatePoint(positive)
     new Ecp(result)
   }
 
-  /** Check if a point is infinity. */
-  def isInfinityPoint(p: Ecp): Boolean = CryptoFacadeJs.isInfinityPoint(p.point)
+  /** Check if a element is identity. */
+  def isIdentity(e: Ecp): Boolean = CryptoFacadeJs.isInfinityPoint(e.point)
 
-  /** Negates the given point by negating its y coordinate. */
-  def negatePoint(p: Ecp): Ecp = new Ecp(CryptoFacadeJs.negatePoint(p.point))
+  /** Negates the given element by negating its y coordinate. */
+  def inverse(e: Ecp): Ecp = new Ecp(CryptoFacadeJs.negatePoint(e.point))
 
   /** JS implementation of Elliptic Curve. */
   class Curve
@@ -245,7 +244,7 @@ object Platform {
   def isCorrectType[T <: SType](value: Any, tpe: T): Boolean = value match {
     case c: Coll[_] => tpe match {
       case STuple(items) => c.tItem == sigma.AnyType && c.length == items.length
-      case tpeColl: SCollection[_] => true
+      case _: SCollection[_] => true
       case _ => sys.error(s"Collection value $c has unexpected type $tpe")
     }
     case _: Option[_] => tpe.isOption

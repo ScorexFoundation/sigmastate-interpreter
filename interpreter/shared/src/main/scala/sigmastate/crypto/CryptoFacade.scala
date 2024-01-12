@@ -26,36 +26,36 @@ object CryptoFacade {
   def createCryptoContext(): CryptoContext = Platform.createContext()
 
   /** Normalization ensures that any projective coordinate is 1, and therefore that the x, y
-    * coordinates reflect those of the equivalent point in an affine coordinate system.
+    * coordinates reflect those of the equivalent element in an affine coordinate system.
     *
-    * @return a new ECPoint instance representing the same point, but with normalized coordinates
+    * @return a new ECPoint instance representing the same element, but with normalized coordinates
     */
-  def normalizePoint(p: Ecp): Ecp = Platform.normalizePoint(p)
+  def normalize(e: Ecp): Ecp = Platform.normalize(e)
 
-  /** Negates the given point by negating its y coordinate. */
-  def negatePoint(p: Ecp): Ecp = Platform.negatePoint(p)
+  /** Negates the given element by negating its y coordinate. */
+  def inverse(e: Ecp): Ecp = Platform.inverse(e)
 
-  /** Check if a point is infinity. */
-  def isInfinityPoint(p: Ecp): Boolean = Platform.isInfinityPoint(p)
+  /** Check if this is identity element. */
+  def isIdentity(e: Ecp): Boolean = Platform.isIdentity(e)
 
-  /** Exponentiate a point.
+  /** Exponentiate an element.
     *
-    * @param p point to exponentiate
+    * @param e element to exponentiate
     * @param n exponent
     * @return p to the power of n (`p^n`) i.e. `p + p + ... + p` (n times)
     */
-  def exponentiatePoint(p: Ecp, n: BigInteger): Ecp = Platform.exponentiatePoint(p, n)
+  def exponentiateElement(e: Ecp, n: BigInteger): Ecp = Platform.exponentiateElement(e, n)
 
   /** Multiply two points.
     *
-    * @param p1 first point
-    * @param p2 second point
-    * @return group multiplication (p1 * p2)
+    * @param e1 first element
+    * @param e2 second element
+    * @return group multiplication (e1 * e2)
     */
-  def multiplyPoints(p1: Ecp, p2: Ecp): Ecp = Platform.multiplyPoints(p1, p2)
+  def multiplyElements(e1: Ecp, e2: Ecp): Ecp = Platform.multiplyElements(e1, e2)
 
-  /** Return simplified string representation of the point (used only for debugging) */
-  def showPoint(p: Ecp): String = Platform.showPoint(p)
+  /** Return simplified string representation of element (used only for debugging) */
+  def showElement(e: Ecp): String = Platform.showElement(e)
 
   /** Returns the sign of the field element. */
   def signOf(p: ECFieldElem): Boolean = Platform.signOf(p)

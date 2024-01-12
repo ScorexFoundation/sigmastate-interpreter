@@ -63,10 +63,10 @@ class CryptoFacadeSpecification extends AnyPropSpec with Matchers with ScalaChec
     val vectors = Table(
       ("point", "expectedHex"),
       (ctx.infinity(), "00"),
-      (CryptoFacade.exponentiatePoint(G, Q), "00"),
+      (CryptoFacade.exponentiateElement(G, Q), "00"),
       (G, G_hex),
-      (CryptoFacade.exponentiatePoint(G, BigInteger.ONE), G_hex),
-      (CryptoFacade.exponentiatePoint(G, Q.subtract(BigInteger.ONE)), "0379be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798")
+      (CryptoFacade.exponentiateElement(G, BigInteger.ONE), G_hex),
+      (CryptoFacade.exponentiateElement(G, Q.subtract(BigInteger.ONE)), "0379be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798")
     )
     forAll (vectors) { (point, expectedHex) =>
       val res = ErgoAlgos.encode(CryptoFacade.getASN1Encoding(point, true))
@@ -78,14 +78,14 @@ class CryptoFacadeSpecification extends AnyPropSpec with Matchers with ScalaChec
     val ctx = CryptoFacade.createCryptoContext()
     
     val inf = ctx.decodePoint(Array[Byte](0))
-    CryptoFacade.isInfinityPoint(inf) shouldBe true
+    CryptoFacade.isIdentity(inf) shouldBe true
 
     val G = ctx.generator
     ctx.decodePoint(ErgoAlgos.decode(G_hex).get) shouldBe G
 
     val Q = ctx.order
     val Q_minus_1 = Q.subtract(BigInteger.ONE)
-    val maxExp = CryptoFacade.exponentiatePoint(G, Q_minus_1)
+    val maxExp = CryptoFacade.exponentiateElement(G, Q_minus_1)
     val maxExpBytes = ErgoAlgos.decode("0379be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798").get
     ctx.decodePoint(maxExpBytes) shouldBe maxExp
   }

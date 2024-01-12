@@ -22,10 +22,10 @@ object GroupElementSerializer extends SigmaSerializer[EcPointType, EcPointType] 
   private lazy val identityPointEncoding = Array.fill(encodingSize)(0: Byte)
 
   override def serialize(point: EcPointType, w: SigmaByteWriter): Unit = {
-    val bytes = if (CryptoFacade.isInfinityPoint(point)) {
+    val bytes = if (CryptoFacade.isIdentity(point)) {
       identityPointEncoding
     } else {
-      val normed = CryptoFacade.normalizePoint(point)
+      val normed = CryptoFacade.normalize(point)
       val ySign = CryptoFacade.signOf(CryptoFacade.getAffineYCoord(normed))
       val X = CryptoFacade.encodeFieldElem(CryptoFacade.getXCoord(normed))
       val PO = safeNewArray[Byte](X.length + 1)

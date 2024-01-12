@@ -17,12 +17,13 @@ class CryptoFacadeJsSpec extends AnyPropSpec with Matchers with CryptoTesting {
   }
 
   property("CryptoFacade.normalizePoint") {
-    CryptoFacade.normalizePoint(new Ecp(p1)) shouldBe new Ecp(p1)
+    CryptoFacadeJs.normalizePoint(p1).toHex(true) shouldBe
+      "0381c5275b1d50c39a0c36c4561c3a37bff1d87e37a9ad69eab029e426c0b1a8ac"
   }
 
   property("CryptoFacade.negatePoint") {
     CryptoFacadeJs.negatePoint(p1).toHex(true) shouldBe
-        "0281c5275b1d50c39a0c36c4561c3a37bff1d87e37a9ad69eab029e426c0b1a8ac"
+      "0281c5275b1d50c39a0c36c4561c3a37bff1d87e37a9ad69eab029e426c0b1a8ac"
   }
 
   property("CryptoFacade.isInfinityPoint") {
