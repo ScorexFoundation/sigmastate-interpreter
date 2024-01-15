@@ -4,7 +4,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import sigma.{Coll, CollGens}
-import org.ergoplatform.sdk.Extensions.{CollBuilderOps, CollOps, GenIterableOps, PairCollOps}
+import org.ergoplatform.sdk.Extensions.{CollBuilderOps, CollOps, PairCollOps}
 import sigma.data.{CSigmaDslBuilder, RType}
 
 class ExtensionsSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers with CollGens {
@@ -13,10 +13,6 @@ class ExtensionsSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matc
 
   val items: Iterable[(Int, String)] = Array((1, "a"), (2, "b"), (1, "c"))
 
-  property("Traversable.mapReduce") {
-    val res = items.mapReduce(p => (p._1, p._2))((v1, v2) => v1 + v2)
-    assertResult(List((1, "ac"), (2, "b")))(res)
-  }
 
   property("Coll.partition") {
     forAll(collGen) { col: Coll[Int] =>
