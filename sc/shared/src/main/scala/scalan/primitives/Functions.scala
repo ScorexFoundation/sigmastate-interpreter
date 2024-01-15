@@ -332,7 +332,7 @@ trait Functions extends Base with ProgramGraphs { self: Scalan =>
     val m = new java.util.HashMap[Sym, Sym](100)
     m.put(lam.x, s)
     val subst = new MapTransformer(m)
-    val t = DefaultMirror.mirrorSymbols(subst, NoRewriting, lam, body)
+    val t = DefaultMirror.mirrorSymbols(subst, NoRewriting, body)
     t(lam.y)
   }
 
