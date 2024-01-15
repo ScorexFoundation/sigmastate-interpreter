@@ -182,7 +182,4 @@ object Extensions {
     }
   }
 
-  implicit class DoubleOps(val i: Double) extends AnyVal {
-    def erg: Long = (i * 1000000000L).toLong
-  }
 }
