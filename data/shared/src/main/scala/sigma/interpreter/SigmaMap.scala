@@ -1,6 +1,7 @@
 package sigma.interpreter
 
 import sigma.ast.{EvaluatedValue, SType}
+import sigma.interpreter.SigmaMap.indices
 
 /**
   * Map data structure with traversal ordering corresponding to used in default scala.collection.Map implementation
@@ -70,10 +71,24 @@ class SigmaMap(private val sparseValues: Array[EvaluatedValue[_ <: SType]],
       new Iterator[(Byte, EvaluatedValue[_ <: SType])] {
         var iteratedOver = 0
 
-        override def hasNext: Boolean = ???
+        var indexPos = 0
+
+        override def hasNext: Boolean = iteratedOver < size
 
         override def next(): (Byte, EvaluatedValue[_ <: SType]) = {
-          ???
+          if (iteratedOver >= size) {
+            throw new NoSuchElementException("next on empty iterator")
+          } else {
+            var res: EvaluatedValue[_ <: SType] = null
+            var key: Byte = 0
+            do {
+              key = indices(indexPos)
+              res = sparseValues(key)
+              indexPos += 1
+            } while (res == null)
+            iteratedOver += 1
+            key -> res
+          }
         }
       }
     }
