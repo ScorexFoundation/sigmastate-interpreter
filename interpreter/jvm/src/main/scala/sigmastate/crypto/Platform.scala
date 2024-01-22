@@ -73,48 +73,48 @@ object Platform {
   /** Normalization ensures that any projective coordinate is 1, and therefore that the x, y
     * coordinates reflect those of the equivalent point in an affine coordinate system.
     *
-    * @return a new ECPoint instance representing the same point, but with normalized coordinates
+    * @return a new ECPoint instance representing the same element, but with normalized coordinates
     */
-  def normalizePoint(p: Ecp): Ecp = Ecp(p.value.normalize())
+  def normalize(e: Ecp): Ecp = Ecp(e.value.normalize())
 
-  /** Return simplified string representation of the point (used only for debugging) */
-  def showPoint(p: Ecp): String = {
-    val rawX = p.value.getRawXCoord.toString.substring(0, 6)
-    val rawY = p.value.getRawYCoord.toString.substring(0, 6)
+  /** Return simplified string representation of element (used only for debugging) */
+  def showElement(e: Ecp): String = {
+    val rawX = e.value.getRawXCoord.toString.substring(0, 6)
+    val rawY = e.value.getRawYCoord.toString.substring(0, 6)
     s"ECPoint($rawX,$rawY,...)"
   }
 
-  /** Multiply two points.
+  /** Multiply two elements.
     *
-    * @param p1 first point
-    * @param p2 second point
-    * @return group multiplication (p1 * p2)
+    * @param e1 first element
+    * @param e2 second element
+    * @return group multiplication (e1 * e2)
     */
-  def multiplyPoints(p1: Ecp, p2: Ecp): Ecp = {
+  def multiplyElements(e1: Ecp, e2: Ecp): Ecp = {
     /*
      * BC treats EC as additive group while we treat that as multiplicative group.
      */
-    Ecp(p1.value.add(p2.value))
+    Ecp(e1.value.add(e2.value))
   }
 
-  /** Exponentiate a point.
-    * @param p point to exponentiate
+  /** Exponentiate an element.
+    * @param e element to exponentiate
     * @param n exponent
     * @return p to the power of n (`p^n`) i.e. `p + p + ... + p` (n times)
     */
-  def exponentiatePoint(p: Ecp, n: BigInteger): Ecp = {
+  def exponentiateElement(e: Ecp, n: BigInteger): Ecp = {
     /*
      * BC treats EC as additive group while we treat that as multiplicative group.
      * Therefore, exponentiate point is multiply.
      */
-    Ecp(p.value.multiply(n))
+    Ecp(e.value.multiply(n))
   }
 
-  /** Check if a point is infinity. */
-  def isInfinityPoint(p: Ecp): Boolean = p.value.isInfinity
+  /** Check if an element is infinity. */
+  def isIdentity(e: Ecp): Boolean = e.value.isInfinity
 
-  /** Negates the given point by negating its y coordinate. */
-  def negatePoint(p: Ecp): Ecp = Ecp(p.value.negate())
+  /** Inverse the given element by negating its y coordinate. */
+  def inverse(e: Ecp): Ecp = Ecp(e.value.negate())
 
   /** Wrapper for curve descriptor. Serves as the concrete implementation of the
     * [[sigmastate.crypto.Curve]] type in JVM.
@@ -199,11 +199,11 @@ object Platform {
   }
 
   /** This JVM specific methods are used in Ergo node which won't be JS cross-compiled. */
-  implicit class EcpOps(val p: Ecp) extends AnyVal {
-    def getCurve: ECCurve = p.value.getCurve
-    def isInfinity: Boolean = CryptoFacade.isInfinityPoint(p)
-    def add(p2: Ecp): Ecp = CryptoFacade.multiplyPoints(p, p2)
-    def multiply(n: BigInteger): Ecp = CryptoFacade.exponentiatePoint(p, n)
+  implicit class EcpOps(val e: Ecp) extends AnyVal {
+    def getCurve: ECCurve = e.value.getCurve
+    def isIdentity: Boolean = CryptoFacade.isIdentity(e)
+    def add(e2: Ecp): Ecp = CryptoFacade.multiplyElements(e, e2)
+    def multiply(n: BigInteger): Ecp = CryptoFacade.exponentiateElement(e, n)
   }
 
   /** This JVM specific methods are used in Ergo node which won't be JS cross-compiled. */

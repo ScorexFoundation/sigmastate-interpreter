@@ -44,7 +44,7 @@ class ValueSpec extends AnyPropSpec with Matchers with SigmaTestingData with Sca
   }
 
   property("GroupElement toHex()/fromHex()") {
-    val ge = CryptoFacade.exponentiatePoint(dlogGroup.generator, BigInteger.valueOf(2))
+    val ge = CryptoFacade.exponentiateElement(dlogGroup.generator, BigInteger.valueOf(2))
     test(GroupElementConstant(ge), "0702c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5")
   }
 

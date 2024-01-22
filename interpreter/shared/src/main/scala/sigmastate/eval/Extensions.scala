@@ -110,7 +110,7 @@ object Extensions {
       "IDENTITY"
     }
     else {
-      CryptoFacade.showPoint(p)
+      CryptoFacade.showElement(p)
     }
   }
 

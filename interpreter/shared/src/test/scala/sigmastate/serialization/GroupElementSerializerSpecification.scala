@@ -21,10 +21,10 @@ class GroupElementSerializerSpecification extends SerializationSpecification {
       val bytes = GroupElementSerializer.toBytes(ge.value)
       bytes.length shouldBe CryptoConstants.EncodedGroupElementLength
       val restored = GroupElementSerializer.parse(SigmaSerializer.startReader(bytes, 0))
-      CryptoFacade.getAffineXCoord(CryptoFacade.normalizePoint(restored)) shouldBe
-        CryptoFacade.getAffineXCoord(CryptoFacade.normalizePoint(ge.value))
-      CryptoFacade.getAffineYCoord(CryptoFacade.normalizePoint(restored)) shouldBe
-        CryptoFacade.getAffineYCoord(CryptoFacade.normalizePoint(ge.value))
+      CryptoFacade.getAffineXCoord(CryptoFacade.normalize(restored)) shouldBe
+        CryptoFacade.getAffineXCoord(CryptoFacade.normalize(ge.value))
+      CryptoFacade.getAffineYCoord(CryptoFacade.normalize(restored)) shouldBe
+        CryptoFacade.getAffineYCoord(CryptoFacade.normalize(ge.value))
     }
   }
 }
