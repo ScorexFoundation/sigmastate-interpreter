@@ -23,7 +23,7 @@ case class ContextExtension(values: scala.collection.Map[Byte, EvaluatedValue[_ 
 object ContextExtension {
   /** Immutable instance of empty ContextExtension, which can be shared to avoid
     * allocations. */
-  val empty = ContextExtension(Map())
+  val empty: ContextExtension = ContextExtension(SigmaMap.empty)
 
   /** Type of context variable binding. */
   type VarBinding = (Byte, EvaluatedValue[_ <: SType])
