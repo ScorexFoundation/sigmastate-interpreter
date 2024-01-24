@@ -1,6 +1,7 @@
 package sigma.interpreter
 
-import sigma.ast.{EvaluatedValue, SType}
+import debox.cfor
+import sigma.ast.{EvaluatedValue, SType, Value}
 import sigma.interpreter.ContextExtension.VarBinding
 import sigma.serialization.{SigmaByteReader, SigmaByteWriter, SigmaSerializer}
 
@@ -15,7 +16,7 @@ import sigma.serialization.{SigmaByteReader, SigmaByteWriter, SigmaSerializer}
   *
   * @param values internal container of the key-value pairs
   */
-case class ContextExtension(values: scala.collection.Map[Byte, EvaluatedValue[_ <: SType]])
+case class ContextExtension(values: SigmaMap)
 
 object ContextExtension {
   /** Immutable instance of empty ContextExtension, which can be shared to avoid
@@ -36,11 +37,32 @@ object ContextExtension {
 
     override def parse(r: SigmaByteReader): ContextExtension = {
       val extSize = r.getByte()
-      if (extSize < 0)
+      if (extSize < 0) {
         error(s"Negative amount of context extension values: $extSize")
-      val values = (0 until extSize)
-          .map(_ => (r.getByte(), r.getValue().asInstanceOf[EvaluatedValue[_ <: SType]]))
-      ContextExtension(values.toMap)
+      }
+      if (extSize > Byte.MaxValue + 1) {
+        error(s"Too many context extension values: $extSize")
+      }
+      if (extSize == 0) {
+        ContextExtension.empty
+      } else {
+        val size = extSize
+        val keys = new Array[Byte](size)
+        val values = new Array[EvaluatedValue[_ <: SType]](size)
+        var maxKey: Byte = -1
+        cfor(0)(_ < size, _ + 1) { i =>
+          val key = r.getByte()
+          if (key < 0) {
+            error(s"Negative key in context extension: $key")
+          }
+          if (key > maxKey) {
+            maxKey = key
+          }
+          keys(i) = key
+          values(i) = r.getValue().asInstanceOf[EvaluatedValue[_ <: SType]]
+        }
+        ContextExtension(SigmaMap(keys, values, maxKey))
+      }
     }
   }
 }

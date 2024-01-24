@@ -1,5 +1,6 @@
 package sigma.interpreter
 
+import debox.cfor
 import sigma.ast.{EvaluatedValue, SType}
 
 /**
@@ -95,6 +96,8 @@ class SigmaMap(private val sparseValues: Array[EvaluatedValue[_ <: SType]],
 
 }
 
+//todo: make SigmaMap1 for CE with 1 key
+
 object SigmaMap {
 
   def apply(values: scala.collection.Map[Byte, EvaluatedValue[_ <: SType]]): SigmaMap = {
@@ -110,6 +113,16 @@ object SigmaMap {
       }
       new SigmaMap(res, maxKey, size)
     }
+  }
+
+  def apply(keys: Array[Byte], values: Array[EvaluatedValue[_ <: SType]], maxKey: Byte): SigmaMap = {
+    val res = new Array[EvaluatedValue[_ <: SType]](maxKey + 1)
+    cfor(0)(_ < keys.length, _ + 1) { i =>
+      val k = keys(i)
+      val v = values(i)
+      res(k) = v
+    }
+    new SigmaMap(res, maxKey, keys.length)
   }
 
   val emptyIterator = new Iterator[(Byte, EvaluatedValue[_ <: SType])] {

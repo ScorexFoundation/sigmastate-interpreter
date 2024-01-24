@@ -1,6 +1,6 @@
 package sigmastate.interpreter
 
-import sigma.interpreter.ContextExtension
+import sigma.interpreter.{ContextExtension, SigmaMap}
 import sigma.interpreter.ContextExtension.VarBinding
 import sigma.validation.SigmaValidationSettings
 
@@ -48,7 +48,7 @@ trait InterpreterContext {
   /** Creates a new instance with given bindings added to extension. */
   def withBindings(bindings: VarBinding*): InterpreterContext = {
     val ext = extension.values ++ bindings
-    withExtension(ContextExtension(ext))
+    withExtension(ContextExtension(SigmaMap(ext)))
   }
 
   /** Creates a new instance with given validation settings. */
