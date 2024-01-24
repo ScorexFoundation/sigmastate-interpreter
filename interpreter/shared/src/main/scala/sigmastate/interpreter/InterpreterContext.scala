@@ -47,8 +47,8 @@ trait InterpreterContext {
 
   /** Creates a new instance with given bindings added to extension. */
   def withBindings(bindings: VarBinding*): InterpreterContext = {
-    val ext = extension.add(bindings: _*)
-    withExtension(ext)
+    val ext = extension.values ++ bindings
+    withExtension(ContextExtension(ext))
   }
 
   /** Creates a new instance with given validation settings. */
