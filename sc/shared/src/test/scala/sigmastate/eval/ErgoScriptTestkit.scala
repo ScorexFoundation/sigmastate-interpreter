@@ -14,7 +14,7 @@ import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeConte
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.interpreter.CErgoTreeEvaluator
 import sigma.ast.syntax.ValueOps
-import sigma.interpreter.ContextExtension
+import sigma.interpreter.{ContextExtension, SigmaMap}
 import sigmastate.lang.{CompilerResult, CompilerSettings, LangTests, SigmaCompiler}
 import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.CompilerTestsBase
@@ -49,7 +49,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
       boxesToSpend = IndexedSeq(boxToSpend),
       spendingTransaction = tx1,
       self = boxToSpend, activatedVersionInTests,
-      extension = ContextExtension(extension))
+      extension = ContextExtension(SigmaMap(extension)))
             .withErgoTreeVersion(ergoTreeVersionInTests)
     ergoCtx
   }
@@ -82,11 +82,11 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
     spendingTransaction = tx1,
     self = boxToSpend,
     activatedVersionInTests,
-    extension = ContextExtension(Map(
+    extension = ContextExtension(SigmaMap(Map(
       backerPubKeyId -> SigmaPropConstant(backerPubKey),
       projectPubKeyId -> SigmaPropConstant(projectPubKey),
       3.toByte -> BigIntArrayConstant(bigIntegerArr1)
-    )))
+    ))))
 
   case class Result(calc: Option[Any], cost: Option[Int], size: Option[Long])
   object Result {

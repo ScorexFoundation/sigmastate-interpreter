@@ -13,17 +13,19 @@ import sigma.eval.Extensions.toAnyValue
   */
 class SigmaMap(private val sparseValues: Array[EvaluatedValue[_ <: SType]],
                val maxKey: Byte,
-               override val size: Int) extends Map[Byte, EvaluatedValue[_ <: SType]] {
+               val knownSize: Int) {
 
   private var _sparseValuesRType: Coll[AnyValue] = null
 
   def sparseValuesRType: Coll[AnyValue] = {
-    import sigma.Evaluation._
-
-    if(_sparseValuesRType == null) {
-      val res = Colls.fromArray(sparseValues.map{ v=>
-        val tVal = stypeToRType[SType](v.tpe)
-        toAnyValue(v.value.asWrappedType)(tVal).asInstanceOf[AnyValue]
+    if (_sparseValuesRType == null) {
+      val res = Colls.fromArray(sparseValues.map { v => // todo: is sparseValues good solution as we need to iterate over it? 
+        if(v != null) {
+          val tVal = sigma.Evaluation.stypeToRType[SType](v.tpe)
+          toAnyValue(v.value.asWrappedType)(tVal).asInstanceOf[AnyValue]
+        } else {
+          null
+        }
       })
       _sparseValuesRType = res
       res
@@ -32,43 +34,47 @@ class SigmaMap(private val sparseValues: Array[EvaluatedValue[_ <: SType]],
     }
   }
 
-  override def isEmpty: Boolean = maxKey == -1
+  def isEmpty: Boolean = knownSize == 0
 
-  override def removed(key: Byte): Map[Byte, EvaluatedValue[_ <: SType]] = {
+  def removed(key: Byte): SigmaMap = {
     sparseValues.update(key, null)
     if (key == maxKey) {
       (maxKey.to(0, -1)).foreach { idx =>
         if (sparseValues(idx) != null) {
-          return new SigmaMap(sparseValues, idx.toByte, size - 1)
+          return new SigmaMap(sparseValues, idx.toByte, knownSize - 1)
         }
       }
       new SigmaMap(sparseValues, -1, 0)
     } else {
-      new SigmaMap(sparseValues, maxKey, size - 1)
+      new SigmaMap(sparseValues, maxKey, knownSize - 1)
     }
   }
 
-  override def updated[V1 >: EvaluatedValue[_ <: SType]](key: Byte, value: V1): Map[Byte, V1] = {
+  def updated(key: Byte, value: EvaluatedValue[_ <: SType]): SigmaMap = {
     val oldValue = sparseValues(key)
-    sparseValues.update(key, value.asInstanceOf[EvaluatedValue[_ <: SType]])
+    sparseValues.update(key, value)
     if (oldValue != null) {
-      new SigmaMap(sparseValues, maxKey, size)
+      new SigmaMap(sparseValues, maxKey, knownSize)
     } else {
       val newMaxKey = if (key > maxKey) {
         key
       } else {
         maxKey
       }
-      new SigmaMap(sparseValues, newMaxKey, size + 1)
+      new SigmaMap(sparseValues, newMaxKey, knownSize + 1)
     }
   }
 
-  override def get(key: Byte): Option[EvaluatedValue[_ <: SType]] = {
-    val res = sparseValues(key).asInstanceOf[EvaluatedValue[_ <: SType]]
+  def contains(key: Byte): Boolean = sparseValues(key) != null
+
+  def get(key: Byte): Option[EvaluatedValue[_ <: SType]] = {
+    val res = sparseValues(key)
     Option(res)
   }
 
-  override def iterator: Iterator[(Byte, EvaluatedValue[_ <: SType])] = {
+  def apply(key: Byte): Option[EvaluatedValue[_ <: SType]] = get(key)
+
+  def iterator: Iterator[(Byte, EvaluatedValue[_ <: SType])] = {
     if (maxKey == -1) {
       SigmaMap.emptyIterator
     } else if (maxKey <= 4) {
@@ -93,10 +99,10 @@ class SigmaMap(private val sparseValues: Array[EvaluatedValue[_ <: SType]],
 
         var indexPos = 0
 
-        override def hasNext: Boolean = iteratedOver < size
+        override def hasNext: Boolean = iteratedOver < knownSize
 
         override def next(): (Byte, EvaluatedValue[_ <: SType]) = {
-          if (iteratedOver >= size) {
+          if (iteratedOver >= knownSize) {
             throw new NoSuchElementException("next on empty iterator")
           } else {
             var res: EvaluatedValue[_ <: SType] = null
@@ -116,7 +122,7 @@ class SigmaMap(private val sparseValues: Array[EvaluatedValue[_ <: SType]],
 
 }
 
-//todo: make SigmaMap1 for CE with 1 key
+//todo: make SigmaMap1 for CE with 1 key ?
 
 object SigmaMap {
 
@@ -147,6 +153,7 @@ object SigmaMap {
 
   val emptyIterator = new Iterator[(Byte, EvaluatedValue[_ <: SType])] {
     def hasNext = false
+
     def next() = throw new NoSuchElementException("next on empty iterator")
   }
 

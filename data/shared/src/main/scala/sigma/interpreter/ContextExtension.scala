@@ -28,11 +28,11 @@ object ContextExtension {
 
   object serializer extends SigmaSerializer[ContextExtension, ContextExtension] {
     override def serialize(obj: ContextExtension, w: SigmaByteWriter): Unit = {
-      val size = obj.values.size
+      val size = obj.values.knownSize
       if (size > Byte.MaxValue)
         error(s"Number of ContextExtension values $size exceeds ${Byte.MaxValue}.")
       w.putUByte(size)
-      obj.values.foreach { case (id, v) => w.put(id).putValue(v) }
+      obj.values.iterator.foreach { case (id, v) => w.put(id).putValue(v) }
     }
 
     override def parse(r: SigmaByteReader): ContextExtension = {

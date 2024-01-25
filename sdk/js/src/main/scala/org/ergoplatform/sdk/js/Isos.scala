@@ -13,7 +13,7 @@ import sigma.ast.syntax.GroupElementConstant
 import sigma.ast.{Constant, GroupElementConstant, SType}
 import sigma.data.Iso.{isoStringToArray, isoStringToColl}
 import sigma.data.{CBigInt, CGroupElement, Digest32Coll, Digest32CollRType, Iso}
-import sigma.interpreter.{ContextExtension, ProverResult}
+import sigma.interpreter.{ContextExtension, ProverResult, SigmaMap}
 import sigma.js.{AvlTree, GroupElement}
 import sigma.serialization.{ErgoTreeSerializer, ValueSerializer}
 import sigma.{Coll, Colls}
@@ -198,14 +198,14 @@ object Isos {
         val c = isoHexStringToConstant.to(x.apply(id).get.get)
         map = map + (id -> c)
       }
-      ContextExtension(map)
+      ContextExtension(SigmaMap(map))
     }
 
     override def from(x: ContextExtension): contextExtensionMod.ContextExtension = {
       val res = new Object().asInstanceOf[contextExtensionMod.ContextExtension]
-      x.values.foreach { case (k, v: Constant[_]) =>
+      x.values.iterator.foreach { case (k, v: Constant[_]) =>
         val hex = isoHexStringToConstant.from(v)
-        res.update(k, hex)
+        res.update(k, hex) // todo: will be order respected after?
       }
       res
     }

@@ -6,14 +6,15 @@ import org.scalatest.Assertions
 
 object Platform {
   /** Output graph given by symbols in `sfs` to files.
-    * @param scalan The Scalan context
-    * @param prefix The prefix of the directory where the graphs will be stored.
+    *
+    * @param scalan   The Scalan context
+    * @param prefix   The prefix of the directory where the graphs will be stored.
     * @param testName The name of the test.
-    * @param name The name of the graph.
-    * @param sfs A sequence of functions that return symbols of the graph roots.
+    * @param name     The name of the graph.
+    * @param sfs      A sequence of functions that return symbols of the graph roots.
     */
   def stage[Ctx <: Scalan](scalan: Ctx)
-      (prefix: String, testName: String, name: String, sfs: Seq[() => scalan.Sym]): Unit = {
+                          (prefix: String, testName: String, name: String, sfs: Seq[() => scalan.Sym]): Unit = {
     val directory = FileUtil.file(prefix, testName)
     val gv = new GraphVizExport(scalan)
     implicit val graphVizConfig = gv.defaultGraphVizConfig

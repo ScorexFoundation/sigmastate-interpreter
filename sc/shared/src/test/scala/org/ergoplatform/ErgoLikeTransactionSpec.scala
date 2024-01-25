@@ -14,7 +14,7 @@ import sigma.ast.syntax.{ErgoBoxCandidateRType, TrueSigmaProp}
 import sigma.ast._
 import sigma.data.{CSigmaProp, Digest32Coll, TrivialProp}
 import sigma.eval.Extensions.{EvalCollOps, EvalIterableOps}
-import sigma.interpreter.{ContextExtension, ProverResult}
+import sigma.interpreter.{ContextExtension, ProverResult, SigmaMap}
 import sigma.serialization.SigmaSerializer
 import sigmastate.helpers.TestingHelpers.copyTransaction
 import sigmastate.utils.Helpers
@@ -203,7 +203,10 @@ class ErgoLikeTransactionSpec extends SigmaDslTesting with JsonCodecs {
         (itx6.messageToSign sameElements initialMessage) shouldBe false
 
         // transaction with modified input extension
-        val newExtension7 = ContextExtension(headInput.spendingProof.extension.values ++ Map(Byte.MinValue -> ByteArrayConstant(Random.randomBytes(32))))
+        val newExtension7 = ContextExtension(SigmaMap(
+          headInput.spendingProof.extension.values.iterator.toMap ++
+            Map(Byte.MinValue -> ByteArrayConstant(Random.randomBytes(32)))
+        ))
         val newProof7 = new ProverResult(headInput.spendingProof.proof, newExtension7)
         val headInput7 = headInput.copy(spendingProof = newProof7)
         val itx7 = new ErgoLikeTransaction(headInput7 +: tailInputs, di, txIn.outputCandidates)
@@ -287,7 +290,7 @@ class ErgoLikeTransactionSpec extends SigmaDslTesting with JsonCodecs {
       whenever(endIndex >= startIndex) {
         val idRange = endIndex - startIndex
 
-        val ce = ContextExtension(startIndex.to(endIndex).map(id => id.toByte -> IntConstant(4)).toMap)
+        val ce = ContextExtension(SigmaMap(startIndex.to(endIndex).map(id => id.toByte -> IntConstant(4)).toMap))
         val wrongInput = Input(tx.inputs.head.boxId, ProverResult(Array.emptyByteArray, ce))
         val ins = IndexedSeq(wrongInput) ++ tx.inputs.tail
         val tx2 = copyTransaction(tx)(inputs = ins)
@@ -297,7 +300,7 @@ class ErgoLikeTransactionSpec extends SigmaDslTesting with JsonCodecs {
           val restored = ErgoLikeTransactionSerializer.parse(
             SigmaSerializer.startReader(bs, 0)
           )
-          restored.inputs.head.extension.values.size shouldBe tx2.inputs.head.extension.values.size
+          restored.inputs.head.extension.values.knownSize shouldBe tx2.inputs.head.extension.values.knownSize
         }
 
         if(idRange < 127) {

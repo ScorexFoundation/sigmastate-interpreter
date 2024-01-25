@@ -230,7 +230,7 @@ trait JsonCodecs {
   })
 
   implicit val contextExtensionEncoder: Encoder[ContextExtension] = Encoder.instance({ extension =>
-    Json.obj(extension.values.toSeq.map { case (key, value) =>
+    Json.obj(extension.values.iterator.toSeq.map { case (key, value) =>
       key.toString -> evaluatedValueEncoder(value)
     }: _*)
   })

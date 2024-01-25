@@ -32,7 +32,7 @@ import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
 import sigmastate.interpreter._
 import sigma.ast.Apply
 import sigma.eval.Extensions.SigmaBooleanOps
-import sigma.interpreter.{ContextExtension, ProverResult}
+import sigma.interpreter.{ContextExtension, ProverResult, SigmaMap}
 import sigma.serialization.ValueSerializer
 import sigma.serialization.generators.ObjectGenerators
 import sigmastate.utils.Helpers._
@@ -278,11 +278,13 @@ class SigmaDslTesting extends AnyPropSpec
       val selfIndex = boxesToSpend.indexWhere(b => java.util.Arrays.equals(b.id, ctx.selfBox.id.toArray))
 
       val extension = ContextExtension(
-        values = ctx.vars.toArray.zipWithIndex.collect {
-          case (v, i) if v != null =>
-            val tpe = Evaluation.rtypeToSType(v.tVal)
-            i.toByte -> ConstantNode(v.value.asWrappedType, tpe)
-        }.toMap
+        SigmaMap(
+          ctx.vars.toArray.zipWithIndex.collect {
+            case (v, i) if v != null =>
+              val tpe = Evaluation.rtypeToSType(v.tVal)
+              i.toByte -> ConstantNode(v.value.asWrappedType, tpe)
+          }.toMap
+        )
       )
       new ErgoLikeContext(
         treeData, ctx.headers, ctx.preHeader,
