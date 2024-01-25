@@ -1,7 +1,10 @@
 package sigma.interpreter
 
 import debox.cfor
+import sigma.{AnyValue, Coll, Colls}
+import sigma.ast.SType.AnyOps
 import sigma.ast.{EvaluatedValue, SType}
+import sigma.eval.Extensions.toAnyValue
 
 /**
   * Map data structure with traversal ordering corresponding to used in default scala.collection.Map implementation
@@ -11,6 +14,23 @@ import sigma.ast.{EvaluatedValue, SType}
 class SigmaMap(private val sparseValues: Array[EvaluatedValue[_ <: SType]],
                val maxKey: Byte,
                override val size: Int) extends Map[Byte, EvaluatedValue[_ <: SType]] {
+
+  private var _sparseValuesRType: Coll[AnyValue] = null
+
+  def sparseValuesRType: Coll[AnyValue] = {
+    import sigma.Evaluation._
+
+    if(_sparseValuesRType == null) {
+      val res = Colls.fromArray(sparseValues.map{ v=>
+        val tVal = stypeToRType[SType](v.tpe)
+        toAnyValue(v.value.asWrappedType)(tVal).asInstanceOf[AnyValue]
+      })
+      _sparseValuesRType = res
+      res
+    } else {
+      _sparseValuesRType
+    }
+  }
 
   override def isEmpty: Boolean = maxKey == -1
 
