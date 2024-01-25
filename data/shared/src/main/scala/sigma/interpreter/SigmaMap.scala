@@ -91,6 +91,17 @@ class SigmaMap(private val sparseValues: Array[EvaluatedValue[_ <: SType]],
     }
   }
 
+  override def equals(obj: Any): Boolean = {
+    obj match {
+      case sm: SigmaMap =>
+        sm.knownSize == this.knownSize &&
+          sm.maxKey == this.maxKey &&
+          sm.iterator.toMap == this.iterator.toMap
+      case _ => false
+    }
+  }
+
+  // todo: define hashCode()
 }
 
 //todo: make SigmaMap1 for CE with 1 key ?

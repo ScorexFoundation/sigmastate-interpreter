@@ -1,8 +1,7 @@
 package sigma.interpreter
 
 import debox.cfor
-import sigma.ast.{EvaluatedValue, SType, Value}
-import sigma.interpreter.ContextExtension.VarBinding
+import sigma.ast.{EvaluatedValue, SType}
 import sigma.serialization.{SigmaByteReader, SigmaByteWriter, SigmaSerializer}
 
 /**
