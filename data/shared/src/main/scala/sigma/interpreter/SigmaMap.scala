@@ -19,7 +19,7 @@ class SigmaMap(private val sparseValues: Array[EvaluatedValue[_ <: SType]],
 
   def sparseValuesRType: Coll[AnyValue] = {
     if (_sparseValuesRType == null) {
-      val res = Colls.fromArray(sparseValues.map { v => // todo: is sparseValues good solution as we need to iterate over it? 
+      val res = Colls.fromArray(sparseValues.map { v => // todo: is sparseValues good solution as we need to iterate over it?
         if(v != null) {
           val tVal = sigma.Evaluation.stypeToRType[SType](v.tpe)
           toAnyValue(v.value.asWrappedType)(tVal).asInstanceOf[AnyValue]
@@ -35,35 +35,6 @@ class SigmaMap(private val sparseValues: Array[EvaluatedValue[_ <: SType]],
   }
 
   def isEmpty: Boolean = knownSize == 0
-
-  def removed(key: Byte): SigmaMap = {
-    sparseValues.update(key, null)
-    if (key == maxKey) {
-      (maxKey.to(0, -1)).foreach { idx =>
-        if (sparseValues(idx) != null) {
-          return new SigmaMap(sparseValues, idx.toByte, knownSize - 1)
-        }
-      }
-      new SigmaMap(sparseValues, -1, 0)
-    } else {
-      new SigmaMap(sparseValues, maxKey, knownSize - 1)
-    }
-  }
-
-  def updated(key: Byte, value: EvaluatedValue[_ <: SType]): SigmaMap = {
-    val oldValue = sparseValues(key)
-    sparseValues.update(key, value)
-    if (oldValue != null) {
-      new SigmaMap(sparseValues, maxKey, knownSize)
-    } else {
-      val newMaxKey = if (key > maxKey) {
-        key
-      } else {
-        maxKey
-      }
-      new SigmaMap(sparseValues, newMaxKey, knownSize + 1)
-    }
-  }
 
   def contains(key: Byte): Boolean = sparseValues(key) != null
 
