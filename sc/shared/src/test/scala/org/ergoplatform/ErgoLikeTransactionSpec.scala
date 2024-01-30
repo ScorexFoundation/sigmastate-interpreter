@@ -287,7 +287,7 @@ class ErgoLikeTransactionSpec extends SigmaDslTesting with JsonCodecs {
 
   property("context extension serialization") {
     forAll { (tx: ErgoLikeTransaction, startIndex: Byte, endIndex: Byte) =>
-      whenever(endIndex >= startIndex) {
+      whenever(endIndex >= startIndex && startIndex >= 0) {
         val idRange = endIndex - startIndex
 
         val ce = ContextExtension(SigmaMap(startIndex.to(endIndex).map(id => id.toByte -> IntConstant(4)).toMap))

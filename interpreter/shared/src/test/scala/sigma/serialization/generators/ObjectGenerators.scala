@@ -33,7 +33,6 @@ import sigma.interpreter.{ContextExtension, ProverResult, SigmaMap}
 
 import java.math.BigInteger
 import scala.collection.compat.immutable.ArraySeq
-import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 

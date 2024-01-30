@@ -20,7 +20,7 @@ class SigmaMap(private val sparseValues: Array[EvaluatedValue[_ <: SType]],
   def sparseValuesRType: Coll[AnyValue] = {
     if (_sparseValuesRType == null) {
       val res = Colls.fromArray(sparseValues.map { v => // todo: is sparseValues good solution as we need to iterate over it?
-        if(v != null) {
+        if (v != null) {
           val tVal = sigma.Evaluation.stypeToRType[SType](v.tpe)
           toAnyValue(v.value.asWrappedType)(tVal).asInstanceOf[AnyValue]
         } else {
@@ -93,10 +93,10 @@ class SigmaMap(private val sparseValues: Array[EvaluatedValue[_ <: SType]],
 
   override def equals(obj: Any): Boolean = {
     obj match {
-      case sm: SigmaMap =>
-        sm.knownSize == this.knownSize &&
-          sm.maxKey == this.maxKey &&
-          sm.iterator.toMap == this.iterator.toMap
+      case that: SigmaMap =>
+        that.knownSize == this.knownSize &&
+          that.maxKey == this.maxKey &&
+          that.iterator.toMap == this.iterator.toMap
       case _ => false
     }
   }

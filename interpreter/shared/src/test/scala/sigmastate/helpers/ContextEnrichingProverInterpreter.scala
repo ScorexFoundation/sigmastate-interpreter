@@ -22,7 +22,7 @@ trait ContextEnrichingProverInterpreter extends ProverInterpreter {
 
   def contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = Map.empty
 
-  val knownExtensions = ContextExtension(SigmaMap(contextExtenders))
+  def knownExtensions = ContextExtension(SigmaMap(contextExtenders))
 
   /**
     * Replace context.extension to knownExtensions and prove script in different context.
