@@ -15,6 +15,16 @@ class SigmaMapSpecification extends TestingCommons {
     empty.iterator.toSeq.isEmpty shouldBe true
   }
 
+  property("SigmaMap.get") {
+    val id = 1.toByte
+    val value = IntConstant(1)
+    val map = Map(id -> value)
+    val empty = SigmaMap(map)
+    empty.knownSize shouldBe map.size
+    empty.maxKey shouldBe 1
+    empty.iterator.toSeq.toMap shouldBe map
+  }
+
   property("traversal vectors") {
       val sm = SigmaMap(Map(
         0.toByte -> IntConstant(0),
