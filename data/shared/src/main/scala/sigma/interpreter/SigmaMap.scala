@@ -80,7 +80,9 @@ class SigmaMap(private val sparseValues: Array[EvaluatedValue[_ <: SType]],
             var key: Byte = 0
             do {
               key = SigmaMap.indices(indexPos)
-              res = sparseValues(key)
+              if (key <= maxKey) {
+                res = sparseValues(key)
+              }
               indexPos += 1
             } while (res == null)
             iteratedOver += 1
