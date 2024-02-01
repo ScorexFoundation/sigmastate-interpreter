@@ -300,7 +300,7 @@ class ErgoLikeTransactionSpec extends SigmaDslTesting with JsonCodecs {
           val restored = ErgoLikeTransactionSerializer.parse(
             SigmaSerializer.startReader(bs, 0)
           )
-          restored.inputs.head.extension.values.knownSize shouldBe tx2.inputs.head.extension.values.knownSize
+          restored.inputs.head.extension.values.size shouldBe tx2.inputs.head.extension.values.size
         }
 
         if(idRange < 127) {

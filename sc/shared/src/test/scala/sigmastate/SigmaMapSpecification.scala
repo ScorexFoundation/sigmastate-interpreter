@@ -11,7 +11,7 @@ class SigmaMapSpecification extends TestingCommons {
 
   property("SigmaMap.empty") {
     val empty = SigmaMap.empty
-    empty.knownSize shouldBe 0
+    empty.size shouldBe 0
     empty.iterator.toSeq.isEmpty shouldBe true
   }
 
@@ -20,12 +20,12 @@ class SigmaMapSpecification extends TestingCommons {
     val value = IntConstant(1)
     val map = Map(id -> value)
     val empty = SigmaMap(map)
-    empty.knownSize shouldBe map.size
+    empty.size shouldBe map.size
     empty.maxKey shouldBe 1
     empty.iterator.toSeq.toMap shouldBe map
   }
 
-  property("traversal vectors") {
+  property("traversal - vector - 0 to 4") {
       val sm = SigmaMap(Map(
         0.toByte -> IntConstant(0),
         1.toByte -> IntConstant(1),
@@ -35,8 +35,37 @@ class SigmaMapSpecification extends TestingCommons {
       ))
 
     sm.maxKey shouldBe 4
-    sm.knownSize shouldBe 5
+    sm.size shouldBe 5
     sm.iterator.toList.map(_._1) shouldBe Array[Byte](0, 1, 2, 3, 4)
+  }
+
+  property("traversal - vector - [73,35,31]") {
+    val m = Map(
+      31.toByte -> IntConstant(2),
+      73.toByte -> IntConstant(0),
+      35.toByte -> IntConstant(1)
+    )
+
+    val sm = SigmaMap(m)
+    val ml = m.iterator.toList
+    val sml = sm.iterator.toList
+
+    println("ml: " + ml)
+    println("sml: " + sml)
+
+    ml shouldBe sml
+  }
+
+  property("traversal - single") {
+    val id = 106.toByte
+
+    val sm = SigmaMap(Map(
+      id -> IntConstant(0)
+    ))
+
+    sm.maxKey shouldBe id
+    sm.size shouldBe 1
+    sm.iterator.toList.map(_._1) shouldBe Array[Byte](id)
   }
 
   property("traversal equivalence") {

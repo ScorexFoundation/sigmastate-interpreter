@@ -13,7 +13,7 @@ import sigma.eval.Extensions.toAnyValue
   */
 class SigmaMap(private val sparseValues: Array[EvaluatedValue[_ <: SType]],
                val maxKey: Byte,
-               val knownSize: Int) {
+               val size: Int) {
 
   private var _sparseValuesRType: Coll[AnyValue] = null
 
@@ -34,7 +34,7 @@ class SigmaMap(private val sparseValues: Array[EvaluatedValue[_ <: SType]],
     }
   }
 
-  def isEmpty: Boolean = knownSize == 0
+  def isEmpty: Boolean = size == 0
 
   def contains(key: Byte): Boolean = sparseValues(key) != null
 
@@ -48,8 +48,8 @@ class SigmaMap(private val sparseValues: Array[EvaluatedValue[_ <: SType]],
   def iterator: Iterator[(Byte, EvaluatedValue[_ <: SType])] = {
     if (maxKey == -1) {
       SigmaMap.emptyIterator
-    } else if (maxKey <= 4) {
-      // keys are coming in ascending order just
+    } else if (size <= 4) {
+      // keys are coming in insertion order
       new Iterator[(Byte, EvaluatedValue[_ <: SType])] {
         var lastKey = -1
 
@@ -65,15 +65,23 @@ class SigmaMap(private val sparseValues: Array[EvaluatedValue[_ <: SType]],
         }
       }
     } else {
+      val s = size
+
       new Iterator[(Byte, EvaluatedValue[_ <: SType])] {
         var iteratedOver = 0
 
         var indexPos = 0
 
-        override def hasNext: Boolean = iteratedOver < knownSize
+        override val knownSize = s
+
+        override val size = s
+
+        override def hasNext: Boolean = {
+          iteratedOver < size
+        }
 
         override def next(): (Byte, EvaluatedValue[_ <: SType]) = {
-          if (iteratedOver >= knownSize) {
+          if (iteratedOver > size) {
             throw new NoSuchElementException("next on empty iterator")
           } else {
             var res: EvaluatedValue[_ <: SType] = null
@@ -96,7 +104,7 @@ class SigmaMap(private val sparseValues: Array[EvaluatedValue[_ <: SType]],
   override def equals(obj: Any): Boolean = {
     obj match {
       case that: SigmaMap =>
-        that.knownSize == this.knownSize &&
+        that.size == this.size &&
           that.maxKey == this.maxKey &&
           that.iterator.toMap == this.iterator.toMap
       case _ => false
@@ -125,6 +133,7 @@ object SigmaMap {
     }
   }
 
+  // todo: cover with test
   def apply(keys: Array[Byte], values: Array[EvaluatedValue[_ <: SType]], maxKey: Byte): SigmaMap = {
     val res = new Array[EvaluatedValue[_ <: SType]](maxKey + 1)
     cfor(0)(_ < keys.length, _ + 1) { i =>
@@ -143,7 +152,7 @@ object SigmaMap {
 
   val indices: Array[Byte] = Array[Byte](69, 101, 0, 88, 115, 5, 120, 10, 56, 42, 24, 37, 25, 52, 14, 110, 125, 20, 46, 93, 57, 78, 29, 106, 121, 84, 61, 89, 116, 1, 74, 6, 60, 117, 85, 102, 28, 38, 70, 21, 33, 92, 65, 97, 9, 53, 109, 124, 77, 96, 13, 41, 73, 105, 2, 32, 34, 45, 64, 17, 22, 44, 59, 118, 27, 71, 12, 54, 49, 86, 113, 81, 76, 7, 39, 98, 103, 91, 66, 108, 3, 80, 35, 112, 123, 48, 63, 18, 95, 50, 67, 16, 127, 31, 11, 72, 43, 99, 87, 104, 40, 26, 55, 114, 23, 8, 75, 119, 58, 82, 36, 30, 51, 19, 107, 4, 126, 79, 94, 47, 15, 68, 62, 90, 111, 122, 83, 100)
 
-  val empty = new SigmaMap(Array.empty[EvaluatedValue[_ <: SType]], -1, 0)
+  val empty = new SigmaMap(Array.empty[EvaluatedValue[_ <: SType]], maxKey = -1, size = 0)
 
 }
 
