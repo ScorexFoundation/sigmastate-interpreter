@@ -144,7 +144,7 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
     Examined ergo code: all that leads to ErgoLikeContext creation.
     */
     val outputs = spendingTransaction.outputs.toArray.map(_.toTestBox).toColl
-    val contextExtVars = extension.values.sparseValuesRType
+    val contextExtVars = extension.values
     val avlTree = CAvlTree(lastBlockUtxoRoot)
     // so selfBox is never one of the `inputs` instances
     // as result selfBoxIndex is always (erroneously) returns -1 in ErgoTree v0, v1

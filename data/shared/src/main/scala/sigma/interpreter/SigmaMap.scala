@@ -1,7 +1,7 @@
 package sigma.interpreter
 
 import debox.cfor
-import sigma.{AnyValue, Coll, Colls}
+import sigma.{AnyValue, Coll, Colls, ContextVarsMap}
 import sigma.ast.SType.AnyOps
 import sigma.ast.{EvaluatedValue, SType}
 import sigma.eval.Extensions.toAnyValue
@@ -13,7 +13,7 @@ import sigma.eval.Extensions.toAnyValue
   */
 class SigmaMap(private val sparseValues: Array[EvaluatedValue[_ <: SType]],
                val maxKey: Byte,
-               val size: Int) {
+               val size: Int) extends ContextVarsMap {
 
   private var _sparseValuesRType: Coll[AnyValue] = null
 
@@ -37,6 +37,12 @@ class SigmaMap(private val sparseValues: Array[EvaluatedValue[_ <: SType]],
   def isEmpty: Boolean = size == 0
 
   def contains(key: Byte): Boolean = sparseValues(key) != null
+
+  def getNullable(key: Byte): AnyValue = {
+    val v = sparseValues(key)
+    val tVal = sigma.Evaluation.stypeToRType[SType](v.tpe)
+    toAnyValue(v.value.asWrappedType)(tVal).asInstanceOf[AnyValue]
+  }
 
   def get(key: Byte): Option[EvaluatedValue[_ <: SType]] = {
     val res = sparseValues(key)
@@ -99,6 +105,15 @@ class SigmaMap(private val sparseValues: Array[EvaluatedValue[_ <: SType]],
         }
       }
     }
+  }
+
+
+  override def anyIterator: Iterator[(Byte, AnyValue)] = {
+    iterator.map { case (k,v) =>
+      val tVal = sigma.Evaluation.stypeToRType[SType](v.tpe)
+      k -> toAnyValue(v.value.asWrappedType)(tVal).asInstanceOf[AnyValue]
+    }
+
   }
 
   override def equals(obj: Any): Boolean = {

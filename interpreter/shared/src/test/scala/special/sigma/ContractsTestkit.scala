@@ -46,18 +46,6 @@ trait ContractsTestkit {
     Colls.fromArray(res)
   }
 
-  /** Converts a map of context vars to collection of context vars. */
-  def contextVars(m: Map[Byte, AnyValue]): Coll[AnyValue] = {
-    val maxKey = if (m.keys.isEmpty) 0 else m.keys.max // TODO optimize: max takes 90% of this method
-    val res = new Array[AnyValue](maxKey)
-    for ( (id, v) <- m ) {
-      val i = id - 1
-      assert(res(i) == null, s"register $id is defined more then once")
-      res(i) = v
-    }
-    Colls.fromArray(res)
-  }
-
   val AliceId = Array[Byte](1) // 0x0001
 
   def newAliceBox(@nowarn id: Byte, value: Long): Box = {
@@ -70,29 +58,26 @@ trait ContractsTestkit {
   def testContext(
       inputs: Array[Box], outputs: Array[Box], height: Int, self: Box,
       tree: AvlTree, minerPk: Array[Byte], activatedScriptVersion: Byte,
-      currErgoTreeVersion: Byte, vars: Array[AnyValue]) =
+      currErgoTreeVersion: Byte, vars: ContextVarsMap) =
     new CContext(
       noInputs.toColl, noHeaders, dummyPreHeader,
       inputs.toColl, outputs.toColl, height, self, inputs.indexOf(self), tree,
-      minerPk.toColl, vars.toColl, activatedScriptVersion, currErgoTreeVersion)
+      minerPk.toColl, vars, activatedScriptVersion, currErgoTreeVersion)
 
   def newContext(
       height: Int,
       self: Box,
       activatedScriptVersion: Byte,
       currErgoTreeVersion: Byte,
-      vars: AnyValue*): CContext = {
+      vars: ContextVarsMap): CContext = {
     testContext(
       noInputs, noOutputs, height, self, emptyAvlTree, dummyPubkey,
-      activatedScriptVersion, currErgoTreeVersion, vars.toArray)
+      activatedScriptVersion, currErgoTreeVersion, vars)
   }
 
   implicit class TestContextOps(ctx: CContext) {
     def withInputs(inputs: Box*) = ctx.copy(inputs = inputs.toArray.toColl)
 
     def withOutputs(outputs: Box*) = ctx.copy(outputs = outputs.toArray.toColl)
-
-    def withVariables(vars: Map[Int, AnyValue]) =
-      ctx.copy(vars = contextVars(vars.map { case (k, v) => (k.toByte, v) }))
   }
 }
