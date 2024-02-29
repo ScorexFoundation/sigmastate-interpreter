@@ -13,7 +13,9 @@ import scala.collection.immutable.StringOps
 
 /** Implementation of Graphviz's dot file generator. */
 class GraphVizExport[Ctx <: Scalan](val scalan: Ctx) {
+
   import scalan._
+
   case class GraphFile(file: File, fileType: String) {
     def open() = {
       Desktop.getDesktop.open(file)
@@ -159,14 +161,19 @@ class GraphVizExport[Ctx <: Scalan](val scalan: Ctx) {
 
   def emitDepGraph(d: Def[_], directory: File, fileName: String)(implicit config: GraphVizConfig): Option[GraphFile] =
     emitDepGraph(d.deps, directory, fileName)(config)
+
   def emitDepGraph(start: Sym, directory: File, fileName: String)(implicit config: GraphVizConfig): Option[GraphFile] =
     emitDepGraph(List(start), directory, fileName)(config)
+
   def emitDepGraph(ss: Seq[Sym], directory: File, fileName: String)(implicit config: GraphVizConfig): Option[GraphFile] =
     emitDepGraph(new PGraph(ss.toList), directory, fileName)(config)
+
   def emitExceptionGraph(e: Throwable, directory: File, fileName: String)(implicit config: GraphVizConfig): Option[GraphFile] =
     emitDepGraph(Left(e), directory, fileName)
+
   def emitDepGraph(graph: AstGraph, directory: File, fileName: String)(implicit config: GraphVizConfig): Option[GraphFile] =
     emitDepGraph(Right(graph), directory, fileName)
+
   def emitDepGraph(exceptionOrGraph: Either[Throwable, AstGraph], directory: File, fileName: String)(implicit config: GraphVizConfig): Option[GraphFile] =
     emitGraphFile(directory, fileName)(emitDepGraph(exceptionOrGraph, fileName)(_, config))
 
@@ -202,6 +209,7 @@ class GraphVizExport[Ctx <: Scalan](val scalan: Ctx) {
   implicit class SeqExpExtensionsForEmitGraph(symbols: Seq[Sym]) {
     // Not default argument to allow use from the debugger
     def show(): Unit = show(defaultGraphVizConfig)
+
     def show(config: GraphVizConfig): Unit = showGraphs(symbols: _*)(config)
   }
 
@@ -319,7 +327,9 @@ class GraphVizExport[Ctx <: Scalan](val scalan: Ctx) {
   private sealed trait Label {
     def label: String
   }
+
   private case class NoAlias(label: String) extends Label
+
   private case class Alias(label: String, rhs: String, td: TypeDesc) extends Label
 
   private case class GraphData(nodes: Map[Sym, Option[Def[_]]], labels: Map[TypeDesc, Label], aliases: List[Alias], aliasCounter: Int)(implicit config: GraphVizConfig) {
@@ -398,10 +408,10 @@ class GraphVizExport[Ctx <: Scalan](val scalan: Ctx) {
         orderedAliases.foreach {
           case Alias(label, rhs, td) =>
             stream.println(s"""$label [label="type $label = $rhs", shape=box, style=rounded, color=${nodeColor(td)}, fillcolor=white]""")
-            // Below code doesn't show the dependencies correctly
-//            if (config.typeAliasEdges) {
-//              partsIterator(td).foreach(emitAliasEdge(label, _))
-//            }
+          // Below code doesn't show the dependencies correctly
+          //            if (config.typeAliasEdges) {
+          //              partsIterator(td).foreach(emitAliasEdge(label, _))
+          //            }
         }
         if (aliases.length > 1) {
           stream.println(orderedAliases.map(_.label).mkString(" -> ") + " [style=invis]")
@@ -415,6 +425,7 @@ class GraphVizExport[Ctx <: Scalan](val scalan: Ctx) {
       }
     }
   }
+
   private object GraphData {
     def empty(implicit config: GraphVizConfig) = GraphData(Map.empty, Map.empty, Nil, 0)
   }
@@ -445,14 +456,18 @@ class GraphVizExport[Ctx <: Scalan](val scalan: Ctx) {
 }
 
 sealed trait Orientation
+
 case object Portrait extends Orientation
+
 case object Landscape extends Orientation
 
 object Orientation {
 }
 
 sealed trait ControlFlowStyle
+
 case object ControlFlowWithBoxes extends ControlFlowStyle
+
 case object ControlFlowWithArrows extends ControlFlowStyle
 
 // outside the cake to be usable from ItTestsUtil
@@ -470,6 +485,7 @@ case class GraphVizConfig(emitGraphs: Boolean,
   // ensures nice line wrapping
   def nodeLabel(parts: Seq[String]): String = {
     def escape(s: String) = s.replace("""\""", """\\""").replace("\"", """\"""")
+
     val lineBreak = """\l"""
 
     var lineLength = 0
@@ -482,7 +498,7 @@ case class GraphVizConfig(emitGraphs: Boolean,
       } else {
         lines match {
           case Seq() =>
-            // do nothing
+          // do nothing
           case Seq(line) =>
             val lineLengthIfNoNewLine = lineLength + 1 + line.length
             lineLength = if (lineLengthIfNoNewLine <= maxLabelLineLength) {
