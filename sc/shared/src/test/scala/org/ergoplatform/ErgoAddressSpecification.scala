@@ -16,9 +16,8 @@ import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigma.serialization.ValueSerializer
 import sigmastate.utils.Helpers._
 import sigmastate.CompilerCrossVersionProps
-import sigma.SigmaDslTesting
+import sigma.{SigmaDslTesting, VersionContext}
 import sigma.ast.ErgoTree.{ZeroHeader, setConstantSegregation}
-
 import sigma.ast.SType
 import sigma.data.ProveDlog
 import sigma.exceptions.{CostLimitException, InvalidType}
@@ -252,12 +251,16 @@ class ErgoAddressSpecification extends SigmaDslTesting
     verifier.verify(env + (ScriptNameProp -> s"verify_ext"), address.script, ctx, pr.proof, fakeMessage).getOrThrow._1 shouldBe true
   }
 
-  property("spending a box protected by P2SH contract") {
+  def createPropAndScriptBytes() = {
     implicit lazy val IR = new TestingIRContext
-
     val script = "{ 1 < 2 }"
     val prop = compile(Map.empty, script).asBoolValue.toSigmaProp
     val scriptBytes = ValueSerializer.serialize(prop)
+    (prop, scriptBytes)
+  }
+
+  property("spending a box protected by P2SH contract") {
+    val (prop, scriptBytes) = createPropAndScriptBytes()
 
     testPay2SHAddress(Pay2SHAddress(prop), scriptBytes)
 
@@ -265,8 +268,16 @@ class ErgoAddressSpecification extends SigmaDslTesting
     testPay2SHAddress(Pay2SHAddress(tree), scriptBytes) // NOTE: same scriptBytes regardless of ErgoTree version
   }
 
+  property("Pay2SHAddress.script should use VersionContext.current.ergoTreeVersion") {
+    val (prop, _) = createPropAndScriptBytes()
+
+    val address = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
+      Pay2SHAddress(prop)
+    }
+    address.script.version shouldBe ergoTreeVersionInTests
+  }
+
   property("negative cases: deserialized script + costing exceptions") {
-   implicit lazy val IR = new TestingIRContext
 
     def testPay2SHAddress(address: Pay2SHAddress, script: VarBinding, costLimit: Int = scriptCostLimitInTests): CostedProverResult = {
       val boxToSpend = testBox(10, address.script, creationHeight = 5)
@@ -281,9 +292,7 @@ class ErgoAddressSpecification extends SigmaDslTesting
     }
 
     val scriptVarId = Pay2SHAddress.scriptId
-    val script = "{ 1 < 2 }"
-    val prop = compile(Map.empty, script).asBoolValue.toSigmaProp
-    val scriptBytes = ValueSerializer.serialize(prop)
+    val (prop, scriptBytes) = createPropAndScriptBytes()
     val addr = Pay2SHAddress(prop)
 
     // when everything is ok
