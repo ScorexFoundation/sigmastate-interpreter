@@ -1,6 +1,7 @@
 package org.ergoplatform
 
 import org.ergoplatform.ErgoAddressEncoder.{MainnetNetworkPrefix, TestnetNetworkPrefix, hash256}
+import org.scalatest.propspec.AnyPropSpecLike
 import org.scalatest.{Assertion, TryValues}
 import scorex.crypto.hash.Blake2b256
 import scorex.util.encode.Base58
@@ -29,7 +30,7 @@ import sigma.validation.ValidationRules.CheckTypeCode
 import java.math.BigInteger
 
 class ErgoAddressSpecification extends SigmaDslTesting
-  with TryValues with CompilerCrossVersionProps {
+  with TryValues with CompilerCrossVersionProps with AnyPropSpecLike {
 
   private implicit val ergoAddressEncoder: ErgoAddressEncoder =
     new ErgoAddressEncoder(TestnetNetworkPrefix)
@@ -275,6 +276,16 @@ class ErgoAddressSpecification extends SigmaDslTesting
       Pay2SHAddress(prop)
     }
     address.script.version shouldBe ergoTreeVersionInTests
+  }
+
+  // create non-versioned property which is executed under default version context
+  // see VersionContext._defaultContext
+  // When default version will be upgraded (as part of protocol upgrade) then this test will fail
+  // and will have to be explicitly fixed.
+  super[AnyPropSpecLike].property("using default VersionContext") {
+    val (prop, _) = createPropAndScriptBytes()
+    val address = Pay2SHAddress(prop)
+    address.script.version shouldBe VersionContext.JitActivationVersion
   }
 
   property("negative cases: deserialized script + costing exceptions") {
