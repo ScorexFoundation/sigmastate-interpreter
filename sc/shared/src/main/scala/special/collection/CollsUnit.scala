@@ -9,9 +9,6 @@ package sigma {
     * for details.
     */
   trait Colls extends Base { self: Library =>
-    import Coll._;
-    import CollBuilder._;
-    import WOption._;
     trait Coll[A] extends Def[Coll[A]] {
       implicit def eA: Elem[A];
       def length: Ref[Int];

@@ -591,7 +591,7 @@ object SigmaPredef {
     ).map(f => f.name -> f).toMap
 
     private val funcNameToIrBuilderMap: Map[String, PredefinedFunc] =
-      funcs.filter { case (n, f) => f.irInfo.irBuilder != undefined }
+      funcs.filter { case (_, f) => f.irInfo.irBuilder != undefined }
 
     def irBuilderForFunc(name: String): Option[IrBuilderFunc] = funcNameToIrBuilderMap.get(name).map(_.irInfo.irBuilder)
   }

@@ -22,19 +22,16 @@ import BigInt._
 import Box._
 import Coll._
 import CollBuilder._
-import Context._
 import GroupElement._
 import Header._
 import PreHeader._
-import SigmaDslBuilder._
 import SigmaProp._
 import WOption._
-import WRType._
+
 
 object BigInt extends EntityObject("BigInt") {
   // entityConst: single const for each entity
   import Liftables._
-  import scala.reflect.{ClassTag, classTag}
   type SBigInt = sigma.BigInt
   case class BigIntConst(
         constValue: SBigInt
