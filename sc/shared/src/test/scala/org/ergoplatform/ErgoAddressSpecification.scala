@@ -269,23 +269,21 @@ class ErgoAddressSpecification extends SigmaDslTesting
     testPay2SHAddress(Pay2SHAddress(tree), scriptBytes) // NOTE: same scriptBytes regardless of ErgoTree version
   }
 
-  property("Pay2SHAddress.script should use VersionContext.current.ergoTreeVersion") {
+  property("Pay2SHAddress.script should create ErgoTree v0") {
     val (prop, _) = createPropAndScriptBytes()
 
     val address = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
       Pay2SHAddress(prop)
     }
-    address.script.version shouldBe ergoTreeVersionInTests
+    address.script.version shouldBe 0
   }
 
   // create non-versioned property which is executed under default version context
   // see VersionContext._defaultContext
-  // When default version will be upgraded (as part of protocol upgrade) then this test will fail
-  // and will have to be explicitly fixed.
-  super[AnyPropSpecLike].property("using default VersionContext") {
+  super[AnyPropSpecLike].property("using default VersionContext still creates ErgoTree v0") {
     val (prop, _) = createPropAndScriptBytes()
     val address = Pay2SHAddress(prop)
-    address.script.version shouldBe VersionContext.JitActivationVersion
+    address.script.version shouldBe 0
   }
 
   property("negative cases: deserialized script + costing exceptions") {
@@ -309,7 +307,7 @@ class ErgoAddressSpecification extends SigmaDslTesting
     // when everything is ok
     testPay2SHAddress(addr, script = scriptVarId -> ByteArrayConstant(scriptBytes))
 
-    val expectedCost = if (ergoTreeVersionInTests == 0) 88 else 90 // account for size serialized for version > 0
+    val expectedCost = 88
 
     // when limit is low
     {
