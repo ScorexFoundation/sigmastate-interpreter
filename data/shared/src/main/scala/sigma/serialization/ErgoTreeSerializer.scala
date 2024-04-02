@@ -1,13 +1,13 @@
 package sigma.serialization
 
 import org.ergoplatform.validation.ValidationRules.{CheckDeserializedScriptIsSigmaProp, CheckHeaderSizeBit}
-import sigma.ast.{Constant, DeserializationSigmaBuilder, ErgoTree, SType, SubstConstants, UnparsedErgoTree}
+import sigma.ast.{Constant, DeserializationSigmaBuilder, ErgoTree, SType, UnparsedErgoTree}
 import sigma.ast.syntax.ValueOps
 import sigma.ast.ErgoTree.{EmptyConstants, HeaderType}
 import sigma.util.safeNewArray
 import debox.cfor
 import sigma.VersionContext
-import sigma.validation.{SigmaValidationSettings, ValidationException}
+import sigma.validation.ValidationException
 import sigma.validation.ValidationRules.CheckPositionLimit
 
 /**

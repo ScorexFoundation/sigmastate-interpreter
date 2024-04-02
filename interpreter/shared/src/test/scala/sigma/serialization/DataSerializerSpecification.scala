@@ -5,7 +5,6 @@ import org.ergoplatform.ErgoBox
 import org.scalacheck.Arbitrary._
 import sigma.data.{DataValueComparer, RType, SigmaBoolean, TupleColl}
 import sigma.ast.SCollection.SByteArray
-import sigmastate._
 import sigmastate.eval._
 import sigma.{AvlTree, Colls, Evaluation}
 import sigma.ast.SType.AnyOps

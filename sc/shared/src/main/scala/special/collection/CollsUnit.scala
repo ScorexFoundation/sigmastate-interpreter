@@ -34,7 +34,5 @@ package sigma {
       def xor(left: Ref[Coll[Byte]], right: Ref[Coll[Byte]]): Ref[Coll[Byte]];
       def replicate[T](n: Ref[Int], v: Ref[T]): Ref[Coll[T]];
     };
-    trait CollCompanion;
-    trait CollBuilderCompanion
   }
 }

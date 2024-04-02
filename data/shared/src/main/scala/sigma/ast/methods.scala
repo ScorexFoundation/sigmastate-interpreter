@@ -234,7 +234,7 @@ object SNumericTypeMethods extends MethodsContainer {
          |  Each boolean corresponds to one bit.
           """.stripMargin)
 
-  protected override def getMethods: Seq[SMethod] = Array(
+  protected override def getMethods(): Seq[SMethod] = Array(
     ToByteMethod, // see Downcast
     ToShortMethod, // see Downcast
     ToIntMethod, // see Downcast

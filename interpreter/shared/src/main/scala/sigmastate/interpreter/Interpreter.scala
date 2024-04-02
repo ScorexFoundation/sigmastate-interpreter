@@ -23,7 +23,7 @@ import sigmastate.interpreter.CErgoTreeEvaluator.fixedCostOp
 import sigmastate.interpreter.Interpreter._
 import sigma.ast.syntax.ValueOps
 import sigma.eval.{EvalSettings, SigmaDsl}
-import sigma.exceptions.{CostLimitException, InterpreterException}
+import sigma.exceptions.InterpreterException
 import sigma.interpreter.ProverResult
 import sigma.util.CollectionUtil
 import sigmastate.utils.Helpers._
