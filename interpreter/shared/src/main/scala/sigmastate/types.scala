@@ -1052,6 +1052,9 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
     SigmaDsl.BigInt(bi)
   }
 
+  val ToNBits = SMethod(this, "toNbits", SFunc(this, SLong), 1, FixedCost(JitCost(5)))
+    .withInfo(ModQ, "Encode this big integer value as NBits")
+
   /** The following `modQ` methods are not fully implemented in v4.x.
     * The following descriptors remain here in the code and are waiting for full implementation
     * is upcoming soft-forks at which point the cost parameters should be calculated and
@@ -1068,6 +1071,7 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
       .withInfo(MethodCall, "Multiply this number with \\lst{other} by module Q.", ArgInfo("other", "Number to multiply with this."))
 
   protected override def getMethods(): Seq[SMethod] = super.getMethods() ++ Seq(
+    ToNBits
 //    ModQMethod,
 //    PlusModQMethod,
 //    MinusModQMethod,
