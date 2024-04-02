@@ -739,6 +739,7 @@ object SPrimType {
 /** Marker trait for all numeric types. */
 trait SNumericType extends SProduct {
   import SNumericType._
+
   protected override def getMethods(): Seq[SMethod] = {
     super.getMethods() ++ SNumericType.methods.map {
       m => m.copy(stype = Terms.applySubst(m.stype, Map(tNum -> this)).asFunc)
@@ -778,6 +779,7 @@ trait SNumericType extends SProduct {
 
   override def toString: String = this.getClass.getSimpleName
 }
+
 object SNumericType extends STypeCompanion {
   /** Array of all numeric types ordered by number of bytes in the representation. */
   final val allNumericTypes = Array(SByte, SShort, SInt, SLong, SBigInt)
@@ -983,7 +985,7 @@ case object SLong extends SPrimType with SEmbeddable with SNumericType with SMon
   override type WrappedType = Long
   override val typeCode: TypeCode = 5: Byte
   override val reprClass: RClass[_] = RClass(classOf[Long])
-  override def typeId = typeCode
+  override def typeId: TypeCode = typeCode
   override def numericTypeIndex: Int = 3
   override def upcast(v: AnyVal): Long = v match {
     case x: Byte => x.toLong
@@ -999,15 +1001,27 @@ case object SLong extends SPrimType with SEmbeddable with SNumericType with SMon
     case l: Long => l
     case _ => sys.error(s"Cannot downcast value $v to the type $this")
   }
+
+  lazy val DecodeNBitsMethod: SMethod = SMethod(
+    this, "DecodeNBits", SFunc(this, SBigInt), 8, FixedCost(JitCost(5)))
+    .withInfo(PropertyCall, "Consider this Long value as nbits-encoded BigInt value and decode it to BigInt")
+
+  protected override def getMethods(): Seq[SMethod] = {
+    if (VersionContext.current.isEvolutionActivated) {
+      super.getMethods() ++ Seq(DecodeNBitsMethod)
+    } else {
+      super.getMethods()
+    }
+  }
 }
 
-/** Type of 256 bit integet values. Implemented using [[java.math.BigInteger]]. */
+/** Type of 256 bit signed integer values. Implemented using [[java.math.BigInteger]]. */
 case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SMonoType {
   override type WrappedType = BigInt
   override val typeCode: TypeCode = 6: Byte
   override val reprClass: RClass[_] = RClass(classOf[BigInt])
 
-  override def typeId = typeCode
+  override def typeId: TypeCode = typeCode
 
   /** Type of Relation binary op like GE, LE, etc. */
   val RelationOpType = SFunc(Array(SBigInt, SBigInt), SBoolean)
@@ -1038,8 +1052,8 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
     SigmaDsl.BigInt(bi)
   }
 
-  /** The following `modQ` methods are not fully implemented in v4.x and this descriptors.
-    * This descritors are remain here in the code and are waiting for full implementation
+  /** The following `modQ` methods are not fully implemented in v4.x.
+    * The following descriptors remain here in the code and are waiting for full implementation
     * is upcoming soft-forks at which point the cost parameters should be calculated and
     * changed.
     */
@@ -1053,7 +1067,7 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall, "Multiply this number with \\lst{other} by module Q.", ArgInfo("other", "Number to multiply with this."))
 
-  protected override def getMethods() = super.getMethods() ++ Seq(
+  protected override def getMethods(): Seq[SMethod] = super.getMethods() ++ Seq(
 //    ModQMethod,
 //    PlusModQMethod,
 //    MinusModQMethod,
@@ -1067,7 +1081,7 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
 case object SString extends SProduct with SMonoType {
   override type WrappedType = String
   override val typeCode: TypeCode = 102: Byte
-  override def typeId = typeCode
+  override def typeId: TypeCode = typeCode
   override def reprClass: RClass[_] = RClass(classOf[String])
 }
 
