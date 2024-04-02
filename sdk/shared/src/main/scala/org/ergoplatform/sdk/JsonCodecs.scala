@@ -10,13 +10,13 @@ import org.ergoplatform.validation.{SigmaValidationSettings, SigmaValidationSett
 import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.crypto.hash.Digest32
 import scorex.util.ModifierId
-import sigmastate.Values.{ErgoTree, EvaluatedValue}
+import sigmastate.Values.{EvaluatedValue, ErgoTree}
 import sigmastate.eval.Extensions._
-import sigmastate.eval.{CPreHeader, WrapperOf, _}
+import sigmastate.eval.{WrapperOf, CPreHeader, _}
 import sigmastate.exceptions.SigmaException
 import sigmastate.interpreter.{ContextExtension, ProverResult}
-import sigmastate.{AvlTreeData, AvlTreeFlags, SType}
-import sigma.{AnyValue, Coll, Colls, Header, PreHeader}
+import sigmastate.{AvlTreeData, SType, AvlTreeFlags}
+import sigma.{Header, AnyValue, Colls, Coll, PreHeader}
 
 import scala.util.Try
 import sigmastate.utils.Helpers._  // required for Scala 2.11
@@ -245,7 +245,7 @@ trait JsonCodecs {
 
   implicit val contextExtensionDecoder: Decoder[ContextExtension] = Decoder.instance({ cursor =>
     for {
-      values <- cursor.as[mutable.LinkedHashMap[Byte, EvaluatedValue[SType]]]
+      values <- cursor.as[Map[Byte, EvaluatedValue[SType]]]
     } yield ContextExtension(values)
   })
 
