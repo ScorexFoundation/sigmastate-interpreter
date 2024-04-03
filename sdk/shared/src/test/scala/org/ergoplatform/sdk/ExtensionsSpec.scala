@@ -5,12 +5,11 @@ import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import sigma.{Coll, CollGens}
 import org.ergoplatform.sdk.Extensions.{CollBuilderOps, CollOps, GenIterableOps, PairCollOps}
-import sigma.data.RType
-import sigmastate.eval.CostingSigmaDslBuilder
+import sigma.data.{CSigmaDslBuilder, RType}
 
 class ExtensionsSpec extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers with CollGens {
   def Coll[T](items: T*)(implicit cT: RType[T]) =
-    CostingSigmaDslBuilder.Colls.fromItems(items: _*)
+    CSigmaDslBuilder.Colls.fromItems(items: _*)
 
   val items: Iterable[(Int, String)] = Array((1, "a"), (2, "b"), (1, "c"))
 

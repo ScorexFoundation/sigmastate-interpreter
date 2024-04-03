@@ -1,17 +1,16 @@
 package org.ergoplatform.sdk.utils
 
 import org.ergoplatform.ErgoBox
-import sigma.data.{CollType, FuncType, OptionType, PairType, RType, TupleType}
+import sigma.data.{AvlTreeData, AvlTreeFlags, CAvlTree, CBigInt, CGroupElement, CSigmaProp, CollType, FuncType, OptionType, PairType, RType, TrivialProp, TupleType}
 import sigma.data.RType._
 import scorex.crypto.authds.avltree.batch.BatchAVLProver
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ModifierId
-import sigmastate.Values.ErgoTree
-import sigmastate.crypto.CryptoConstants
 import sigmastate.eval._
-import sigmastate.{AvlTreeData, AvlTreeFlags, TrivialProp}
 import sigma._
-
+import sigma.ast.ErgoTree
+import ErgoTree.HeaderType
+import sigma.crypto.CryptoConstants
 import java.math.BigInteger
 import scala.language.implicitConversions
 
@@ -62,7 +61,7 @@ object Zero extends ZeroLowPriority {
     new ErgoBox(
       LongIsZero.zero,
       new ErgoTree(
-        ByteIsZero.zero,
+        HeaderType @@ ByteIsZero.zero,
         IndexedSeq.empty,
         Right(sigmaPropIsZero.zero)
       ),

@@ -1,27 +1,31 @@
 package org.ergoplatform
 
 import org.ergoplatform.ErgoAddressEncoder.{MainnetNetworkPrefix, TestnetNetworkPrefix, hash256}
-import org.ergoplatform.validation.{ValidationException, ValidationRules}
 import org.scalatest.{Assertion, TryValues}
 import scorex.crypto.hash.Blake2b256
 import scorex.util.encode.Base58
-import sigmastate.Values.{ByteArrayConstant, Constant, ErgoTree, IntConstant, UnparsedErgoTree}
-import sigmastate.crypto.DLogProtocol
-import sigmastate.crypto.DLogProtocol.{DLogProverInput, ProveDlog}
-import sigmastate.eval.InvalidType
+import sigma.ast.{ByteArrayConstant, Constant, ErgoTree, IntConstant, SigmaAnd, UnparsedErgoTree}
+import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers._
-import sigmastate.interpreter.ContextExtension.VarBinding
-import sigmastate.crypto.CryptoConstants.dlogGroup
-import sigmastate.exceptions.CostLimitException
+import sigma.interpreter.ContextExtension.VarBinding
+import sigma.crypto.CryptoConstants.dlogGroup
 import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
-import sigmastate.interpreter.{ContextExtension, CostedProverResult}
-import sigmastate.lang.Terms.ValueOps
-import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.serialization.{GroupElementSerializer, ValueSerializer}
+import sigma.ast.syntax.ValueOps
+import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigma.serialization.ValueSerializer
 import sigmastate.utils.Helpers._
-import sigmastate.{CompilerCrossVersionProps, SType, SigmaAnd}
+import sigmastate.CompilerCrossVersionProps
 import sigma.SigmaDslTesting
+import sigma.ast.ErgoTree.{ZeroHeader, setConstantSegregation}
+
+import sigma.ast.SType
+import sigma.data.ProveDlog
+import sigma.exceptions.{CostLimitException, InvalidType}
+import sigma.interpreter.{ContextExtension, CostedProverResult}
+import sigma.serialization.GroupElementSerializer
+import sigma.validation.ValidationException
+import sigma.validation.ValidationRules.CheckTypeCode
 
 import java.math.BigInteger
 
@@ -76,12 +80,12 @@ class ErgoAddressSpecification extends SigmaDslTesting
 
   def testFromProposition(scriptVersion: Byte,
                           expectedP2S: String, expectedP2SH: String, expectedP2PK: String) = {
-    val pk: DLogProtocol.ProveDlog = DLogProverInput(BigInteger.ONE).publicImage
-    val pk10: DLogProtocol.ProveDlog = DLogProverInput(BigInteger.TEN).publicImage
+    val pk: ProveDlog = DLogProverInput(BigInteger.ONE).publicImage
+    val pk10: ProveDlog = DLogProverInput(BigInteger.TEN).publicImage
 
     val p2s: Pay2SAddress = Pay2SAddress(
       ErgoTree.fromProposition(
-        ErgoTree.headerWithVersion(scriptVersion),
+        ErgoTree.headerWithVersion(ZeroHeader, scriptVersion),
         SigmaAnd(pk, pk10)))
     val p2sh: Pay2SHAddress = Pay2SHAddress(pk)
     val p2pk: P2PKAddress = P2PKAddress(pk)
@@ -125,7 +129,7 @@ class ErgoAddressSpecification extends SigmaDslTesting
     val pk = dlogGroup.exponentiate(g, w)
     val pkBytes = GroupElementSerializer.toBytes(pk)
     val encoder = new ErgoAddressEncoder(MainnetNetworkPrefix)
-    val p2pk =  new P2PKAddress(ProveDlog(pk), pkBytes)(encoder)
+    val p2pk =  P2PKAddress(ProveDlog(pk))(encoder)
     val addrStr = p2pk.toString
 
     val prefix = (encoder.networkPrefix + P2PKAddress.addressTypePrefix).toByte
@@ -146,6 +150,11 @@ class ErgoAddressSpecification extends SigmaDslTesting
 
     testFromProposition(scriptVersion = 1,
       expectedP2S = "2MzJLjzX6UNfJHSVvioB6seYZ99FpWHB4Ds1gekHPv5KtNmLJUecgRWwvcGEqbt8ZAokUxGvKMuNgMZFzkPPdTGiYzPQoSR55NT5isCidMywgp52LYV",
+      expectedP2SH = "qETVgcEctaXurNbFRgGUcZEGg4EKa8R4a5UNHY7",
+      expectedP2PK = "3WwXpssaZwcNzaGMv3AgxBdTPJQBt5gCmqBsg3DykQ39bYdhJBsN")
+
+    testFromProposition(scriptVersion = 2,
+      expectedP2S = "2N1Egpu5R9XtomV7x343LTXGrBLEkC8pvMVtjm6V3iHryxVfc6LUJhd1JsswhXMpPXUMatoBgnJ4qMGAC7dha27WkjqVBUsebWBDhig97zhmKS8T4YS",
       expectedP2SH = "qETVgcEctaXurNbFRgGUcZEGg4EKa8R4a5UNHY7",
       expectedP2PK = "3WwXpssaZwcNzaGMv3AgxBdTPJQBt5gCmqBsg3DykQ39bYdhJBsN")
   }
@@ -175,7 +184,7 @@ class ErgoAddressSpecification extends SigmaDslTesting
     }
 
     {
-      val pk: DLogProtocol.ProveDlog = DLogProverInput(BigInteger.ONE).publicImage
+      val pk: ProveDlog = DLogProverInput(BigInteger.ONE).publicImage
       val p2pk = P2PKAddress(pk)(ergoAddressEncoder)
 
       val invalidAddrType = 4.toByte
@@ -192,9 +201,9 @@ class ErgoAddressSpecification extends SigmaDslTesting
 
     {
       val unparsedTree = new ErgoTree(
-        (ErgoTree.ConstantSegregationHeader | ergoTreeHeaderInTests).toByte,
+        setConstantSegregation(ergoTreeHeaderInTests),
         Array[Constant[SType]](),
-        Left(UnparsedErgoTree(Array[Byte](), ValidationException("", ValidationRules.CheckTypeCode, Seq())))
+        Left(UnparsedErgoTree(Array[Byte](), ValidationException("", CheckTypeCode, Seq())))
       )
       assertExceptionThrown(
         ergoAddressEncoder.fromProposition(unparsedTree).getOrThrow,
@@ -204,7 +213,7 @@ class ErgoAddressSpecification extends SigmaDslTesting
 
     {
       val invalidTree = new ErgoTree(
-        (ErgoTree.ConstantSegregationHeader | ergoTreeHeaderInTests).toByte,
+        setConstantSegregation(ergoTreeHeaderInTests),
         Array[Constant[SType]](),
         Right(IntConstant(10).asSigmaProp)
       )
@@ -280,16 +289,17 @@ class ErgoAddressSpecification extends SigmaDslTesting
     // when everything is ok
     testPay2SHAddress(addr, script = scriptVarId -> ByteArrayConstant(scriptBytes))
 
+    val expectedCost = if (ergoTreeVersionInTests == 0) 88 else 90 // account for size serialized for version > 0
+
     // when limit is low
     {
       val deliberatelySmallLimit = 24
-
       assertExceptionThrown(
         testPay2SHAddress(addr,
           script = scriptVarId -> ByteArrayConstant(scriptBytes),
           costLimit = deliberatelySmallLimit),
         rootCauseLike[CostLimitException](
-          s"Estimated execution cost 88 exceeds the limit $deliberatelySmallLimit")
+          s"Estimated execution cost $expectedCost exceeds the limit $deliberatelySmallLimit")
       )
     }
 
@@ -305,7 +315,7 @@ class ErgoAddressSpecification extends SigmaDslTesting
           costLimit = deliberatelySmallLimit)
       },
       rootCauseLike[CostLimitException](
-        s"Estimated execution cost 88 exceeds the limit $deliberatelySmallLimit")
+        s"Estimated execution cost $expectedCost exceeds the limit $deliberatelySmallLimit")
       )
     }
 

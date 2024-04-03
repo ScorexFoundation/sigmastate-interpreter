@@ -24,7 +24,7 @@ class SigmaProver(_prover: sdk.SigmaProver) extends js.Object {
 
   /** Returns the prover's secret key. */
   def getSecretKey(): js.BigInt =
-    isoBigInt.from(_prover.getSecretKey)
+    sigma.js.Isos.isoBigInt.from(_prover.getSecretKey)
 
   /** Returns an array of EIP-3 addresses associated with the prover's secret keys. */
   def getEip3Addresses(): js.Array[String] = {
@@ -50,9 +50,9 @@ class SigmaProver(_prover: sdk.SigmaProver) extends js.Object {
       baseCost: Int): ReducedTransaction = {
     val unreducedTx = sdk.UnreducedTransaction(
       unsignedTx = isoUnsignedTransaction.to(unsignedTx),
-      boxesToSpend = isoArrayToIndexed(isoEIP12UnsignedInput).to(boxesToSpend),
-      dataInputs = isoArrayToIndexed(isoBox).to(dataInputs),
-      tokensToBurn = isoArrayToIndexed(isoToken.andThen(sdk.Iso.isoErgoTokenToPair.inverse)).to(tokensToBurn)
+      boxesToSpend = sigma.js.Isos.isoArrayToIndexed(isoEIP12UnsignedInput).to(boxesToSpend),
+      dataInputs = sigma.js.Isos.isoArrayToIndexed(isoBox).to(dataInputs),
+      tokensToBurn = sigma.js.Isos.isoArrayToIndexed(isoToken.andThen(sdk.SdkIsos.isoErgoTokenToPair.inverse)).to(tokensToBurn)
     )
     val ctx = isoBlockchainStateContext.to(stateCtx)
     val reducedTx = _prover.reduce(ctx, unreducedTx, baseCost)
