@@ -1,14 +1,13 @@
 package sigma
 
 import org.scalatest.BeforeAndAfterAll
-import sigma.data.RType
+import sigma.data.{CSigmaProp, DataValueComparer, RType, TrivialProp}
 import sigma.util.BenchmarkUtil
-import sigmastate.{DataValueComparer, JitCost, TrivialProp}
-import sigmastate.Values.ErgoTree
-import sigmastate.eval.{CSigmaProp, Profiler, SigmaDsl}
+import sigmastate.eval.CProfiler
 import sigmastate.helpers.SigmaPPrint
-import sigmastate.interpreter.{CostAccumulator, ErgoTreeEvaluator, EvalSettings, TracedCost}
-import sigma.Coll
+import sigmastate.interpreter.{CostAccumulator, CErgoTreeEvaluator}
+import sigma.ast.{ErgoTree, JitCost}
+import sigma.eval.{EvalSettings, SigmaDsl, TracedCost}
 
 import scala.util.{Success, Try}
 
@@ -18,7 +17,7 @@ class DataValueComparerSpecification extends SigmaDslTesting
   implicit override val generatorDrivenConfig = PropertyCheckConfiguration(minSuccessful = 30)
 
   implicit override val evalSettings: EvalSettings =
-    ErgoTreeEvaluator.DefaultEvalSettings.copy(
+    CErgoTreeEvaluator.DefaultEvalSettings.copy(
     isMeasureOperationTime = true,
     isMeasureScriptTime = true,
     isLogEnabled = false, // don't commit the `true` value (CI log is too high)
@@ -29,15 +28,15 @@ class DataValueComparerSpecification extends SigmaDslTesting
 
   val nWarmUpIterations = 100
 
-  implicit val suiteProfiler = new Profiler
+  implicit val suiteProfiler = new CProfiler
 
   import TestData._
 
-  def createEvaluator(settings: EvalSettings, profiler: Profiler): ErgoTreeEvaluator = {
+  def createEvaluator(settings: EvalSettings, profiler: CProfiler): CErgoTreeEvaluator = {
     val accumulator = new CostAccumulator(
       initialCost = JitCost(0),
       costLimit = Some(JitCost.fromBlockCost(settings.scriptCostLimitInEvaluator)))
-    val evaluator = new ErgoTreeEvaluator(
+    val evaluator = new CErgoTreeEvaluator(
       context = null,
       constants = ErgoTree.EmptyConstants,
       coster = accumulator, profiler, settings)
@@ -51,7 +50,7 @@ class DataValueComparerSpecification extends SigmaDslTesting
     * @param x computation which produced first argument
     * @param y computation which produced second argument
     */
-  def check(x: => Any, y: => Any, expected: Boolean)(implicit settings: EvalSettings, profiler: Profiler) = {
+  def check(x: => Any, y: => Any, expected: Boolean)(implicit settings: EvalSettings, profiler: CProfiler) = {
     val _x = x // force computation and obtain value
     val _y = y
     withClue(s"EQ.equalDataValues(${_x}, ${_y})") {
@@ -96,7 +95,7 @@ class DataValueComparerSpecification extends SigmaDslTesting
 
   override protected def beforeAll(): Unit = {
     // this method warms up the code in DataValueComparer
-    val warmUpProfiler = new Profiler
+    val warmUpProfiler = new CProfiler
     warmUpBeforeAllTest(nTotalIters = nWarmUpIterations) {
       runBaseCases(warmUpProfiler)(evalSettings = evalSettings.copy(isLogEnabled = false))
     }
@@ -116,7 +115,7 @@ class DataValueComparerSpecification extends SigmaDslTesting
     * This method is used:
     * 1) to warm up DataValueComparer in the beforeAll method
     * 2) to profile DataValueComparer operations */
-  def runBaseCases(profiler: Profiler)(implicit evalSettings: EvalSettings) = {
+  def runBaseCases(profiler: CProfiler)(implicit evalSettings: EvalSettings) = {
     implicit val suiteProfiler = profiler  // hide suite's profiler and use explicitly passed
     ones.foreach { x =>
       ones.foreach { y =>
