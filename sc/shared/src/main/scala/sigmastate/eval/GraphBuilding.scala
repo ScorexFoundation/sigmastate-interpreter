@@ -2,20 +2,20 @@ package sigmastate.eval
 
 import org.ergoplatform._
 import scalan.MutableLazy
+import sigma.{SigmaException, ast}
+import sigma.ast.TypeCodes.LastConstantCode
+import sigma.ast.Value.Typed
+import sigma.ast._
+import sigma.ast.syntax.{SValue, ValueOps}
+import sigma.crypto.EcPointType
 import sigma.data.ExactIntegral.{ByteIsExactIntegral, IntIsExactIntegral, LongIsExactIntegral, ShortIsExactIntegral}
 import sigma.data.ExactOrdering.{ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering, ShortIsExactOrdering}
+import sigma.data.{CSigmaDslBuilder, ExactIntegral, ExactNumeric, ExactOrdering, Lazy, Nullable}
 import sigma.util.Extensions.ByteOps
-import sigma.data.{ExactIntegral, ExactNumeric, ExactOrdering, Lazy, Nullable}
-import sigmastate.Values.Value.Typed
-import sigmastate.Values._
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.{SourceContext, Terms}
-import sigmastate.lang.Terms.{Ident, Select, Val, ValueOps}
-import sigmastate.serialization.OpCodes
-import sigmastate.utxo._
-import sigmastate._
-import sigmastate.crypto.CryptoConstants.EcPointType
-import sigmastate.exceptions.{GraphBuildingException, SigmaException}
+import sigma.ast.{Ident, Select, Val}
+import sigma.exceptions.GraphBuildingException
+import sigma.serialization.OpCodes
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -43,9 +43,8 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
   import WOption._
 
   /** Should be specified in the final cake */
-  val builder: sigmastate.lang.SigmaBuilder
+  val builder: SigmaBuilder
   import builder._
-
 
   val okMeasureOperationTime: Boolean = false
 
@@ -59,16 +58,6 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
 
   /** Whether to save calcF and costF graphs in the file given by ScriptNameProp environment variable */
   var saveGraphsInFile: Boolean = false
-
-  //  /** Pass configuration which is used by default in IRContext. */
-  //  val calcPass = new DefaultPass("calcPass", Pass.defaultPassConfig.copy(constantPropagation = true))
-  //
-  //  /** Pass configuration which is used during splitting cost function out of cost graph.
-  //    * @see `RuntimeCosting.split2` */
-  //  val costPass = new DefaultPass("costPass", Pass.defaultPassConfig.copy(constantPropagation = true))
-
-  /**  To enable specific configuration uncomment one of the lines above and use it in the beginPass below. */
-  //  beginPass(costPass)
 
   /** Check the tuple type is valid.
     * In v5.x this code is taken from CheckTupleType validation rule which is no longer
@@ -173,7 +162,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
       case ThunkForce(Def(ThunkDef(root, sch))) if sch.isEmpty => root
 
       // Rule: l.isValid op Thunk {... root} => (l op TrivialSigma(root)).isValid
-      case ApplyBinOpLazy(op, SigmaM.isValid(l), Def(ThunkDef(root, sch))) if root.elem == BooleanElement =>
+      case ApplyBinOpLazy(op, SigmaM.isValid(l), Def(ThunkDef(root, _))) if root.elem == BooleanElement =>
         // don't need new Thunk because sigma logical ops always strict
         val r = asRep[SigmaProp](sigmaDslBuilder.sigmaProp(asRep[Boolean](root)))
         val res = if (op == And)
@@ -298,7 +287,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
     case _: BigIntElem[_] => SBigInt
     case _: GroupElementElem[_] => SGroupElement
     case _: AvlTreeElem[_] => SAvlTree
-    case oe: WOptionElem[_, _] => sigmastate.SOption(elemToSType(oe.eItem))
+    case oe: WOptionElem[_, _] => SOption(elemToSType(oe.eItem))
     case _: BoxElem[_] => SBox
     case _: ContextElem[_] => SContext
     case _: SigmaDslBuilderElem[_] => SGlobal
@@ -310,8 +299,6 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
     case pe: PairElem[_, _] => STuple(elemToSType(pe.eFst), elemToSType(pe.eSnd))
     case _ => error(s"Don't know how to convert Elem $e to SType")
   }
-
-  import Liftables._
 
   /** Translates Elem to the corresponding Liftable instance.
     * @param eWT type descriptor
@@ -339,7 +326,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
       FuncIsLiftable(la, lb)
   }).asInstanceOf[Liftable[_,WT]]
 
-  import NumericOps._
+  import sigma.data.NumericOps._
   private lazy val elemToExactNumericMap = Map[Elem[_], ExactNumeric[_]](
     (ByteElement, ByteIsExactIntegral),
     (ShortElement, ShortIsExactIntegral),
@@ -390,12 +377,12 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
     case OpCodes.LtCode  => OrderingLT[A](elemToExactOrdering(eA))
     case OpCodes.GeCode  => OrderingGTEQ[A](elemToExactOrdering(eA))
     case OpCodes.LeCode  => OrderingLTEQ[A](elemToExactOrdering(eA))
-    case _ => error(s"Cannot find BinOp for opcode newOpCode(${opCode.toUByte-OpCodes.LastConstantCode}) and type $eA")
+    case _ => error(s"Cannot find BinOp for opcode newOpCode(${opCode.toUByte - LastConstantCode}) and type $eA")
   }
 
   import sigmastate._
 
-  protected implicit def groupElementToECPoint(g: sigma.GroupElement): EcPointType = CostingSigmaDslBuilder.toECPoint(g).asInstanceOf[EcPointType]
+  protected implicit def groupElementToECPoint(g: sigma.GroupElement): EcPointType = CSigmaDslBuilder.toECPoint(g).asInstanceOf[EcPointType]
 
   def error(msg: String) = throw new GraphBuildingException(msg, None)
   def error(msg: String, srcCtx: Option[SourceContext]) = throw new GraphBuildingException(msg, srcCtx)
@@ -484,7 +471,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
           val resV = toRep(v)(e)
           resV
       }
-      case org.ergoplatform.Context => ctx
+      case sigma.ast.Context => ctx
       case Global => sigmaDslBuilder
       case Height => ctx.HEIGHT
       case Inputs => ctx.INPUTS
@@ -496,10 +483,10 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
       case Ident(n, _) =>
         env.getOrElse(n, !!!(s"Variable $n not found in environment $env"))
 
-      case sigmastate.Upcast(Constant(value, _), toTpe: SNumericType) =>
+      case ast.Upcast(Constant(value, _), toTpe: SNumericType) =>
         eval(mkConstant(toTpe.upcast(value.asInstanceOf[AnyVal]), toTpe))
 
-      case sigmastate.Downcast(Constant(value, _), toTpe: SNumericType) =>
+      case ast.Downcast(Constant(value, _), toTpe: SNumericType) =>
         eval(mkConstant(toTpe.downcast(value.asInstanceOf[AnyVal]), toTpe))
 
       // Rule: col.size --> SizeOf(col)
@@ -510,11 +497,11 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
           error(s"The type of $obj is expected to be Collection to select 'size' property", obj.sourceContext.toOption)
 
       // Rule: proof.isProven --> IsValid(proof)
-      case Select(p, SSigmaProp.IsProven, _) if p.tpe == SSigmaProp =>
+      case Select(p, SSigmaPropMethods.IsProven, _) if p.tpe == SSigmaProp =>
         eval(SigmaPropIsProven(p.asSigmaProp))
 
       // Rule: prop.propBytes --> SigmaProofBytes(prop)
-      case Select(p, SSigmaProp.PropBytes, _) if p.tpe == SSigmaProp =>
+      case Select(p, SSigmaPropMethods.PropBytes, _) if p.tpe == SSigmaProp =>
         eval(SigmaPropBytes(p.asSigmaProp))
 
       // box.R$i[valType] =>
@@ -525,12 +512,12 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
 
       case sel @ Select(obj, field, _) if obj.tpe == SBox =>
         (obj.asValue[SBox.type], field) match {
-          case (box, SBox.Value) => eval(mkExtractAmount(box))
-          case (box, SBox.PropositionBytes) => eval(mkExtractScriptBytes(box))
-          case (box, SBox.Id) => eval(mkExtractId(box))
-          case (box, SBox.Bytes) => eval(mkExtractBytes(box))
-          case (box, SBox.BytesWithoutRef) => eval(mkExtractBytesWithNoRef(box))
-          case (box, SBox.CreationInfo) => eval(mkExtractCreationInfo(box))
+          case (box, SBoxMethods.Value) => eval(mkExtractAmount(box))
+          case (box, SBoxMethods.PropositionBytes) => eval(mkExtractScriptBytes(box))
+          case (box, SBoxMethods.Id) => eval(mkExtractId(box))
+          case (box, SBoxMethods.Bytes) => eval(mkExtractBytes(box))
+          case (box, SBoxMethods.BytesWithoutRef) => eval(mkExtractBytesWithNoRef(box))
+          case (box, SBoxMethods.CreationInfo) => eval(mkExtractCreationInfo(box))
           case _ => error(s"Invalid access to Box property in $sel: field $field is not found", sel.sourceContext.toOption)
         }
 
@@ -539,7 +526,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         eval(mkSelectField(tuple.asTuple, index))
 
       case Select(obj, method, Some(tRes: SNumericType))
-        if obj.tpe.isNumType && obj.asNumValue.tpe.isCastMethod(method) =>
+            if obj.tpe.isNumType && SNumericTypeMethods.isCastMethod(method) =>
         val numValue = obj.asNumValue
         if (numValue.tpe == tRes)
           eval(numValue)
@@ -548,7 +535,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         else
           eval(mkUpcast(numValue, tRes))
 
-      case Terms.Apply(col, Seq(index)) if col.tpe.isCollection =>
+      case sigma.ast.Apply(col, Seq(index)) if col.tpe.isCollection =>
         eval(mkByIndex(col.asCollection[SType], index.asValue[SInt.type], None))
 
       case GetVar(id, optTpe) =>
@@ -558,7 +545,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
       case ValUse(valId, _) =>
         env.getOrElse(valId, !!!(s"ValUse $valId not found in environment $env"))
 
-      case Terms.Block(binds, res) =>
+      case Block(binds, res) =>
         var curEnv = env
         for (v @ Val(n, _, b) <- binds) {
           if (curEnv.contains(n))
@@ -591,37 +578,37 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val vv = asRep[GroupElement](_vv)
         sigmaDslBuilder.proveDHTuple(gv, hv, uv, vv)
 
-      case sigmastate.Exponentiate(In(l), In(r)) =>
+      case Exponentiate(In(l), In(r)) =>
         val lV = asRep[GroupElement](l)
         val rV = asRep[BigInt](r)
         lV.exp(rV)
 
-      case sigmastate.MultiplyGroup(In(_l), In(_r)) =>
+      case MultiplyGroup(In(_l), In(_r)) =>
         val l = asRep[GroupElement](_l)
         val r = asRep[GroupElement](_r)
         l.multiply(r)
 
-      case Values.GroupGenerator =>
+      case GroupGenerator =>
         sigmaDslBuilder.groupGenerator
 
-      case sigmastate.ByteArrayToBigInt(In(arr)) =>
+      case ByteArrayToBigInt(In(arr)) =>
         val arrV = asRep[Coll[Byte]](arr)
         sigmaDslBuilder.byteArrayToBigInt(arrV)
 
-      case sigmastate.LongToByteArray(In(x)) =>
+      case LongToByteArray(In(x)) =>
         val xV = asRep[Long](x)
         sigmaDslBuilder.longToByteArray(xV)
 
       // opt.get
-      case utxo.OptionGet(In(opt: ROption[_]@unchecked)) =>
+      case OptionGet(In(opt: ROption[_]@unchecked)) =>
         opt.get
 
       // opt.isDefined
-      case utxo.OptionIsDefined(In(opt: ROption[_]@unchecked)) =>
+      case OptionIsDefined(In(opt: ROption[_]@unchecked)) =>
         opt.isDefined
 
       // opt.getOrElse(default)
-      case utxo.OptionGetOrElse(In(opt: ROption[a]@unchecked), In(default)) =>
+      case OptionGetOrElse(In(opt: ROption[a]@unchecked), In(default)) =>
         opt.getOrElse(asRep[a](default))
 
       // tup._1 or tup._2
@@ -630,16 +617,14 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         checkTupleType(IR)(eTuple)
         eTuple match {
           case pe: PairElem[a,b] =>
-            assert(fieldIndex == 1 || fieldIndex == 2, s"Invalid field index $fieldIndex of the pair ${tup}: $pe")
-            implicit val ea = pe.eFst
-            implicit val eb = pe.eSnd
+            assert(fieldIndex == 1 || fieldIndex == 2, s"Invalid field index $fieldIndex of the pair $tup: $pe")
             val pair = asRep[(a,b)](tup)
             val res = if (fieldIndex == 1) pair._1 else pair._2
             res
         }
 
       // (x, y)
-      case Values.Tuple(InSeq(Seq(x, y))) =>
+      case Tuple(InSeq(Seq(x, y))) =>
         Pair(x, y)
 
       // xs.exists(predicate) or xs.forall(predicate)
@@ -705,7 +690,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val pV = asRep[Any => Boolean](eval(p))
         inputV.filter(pV)
 
-      case Terms.Apply(f, Seq(x)) if f.tpe.isFunc =>
+      case sigma.ast.Apply(f, Seq(x)) if f.tpe.isFunc =>
         val fV = asRep[Any => Coll[Any]](eval(f))
         val xV = asRep[Any](eval(x))
         Apply(fV, xV, mayInline = false)
@@ -720,7 +705,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val res = sigmaDslBuilder.sha256(inputV)
         res
 
-      case utxo.SizeOf(In(xs)) =>
+      case ast.SizeOf(In(xs)) =>
         xs.elem.asInstanceOf[Any] match {
           case _: CollElem[a,_] =>
             val xsV = asRep[Coll[a]](xs)
@@ -749,26 +734,26 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val pV = asRep[SigmaProp](eval(p))
         pV.propBytes
 
-      case utxo.ExtractId(In(box: Ref[Box]@unchecked)) =>
+      case ExtractId(In(box: Ref[Box]@unchecked)) =>
         box.id
 
-      case utxo.ExtractBytesWithNoRef(In(box: Ref[Box]@unchecked)) =>
+      case ExtractBytesWithNoRef(In(box: Ref[Box]@unchecked)) =>
         box.bytesWithoutRef
 
-      case utxo.ExtractAmount(In(box)) =>
+      case ExtractAmount(In(box)) =>
         val boxV = asRep[Box](box)
         boxV.value
 
-      case utxo.ExtractScriptBytes(In(box: Ref[Box]@unchecked)) =>
+      case ExtractScriptBytes(In(box: Ref[Box]@unchecked)) =>
         box.propositionBytes
 
-      case utxo.ExtractBytes(In(box: Ref[Box]@unchecked)) =>
+      case ExtractBytes(In(box: Ref[Box]@unchecked)) =>
         box.bytes
 
-      case utxo.ExtractCreationInfo(In(box: Ref[Box]@unchecked)) =>
+      case ExtractCreationInfo(In(box: Ref[Box]@unchecked)) =>
         box.creationInfo
 
-      case utxo.ExtractRegisterAs(In(box: Ref[Box]@unchecked), regId, optTpe) =>
+      case ExtractRegisterAs(In(box: Ref[Box]@unchecked), regId, optTpe) =>
         val elem = stypeToElem(optTpe.elemType).asInstanceOf[Elem[Any]]
         val i: Ref[Int] = regId.number.toInt
         box.getReg(i)(elem)
@@ -886,14 +871,14 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val y = eval(rel.right)
         binop.apply(x, asRep[t#WrappedType](y))
 
-      case Terms.Lambda(_, Seq((n, argTpe)), _, Some(body)) =>
+      case sigma.ast.Lambda(_, Seq((n, argTpe)), _, Some(body)) =>
         val eArg = stypeToElem(argTpe).asInstanceOf[Elem[Any]]
         val f = fun(removeIsProven({ x: Ref[Any] =>
           buildNode(ctx, env + (n -> x), body)
         }))(Lazy(eArg))
         f
 
-      case Terms.Lambda(_, Seq((accN, accTpe), (n, tpe)), _, Some(body)) =>
+      case sigma.ast.Lambda(_, Seq((accN, accTpe), (n, tpe)), _, Some(body)) =>
         (stypeToElem(accTpe), stypeToElem(tpe)) match { case (eAcc: Elem[s], eA: Elem[a]) =>
           val eArg = pairElement(eAcc, eA)
           val f = fun { x: Ref[(s, a)] =>
@@ -914,11 +899,11 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val values = colBuilder.fromItems(vs: _*)(eAny)
         values
 
-      case sigmastate.Upcast(In(input), tpe) =>
+      case ast.Upcast(In(input), tpe) =>
         val elem = stypeToElem(tpe.asNumType)
         upcast(input)(elem)
 
-      case sigmastate.Downcast(In(input), tpe) =>
+      case ast.Downcast(In(input), tpe) =>
         val elem = stypeToElem(tpe.asNumType)
         downcast(input)(elem)
 
@@ -936,221 +921,221 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         sigmaDslBuilder.decodePoint(bytes)
 
       // fallback rule for MethodCall, should be the last case in the list
-      case Terms.MethodCall(obj, method, args, _) =>
+      case sigma.ast.MethodCall(obj, method, args, _) =>
         val objV = eval(obj)
         val argsV = args.map(eval)
         (objV, method.objType) match {
-          case (xs: RColl[t]@unchecked, SCollection) => method.name match {
-            case SCollection.IndicesMethod.name =>
+          case (xs: RColl[t]@unchecked, SCollectionMethods) => method.name match {
+            case SCollectionMethods.IndicesMethod.name =>
               xs.indices
-            case SCollection.PatchMethod.name =>
+            case SCollectionMethods.PatchMethod.name =>
               val from = asRep[Int](argsV(0))
               val patch = asRep[Coll[t]](argsV(1))
               val replaced = asRep[Int](argsV(2))
               xs.patch(from, patch, replaced)
-            case SCollection.UpdatedMethod.name =>
+            case SCollectionMethods.UpdatedMethod.name =>
               val index = asRep[Int](argsV(0))
               val value = asRep[t](argsV(1))
               xs.updated(index, value)
-            case SCollection.AppendMethod.name =>
+            case SCollectionMethods.AppendMethod.name =>
               val ys = asRep[Coll[t]](argsV(0))
               xs.append(ys)
-            case SCollection.SliceMethod.name =>
+            case SCollectionMethods.SliceMethod.name =>
               val from = asRep[Int](argsV(0))
               val until = asRep[Int](argsV(1))
               xs.slice(from, until)
-            case SCollection.UpdateManyMethod.name =>
+            case SCollectionMethods.UpdateManyMethod.name =>
               val indexes = asRep[Coll[Int]](argsV(0))
               val values = asRep[Coll[t]](argsV(1))
               xs.updateMany(indexes, values)
-            case SCollection.IndexOfMethod.name =>
+            case SCollectionMethods.IndexOfMethod.name =>
               val elem = asRep[t](argsV(0))
               val from = asRep[Int](argsV(1))
               xs.indexOf(elem, from)
-            case SCollection.ZipMethod.name =>
+            case SCollectionMethods.ZipMethod.name =>
               val ys = asRep[Coll[Any]](argsV(0))
               xs.zip(ys)
-            case SCollection.FlatMapMethod.name =>
+            case SCollectionMethods.FlatMapMethod.name =>
               val f = asRep[Any => Coll[Any]](argsV(0))
               xs.flatMap(f)
-            case SCollection.MapMethod.name =>
+            case SCollectionMethods.MapMethod.name =>
               val f = asRep[Any => Any](argsV(0))
               xs.map(f)
-            case SCollection.FilterMethod.name =>
+            case SCollectionMethods.FilterMethod.name =>
               val p = asRep[Any => Boolean](argsV(0))
               xs.filter(p)
-            case SCollection.ForallMethod.name =>
+            case SCollectionMethods.ForallMethod.name =>
               val p = asRep[Any => Boolean](argsV(0))
               xs.forall(p)
-            case SCollection.ExistsMethod.name =>
+            case SCollectionMethods.ExistsMethod.name =>
               val p = asRep[Any => Boolean](argsV(0))
               xs.exists(p)
-            case SCollection.FoldMethod.name =>
+            case SCollectionMethods.FoldMethod.name =>
               val zero = asRep[Any](argsV(0))
               val op = asRep[((Any, Any)) => Any](argsV(1))
               xs.foldLeft(zero, op)
-            case SCollection.GetOrElseMethod.name =>
+            case SCollectionMethods.GetOrElseMethod.name =>
               val i = asRep[Int](argsV(0))
               val d = asRep[t](argsV(1))
               xs.getOrElse(i, d)
             case _ => throwError
           }
-          case (opt: ROption[t]@unchecked, SOption) => method.name match {
-            case SOption.GetMethod.name =>
+          case (opt: ROption[t]@unchecked, SOptionMethods) => method.name match {
+            case SOptionMethods.GetMethod.name =>
               opt.get
-            case SOption.GetOrElseMethod.name =>
+            case SOptionMethods.GetOrElseMethod.name =>
               val defaultTh = asRep[t](argsV(0))
               opt.getOrElse(Thunk(defaultTh))
-            case SOption.IsDefinedMethod.name =>
+            case SOptionMethods.IsDefinedMethod.name =>
               opt.isDefined
-            case SOption.MapMethod.name =>
+            case SOptionMethods.MapMethod.name =>
               opt.map(asRep[t => Any](argsV(0)))
-            case SOption.FilterMethod.name =>
+            case SOptionMethods.FilterMethod.name =>
               opt.filter(asRep[t => Boolean](argsV(0)))
             case _ => throwError
           }
-          case (ge: Ref[GroupElement]@unchecked, SGroupElement) => method.name match {
-            case SGroupElement.GetEncodedMethod.name =>
+          case (ge: Ref[GroupElement]@unchecked, SGroupElementMethods) => method.name match {
+            case SGroupElementMethods.GetEncodedMethod.name =>
               ge.getEncoded
-            case SGroupElement.NegateMethod.name =>
+            case SGroupElementMethods.NegateMethod.name =>
               ge.negate
-            case SGroupElement.MultiplyMethod.name =>
+            case SGroupElementMethods.MultiplyMethod.name =>
               val g2 = asRep[GroupElement](argsV(0))
               ge.multiply(g2)
-            case SGroupElement.ExponentiateMethod.name =>
+            case SGroupElementMethods.ExponentiateMethod.name =>
               val k = asRep[BigInt](argsV(0))
               ge.exp(k)
             case _ => throwError
           }
-          case (box: Ref[Box]@unchecked, SBox) => method.name match {
-            case SBox.tokensMethod.name =>
+          case (box: Ref[Box]@unchecked, SBoxMethods) => method.name match {
+            case SBoxMethods.tokensMethod.name =>
               box.tokens
             case _ => throwError
           }
-          case (ctx: Ref[Context]@unchecked, SContext) => method.name match {
-            case SContext.dataInputsMethod.name =>
+          case (ctx: Ref[Context]@unchecked, SContextMethods) => method.name match {
+            case SContextMethods.dataInputsMethod.name =>
               ctx.dataInputs
-            case SContext.headersMethod.name =>
+            case SContextMethods.headersMethod.name =>
               ctx.headers
-            case SContext.preHeaderMethod.name =>
+            case SContextMethods.preHeaderMethod.name =>
               ctx.preHeader
-            case SContext.inputsMethod.name =>
+            case SContextMethods.inputsMethod.name =>
               ctx.INPUTS
-            case SContext.outputsMethod.name =>
+            case SContextMethods.outputsMethod.name =>
               ctx.OUTPUTS
-            case SContext.heightMethod.name =>
+            case SContextMethods.heightMethod.name =>
               ctx.HEIGHT
-            case SContext.selfMethod.name =>
+            case SContextMethods.selfMethod.name =>
               ctx.SELF
-            case SContext.selfBoxIndexMethod.name =>
+            case SContextMethods.selfBoxIndexMethod.name =>
               ctx.selfBoxIndex
-            case SContext.lastBlockUtxoRootHashMethod.name =>
+            case SContextMethods.lastBlockUtxoRootHashMethod.name =>
               ctx.LastBlockUtxoRootHash
-            case SContext.minerPubKeyMethod.name =>
+            case SContextMethods.minerPubKeyMethod.name =>
               ctx.minerPubKey
             case _ => throwError
           }
-          case (tree: Ref[AvlTree]@unchecked, SAvlTree) => method.name match {
-            case SAvlTree.digestMethod.name =>
+          case (tree: Ref[AvlTree]@unchecked, SAvlTreeMethods) => method.name match {
+            case SAvlTreeMethods.digestMethod.name =>
               tree.digest
-            case SAvlTree.keyLengthMethod.name =>
+            case SAvlTreeMethods.keyLengthMethod.name =>
               tree.keyLength
-            case SAvlTree.valueLengthOptMethod.name =>
+            case SAvlTreeMethods.valueLengthOptMethod.name =>
               tree.valueLengthOpt
-            case SAvlTree.enabledOperationsMethod.name =>
+            case SAvlTreeMethods.enabledOperationsMethod.name =>
               tree.enabledOperations
-            case SAvlTree.isInsertAllowedMethod.name =>
+            case SAvlTreeMethods.isInsertAllowedMethod.name =>
               tree.isInsertAllowed
-            case SAvlTree.isRemoveAllowedMethod.name =>
+            case SAvlTreeMethods.isRemoveAllowedMethod.name =>
               tree.isRemoveAllowed
-            case SAvlTree.isUpdateAllowedMethod.name =>
+            case SAvlTreeMethods.isUpdateAllowedMethod.name =>
               tree.isUpdateAllowed
-            case SAvlTree.updateDigestMethod.name =>
+            case SAvlTreeMethods.updateDigestMethod.name =>
               val digest = asRep[Coll[Byte]](argsV(0))
               tree.updateDigest(digest)
-            case SAvlTree.updateOperationsMethod.name =>
+            case SAvlTreeMethods.updateOperationsMethod.name =>
               val operations = asRep[Byte](argsV(0))
               tree.updateOperations(operations)
-            case SAvlTree.getMethod.name =>
+            case SAvlTreeMethods.getMethod.name =>
               val key = asRep[Coll[Byte]](argsV(0))
               val proof = asRep[Coll[Byte]](argsV(1))
               tree.get(key, proof)
-            case SAvlTree.getManyMethod.name =>
+            case SAvlTreeMethods.getManyMethod.name =>
               val keys = asRep[Coll[Coll[Byte]]](argsV(0))
               val proof = asRep[Coll[Byte]](argsV(1))
               tree.getMany(keys, proof)
-            case SAvlTree.containsMethod.name =>
+            case SAvlTreeMethods.containsMethod.name =>
               val key = asRep[Coll[Byte]](argsV(0))
               val proof = asRep[Coll[Byte]](argsV(1))
               tree.contains(key, proof)
-            case SAvlTree.insertMethod.name =>
+            case SAvlTreeMethods.insertMethod.name =>
               val operations = asRep[Coll[(Coll[Byte], Coll[Byte])]](argsV(0))
               val proof = asRep[Coll[Byte]](argsV(1))
               tree.insert(operations, proof)
-            case SAvlTree.removeMethod.name =>
+            case SAvlTreeMethods.removeMethod.name =>
               val operations = asRep[Coll[Coll[Byte]]](argsV(0))
               val proof = asRep[Coll[Byte]](argsV(1))
               tree.remove(operations, proof)
-            case SAvlTree.updateMethod.name =>
+            case SAvlTreeMethods.updateMethod.name =>
               val operations = asRep[Coll[(Coll[Byte], Coll[Byte])]](argsV(0))
               val proof = asRep[Coll[Byte]](argsV(1))
               tree.update(operations, proof)
             case _ => throwError
           }
-          case (ph: Ref[PreHeader]@unchecked, SPreHeader) => method.name match {
-            case SPreHeader.versionMethod.name =>
+          case (ph: Ref[PreHeader]@unchecked, SPreHeaderMethods) => method.name match {
+            case SPreHeaderMethods.versionMethod.name =>
               ph.version
-            case SPreHeader.parentIdMethod.name =>
+            case SPreHeaderMethods.parentIdMethod.name =>
               ph.parentId
-            case SPreHeader.timestampMethod.name =>
+            case SPreHeaderMethods.timestampMethod.name =>
               ph.timestamp
-            case SPreHeader.nBitsMethod.name =>
+            case SPreHeaderMethods.nBitsMethod.name =>
               ph.nBits
-            case SPreHeader.heightMethod.name =>
+            case SPreHeaderMethods.heightMethod.name =>
               ph.height
-            case SPreHeader.minerPkMethod.name =>
+            case SPreHeaderMethods.minerPkMethod.name =>
               ph.minerPk
-            case SPreHeader.votesMethod.name =>
+            case SPreHeaderMethods.votesMethod.name =>
               ph.votes
             case _ => throwError
           }
-          case (h: Ref[Header]@unchecked, SHeader) => method.name match {
-            case SHeader.idMethod.name =>
+          case (h: Ref[Header]@unchecked, SHeaderMethods) => method.name match {
+            case SHeaderMethods.idMethod.name =>
               h.id
-            case SHeader.versionMethod.name =>
+            case SHeaderMethods.versionMethod.name =>
               h.version
-            case SHeader.parentIdMethod.name =>
+            case SHeaderMethods.parentIdMethod.name =>
               h.parentId
-            case SHeader.ADProofsRootMethod.name =>
+            case SHeaderMethods.ADProofsRootMethod.name =>
               h.ADProofsRoot
-            case SHeader.stateRootMethod.name =>
+            case SHeaderMethods.stateRootMethod.name =>
               h.stateRoot
-            case SHeader.transactionsRootMethod.name =>
+            case SHeaderMethods.transactionsRootMethod.name =>
               h.transactionsRoot
-            case SHeader.timestampMethod.name =>
+            case SHeaderMethods.timestampMethod.name =>
               h.timestamp
-            case SHeader.nBitsMethod.name =>
+            case SHeaderMethods.nBitsMethod.name =>
               h.nBits
-            case SHeader.heightMethod.name =>
+            case SHeaderMethods.heightMethod.name =>
               h.height
-            case SHeader.extensionRootMethod.name =>
+            case SHeaderMethods.extensionRootMethod.name =>
               h.extensionRoot
-            case SHeader.minerPkMethod.name =>
+            case SHeaderMethods.minerPkMethod.name =>
               h.minerPk
-            case SHeader.powOnetimePkMethod.name =>
+            case SHeaderMethods.powOnetimePkMethod.name =>
               h.powOnetimePk
-            case SHeader.powNonceMethod.name =>
+            case SHeaderMethods.powNonceMethod.name =>
               h.powNonce
-            case SHeader.powDistanceMethod.name =>
+            case SHeaderMethods.powDistanceMethod.name =>
               h.powDistance
-            case SHeader.votesMethod.name =>
+            case SHeaderMethods.votesMethod.name =>
               h.votes
             case _ => throwError
           }
-          case (g: Ref[SigmaDslBuilder]@unchecked, SGlobal) => method.name match {
-            case SGlobal.groupGeneratorMethod.name =>
+          case (g: Ref[SigmaDslBuilder]@unchecked, SGlobalMethods) => method.name match {
+            case SGlobalMethods.groupGeneratorMethod.name =>
               g.groupGenerator
-            case SGlobal.xorMethod.name =>
+            case SGlobalMethods.xorMethod.name =>
               val c1 = asRep[Coll[Byte]](argsV(0))
               val c2 = asRep[Coll[Byte]](argsV(1))
               g.xor(c1, c2)

@@ -1,38 +1,30 @@
 package org.ergoplatform.sdk
 
-import java.math.BigInteger
 import cats.syntax.either._
 import io.circe._
 import io.circe.syntax._
-import org.ergoplatform.ErgoBox.{BoxId, NonMandatoryRegisterId, Token, TokenId}
+import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, Token, TokenId}
+import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
-import org.ergoplatform.validation.{SigmaValidationSettings, SigmaValidationSettingsSerializer}
+import org.ergoplatform.validation.SigmaValidationSettingsSerializer
 import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.crypto.hash.Digest32
 import scorex.util.ModifierId
-import sigmastate.Values.{EvaluatedValue, ErgoTree}
-import sigmastate.eval.Extensions._
-import sigmastate.eval.{WrapperOf, CPreHeader, _}
-import sigmastate.exceptions.SigmaException
-import sigmastate.interpreter.{ContextExtension, ProverResult}
-import sigmastate.{AvlTreeData, SType, AvlTreeFlags}
-import sigma.{Header, AnyValue, Colls, Coll, PreHeader}
+import sigma.Extensions.ArrayOps
+import sigma.ast.{ErgoTree, EvaluatedValue, SType}
+import sigma.data.{AvlTreeData, AvlTreeFlags, CBigInt, Digest32Coll, WrapperOf}
+import sigma.eval.Extensions.EvalIterableOps
+import sigma.eval.SigmaDsl
+import sigma.interpreter.{ContextExtension, ProverResult}
+import sigma.serialization.{ErgoTreeSerializer, ValueSerializer}
+import sigma.validation.SigmaValidationSettings
+import sigma.{AnyValue, Coll, Colls, Header, PreHeader, SigmaException}
+import sigmastate.eval.{CPreHeader, _}
+import sigmastate.utils.Helpers._   // required for Scala 2.11
 
-import scala.util.Try
-import sigmastate.utils.Helpers._  // required for Scala 2.11
-import org.ergoplatform.ErgoBox
-import sigmastate.serialization.ValueSerializer
-import org.ergoplatform.DataInput
-import org.ergoplatform.Input
-import org.ergoplatform.UnsignedInput
-import sigmastate.serialization.ErgoTreeSerializer
-import org.ergoplatform.ErgoLikeTransaction
-import org.ergoplatform.UnsignedErgoLikeTransaction
-import org.ergoplatform.ErgoLikeTransactionTemplate
-import org.ergoplatform.ErgoBoxCandidate
-import org.ergoplatform.ErgoLikeContext
-
+import java.math.BigInteger
 import scala.collection.mutable
+import scala.util.Try
 
 trait JsonCodecs {
 

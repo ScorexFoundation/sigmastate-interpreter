@@ -1,5 +1,7 @@
 package sigma
 
+import supertagged.TaggedType
+
 import scala.annotation.nowarn
 import scala.reflect.classTag
 
@@ -10,9 +12,11 @@ package object data {
     */
   @nowarn private def rtypeToClassTag = ???
 
+  val StringClassTag = classTag[String]
   val BigIntClassTag = classTag[BigInt]
   val GroupElementClassTag = classTag[GroupElement]
   val SigmaPropClassTag = classTag[SigmaProp]
+  val SigmaBooleanClassTag = classTag[SigmaBoolean]
   val AvlTreeClassTag = classTag[AvlTree]
   val BoxClassTag = classTag[Box]
   val ContextClassTag = classTag[Context]
@@ -38,4 +42,19 @@ package object data {
     */
   def emptyDBufferOfInt: debox.Buffer[Int] = debox.Buffer.unsafe(EmptyArrayOfInt)
 
+  /** Constructor of tuple value with more than 2 items.
+    * Such long tuples are represented as Coll[Any].
+    * This representaion of tuples is different from representation of pairs (x, y),
+    * where Tuple2 type is used instead of Coll. */
+  def TupleColl(items: Any*): Coll[Any] = Colls.fromItems(items: _*)(sigma.AnyType)
+
+  type KeyValueColl = Coll[(Coll[Byte], Coll[Byte])]
+
+  trait BaseDigestColl extends TaggedType[Coll[Byte]]
+
+  object Digest32Coll extends BaseDigestColl
+
+  type Digest32Coll = Digest32Coll.Type
+
+  implicit val Digest32CollRType: RType[data.Digest32Coll] = RType[Coll[Byte]].asInstanceOf[RType[data.Digest32Coll]]
 }

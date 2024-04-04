@@ -1,6 +1,6 @@
 package org.ergoplatform.sdk
 
-import org.ergoplatform.SigmaConstants.MaxBoxSize
+import sigma.data.SigmaConstants.MaxBoxSize
 import org.ergoplatform.sdk.wallet.Constants.MaxAssetsPerBox
 import org.ergoplatform.sdk.wallet.{AssetUtils, TokensMap}
 import org.ergoplatform.{ErgoBoxAssets, ErgoBoxAssetsHolder}

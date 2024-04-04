@@ -3,9 +3,7 @@ package org.ergoplatform.sdk
 import org.ergoplatform.sdk.JavaHelpers.StringExtensions
 import org.ergoplatform.{ErgoBox, ErgoLikeTransaction, UnsignedErgoLikeTransaction}
 import sigmastate.eval.Extensions.ArrayByteOps
-import sigmastate.serialization.SigmaSerializer
-
-import java.util
+import sigma.serialization.SigmaSerializer
 
 /** Represents a transaction data chat can be reduced to [[ReducedTransaction]].
   *

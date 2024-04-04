@@ -1,6 +1,6 @@
 package sigmastate.utils
 
-import sigmastate.SMethod
+import sigma.ast.SMethod
 import sigma.util.PrintExtensions._
 import scala.util.Try
 import Helpers._ // required for Scala 2.11

@@ -11,6 +11,10 @@ import special.wrappers.{OptionWrapSpec, RTypeWrapSpec}
 import wrappers.scalan.WRTypes
 
 /** Registrations of reflection metadata for graph-ir module (see README.md).
+  * Such metadata is only used on JS platform to support reflection-like interfaces of
+  * RClass, RMethod, RConstructor. These interfaces implemented on JVM using Java
+  * reflection.
+  *
   * For each class of this module that needs reflection metadata,
   * we register a class entry with the necessary information.
   * Only information that is needed at runtime is registered.
@@ -26,10 +30,10 @@ object GraphIRReflection {
         mkMethod(clazz, "filter", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
           obj.asInstanceOf[ctx.WOption[Any]].filter(args(0).asInstanceOf[ctx.Ref[Any => Boolean]])
         },
-        mkMethod(clazz, "get", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "get", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[ctx.WOption[_]].get
         },
-        mkMethod(clazz, "isDefined", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "isDefined", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[ctx.WOption[_]].isDefined
         },
         mkMethod(clazz, "getOrElse", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
@@ -76,10 +80,10 @@ object GraphIRReflection {
         mkMethod(clazz, "$bar$bar", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
           obj.asInstanceOf[ctx.SigmaProp].$bar$bar(args(0).asInstanceOf[ctx.Ref[ctx.SigmaProp]])
         },
-        mkMethod(clazz, "isValid", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "isValid", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[ctx.SigmaProp].isValid
         },
-        mkMethod(clazz, "propBytes", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "propBytes", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[ctx.SigmaProp].propBytes
         },
         mkMethod(clazz, "$amp$amp", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
@@ -221,26 +225,26 @@ object GraphIRReflection {
           obj.asInstanceOf[ctx.AvlTree].update(args(0).asInstanceOf[ctx.Ref[ctx.Coll[(ctx.Coll[Byte], ctx.Coll[Byte])]]],
             args(1).asInstanceOf[ctx.Ref[ctx.Coll[Byte]]])
         },
-        mkMethod(clazz, "keyLength", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "keyLength", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[ctx.AvlTree].keyLength
         },
-        mkMethod(clazz, "enabledOperations", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "enabledOperations", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[ctx.AvlTree].enabledOperations
         },
         mkMethod(clazz, "updateDigest", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
           obj.asInstanceOf[ctx.AvlTree].updateDigest(args(0).asInstanceOf[ctx.Ref[ctx.Coll[Byte]]])
         },
-        mkMethod(clazz, "digest", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "digest", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[ctx.AvlTree].digest
         },
         mkMethod(clazz, "insert", Array[Class[_]](classOf[Base#Ref[_]], classOf[Base#Ref[_]])) { (obj, args) =>
           obj.asInstanceOf[ctx.AvlTree].insert(args(0).asInstanceOf[ctx.Ref[ctx.Coll[(ctx.Coll[Byte], ctx.Coll[Byte])]]],
             args(1).asInstanceOf[ctx.Ref[ctx.Coll[Byte]]])
         },
-        mkMethod(clazz, "isRemoveAllowed", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "isRemoveAllowed", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[ctx.AvlTree].isRemoveAllowed
         },
-        mkMethod(clazz, "valueLengthOpt", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "valueLengthOpt", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[ctx.AvlTree].valueLengthOpt
         },
         mkMethod(clazz, "get", Array[Class[_]](classOf[Base#Ref[_]], classOf[Base#Ref[_]])) { (obj, args) =>
@@ -254,10 +258,10 @@ object GraphIRReflection {
           obj.asInstanceOf[ctx.AvlTree].contains(args(0).asInstanceOf[ctx.Ref[ctx.Coll[Byte]]],
             args(1).asInstanceOf[ctx.Ref[ctx.Coll[Byte]]])
         },
-        mkMethod(clazz, "isUpdateAllowed", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "isUpdateAllowed", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[ctx.AvlTree].isUpdateAllowed
         },
-        mkMethod(clazz, "isInsertAllowed", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "isInsertAllowed", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[ctx.AvlTree].isInsertAllowed
         }
       )
@@ -268,22 +272,22 @@ object GraphIRReflection {
     val ctx = null.asInstanceOf[SigmaLibrary] // ok! type level only
     registerClassEntry(clazz,
       methods = Map(
-        mkMethod(clazz, "value", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "value", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[ctx.Box].value
         },
-        mkMethod(clazz, "id", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "id", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[ctx.Box].id
         },
-        mkMethod(clazz, "creationInfo", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "creationInfo", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[ctx.Box].creationInfo
         },
-        mkMethod(clazz, "bytes", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "bytes", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[ctx.Box].bytes
         },
         mkMethod(clazz, "getReg", Array[Class[_]](classOf[Base#Ref[_]], classOf[TypeDescs#Elem[_]])) { (obj, args) =>
           obj.asInstanceOf[ctx.Box].getReg(args(0).asInstanceOf[ctx.Ref[Int]])(args(1).asInstanceOf[ctx.Elem[_]])
         },
-        mkMethod(clazz, "tokens", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "tokens", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[ctx.Box].tokens
         },
         mkMethod(clazz, "bytesWithoutRef", Array[Class[_]]()) { (obj, args) =>
@@ -415,25 +419,25 @@ object GraphIRReflection {
     val ctx = null.asInstanceOf[SigmaLibrary] // ok! type level only
     registerClassEntry(clazz,
       methods = Map(
-        mkMethod(clazz, "minerPk", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "minerPk", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[ctx.PreHeader].minerPk
         },
-        mkMethod(clazz, "votes", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "votes", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[ctx.PreHeader].votes
         },
-        mkMethod(clazz, "nBits", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "nBits", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[ctx.PreHeader].nBits
         },
-        mkMethod(clazz, "version", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "version", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[ctx.PreHeader].version
         },
-        mkMethod(clazz, "timestamp", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "timestamp", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[ctx.PreHeader].timestamp
         },
-        mkMethod(clazz, "parentId", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "parentId", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[ctx.PreHeader].parentId
         },
-        mkMethod(clazz, "height", Array[Class[_]]()) { (obj, args) =>
+        mkMethod(clazz, "height", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[ctx.PreHeader].height
         }
       )

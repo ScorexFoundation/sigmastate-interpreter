@@ -1,20 +1,20 @@
 package org.ergoplatform.dsl
 
 import org.ergoplatform.ErgoBox.{BoxId, NonMandatoryRegisterId, TokenId}
-import sigmastate.interpreter.{CostedProverResult, ProverResult}
-import sigma.data.RType
+import sigma.interpreter.{CostedProverResult, ProverResult}
+import sigma.data.{CSigmaDslBuilder, RType}
 import org.ergoplatform.{ErgoBox, ErgoLikeContext}
-import sigma.{AnyValue, Coll, SigmaDslBuilder, SigmaProp}
-import sigmastate.Values.ErgoTree
-import sigmastate.eval.{CostingSigmaDslBuilder, IRContext}
+import sigma.{Coll, SigmaDslBuilder, SigmaProp}
+import sigmastate.eval.IRContext
 
 import scala.util.Try
 import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition, Token}
+import sigma.ast.{ErgoTree, EvaluatedValue, SType}
 
 import scala.language.implicitConversions
 
 trait ContractSpec {
-  val dsl: SigmaDslBuilder = CostingSigmaDslBuilder
+  val dsl: SigmaDslBuilder = CSigmaDslBuilder
   val Colls = dsl.Colls
 
   implicit def Coll[T](items: Array[T])(implicit cT: RType[T]): Coll[T] = Colls.fromArray(items)
@@ -49,7 +49,7 @@ trait ContractSpec {
 
     /** Generate proof for the given `inBox`. The input box has attached guarding proposition,
       * which is executed in the Context, specifically created for `inBox`.*/
-    def prove(inBox: InputBox, extensions: Map[Byte, AnyValue] = Map()): Try[CostedProverResult]
+    def prove(inBox: InputBox, extensions: Map[Byte, EvaluatedValue[_ <: SType]] = Map()): Try[CostedProverResult]
   }
   object ProvingParty {
     def apply(name: String): ProvingParty = mkProvingParty(name)
@@ -68,7 +68,7 @@ trait ContractSpec {
   trait InputBox {
     def tx: TransactionCandidate
     def utxoBox: OutBox
-    def runDsl(extensions: Map[Byte, AnyValue] = Map()): SigmaProp
+    def runDsl(extensions: Map[Byte, EvaluatedValue[_ <: SType]] = Map()): SigmaProp
     private [dsl] def toErgoContext: ErgoLikeContext
   }
 

@@ -1,28 +1,28 @@
 package sigmastate.helpers
 
 import org.ergoplatform._
-import org.ergoplatform.validation.ValidationRules.CheckSerializableTypeCode
-import org.ergoplatform.validation.{ValidationException, ValidationSpecification}
+import org.ergoplatform.validation.ValidationSpecification
 import org.scalacheck.Arbitrary.arbByte
 import org.scalacheck.Gen
-import org.scalatest.Assertion
 import sigma.util.BenchmarkUtil
 import scalan.TestContexts
-import sigma.{Colls, TestUtils}
-import sigma.data.RType
-import sigmastate.Values.{Constant, ErgoTree, SValue, SigmaBoolean, SigmaPropValue}
-import sigmastate.eval._
+import sigma.ast.{Constant, CostItem, ErgoTree, JitCost, SOption, SType}
+import sigma.{Colls, Evaluation, TestUtils}
+import sigma.data.{RType, SigmaBoolean}
+import sigma.validation.ValidationException
+import sigma.validation.ValidationRules.CheckSerializableTypeCode
+import sigma.ast.syntax.{SValue, SigmaPropValue}
+import sigma.eval.{CostDetails, EvalSettings, Extensions, GivenCost, TracedCost}
 import sigmastate.helpers.TestingHelpers._
-import sigmastate.interpreter.ContextExtension.VarBinding
-import sigmastate.interpreter.ErgoTreeEvaluator.DefaultProfiler
+import sigma.interpreter.ContextExtension.VarBinding
+import sigmastate.interpreter.CErgoTreeEvaluator.DefaultProfiler
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.interpreter._
-import sigmastate.lang.{CompilerSettings, SigmaCompiler, Terms}
-import sigmastate.serialization.SigmaSerializer
-import sigmastate.{CompilerTestsBase, JitCost, SOption, SType}
+import sigmastate.lang.{CompilerSettings, SigmaCompiler}
+import sigma.serialization.SigmaSerializer
+import sigmastate.CompilerTestsBase
+import sigmastate.eval.{CContext, IRContext}
 
-import scala.language.implicitConversions
-import scala.reflect.ClassTag
 import scala.util.DynamicVariable
 
 trait CompilerTestingCommons extends TestingCommons
@@ -48,7 +48,7 @@ trait CompilerTestingCommons extends TestingCommons
   def createContexts[A](in: A, bindings: Seq[VarBinding])(implicit tA: RType[A]) = {
     val tpeA = Evaluation.rtypeToSType(tA)
     in match {
-      case ctx: CostingDataContext =>
+      case ctx: CContext =>
         // the context is passed as function argument (this is for testing only)
         // This is to overcome non-functional semantics of context operations
         // (such as Inputs, Height, etc which don't have arguments and refer to the
@@ -83,7 +83,7 @@ trait CompilerTestingCommons extends TestingCommons
           .withErgoTreeVersion(ergoTreeVersionInTests)
           .withBindings(1.toByte -> Constant[SType](in.asInstanceOf[SType#WrappedType], tpeA))
           .withBindings(bindings: _*)
-        val calcCtx = ergoCtx.toSigmaContext().asInstanceOf[CostingDataContext]
+        val calcCtx = ergoCtx.toSigmaContext().asInstanceOf[CContext]
         calcCtx
     }
   }
@@ -116,7 +116,7 @@ trait CompilerTestingCommons extends TestingCommons
     compiledTree
   }
 
-  def evalSettings = ErgoTreeEvaluator.DefaultEvalSettings
+  def evalSettings = CErgoTreeEvaluator.DefaultEvalSettings
 
   def printCostDetails(script: String, details: CostDetails) = {
     val traceLines = SigmaPPrint(details, height = 550, width = 150)
@@ -132,20 +132,18 @@ trait CompilerTestingCommons extends TestingCommons
       (implicit IR: IRContext,
                 evalSettings: EvalSettings,
                 compilerSettings: CompilerSettings): CompiledFunc[A, B] = {
-    val tA = RType[A]
     val f = (in: A) => {
-      implicit val cA: ClassTag[A] = tA.classTag
       val sigmaCtx = createContexts(in, bindings)
       val accumulator = new CostAccumulator(
         initialCost = JitCost(0),
         costLimit = Some(JitCost.fromBlockCost(evalSettings.scriptCostLimitInEvaluator)))
-      val evaluator = new ErgoTreeEvaluator(
+      val evaluator = new CErgoTreeEvaluator(
         context = sigmaCtx,
         constants = ErgoTree.EmptyConstants,
         coster = accumulator, evalSettings.profilerOpt.getOrElse(DefaultProfiler), evalSettings)
 
       val (res, actualTime) = BenchmarkUtil.measureTimeNano(
-        evaluator.evalWithCost[B](ErgoTreeEvaluator.EmptyDataEnv, expr))
+        evaluator.evalWithCost[B](CErgoTreeEvaluator.EmptyDataEnv, expr))
       val costDetails = if (evalSettings.costTracingEnabled) {
         val trace: Seq[CostItem] = evaluator.getCostTrace()
         val costDetails = TracedCost(trace, Some(actualTime))
@@ -163,7 +161,7 @@ trait CompilerTestingCommons extends TestingCommons
       }
       (res.value, costDetails)
     }
-    val Terms.Apply(funcVal, _) = expr.asInstanceOf[SValue]
+    val sigma.ast.Apply(funcVal, _) = expr.asInstanceOf[SValue]
     CompiledFunc(funcScript, bindings, funcVal, expr, f)
   }
 
