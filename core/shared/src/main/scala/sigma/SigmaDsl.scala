@@ -154,6 +154,8 @@ trait BigInt {
     */
   def or(that: BigInt): BigInt
   def |(that: BigInt): BigInt = or(that)
+
+  def toNbits(): Long
 }
 
 /** Base class for points on elliptic curves. */
