@@ -11,6 +11,10 @@ import special.wrappers.{OptionWrapSpec, RTypeWrapSpec}
 import wrappers.scalan.WRTypes
 
 /** Registrations of reflection metadata for graph-ir module (see README.md).
+  * Such metadata is only used on JS platform to support reflection-like interfaces of
+  * RClass, RMethod, RConstructor. These interfaces implemented on JVM using Java
+  * reflection.
+  *
   * For each class of this module that needs reflection metadata,
   * we register a class entry with the necessary information.
   * Only information that is needed at runtime is registered.
