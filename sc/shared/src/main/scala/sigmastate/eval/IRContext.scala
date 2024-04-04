@@ -10,7 +10,9 @@ import scala.util.Try
   * methods.
   * It is not used in v5.0 interpreter and thus not part of consensus.
   *
-  * @see RuntimeIRContext, CompiletimeIRContext
+  * Used in ErgoScript compiler only.
+  *
+  * @see CompiletimeIRContext
   */
 trait IRContext extends TreeBuilding with GraphBuilding {
   import SigmaProp._
@@ -53,10 +55,6 @@ trait IRContext extends TreeBuilding with GraphBuilding {
       }
     }
   }
-}
-
-/** IR context to be used by blockchain nodes to validate transactions. */
-class RuntimeIRContext extends IRContext {
 }
 
 /** IR context to be used by script development tools to compile ErgoScript into ErgoTree bytecode. */
