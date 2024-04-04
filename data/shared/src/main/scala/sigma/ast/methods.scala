@@ -1494,7 +1494,7 @@ case object SGlobalMethods extends MonoTypeMethods {
     * Called via reflection based on naming convention.
     * @see SMethod.evalMethod, Xor.eval, Xor.xorWithCosting
     */
-  def xor_eval(ls: Coll[Byte], rs: Coll[Byte])
+  def xor_eval(mc: MethodCall, G: SigmaDslBuilder, ls: Coll[Byte], rs: Coll[Byte])
               (implicit E: ErgoTreeEvaluator): Coll[Byte] = {
     Xor.xorWithCosting(ls, rs)
   }

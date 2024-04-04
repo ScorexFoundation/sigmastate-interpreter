@@ -318,7 +318,8 @@ object SigmaDataReflection {
     registerClassEntry(clazz,
       methods = Map(
         mkMethod(clazz, "xor_eval", Array[Class[_]](classOf[MethodCall], classOf[SigmaDslBuilder], classOf[Coll[_]], classOf[Coll[_]], classOf[ErgoTreeEvaluator])) { (obj, args) =>
-          obj.asInstanceOf[SGlobalMethods.type].xor_eval(
+          obj.asInstanceOf[SGlobalMethods.type].xor_eval(args(0).asInstanceOf[MethodCall],
+            args(1).asInstanceOf[SigmaDslBuilder],
             args(2).asInstanceOf[Coll[Byte]],
             args(3).asInstanceOf[Coll[Byte]])(args(4).asInstanceOf[ErgoTreeEvaluator])
         }
