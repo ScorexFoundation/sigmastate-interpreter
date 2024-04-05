@@ -21,7 +21,7 @@ import sigmastate.CompilerTestsBase
 import sigma.{ContractsTestkit, Context => DContext}
 
 import scala.annotation.unused
-import scala.util.Success
+import scala.util.{Success, Try}
 
 trait ErgoScriptTestkit extends ContractsTestkit with LangTests
     with ValidationSpecification with CompilerTestsBase { self: BaseCtxTests =>
@@ -145,6 +145,31 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
       }
       checkExpectedFunc(calcF, expectedCalcF, "Calc function actual: %s, expected: %s")
       res
+    }
+
+    private val SigmaM = SigmaProp.SigmaPropMethods
+
+    /** Finds SigmaProp.isProven method calls in the given Lambda `f` */
+    private def findIsProven[T](f: Ref[Context => T]): Option[Sym] = {
+      val Def(Lambda(lam,_,_,_)) = f
+      val s = lam.flatSchedule.find(sym => sym.node match {
+        case SigmaM.isValid(_) => true
+        case _ => false
+      })
+      s
+    }
+
+    /** Checks that if SigmaProp.isProven method calls exists in the given Lambda's schedule,
+      * then it is the last operation. */
+    private def verifyIsProven[T](f: Ref[Context => T]): Try[Unit] = {
+      val isProvenOpt = findIsProven(f)
+      Try {
+        isProvenOpt match {
+          case Some(s) =>
+            if (f.getLambda.y != s) !!!(s"Sigma.isProven found in none-root position", s)
+          case None =>
+        }
+      }
     }
 
     def doReduce(): Unit = {
