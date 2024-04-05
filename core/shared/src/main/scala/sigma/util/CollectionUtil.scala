@@ -8,7 +8,7 @@ import scala.collection.compat._
 object CollectionUtil {
 
   /** @deprecated shouldn't be used other than for backwards compatibility with v3.x, v4.x. */
-  def concatArrays[T](xs: Array[T], ys: Array[T]): Array[T] = {
+  def concatArrays_v4[T](xs: Array[T], ys: Array[T]): Array[T] = {
     val len = xs.length + ys.length
     val result = (xs match {
       case _: Array[AnyRef] => new Array[AnyRef](len) // creates an array with invalid type descriptor (i.e. when T == Tuple2)
@@ -31,13 +31,20 @@ object CollectionUtil {
     * This method takes ClassTag to create proper resulting array.
     * Can be used in v5.0 and above.
     */
-  def concatArrays_v5[T:ClassTag](arr1: Array[T], arr2: Array[T]): Array[T] = {
+  def concatArrays[T:ClassTag](arr1: Array[T], arr2: Array[T]): Array[T] = {
     val l1 = arr1.length
     val l2 = arr2.length
     val length: Int = l1 + l2
     val result: Array[T] = new Array[T](length)
     System.arraycopy(arr1, 0, result, 0, l1)
     System.arraycopy(arr2, 0, result, l1, l2)
+    result
+  }
+
+  /** Casts the array of `A`s into array of `B`s, where B is a superclass of A. */
+  def castArray[A, B >: A : ClassTag](array: Array[A]): Array[B] = {
+    val result: Array[B] = new Array[B](array.length)
+    System.arraycopy(array, 0, result, 0, array.length)
     result
   }
 

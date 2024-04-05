@@ -5,7 +5,7 @@ import org.ergoplatform.dsl.ContractSyntax.Token
 import org.ergoplatform.dsl.ErgoContractSpec
 import sigma.Coll
 import scorex.crypto.hash.Blake2b256
-import sigmastate.eval.Digest32Coll
+import sigma.data.Digest32Coll
 
 class AssetsAtomicExchangeErgoTests extends CompilerTestingCommons { suite =>
   lazy val spec = new ErgoContractSpec()(new TestingIRContext)
