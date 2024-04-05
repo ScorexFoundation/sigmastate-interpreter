@@ -107,7 +107,7 @@ trait Library extends Scalan
 
   override def invokeUnlifted(e: Elem[_], mc: MethodCall, dataEnv: DataEnv): Any = e match {
     case _: CollElem[_,_] => mc match {
-      case CollMethods.map(xs, f) =>
+      case CollMethods.map(_, f) =>
         val newMC = mc.copy(args = mc.args :+ f.elem.eRange)(mc.resultType, mc.isAdapterCall)
         super.invokeUnlifted(e, newMC, dataEnv)
       case _ =>

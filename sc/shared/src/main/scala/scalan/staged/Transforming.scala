@@ -47,9 +47,6 @@ trait Transforming { self: Scalan =>
     constantPropagation: Boolean = true,
     /** Used in SlicingPass */
     shouldSlice: Boolean = false)
-  {
-    def withConstantPropagation(value: Boolean) = this.copy(constantPropagation = value)
-  }
 
   /** Default pass to be used when IR is used without special compiler configuration. */
   class DefaultPass(val name: String, override val config: PassConfig = PassConfig()) extends Pass

@@ -16,12 +16,6 @@ trait Functions extends Base with ProgramGraphs { self: Scalan =>
     /** Apply given function symbol to the given argument symbol.
       * @return  symbol representing result of function application */
     final def apply(x: Ref[A]): Ref[B] = mkApply(f, x)
-
-    /** Build new function which applies `f` and then `g`*/
-    final def >>[C](g: Ref[B => C]): Ref[A => C] = compose(g, f)
-
-    /** Build new function which applies `g` and then `f`*/
-    final def <<[C](g: Ref[C => A]): Ref[C => B] = compose(f, g)
   }
 
   /** Global lambda equality mode used by default. It is used in `fun` and `fun2` lambda builders.

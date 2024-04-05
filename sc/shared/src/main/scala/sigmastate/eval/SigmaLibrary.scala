@@ -10,7 +10,7 @@ trait SigmaLibrary extends Library
 {
   import WRType._
 
-  implicit lazy val wRTypeAnyElement = wRTypeElement(AnyElement)
+  implicit lazy val wRTypeAnyElement: Elem[WRType[Any]] = wRTypeElement(AnyElement)
 
   /** During compilation represent a global value Global, see also SGlobal type. */
   def sigmaDslBuilder: Ref[SigmaDslBuilder]

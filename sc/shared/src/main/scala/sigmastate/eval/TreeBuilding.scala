@@ -161,7 +161,7 @@ trait TreeBuilding extends SigmaLibrary { IR: IRContext =>
       case _ if env.contains(s) =>
         val (id, tpe) = env(s)
         ValUse(id, tpe) // recursion base
-      case Def(Lambda(lam, _, x, y)) =>
+      case Def(Lambda(lam, _, x, _)) =>
         val varId = defId + 1       // arguments are treated as ValDefs and occupy id space
         val env1 = env + (x -> (varId, elemToSType(x.elem)))
         val block = processAstGraph(ctx, mainG, env1, lam, varId + 1, constantsProcessing)
@@ -170,7 +170,7 @@ trait TreeBuilding extends SigmaLibrary { IR: IRContext =>
       case Def(Apply(fSym, xSym, _)) =>
         val Seq(f, x) = Seq(fSym, xSym).map(recurse)
         builder.mkApply(f, Array(x))
-      case Def(th @ ThunkDef(root, _)) =>
+      case Def(th @ ThunkDef(_, _)) =>
         val block = processAstGraph(ctx, mainG, env, th, defId, constantsProcessing)
         block
       case Def(Const(x)) =>
@@ -449,7 +449,7 @@ trait TreeBuilding extends SigmaLibrary { IR: IRContext =>
       (valdefs.toArray[BlockItem], rhs) match {
         // simple optimization to avoid producing block sub-expressions like:
         // `{ val idNew = id; idNew }` which this rules rewrites to just `id`
-        case (Array(ValDef(idNew, _, source @ ValUse(id, tpe))), ValUse(idUse, tpeUse))
+        case (Array(ValDef(idNew, _, source @ ValUse(_, tpe))), ValUse(idUse, tpeUse))
           if idUse == idNew && tpeUse == tpe => source
         case (items, _) =>
           BlockValue(items, rhs)

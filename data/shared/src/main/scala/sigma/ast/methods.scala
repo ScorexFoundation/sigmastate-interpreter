@@ -15,7 +15,6 @@ import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma.utils.SparseArrayContainer
 
 import scala.annotation.unused
-import scala.language.implicitConversions
 
 /** Base type for all companions of AST nodes of sigma lang. */
 trait SigmaNodeCompanion
@@ -235,7 +234,7 @@ object SNumericTypeMethods extends MethodsContainer {
          |  Each boolean corresponds to one bit.
           """.stripMargin)
 
-  protected override def getMethods: Seq[SMethod] = Array(
+  protected override def getMethods(): Seq[SMethod] = Array(
     ToByteMethod, // see Downcast
     ToShortMethod, // see Downcast
     ToIntMethod, // see Downcast
@@ -720,7 +719,7 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
     * of flatMap. Other bodies are rejected with throwing exception.
     */
   val flatMap_BodyPatterns = Array[PartialFunction[SValue, Int]](
-    { case MethodCall(ValUse(id, tpe), m, args, _) if args.isEmpty => id },
+    { case MethodCall(ValUse(id, _), _, args, _) if args.isEmpty => id },
     { case ExtractScriptBytes(ValUse(id, _)) => id },
     { case ExtractId(ValUse(id, _)) => id },
     { case SigmaPropBytes(ValUse(id, _)) => id },
@@ -766,7 +765,7 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
       var res: Nullable[(Int, SValue)] = Nullable.None
       E.addFixedCost(MatchSingleArgMethodCall_Info) {
         res = mc match {
-          case MethodCall(_, m, Seq(FuncValue(args, body)), _) if args.length == 1 =>
+          case MethodCall(_, _, Seq(FuncValue(args, body)), _) if args.length == 1 =>
             val id = args(0)._1
             Nullable((id, body))
           case _ =>
@@ -1480,7 +1479,7 @@ case object SGlobalMethods extends MonoTypeMethods {
 
   lazy val groupGeneratorMethod = SMethod(
     this, "groupGenerator", SFunc(SGlobal, SGroupElement), 1, GroupGenerator.costKind)
-    .withIRInfo({ case (builder, obj, method, args, tparamSubst) => GroupGenerator })
+    .withIRInfo({ case (_, _, _, _, _) => GroupGenerator })
     .withInfo(GroupGenerator, "")
 
   lazy val xorMethod = SMethod(
