@@ -6,12 +6,12 @@ import sigma.ast._
 import sigma.ast.syntax._
 import sigmastate.interpreter._
 import Interpreter._
-import sigma.ast.syntax._
 import org.ergoplatform._
 import org.scalatest.BeforeAndAfterAll
 import scorex.util.encode.Base58
 import sigma.crypto.CryptoConstants
 import sigma.data.{AvlTreeData, CAND, ProveDlog, SigmaBoolean, TrivialProp}
+import sigma.VersionContext.V6SoftForkVersion
 import sigma.util.Extensions.IntOps
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
 import sigmastate.helpers.TestingHelpers._
@@ -202,6 +202,23 @@ class TestingInterpreterSpecification extends CompilerTestingCommons
         |  val arr = Coll(1, 2, 3)
         |  arr.filter {(i: Int) => i < 3} == Coll(1, 2)
         |}""".stripMargin)
+  }
+
+  property("Evaluate BigInt to nbits conversion") {
+    val source =
+      """
+        |{
+        | val b: BigInt = 11999.toBigInt
+        | b.nbits == 36626176
+        |}
+        |""".stripMargin
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      println("h")
+      an [sigmastate.exceptions.MethodNotFound] should be thrownBy testEval(source, true)
+    } else {
+      println("here!")
+      testEval(source, true)
+    }
   }
 
   property("Evaluate numeric casting ops") {

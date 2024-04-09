@@ -53,7 +53,7 @@ sealed trait MethodsContainer {
   protected def getMethods(): Seq[SMethod] = Nil
 
   /** Returns all the methods of this type. */
-  lazy val methods: Seq[SMethod] = {
+  def methods: Seq[SMethod] = {                        //todo: consider versioned caching
     val ms = getMethods().toArray
     assert(ms.map(_.name).distinct.length == ms.length, s"Duplicate method names in $this")
     ms.groupBy(_.objType).foreach { case (comp, ms) =>
@@ -309,7 +309,7 @@ case object SLongMethods extends SNumericTypeMethods {
     .withInfo(PropertyCall, "Consider this Long value as nbits-encoded BigInt value and decode it to BigInt")
 
   protected override def getMethods(): Seq[SMethod] = {
-    if (VersionContext.current.isEvolutionActivated) {
+    if (VersionContext.current.isV6SoftForkActivated) {
       super.getMethods() ++ Seq(DecodeNBitsMethod)
     } else {
       super.getMethods()
@@ -322,8 +322,12 @@ case object SBigIntMethods extends SNumericTypeMethods {
   /** Type for which this container defines methods. */
   override def ownerType: SMonoType = SBigInt
 
-  val ToNBits = SMethod(this, "toNbits", SFunc(this.ownerType, SLong), 1, FixedCost(JitCost(5)))
-    .withInfo(ModQ, "Encode this big integer value as NBits")
+  final val ToNBitsCostInfo = OperationCostInfo(
+    FixedCost(JitCost(5)), NamedDesc("NBitsMethodCall"))
+
+  //id = 8 to make it after toBits
+  val ToNBits = SMethod(this, "nbits", SFunc(this.ownerType, SLong), 8, ToNBitsCostInfo.costKind)
+                  .withInfo(ModQ, "Encode this big integer value as NBits")
 
   /** The following `modQ` methods are not fully implemented in v4.x and this descriptors.
     * This descritors are remain here in the code and are waiting for full implementation
@@ -341,7 +345,7 @@ case object SBigIntMethods extends SNumericTypeMethods {
       .withInfo(MethodCall, "Multiply this number with \\lst{other} by module Q.", ArgInfo("other", "Number to multiply with this."))
 
   protected override def getMethods(): Seq[SMethod]  = {
-    if (VersionContext.current.isEvolutionActivated) {
+    if (VersionContext.current.isV6SoftForkActivated) {
       super.getMethods() ++ Seq(ToNBits)
       //    ModQMethod,
       //    PlusModQMethod,
@@ -352,6 +356,14 @@ case object SBigIntMethods extends SNumericTypeMethods {
       super.getMethods()
     }
   }
+
+  /**
+    *
+    */
+  def nbits_eval(mc: MethodCall, bi: sigma.BigInt)(implicit E: ErgoTreeEvaluator): Long = {
+    E.nbits(mc, bi)
+  }
+
 }
 
 /** Methods of type `String`. */

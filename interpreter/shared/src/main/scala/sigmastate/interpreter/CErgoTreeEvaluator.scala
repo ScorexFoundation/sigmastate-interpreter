@@ -67,6 +67,12 @@ class CErgoTreeEvaluator(
   override def createTreeVerifier(tree: AvlTree, proof: Coll[Byte]): AvlTreeVerifier =
     CAvlTreeVerifier(tree, proof)
 
+  def nbits(mc: MethodCall, bi: sigma.BigInt): Long = {
+    addFixedCost(SBigIntMethods.ToNBitsCostInfo) {
+      bi.nbits
+    }
+  }
+
   /** Creates [[sigma.eval.AvlTreeVerifier]] for the given tree and proof. */
   def createVerifier(tree: AvlTree, proof: Coll[Byte]) = {
     // the cost of tree reconstruction from proof is O(proof.length)
@@ -293,7 +299,7 @@ class CErgoTreeEvaluator(
   }
 
   /** @hotspot don't beautify the code */
-  override def addFixedCost(costKind: FixedCost, opDesc: OperationDesc)(block: => Unit): Unit = {
+  override def addFixedCost[R](costKind: FixedCost, opDesc: OperationDesc)(block: => R): R = {
     var costItem: FixedCostItem = null
     if (settings.costTracingEnabled) {
       costItem = FixedCostItem(opDesc, costKind)
@@ -305,16 +311,17 @@ class CErgoTreeEvaluator(
       }
       val start = System.nanoTime()
       coster.add(costKind.cost)
-      val _ = block
+      val res = block
       val end = System.nanoTime()
       profiler.addCostItem(costItem, end - start)
+      res
     } else {
       coster.add(costKind.cost)
       block
     }
   }
 
-  override def addFixedCost(costInfo: OperationCostInfo[FixedCost])(block: => Unit): Unit = {
+  override def addFixedCost[R](costInfo: OperationCostInfo[FixedCost])(block: => R): R = {
     addFixedCost(costInfo.costKind, costInfo.opDesc)(block)
   }
 
