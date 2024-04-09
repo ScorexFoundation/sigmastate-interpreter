@@ -54,9 +54,8 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
     ergoCtx
   }
 
-
-  lazy val boxA1 = newAliceBox(1, 100)
-  lazy val boxA2 = newAliceBox(2, 200)
+  lazy val boxA1 = newAliceBox(100)
+  lazy val boxA2 = newAliceBox(200)
 
   lazy val n1Sym = liftConst(n1)
 
@@ -207,13 +206,6 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
       }
     }
   }
-
-  def Case(env: ScriptEnv, name: String, script: String, ctx: ErgoLikeContext,
-           calc: Ref[Context] => Ref[Any],
-           tree: SValue,
-           result: Result) =
-    EsTestCase(name, env, Code(script), Option(ctx), None,
-      Option(calc), Option(tree), result)
 
   def reduce(env: ScriptEnv, name: String, script: String, ergoCtx: ErgoLikeContext, expectedResult: Any): Unit = {
     val tcase = EsTestCase(name, env, Code(script), Some(ergoCtx), expectedResult = Result(expectedResult))
