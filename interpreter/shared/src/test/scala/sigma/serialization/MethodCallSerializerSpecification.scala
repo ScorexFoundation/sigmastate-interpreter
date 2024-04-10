@@ -21,4 +21,14 @@ class MethodCallSerializerSpecification extends SerializationSpecification {
     )
     roundTripTest(expr)
   }
+
+  property("MethodCall deserialization round trip for BigInt.nbits") {
+    val bi = BigIntConstant(5)
+    val expr = MethodCall(bi,
+      SBigIntMethods.ToNBits,
+      Vector(),
+      Map()
+    )
+    roundTripTest(expr)
+  }
 }
