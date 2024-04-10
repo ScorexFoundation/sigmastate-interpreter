@@ -303,18 +303,6 @@ case object SIntMethods extends SNumericTypeMethods {
 case object SLongMethods extends SNumericTypeMethods {
   /** Type for which this container defines methods. */
   override def ownerType: SMonoType = SLong
-
-  lazy val DecodeNBitsMethod: SMethod = SMethod(
-    this, "DecodeNBits", SFunc(this.ownerType, SBigInt), 8, FixedCost(JitCost(5)))
-    .withInfo(PropertyCall, "Consider this Long value as nbits-encoded BigInt value and decode it to BigInt")
-
-  protected override def getMethods(): Seq[SMethod] = {
-    if (VersionContext.current.isV6SoftForkActivated) {
-      super.getMethods() ++ Seq(DecodeNBitsMethod)
-    } else {
-      super.getMethods()
-    }
-  }
 }
 
 /** Methods of BigInt type. Implemented using [[java.math.BigInteger]]. */
