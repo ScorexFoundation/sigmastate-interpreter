@@ -96,6 +96,13 @@ object BigInt extends EntityObject("BigInt") {
         Array[AnyRef](that),
         true, false, element[BigInt]))
     }
+
+    override def nbits: Ref[Long] = {
+      asRep[Long](mkMethodCall(self,
+        BigIntClass.getMethod("nbits"),
+        Array[AnyRef](),
+        neverInvoke = true, isAdapterCall = false, element[Long]))
+    }
   }
 
   implicit object LiftableBigInt
@@ -163,6 +170,13 @@ object BigInt extends EntityObject("BigInt") {
         BigIntClass.getMethod("max", classOf[Sym]),
         Array[AnyRef](that),
         true, true, element[BigInt]))
+    }
+
+    def nbits: Ref[Long] = {
+      asRep[Long](mkMethodCall(source,
+        BigIntClass.getMethod("nbits", classOf[Sym]),
+        Array[AnyRef](),
+        neverInvoke = true, isAdapterCall = true, element[Long]))
     }
   }
 

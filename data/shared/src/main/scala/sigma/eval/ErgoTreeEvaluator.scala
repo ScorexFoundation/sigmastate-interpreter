@@ -59,9 +59,9 @@ abstract class ErgoTreeEvaluator {
     * @param opDesc   the operation descriptor to associate the cost with (when costTracingEnabled)
     * @param block    operation executed under the given cost
     */
-  def addFixedCost(costKind: FixedCost, opDesc: OperationDesc)(block: => Unit): Unit
+  def addFixedCost[R](costKind: FixedCost, opDesc: OperationDesc)(block: => R): R
 
-  def addFixedCost(costInfo: OperationCostInfo[FixedCost])(block: => Unit): Unit
+  def addFixedCost[R](costInfo: OperationCostInfo[FixedCost])(block: => R): R
 
   /** Adds the given cost to the `coster`. If tracing is enabled, creates a new cost item
     * with the given operation.
@@ -97,6 +97,9 @@ abstract class ErgoTreeEvaluator {
 
   /** Represents blockchain data context for ErgoTree evaluation. */
   def context: Context
+
+  /** Implements evaluation of BigInt.nbits method call ErgoTree node. */
+  def nbits(mc: MethodCall, bi: sigma.BigInt): Long
 
   /** Create an instance of [[AvlTreeVerifier]] for the given tree and proof. */
   def createTreeVerifier(tree: AvlTree, proof: Coll[Byte]): AvlTreeVerifier

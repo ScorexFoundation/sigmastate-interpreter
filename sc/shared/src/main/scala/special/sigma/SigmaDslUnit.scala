@@ -11,6 +11,7 @@ package sigma {
       def mod(m: Ref[BigInt]): Ref[BigInt];
       def min(that: Ref[BigInt]): Ref[BigInt];
       def max(that: Ref[BigInt]): Ref[BigInt];
+      def nbits: Ref[Long]
     };
     trait GroupElement extends Def[GroupElement] {
       def exp(k: Ref[BigInt]): Ref[GroupElement];

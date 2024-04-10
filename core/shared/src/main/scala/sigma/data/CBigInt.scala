@@ -1,6 +1,7 @@
 package sigma.data
 
 import sigma.util.Extensions.BigIntegerOps
+import sigma.util.NBitsUtils
 import sigma.{BigInt, Coll, Colls}
 
 import java.math.BigInteger
@@ -49,4 +50,6 @@ case class CBigInt(override val wrappedValue: BigInteger) extends BigInt with Wr
   override def and(that: BigInt): BigInt = CBigInt(wrappedValue.and(that.asInstanceOf[CBigInt].wrappedValue))
 
   override def or(that: BigInt): BigInt = CBigInt(wrappedValue.or(that.asInstanceOf[CBigInt].wrappedValue))
+
+  override def nbits: Long = NBitsUtils.encodeCompactBits(wrappedValue)
 }
