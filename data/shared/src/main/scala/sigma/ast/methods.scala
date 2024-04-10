@@ -2,7 +2,7 @@ package sigma.ast
 
 import org.ergoplatform._
 import org.ergoplatform.validation._
-import sigma._
+import sigma.{VersionContext, _}
 import sigma.ast.SCollection.{SBooleanArray, SBoxArray, SByteArray, SByteArray2, SHeaderArray}
 import sigma.ast.SMethod.{MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
 import sigma.ast.SType.TypeCode
@@ -53,7 +53,7 @@ sealed trait MethodsContainer {
   protected def getMethods(): Seq[SMethod] = Nil
 
   /** Returns all the methods of this type. */
-  lazy val methods: Seq[SMethod] = {
+  def methods: Seq[SMethod] = {                        //todo: consider versioned caching
     val ms = getMethods().toArray
     assert(ms.map(_.name).distinct.length == ms.length, s"Duplicate method names in $this")
     ms.groupBy(_.objType).foreach { case (comp, ms) =>
@@ -310,6 +310,13 @@ case object SBigIntMethods extends SNumericTypeMethods {
   /** Type for which this container defines methods. */
   override def ownerType: SMonoType = SBigInt
 
+  final val ToNBitsCostInfo = OperationCostInfo(
+    FixedCost(JitCost(5)), NamedDesc("NBitsMethodCall"))
+
+  //id = 8 to make it after toBits
+  val ToNBits = SMethod(this, "nbits", SFunc(this.ownerType, SLong), 8, ToNBitsCostInfo.costKind)
+                  .withInfo(ModQ, "Encode this big integer value as NBits")
+
   /** The following `modQ` methods are not fully implemented in v4.x and this descriptors.
     * This descritors are remain here in the code and are waiting for full implementation
     * is upcoming soft-forks at which point the cost parameters should be calculated and
@@ -325,13 +332,26 @@ case object SBigIntMethods extends SNumericTypeMethods {
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall, "Multiply this number with \\lst{other} by module Q.", ArgInfo("other", "Number to multiply with this."))
 
-  protected override def getMethods() = super.getMethods() ++ Seq(
-//    ModQMethod,
-//    PlusModQMethod,
-//    MinusModQMethod,
-    // TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-    // MultModQMethod,
-  )
+  protected override def getMethods(): Seq[SMethod]  = {
+    if (VersionContext.current.isV6SoftForkActivated) {
+      super.getMethods() ++ Seq(ToNBits)
+      //    ModQMethod,
+      //    PlusModQMethod,
+      //    MinusModQMethod,
+      // TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+      // MultModQMethod,
+    } else {
+      super.getMethods()
+    }
+  }
+
+  /**
+    *
+    */
+  def nbits_eval(mc: MethodCall, bi: sigma.BigInt)(implicit E: ErgoTreeEvaluator): Long = {
+    ???
+  }
+
 }
 
 /** Methods of type `String`. */
