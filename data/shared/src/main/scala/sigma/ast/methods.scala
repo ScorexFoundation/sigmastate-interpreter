@@ -61,7 +61,7 @@ sealed trait MethodsContainer {
     }
     ms
   }
-  private lazy val _methodsMap: Map[Byte, Map[Byte, SMethod]] = methods
+  private def _methodsMap: Map[Byte, Map[Byte, SMethod]] = methods //todo: consider versioned caching
       .groupBy(_.objType.typeId)
       .map { case (typeId, ms) => (typeId -> ms.map(m => m.methodId -> m).toMap) }
 
