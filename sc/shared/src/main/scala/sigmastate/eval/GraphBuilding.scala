@@ -8,6 +8,7 @@ import sigma.ast.Value.Typed
 import sigma.ast._
 import sigma.ast.syntax.{SValue, ValueOps}
 import sigma.crypto.EcPointType
+import sigma.VersionContext
 import sigma.data.ExactIntegral.{ByteIsExactIntegral, IntIsExactIntegral, LongIsExactIntegral, ShortIsExactIntegral}
 import sigma.data.ExactOrdering.{ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering, ShortIsExactOrdering}
 import sigma.data.{CSigmaDslBuilder, ExactIntegral, ExactNumeric, ExactOrdering, Lazy, Nullable}
@@ -495,6 +496,10 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
           eval(mkSizeOf(obj.asValue[SCollection[SType]]))
         else
           error(s"The type of $obj is expected to be Collection to select 'size' property", obj.sourceContext.toOption)
+
+      case Select(obj, SBooleanMethods.ToByte, _) if obj.tpe == SBoolean && VersionContext.current.isV6SoftForkActivated =>
+          val bool = eval(obj.asBoolValue)
+          bool.toByte
 
       // Rule: proof.isProven --> IsValid(proof)
       case Select(p, SSigmaPropMethods.IsProven, _) if p.tpe == SSigmaProp =>

@@ -272,13 +272,19 @@ case object SBooleanMethods extends MonoTypeMethods {
   override def ownerType: SMonoType = SBoolean
 
   val ToByte = "toByte"
-  protected override def getMethods() = super.getMethods()
-  /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-  ++ Seq(
-    SMethod(this, ToByte, SFunc(this, SByte), 1)
-      .withInfo(PropertyCall, "Convert true to 1 and false to 0"),
-  )
-  */
+
+  lazy val ToByteMethod: SMethod = SMethod(
+      this, ToByte, SFunc(this.ownerType, SByte), 1, FixedCost(JitCost(1)))
+      .withInfo(PropertyCall, "Convert true to 1 and false to 0")
+
+  protected override def getMethods(): Seq[SMethod] = {
+    if (VersionContext.current.isV6SoftForkActivated) {
+      super.getMethods() ++ Seq(ToByteMethod)
+    } else {
+      super.getMethods()
+    }
+  }
+
 }
 
 /** Methods of ErgoTree type `Byte`. */
