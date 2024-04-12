@@ -1,6 +1,7 @@
 package org.ergoplatform
 
 import org.ergoplatform.ErgoAddressEncoder.{MainnetNetworkPrefix, TestnetNetworkPrefix, hash256}
+import org.scalatest.propspec.AnyPropSpecLike
 import org.scalatest.{Assertion, TryValues}
 import scorex.crypto.hash.Blake2b256
 import scorex.util.encode.Base58

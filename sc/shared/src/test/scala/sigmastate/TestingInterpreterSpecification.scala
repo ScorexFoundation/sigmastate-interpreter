@@ -213,11 +213,9 @@ class TestingInterpreterSpecification extends CompilerTestingCommons
         |}
         |""".stripMargin
     if (activatedVersionInTests < V6SoftForkVersion) {
-      println("h")
-      an [sigmastate.exceptions.MethodNotFound] should be thrownBy testEval(source, true)
+      an [sigmastate.exceptions.MethodNotFound] should be thrownBy testEval(source)
     } else {
-      println("here!")
-      testEval(source, true)
+      testEval(source)
     }
   }
 
