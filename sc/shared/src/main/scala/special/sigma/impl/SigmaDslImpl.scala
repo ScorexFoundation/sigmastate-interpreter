@@ -1945,6 +1945,13 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         Array[AnyRef](l, r),
         true, false, element[Coll[Byte]]))
     }
+
+    override def powHit(k: Ref[Int], msg: Ref[Coll[Byte]], nonce: Ref[Coll[Byte]], h: Ref[Coll[Byte]], N: Ref[Int]): Ref[BigInt] = {
+      asRep[Coll[Byte]](mkMethodCall(self,
+        SigmaDslBuilderClass.getMethod("powHit", classOf[Sym], classOf[Sym]),
+        Array[AnyRef](k, msg, nonce, h, N),
+        true, false, element[BigInt]))
+    }
   }
 
   implicit object LiftableSigmaDslBuilder

@@ -2,14 +2,15 @@ package sigma.ast
 
 import org.ergoplatform._
 import org.ergoplatform.validation._
-import sigma.{VersionContext, _}
+import sigma.{Coll, VersionContext, _}
 import sigma.ast.SCollection.{SBooleanArray, SBoxArray, SByteArray, SByteArray2, SHeaderArray}
 import sigma.ast.SMethod.{MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
 import sigma.ast.SType.TypeCode
 import sigma.ast.syntax.{SValue, ValueOps}
 import sigma.data.OverloadHack.Overloaded1
-import sigma.data.{DataValueComparer, KeyValueColl, Nullable, RType, SigmaConstants}
+import sigma.data.{CBigInt, DataValueComparer, KeyValueColl, Nullable, RType, SigmaConstants}
 import sigma.eval.{CostDetails, ErgoTreeEvaluator, TracedCost}
+import sigma.pow.Autolykos2PowValidation
 import sigma.reflection.RClass
 import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma.utils.SparseArrayContainer
@@ -1510,6 +1511,19 @@ case object SGlobalMethods extends MonoTypeMethods {
     })
     .withInfo(Xor, "Byte-wise XOR of two collections of bytes",
       ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))
+
+  lazy val checkPoWMethod = SMethod(
+    this, "powHit", SFunc(Array(SGlobal, SInt, SByteArray, SByteArray, SByteArray, SInt), SBigInt), 2, Xor.costKind) // todo: cost
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(Xor, "Byte-wise XOR of two collections of bytes",
+      ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))
+
+  def powHit_eval(mc: MethodCall, G: SigmaDslBuilder, k: Int, msg: Coll[Byte], nonce: Coll[Byte], h: Coll[Byte], N: Int)
+                  (implicit E: ErgoTreeEvaluator): BigInt = {
+    E.addSeqCost(Xor.costKind, msg.length, Xor.opDesc) { () => // todo: proper costing
+      CBigInt(Autolykos2PowValidation.hitForVersion2ForMessage(k, msg.toArray, nonce.toArray, h.toArray, N).bigInteger)
+    }
+  }
 
   /** Implements evaluation of Global.xor method call ErgoTree node.
     * Called via reflection based on naming convention.
