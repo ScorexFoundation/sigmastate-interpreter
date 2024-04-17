@@ -718,12 +718,6 @@ trait SigmaDslBuilder {
     */
   def decodePoint(encoded: Coll[Byte]): GroupElement
 
-  /** Create DSL big integer from existing `java.math.BigInteger`*/
-  def BigInt(n: BigInteger): BigInt
-
-  /** Extract `java.math.BigInteger` from DSL's `BigInt` type*/
-  def toBigInteger(n: BigInt): BigInteger
-
   /** Construct a new authenticated dictionary with given parameters and tree root digest. */
   def avlTree(operationFlags: Byte, digest: Coll[Byte], keyLength: Int, valueLengthOpt: Option[Int]): AvlTree
 

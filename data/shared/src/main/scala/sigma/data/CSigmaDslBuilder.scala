@@ -24,10 +24,6 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
 
   override val Colls: CollBuilder = sigma.Colls
 
-  override def BigInt(n: BigInteger): BigInt = CBigInt(n)
-
-  override def toBigInteger(n: BigInt): BigInteger = n.asInstanceOf[CBigInt].wrappedValue
-
   /** Wraps the given elliptic curve point into GroupElement type. */
   def GroupElement(p: Ecp): GroupElement = p match {
     case ept: EcPointType => CGroupElement(ept)
