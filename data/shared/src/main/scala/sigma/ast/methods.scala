@@ -1512,8 +1512,8 @@ case object SGlobalMethods extends MonoTypeMethods {
     .withInfo(Xor, "Byte-wise XOR of two collections of bytes",
       ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))
 
-  lazy val checkPoWMethod = SMethod(
-    this, "powHit", SFunc(Array(SGlobal, SInt, SByteArray, SByteArray, SByteArray, SInt), SBigInt), 2, Xor.costKind) // todo: cost
+  lazy val powHitMethod = SMethod(
+    this, "powHit", SFunc(Array(SGlobal, SInt, SByteArray, SByteArray, SByteArray, SInt), SBigInt), 3, Xor.costKind) // todo: cost
     .withIRInfo(MethodCallIrBuilder)
     .withInfo(Xor, "Byte-wise XOR of two collections of bytes",
       ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))
@@ -1534,9 +1534,19 @@ case object SGlobalMethods extends MonoTypeMethods {
     Xor.xorWithCosting(ls, rs)
   }
 
-  protected override def getMethods() = super.getMethods() ++ Seq(
-    groupGeneratorMethod,
-    xorMethod
-  )
+  protected override def getMethods(): Seq[SMethod] = {
+    if (VersionContext.current.isV6SoftForkActivated) {
+      super.getMethods() ++ Seq(
+        groupGeneratorMethod,
+        xorMethod,
+        powHitMethod
+      )
+    } else {
+      super.getMethods() ++ Seq(
+        groupGeneratorMethod,
+        xorMethod
+      )
+    }
+  }
 }
 

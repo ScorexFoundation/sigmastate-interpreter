@@ -730,6 +730,6 @@ trait SigmaDslBuilder {
   /** Returns a byte-wise XOR of the two collections of bytes. */
   def xor(l: Coll[Byte], r: Coll[Byte]): Coll[Byte]
 
-  def powHit(): BigInt
+  def powHit(k: Int, msg: Coll[Byte], nonce: Coll[Byte], h: Coll[Byte], N: Int): BigInt
 }
 

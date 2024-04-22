@@ -33,7 +33,7 @@ class SigmaTyper(val builder: SigmaBuilder,
 
   private def processGlobalMethod(srcCtx: Nullable[SourceContext],
                                   method: SMethod,
-                                  args: IndexedSeq[SValue]) = {
+                                  args: IndexedSeq[SValue]): SValue = {
     val global = Global.withPropagatedSrcCtx(srcCtx)
     val node = for {
       pf <- method.irInfo.irBuilder if lowerMethodCalls

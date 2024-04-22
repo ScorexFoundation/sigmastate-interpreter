@@ -6,10 +6,10 @@ import sigma.ast._
 import sigma.ast.syntax._
 import sigmastate.interpreter._
 import Interpreter._
-import sigma.ast.syntax._
 import org.ergoplatform._
 import org.scalatest.BeforeAndAfterAll
 import scorex.util.encode.Base58
+import sigma.VersionContext.V6SoftForkVersion
 import sigma.crypto.CryptoConstants
 import sigma.data.{AvlTreeData, CAND, ProveDlog, SigmaBoolean, TrivialProp}
 import sigma.util.Extensions.IntOps
@@ -252,6 +252,27 @@ class TestingInterpreterSpecification extends CompilerTestingCommons
 
   property("Coll indexing (out of bounds with evaluated default value)") {
     testEval("Coll(1, 1).getOrElse(3, 1 + 1) == 2")
+  }
+
+  property("Evaluate powHit") {
+    val source =
+      """
+        |{
+        | val b: BigInt = 11999.toBigInt
+        | val k = 32
+        | val N = 1024 * 1024
+        | val msg = fromBase16("")
+        | val nonce = fromBase16("")
+        | val h = fromBase16("")
+        |
+        | Global.powHit(k, msg, nonce, h, N) < b
+        |}
+        |""".stripMargin
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an [sigmastate.exceptions.MethodNotFound] should be thrownBy testEval(source)
+    } else {
+      testEval(source)
+    }
   }
 
   property("Evaluation example #1") {
