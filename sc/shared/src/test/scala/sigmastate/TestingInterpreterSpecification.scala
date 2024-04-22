@@ -258,12 +258,14 @@ class TestingInterpreterSpecification extends CompilerTestingCommons
     val source =
       """
         |{
-        | val b: BigInt = 11999.toBigInt
+        |
+        | val ml = 9223372036854775807L // Long.MaxValue
+        | val b: BigInt = ml.toBigInt * ml.toBigInt * ml.toBigInt * ml.toBigInt / 6
         | val k = 32
         | val N = 1024 * 1024
-        | val msg = fromBase16("")
-        | val nonce = fromBase16("")
-        | val h = fromBase16("")
+        | val msg = fromBase16("0a101b8c6a4f2e")
+        | val nonce = fromBase16("000000000000002c")
+        | val h = fromBase16("00000000")
         |
         | Global.powHit(k, msg, nonce, h, N) < b
         |}
