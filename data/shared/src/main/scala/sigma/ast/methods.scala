@@ -1513,9 +1513,9 @@ case object SGlobalMethods extends MonoTypeMethods {
       ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))
 
   lazy val powHitMethod = SMethod(
-    this, "powHit", SFunc(Array(SGlobal, SInt, SByteArray, SByteArray, SByteArray, SInt), SBigInt), 3, Xor.costKind) // todo: cost
+    this, "powHit", SFunc(Array(SGlobal, SInt, SByteArray, SByteArray, SByteArray, SInt), SBigInt), 3, GroupGenerator.costKind) // todo: cost
     .withIRInfo(MethodCallIrBuilder)
-    .withInfo(Xor, "Byte-wise XOR of two collections of bytes",
+    .withInfo(Xor, "Byte-wise XOR of two collections of bytes", // todo: desc
       ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))
 
   def powHit_eval(mc: MethodCall, G: SigmaDslBuilder, k: Int, msg: Coll[Byte], nonce: Coll[Byte], h: Coll[Byte], N: Int)
