@@ -2278,16 +2278,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
       def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[GroupElement], Ref[GroupElement], Ref[GroupElement], Ref[GroupElement])] = unapply(exp.node)
     }
 
-    object groupGenerator {
-      def unapply(d: Def[_]): Nullable[Ref[SigmaDslBuilder]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "groupGenerator" && receiver.elem.isInstanceOf[SigmaDslBuilderElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[SigmaDslBuilder]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[SigmaDslBuilder]] = unapply(exp.node)
-    }
-
     object substConstants {
       def unapply(d: Def[_]): Nullable[(Ref[SigmaDslBuilder], Ref[Coll[Byte]], Ref[Coll[Int]], Ref[Coll[T]]) forSome {type T}] = d match {
         case MethodCall(receiver, method, args, _) if method.getName == "substConstants" && receiver.elem.isInstanceOf[SigmaDslBuilderElem[_]] =>
