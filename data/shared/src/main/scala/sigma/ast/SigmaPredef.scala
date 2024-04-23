@@ -12,6 +12,8 @@ import sigma.exceptions.InvalidArguments
 import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma.serialization.ValueSerializer
 
+import java.math.BigInteger
+
 object SigmaPredef {
 
   type IrBuilderFunc = PartialFunction[(SValue, Seq[SValue]), SValue]
@@ -177,6 +179,17 @@ object SigmaPredef {
       }),
       OperationInfo(Constant, "Deserializes values from Base58 encoded binary data at compile time into a value of type T.",
           Seq(ArgInfo("", "")))
+    )
+
+    val BigIntFromStringFunc = PredefinedFunc("bigInt",
+      Lambda(Array("input" -> SString), SBigInt, None),
+      PredefFuncInfo(
+        { case (_, Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
+          BigIntConstant(new BigInteger(arg.value))
+        }),
+      OperationInfo(Constant,
+        """Parsing string argument as a 256-bit signed big integer.""".stripMargin,
+        Seq(ArgInfo("", "")))
     )
 
     val FromBase16Func = PredefinedFunc("fromBase16",
@@ -402,6 +415,7 @@ object SigmaPredef {
       SigmaPropFunc,
       GetVarFunc,
       DeserializeFunc,
+      BigIntFromStringFunc,
       FromBase16Func,
       FromBase64Func,
       FromBase58Func,
