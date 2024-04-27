@@ -1915,7 +1915,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
     }
 
     override def substConstants[T](scriptBytes: Ref[Coll[Byte]], positions: Ref[Coll[Int]], newValues: Ref[Coll[T]]): Ref[Coll[Byte]] = {
-      implicit val eT = newValues.eA
       asRep[Coll[Byte]](mkMethodCall(self,
         SigmaDslBuilderClass.getMethod("substConstants", classOf[Sym], classOf[Sym], classOf[Sym]),
         Array[AnyRef](scriptBytes, positions, newValues),
@@ -2075,7 +2074,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
     }
 
     def substConstants[T](scriptBytes: Ref[Coll[Byte]], positions: Ref[Coll[Int]], newValues: Ref[Coll[T]]): Ref[Coll[Byte]] = {
-      implicit val eT = newValues.eA
       asRep[Coll[Byte]](mkMethodCall(source,
         SigmaDslBuilderClass.getMethod("substConstants", classOf[Sym], classOf[Sym], classOf[Sym]),
         Array[AnyRef](scriptBytes, positions, newValues),

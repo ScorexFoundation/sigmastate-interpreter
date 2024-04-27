@@ -1152,8 +1152,8 @@ class SigmaDslTesting extends AnyPropSpec
       (cases: Seq[A], f: Feature[A, B], nIters: Int, formatter: MeasureFormatter[A])
       (implicit IR: IRContext, evalSettings: EvalSettings): Seq[Long] = {
     val fNew = f.newF
-    implicit val tA = fNew.tA
-    implicit val tB = fNew.tB
+    val tA = fNew.tA
+    val tB = fNew.tB
     implicit val cs = defaultCompilerSettings
     val func = funcJit[A, B](f.script)
     val noTraceSettings = evalSettings.copy(
