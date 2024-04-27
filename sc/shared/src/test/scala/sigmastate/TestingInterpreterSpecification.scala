@@ -24,13 +24,9 @@ class TestingInterpreterSpecification extends CompilerTestingCommons
   with CompilerCrossVersionProps with BeforeAndAfterAll {
   implicit lazy val IR: TestingIRContext = new TestingIRContext
 
-  lazy val prover = new ErgoLikeTestProvingInterpreter() {
-  }
+  lazy val prover = new ErgoLikeTestProvingInterpreter()
 
-  lazy val verifier = new ErgoLikeTestInterpreter {
-  }
-
-  implicit val soundness: Int = CryptoConstants.soundnessBits
+  lazy val verifier = new ErgoLikeTestInterpreter
   
   def testingContext(h: Int) =
     ErgoLikeContextTesting(h,
