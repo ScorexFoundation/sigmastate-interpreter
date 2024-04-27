@@ -340,6 +340,9 @@ object ReflectionData {
         },
         mkMethod(clazz, "powDistance", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Header].powDistance
+        },
+        mkMethod(clazz, "checkPow", Array[Class[_]]()) { (obj, _) =>
+          obj.asInstanceOf[Header].checkPow
         }
       )
     )

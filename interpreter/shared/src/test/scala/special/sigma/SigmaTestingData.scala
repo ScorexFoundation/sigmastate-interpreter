@@ -84,7 +84,8 @@ trait SigmaTestingData extends TestingCommons with ObjectGenerators {
     powOnetimePk = SigmaDsl.groupGenerator,
     powNonce = Colls.fromArray(Array[Byte](0, 1, 2, 3, 4, 5, 6, 7)),
     powDistance = SigmaDsl.BigInt(BigInt("1405498250268750867257727119510201256371618473728619086008183115260323").bigInteger),
-    votes = Colls.fromArray(Array[Byte](0, 1, 2))
+    votes = Colls.fromArray(Array[Byte](0, 1, 2)),
+    unparsedBytes = Colls.emptyColl[Byte]
   )
   val header2: Header = CHeader(Blake2b256("Header2.id").toColl,
     0,
@@ -100,7 +101,8 @@ trait SigmaTestingData extends TestingCommons with ObjectGenerators {
     powOnetimePk = SigmaDsl.groupGenerator,
     powNonce = Colls.fromArray(Array.fill(0.toByte)(8)),
     powDistance = SigmaDsl.BigInt(BigInt("19306206489815517413186395405558417825367537880571815686937307203793939").bigInteger),
-    votes = Colls.fromArray(Array[Byte](0, 1, 0))
+    votes = Colls.fromArray(Array[Byte](0, 1, 0)),
+    unparsedBytes = Colls.emptyColl[Byte]
   )
   val headers = Colls.fromItems(header2, header1)
   val preHeader: PreHeader = CPreHeader(0,
@@ -321,7 +323,8 @@ trait SigmaTestingData extends TestingCommons with ObjectGenerators {
       Helpers.decodeGroupElement("0361299207fa392231e23666f6945ae3e867b978e021d8d702872bde454e9abe9c"),
       Helpers.decodeBytes("7f4f09012a807f01"),
       CBigInt(new BigInteger("-e24990c47e15ed4d0178c44f1790cc72155d516c43c3e8684e75db3800a288", 16)),
-      Helpers.decodeBytes("7f0180")
+      Helpers.decodeBytes("7f0180"),
+      Colls.emptyColl[Byte]
     ))
 
     def create_h1(): Header = h1_instances.getNext

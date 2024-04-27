@@ -125,7 +125,8 @@ trait JsonCodecs {
       "powOnetimePk" -> h.powOnetimePk.getEncoded.asJson,
       "powNonce" -> h.powNonce.asJson,
       "powDistance" -> h.powDistance.asJson,
-      "votes" -> h.votes.asJson
+      "votes" -> h.votes.asJson,
+      "unparsedBytes" -> h.unparsedBytes.asJson
     ).asJson
   })
 
@@ -146,8 +147,10 @@ trait JsonCodecs {
       powNonce <- cursor.downField("powNonce").as[Coll[Byte]]
       powDistance <- cursor.downField("powDistance").as[sigma.BigInt]
       votes <- cursor.downField("votes").as[Coll[Byte]]
+      unparsedBytes <- cursor.downField("unparsedBytes").as[Option[Coll[Byte]]]
     } yield new CHeader(id, version, parentId, adProofsRoot, stateRoot, transactionsRoot, timestamp, nBits,
-      height, extensionRoot, SigmaDsl.decodePoint(minerPk), SigmaDsl.decodePoint(powOnetimePk), powNonce, powDistance, votes)
+      height, extensionRoot, SigmaDsl.decodePoint(minerPk), SigmaDsl.decodePoint(powOnetimePk), powNonce, powDistance,
+      votes, unparsedBytes.getOrElse(Colls.emptyColl))
   })
 
   implicit val preHeaderEncoder: Encoder[PreHeader] = Encoder.instance({ v: PreHeader =>

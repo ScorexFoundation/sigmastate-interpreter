@@ -2,7 +2,7 @@ package sigmastate.eval
 
 import org.ergoplatform._
 import scalan.MutableLazy
-import sigma.{SigmaException, ast}
+import sigma.{SigmaException, VersionContext, ast}
 import sigma.ast.TypeCodes.LastConstantCode
 import sigma.ast.Value.Typed
 import sigma.ast._
@@ -1130,6 +1130,8 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
               h.powDistance
             case SHeaderMethods.votesMethod.name =>
               h.votes
+            case SHeaderMethods.checkPowMethod.name if VersionContext.current.isV6SoftForkActivated =>
+              h.checkPow
             case _ => throwError
           }
           case (g: Ref[SigmaDslBuilder]@unchecked, SGlobalMethods) => method.name match {

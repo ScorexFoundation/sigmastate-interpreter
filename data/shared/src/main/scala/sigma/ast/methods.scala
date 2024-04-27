@@ -10,6 +10,7 @@ import sigma.ast.syntax.{SValue, ValueOps}
 import sigma.data.OverloadHack.Overloaded1
 import sigma.data.{DataValueComparer, KeyValueColl, Nullable, RType, SigmaConstants}
 import sigma.eval.{CostDetails, ErgoTreeEvaluator, TracedCost}
+import sigma.pow.Autolykos2PowValidation
 import sigma.reflection.RClass
 import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma.utils.SparseArrayContainer
@@ -1457,11 +1458,30 @@ case object SHeaderMethods extends MonoTypeMethods {
   lazy val powDistanceMethod      = propertyCall("powDistance", SBigInt, 14, FixedCost(JitCost(10)))
   lazy val votesMethod            = propertyCall("votes", SByteArray, 15, FixedCost(JitCost(10)))
 
-  protected override def getMethods() = super.getMethods() ++ Seq(
-    idMethod, versionMethod, parentIdMethod, ADProofsRootMethod, stateRootMethod, transactionsRootMethod,
-    timestampMethod, nBitsMethod, heightMethod, extensionRootMethod, minerPkMethod, powOnetimePkMethod,
-    powNonceMethod, powDistanceMethod, votesMethod
-  )
+  lazy val checkPowMethod = SMethod(
+    this, "checkPow", SFunc(Array(SHeader), SBoolean), 3, GroupGenerator.costKind) // todo: cost
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(Xor, "Byte-wise XOR of two collections of bytes") // todo: desc
+
+  def checkPow_eval(mc: MethodCall, G: SigmaDslBuilder, header: Header)
+                 (implicit E: ErgoTreeEvaluator): Boolean = {
+    E.checkPow_eval(mc, header)
+  }
+
+  protected override def getMethods() = {
+    if (VersionContext.current.isV6SoftForkActivated) {
+      // 6.0 : checkPow method added
+      super.getMethods() ++ Seq(
+        idMethod, versionMethod, parentIdMethod, ADProofsRootMethod, stateRootMethod, transactionsRootMethod,
+        timestampMethod, nBitsMethod, heightMethod, extensionRootMethod, minerPkMethod, powOnetimePkMethod,
+        powNonceMethod, powDistanceMethod, votesMethod, checkPowMethod)
+    } else {
+      super.getMethods() ++ Seq(
+        idMethod, versionMethod, parentIdMethod, ADProofsRootMethod, stateRootMethod, transactionsRootMethod,
+        timestampMethod, nBitsMethod, heightMethod, extensionRootMethod, minerPkMethod, powOnetimePkMethod,
+        powNonceMethod, powDistanceMethod, votesMethod)
+    }
+  }
 }
 
 /** Type descriptor of `PreHeader` type of ErgoTree. */

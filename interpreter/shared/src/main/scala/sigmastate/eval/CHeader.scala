@@ -1,7 +1,12 @@
 package sigmastate.eval
 
+import org.ergoplatform.{HeaderWithoutPow, HeaderWithoutPowSerializer}
+import scorex.crypto.authds.ADDigest
+import scorex.crypto.hash.Digest32
+import scorex.util.bytesToId
 import sigma.data.SigmaConstants
-import sigma.{AvlTree, BigInt, Coll, GroupElement, Header}
+import sigma.pow.Autolykos2PowValidation
+import sigma.{AvlTree, BigInt, Coll, Colls, GroupElement, Header}
 
 /** A default implementation of [[Header]] interface.
   *
@@ -22,8 +27,22 @@ case class CHeader(
     powOnetimePk: GroupElement,
     powNonce: Coll[Byte],
     powDistance: BigInt,
-    votes: Coll[Byte]
-) extends Header
+    votes: Coll[Byte],
+    unparsedBytes: Coll[Byte]
+) extends Header {
+
+  override def serializeWithoutPoW: Coll[Byte] = {
+    val headerWithoutPow = HeaderWithoutPow(version, bytesToId(parentId.toArray), Digest32 @@ ADProofsRoot.toArray,
+      ADDigest @@ stateRoot.digest.toArray, Digest32 @@ transactionsRoot.toArray, timestamp,
+      nBits, height, Digest32 @@ extensionRoot.toArray, votes.toArray, unparsedBytes.toArray)
+    Colls.fromArray(HeaderWithoutPowSerializer.toBytes(headerWithoutPow))
+  }
+
+  override def checkPow: Boolean = {
+    Autolykos2PowValidation.checkPoWForVersion2(this)
+  }
+
+}
 
 object CHeader {
   /** Size of of Header.votes array. */

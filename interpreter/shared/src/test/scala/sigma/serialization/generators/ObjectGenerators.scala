@@ -707,8 +707,9 @@ trait ObjectGenerators extends TypeGenerators
     powNonce <- nonceBytesGen
     powDistance <- arbBigInt.arbitrary
     votes <- minerVotesGen
+    unparsedBytes <- collOfRange(0, 32, arbByte.arbitrary)
   } yield CHeader(id, version, parentId, adProofsRoot, stateRoot, transactionRoot, timestamp, nBits,
-    height, extensionRoot, minerPk.toGroupElement, powOnetimePk.toGroupElement, powNonce, powDistance, votes)
+    height, extensionRoot, minerPk.toGroupElement, powOnetimePk.toGroupElement, powNonce, powDistance, votes, unparsedBytes)
 
   lazy val headerGen: Gen[Header] = for {
     stateRoot <- avlTreeGen

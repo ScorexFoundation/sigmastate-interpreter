@@ -48,5 +48,7 @@ class Header(
     val powDistance: js.BigInt,
 
     /** Miner votes for changing system parameters. */
-    val votes: String
+    val votes: String,
+
+    val unparsedBytes: String
 ) extends js.Object
