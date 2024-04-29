@@ -1459,7 +1459,7 @@ case object SHeaderMethods extends MonoTypeMethods {
   lazy val votesMethod            = propertyCall("votes", SByteArray, 15, FixedCost(JitCost(10)))
 
   lazy val checkPowMethod = SMethod(
-    this, "checkPow", SFunc(Array(SHeader), SBoolean), 3, GroupGenerator.costKind) // todo: cost
+    this, "checkPow", SFunc(Array(SHeader), SBoolean), 16, GroupGenerator.costKind) // todo: cost
     .withIRInfo(MethodCallIrBuilder)
     .withInfo(Xor, "Byte-wise XOR of two collections of bytes") // todo: desc
 
