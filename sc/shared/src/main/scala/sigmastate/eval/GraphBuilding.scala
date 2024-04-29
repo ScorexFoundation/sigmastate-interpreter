@@ -52,10 +52,6 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
   this.keepOriginalFunc = false  // original lambda of Lambda node contains invocations of evalNode and we don't want that
   this.useAlphaEquality = false
 
-  /** Whether to create CostOf nodes or substutute costs from CostTable as constants in the graph.
-    * true - substitute; false - create CostOf nodes */
-  var substFromCostTable: Boolean = true
-
   /** Whether to save calcF and costF graphs in the file given by ScriptNameProp environment variable */
   var saveGraphsInFile: Boolean = false
 

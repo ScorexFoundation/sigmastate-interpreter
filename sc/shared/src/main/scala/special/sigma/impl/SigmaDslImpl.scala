@@ -1915,7 +1915,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
     }
 
     override def substConstants[T](scriptBytes: Ref[Coll[Byte]], positions: Ref[Coll[Int]], newValues: Ref[Coll[T]]): Ref[Coll[Byte]] = {
-      implicit val eT = newValues.eA
       asRep[Coll[Byte]](mkMethodCall(self,
         SigmaDslBuilderClass.getMethod("substConstants", classOf[Sym], classOf[Sym], classOf[Sym]),
         Array[AnyRef](scriptBytes, positions, newValues),
@@ -2075,7 +2074,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
     }
 
     def substConstants[T](scriptBytes: Ref[Coll[Byte]], positions: Ref[Coll[Int]], newValues: Ref[Coll[T]]): Ref[Coll[Byte]] = {
-      implicit val eT = newValues.eA
       asRep[Coll[Byte]](mkMethodCall(source,
         SigmaDslBuilderClass.getMethod("substConstants", classOf[Sym], classOf[Sym], classOf[Sym]),
         Array[AnyRef](scriptBytes, positions, newValues),
@@ -2276,16 +2274,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         case _ => Nullable.None
       }
       def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[GroupElement], Ref[GroupElement], Ref[GroupElement], Ref[GroupElement])] = unapply(exp.node)
-    }
-
-    object groupGenerator {
-      def unapply(d: Def[_]): Nullable[Ref[SigmaDslBuilder]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "groupGenerator" && receiver.elem.isInstanceOf[SigmaDslBuilderElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Ref[SigmaDslBuilder]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Ref[SigmaDslBuilder]] = unapply(exp.node)
     }
 
     object substConstants {
