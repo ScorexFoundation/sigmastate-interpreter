@@ -13,6 +13,7 @@ import java.util
 import java.util.concurrent.locks.Lock
 import scala.reflect.ClassTag
 import scala.util.{Either, Failure, Right, Success, Try}
+import scorex.utils.Ints
 
 object Helpers {
 
@@ -64,7 +65,7 @@ object Helpers {
     */
   @inline final def safeIdHashCode(id: Array[Byte]): Int =
     if (id != null && id.length >= 4) Ints.fromBytes(id(0), id(1), id(2), id(3))
-    else java.util.Arrays.hashCode(id)
+    else Ints.fromByteArray(id)
 
   implicit class TryOps[+A](val source: Try[A]) extends AnyVal {
     def fold[B](onError: Throwable => B, onSuccess: A => B) = source match {

@@ -19,7 +19,7 @@ class ErgoId(val _idBytes: Array[Byte]) {
 
   override def hashCode =
     if (_idBytes != null && _idBytes.length >= 4) Ints.fromByteArray(_idBytes)
-    else java.util.Arrays.hashCode(_idBytes)
+    else Ints.fromByteArray(_idBytes)
 
   override def equals(obj: Any): Boolean = {
     if (obj == null) return false
