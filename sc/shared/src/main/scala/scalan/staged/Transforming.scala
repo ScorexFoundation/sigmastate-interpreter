@@ -47,9 +47,6 @@ trait Transforming { self: Scalan =>
     constantPropagation: Boolean = true,
     /** Used in SlicingPass */
     shouldSlice: Boolean = false)
-  {
-    def withConstantPropagation(value: Boolean) = this.copy(constantPropagation = value)
-  }
 
   /** Default pass to be used when IR is used without special compiler configuration. */
   class DefaultPass(val name: String, override val config: PassConfig = PassConfig()) extends Pass
@@ -64,10 +61,6 @@ trait Transforming { self: Scalan =>
   /** Called to setup IR before the new pass is executed. */
   def beginPass(pass: Pass): Unit = {
     _currentPass = pass
-  }
-  /** Called to let this IR context to finalized the given pass. */
-  def endPass(pass: Pass): Unit = {
-    _currentPass = Pass.defaultPass
   }
 
   /** Concrete and default implementation of Transformer using underlying HashMap.
@@ -152,7 +145,7 @@ trait Transforming { self: Scalan =>
     protected def mirrorElem(node: Sym): Elem[_] = node.elem
 
     // every mirrorXXX method should return a pair (t + (v -> v1), v1)
-    protected def mirrorVar[A](t: Transformer, rewriter: Rewriter, v: Ref[A]): Transformer = {
+    protected def mirrorVar[A](t: Transformer, v: Ref[A]): Transformer = {
       val newVar = variable(Lazy(mirrorElem(v)))
       t + (v, newVar)
     }
@@ -173,7 +166,7 @@ trait Transforming { self: Scalan =>
 
     protected def mirrorLambda[A, B](t: Transformer, rewriter: Rewriter, node: Ref[A => B], lam: Lambda[A, B]): Transformer = {
       var tRes: Transformer = t
-      val t1 = mirrorNode(t, rewriter, lam, lam.x)
+      val t1 = mirrorNode(t, rewriter, lam.x)
 
       // original root
       val originalRoot = lam.y
@@ -190,7 +183,7 @@ trait Transforming { self: Scalan =>
 //        lambdaStack = newLambdaCandidate :: lambdaStack
         val newRoot = { // reifyEffects block
           val schedule = lam.scheduleIds
-          val t2 = mirrorSymbols(t1, rewriter, lam, schedule)
+          val t2 = mirrorSymbols(t1, rewriter, schedule)
           tRes = t2
           tRes(originalRoot) // this will be a new root
         }
@@ -214,7 +207,7 @@ trait Transforming { self: Scalan =>
 
       val newScope = thunkStack.beginScope(newThunkSym)
       val schedule = thunk.scheduleIds
-      val t1 = mirrorSymbols(t, rewriter, thunk, schedule)
+      val t1 = mirrorSymbols(t, rewriter, schedule)
       thunkStack.endScope()
 
       val newRoot = t1(thunk.root)
@@ -230,12 +223,12 @@ trait Transforming { self: Scalan =>
 
     protected def isMirrored(t: Transformer, node: Sym): Boolean = t.isDefinedAt(node)
 
-    def mirrorNode(t: Transformer, rewriter: Rewriter, g: AstGraph, node: Sym): Transformer = {
+    def mirrorNode(t: Transformer, rewriter: Rewriter, node: Sym): Transformer = {
       if (isMirrored(t, node)) t
       else {
         node.node match {
-          case v: Variable[_] =>
-            mirrorVar(t, rewriter, node)
+          case _: Variable[_] =>
+            mirrorVar(t, node)
           case lam: Lambda[a, b] =>
             mirrorLambda(t, rewriter, node.asInstanceOf[Ref[a => b]], lam)
           case th: ThunkDef[a] =>
@@ -247,12 +240,12 @@ trait Transforming { self: Scalan =>
     }
 
     /** HOTSPOT: */
-    def mirrorSymbols(t0: Transformer, rewriter: Rewriter, g: AstGraph, nodes: DBuffer[Int]) = {
+    def mirrorSymbols(t0: Transformer, rewriter: Rewriter, nodes: DBuffer[Int]): Transformer = {
       var t: Transformer = t0
       cfor(0)(_ < nodes.length, _ + 1) { i =>
         val n = nodes(i)
         val s = getSym(n)
-        t = mirrorNode(t, rewriter, g, s)
+        t = mirrorNode(t, rewriter, s)
       }
       t
     }

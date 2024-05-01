@@ -52,10 +52,6 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
   this.keepOriginalFunc = false  // original lambda of Lambda node contains invocations of evalNode and we don't want that
   this.useAlphaEquality = false
 
-  /** Whether to create CostOf nodes or substutute costs from CostTable as constants in the graph.
-    * true - substitute; false - create CostOf nodes */
-  var substFromCostTable: Boolean = true
-
   /** Whether to save calcF and costF graphs in the file given by ScriptNameProp environment variable */
   var saveGraphsInFile: Boolean = false
 
@@ -380,8 +376,6 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
     case _ => error(s"Cannot find BinOp for opcode newOpCode(${opCode.toUByte - LastConstantCode}) and type $eA")
   }
 
-  import sigmastate._
-
   protected implicit def groupElementToECPoint(g: sigma.GroupElement): EcPointType = CSigmaDslBuilder.toECPoint(g).asInstanceOf[EcPointType]
 
   def error(msg: String) = throw new GraphBuildingException(msg, None)
@@ -436,7 +430,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
       error(s"Don't know how to buildNode($node)", node.sourceContext.toOption)
 
     val res: Ref[Any] = node match {
-      case c @ Constant(v, tpe) => v match {
+      case Constant(v, tpe) => v match {
         case p: SSigmaProp =>
           assert(tpe == SSigmaProp)
           val resV = liftConst(p)
@@ -887,7 +881,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
           f
         }
 
-      case l @ FuncValue(Seq((n, argTpe)), body) =>
+      case FuncValue(Seq((n, argTpe)), body) =>
         val eArg = stypeToElem(argTpe).asInstanceOf[Elem[Any]]
         val f = fun { x: Ref[Any] =>
           buildNode(ctx, env + (n -> x), body)

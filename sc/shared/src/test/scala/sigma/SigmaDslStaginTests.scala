@@ -28,8 +28,8 @@ class SigmaDslStaginTests extends BaseCtxTests with ErgoScriptTestkit with BaseL
     type RContext = cake.Context
     type RBox = cake.Box
     type RSigmaProp = cake.SigmaProp
-    val boxA1 = newAliceBox(1, 100)
-    val boxA2 = newAliceBox(2, 200)
+    val boxA1 = newAliceBox(100)
+    val boxA2 = newAliceBox(200)
     val ctx: SContext = newContext(10, boxA1, VersionContext.MaxSupportedScriptVersion, VersionContext.MaxSupportedScriptVersion)
       .withInputs(boxA2)
       .withVariables(Map(1 -> toAnyValue(30), 2 -> toAnyValue(40)))

@@ -323,7 +323,7 @@ trait Thunks extends Functions { self: Scalan =>
     */
   def forceThunkDefByMirror[A](th: ThunkDef[A], subst: MapTransformer = MapTransformer.empty()): Ref[A] = {
     val body = th.scheduleIds
-    val t = DefaultMirror.mirrorSymbols(subst, NoRewriting, th, body)
+    val t = DefaultMirror.mirrorSymbols(subst, NoRewriting, body)
     t(th.root)
   }
 
