@@ -7,7 +7,6 @@ import sigma.ast.syntax._
 import sigmastate.interpreter._
 import Interpreter._
 import io.circe.parser.parse
-import sigma.ast.syntax._
 import org.ergoplatform._
 import org.ergoplatform.sdk.JsonCodecs
 import org.scalatest.BeforeAndAfterAll
@@ -15,14 +14,14 @@ import scorex.util.encode.Base58
 import sigma.Colls
 import sigma.VersionContext.V6SoftForkVersion
 import sigma.crypto.CryptoConstants
-import sigma.data.{AvlTreeData, CAND, CAvlTree, ProveDlog, SigmaBoolean, TrivialProp}
+import sigma.data.{CAND, CAvlTree, ProveDlog, SigmaBoolean, TrivialProp}
 import sigma.interpreter.ContextExtension
 import sigma.util.Extensions.IntOps
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigma.serialization.{GroupElementSerializer, SigmaSerializer, ValueSerializer}
 import sigmastate.eval.CPreHeader
-import sigmastate.helpers.ErgoLikeContextTesting.{dummyPreHeader, noBoxes, noHeaders}
+import sigmastate.helpers.ErgoLikeContextTesting.noBoxes
 import sigmastate.interpreter.CErgoTreeEvaluator.DefaultEvalSettings
 import sigmastate.utils.Helpers._
 import sigma.util.Extensions._
@@ -443,6 +442,9 @@ class TestingInterpreterSpecification extends CompilerTestingCommons
   }
 
   property("checkPow") {
+
+    //todo: check invalid header
+    
     val source = """ {
                    |     val h = CONTEXT.headers(0)
                    |      h.checkPow
