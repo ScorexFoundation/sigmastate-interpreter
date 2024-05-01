@@ -188,7 +188,7 @@ object SigmaPredef {
           BigIntConstant(new BigInteger(arg.value))
         }),
       OperationInfo(Constant,
-        """Parsing string argument as a 256-bit signed big integer.""".stripMargin,
+        """Parsing string literal argument as a 256-bit signed big integer.""".stripMargin,
         Seq(ArgInfo("", "")))
     )
 
