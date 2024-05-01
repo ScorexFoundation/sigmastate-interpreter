@@ -101,11 +101,6 @@ trait MethodCalls extends Base { self: Scalan =>
     reifyObject(MethodCall(receiver, method, args, neverInvoke)(asElem[Any](resultElem), isAdapterCall))
   }
 
-  /** Creates new NewObject node and returns its node ref. */
-  def newObjEx[A](args: Any*)(implicit eA: Elem[A]): Ref[A] = {
-    reifyObject(NewObject[A](eA, args))
-  }
-
   @tailrec
   private def baseCause(e: Throwable): Throwable = e match {
     case e: ExceptionInInitializerError => baseCause(e.getCause)
@@ -120,21 +115,6 @@ trait MethodCalls extends Base { self: Scalan =>
     * point we know that the first RW set didn't triggered any rewrite. */
   def rewriteNonInvokableMethodCall(@unused mc: MethodCall): Ref[_] = null
 
-  /** Create delegate instance suitable for method invocation.
-    * It is used when T is a class or a trait and the node referred by x doesn't conform to T.
-    * This method returns dynamically constructed instance, which conforms to T.
-    * Whenever a method of T is called on that instance, the call is intercepted and
-    * `DelegatedInterceptionHandler.invoke` method is called, then a new MethodCall can
-    * be constructed (which is befavior by default).
-    */
-  protected def unrefDelegate[T <: AnyRef](x: Ref[T])(implicit ct: ClassTag[T]): T = {
-    val d = x.node
-    if (d.isInstanceOf[Const[_]])
-      d.asInstanceOf[Const[T]@unchecked].x
-    else
-      !!!(s"Cannot do undefDelegate($x -> ${x.node})")
-  }
-
   /** Generic helper to call the given method on the given receiver node. */
   private[scalan] def invokeMethod[A](receiver: Sym, m: RMethod, args: Array[AnyRef],
                               onInvokeSuccess: Any => A,
@@ -148,9 +128,9 @@ trait MethodCalls extends Base { self: Scalan =>
       } catch {
         case e: Exception => onInvokeException(baseCause(e))
       }
-    }
-    else
+    } else {
       onInvokeImpossible
+    }
   }
 
   /** Method invocation enabler.

@@ -8,7 +8,6 @@ import sigma.ast._
 import sigma.crypto.CryptoConstants
 import sigma.data.{CAnyValue, CSigmaDslBuilder, ProveDHTuple, ProveDlog, SigmaBoolean}
 import sigma.util.Extensions.BigIntegerOps
-import sigmastate.eval._
 import sigmastate.helpers.NegativeTesting
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigma.ast.{Ident, MethodCallLike}
