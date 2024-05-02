@@ -1,10 +1,9 @@
 const {Box$, Value$} = require("sigmastate-js/main");
 
 describe("Box", () => {
-    it("should deserialize from hex", () => {
+    it("should serialize from/to hex", () => {
         let boxHex = "63b96000d1968302010100ff83020193040204020100c0843d000401010e32297000800b80f1d56c809a8c6affbed864b87f007f6f007f00ac00018c01c4fdff011088807f0100657f00f9ab0101ff6d6505a4a7b5a2e7a4a4dd3a05feffffffffffffffff01003bd5c630803cfff6c1ff7f7fb980ff136afc011f8080b8b04ad4dbda2d7f4e01"
         let deserialized = Value$.fromHex(boxHex);
-        // console.log(b.data)
         let expected = {
             additionalRegisters: {
                 R4: '0101',
