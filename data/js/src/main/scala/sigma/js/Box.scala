@@ -16,15 +16,15 @@ import scala.scalajs.js.annotation.JSExportTopLevel
 
 /** Equivalent of [[sigma.Box]] available from JS. */
 @JSExportTopLevel("Box")
-class Box(val box: FBox[Amount, NonMandatoryRegisters]) extends js.Object {
-}
+class Box(val box: FBox[Amount, NonMandatoryRegisters]) extends js.Object
 
-@JSExportTopLevel("Box$")
 object Box extends js.Object {
+  /** Represents a box in Fleet SDK. */
+  type FleetBox = FBox[commonMod.Amount, NonMandatoryRegisters]
 
   /** Converts Fleet box to ErgoBox and back. */
-  val isoBox: Iso[FBox[commonMod.Amount, NonMandatoryRegisters], ErgoBox] = new Iso[FBox[commonMod.Amount, NonMandatoryRegisters], ErgoBox] {
-    override def to(x: FBox[commonMod.Amount, NonMandatoryRegisters]): ErgoBox = {
+  val isoBox: Iso[FleetBox, ErgoBox] = new Iso[FleetBox, ErgoBox] {
+    override def to(x: FleetBox): ErgoBox = {
       val ergoBox = new ErgoBox(
         value = isoAmount.to(x.value),
         ergoTree = {
@@ -40,7 +40,7 @@ object Box extends js.Object {
       ergoBox
     }
 
-    override def from(x: ErgoBox): FBox[commonMod.Amount, NonMandatoryRegisters] = {
+    override def from(x: ErgoBox): FleetBox = {
       val ergoTree = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(x.ergoTree)
       val ergoTreeStr = Base16.encode(ergoTree)
       val assets = isoTokenArray.from(x.additionalTokens)

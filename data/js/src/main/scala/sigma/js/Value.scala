@@ -7,9 +7,10 @@ import sigma.ast.SType
 import sigma.crypto.Platform
 import sigma.data._
 import sigma.js.Value.toRuntimeData
-import sigma.serialization.{CoreSerializer, DataSerializer}
+import sigma.serialization.{CoreDataSerializer, CoreSerializer, DataSerializer, SigmaSerializer}
 import sigma.util.Extensions.BigIntOps
 import sigma.{Coll, Colls, Evaluation}
+import sigmastate.fleetSdkCommon.distEsmTypesBoxesMod.{Box => FBox}
 
 import java.math.BigInteger
 import scala.scalajs.js
@@ -55,7 +56,7 @@ class Value(val data: Any, val tpe: Type) extends js.Object {
   def toHex(): String = {
     val stype = Evaluation.rtypeToSType(tpe.rtype)
     val value = runtimeData.asInstanceOf[SType#WrappedType]
-    val w = CoreSerializer.startWriter()
+    val w = SigmaSerializer.startWriter()
     w.putType(stype)
     DataSerializer.serialize(value, stype, w)
     Base16.encode(w.toBytes)
@@ -128,7 +129,8 @@ object Value extends js.Object {
     case sigma.AvlTreeRType =>
       AvlTree.isoAvlTree.from(value.asInstanceOf[CAvlTree])
     case sigma.BoxRType =>
-      AvlTree.isoAvlTree.from(value.asInstanceOf[CAvlTree])
+      val fleetBox = Box.isoBox.from(value.asInstanceOf[CBox].wrappedValue)
+      new Box(fleetBox)
     case ct: CollType[a] =>
       val arr = value.asInstanceOf[Coll[a]].toArray
       js.Array(arr.map(x => fromRuntimeData(x, ct.tItem)):_*)
@@ -225,6 +227,13 @@ object Value extends js.Object {
     new Value(sp, Type.SigmaProp)
   }
 
+  /** Creates a Value of Box type from a [[FBox]] instance.
+    * @param fleetBox a Fleet box to be wrapped in a [[Value]]
+    */
+  def ofBox(fleetBox: Box.FleetBox): Value = {
+    new Value(new Box(fleetBox), Type.Box)
+  }
+
   /** Create Pair value from two values. */
   def pairOf(l: Value, r: Value): Value = {
     val data = js.Array(l.data, r.data) // the l and r data have been validated
@@ -256,7 +265,7 @@ object Value extends js.Object {
     */
   def fromHex(hex: String): Value = {
     val bytes   = Base16.decode(hex).fold(t => throw t, identity)
-    val r       = CoreSerializer.startReader(bytes)
+    val r       = SigmaSerializer.startReader(bytes)
     val stype   = r.getType()
     val value   = DataSerializer.deserialize(stype, r)
     val rtype   = Evaluation.stypeToRType(stype)
