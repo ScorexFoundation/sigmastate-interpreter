@@ -39,7 +39,11 @@ case class CHeader(
   }
 
   override def checkPow: Boolean = {
-    Autolykos2PowValidation.checkPoWForVersion2(this)
+    if (version == 1) {
+      throw new Exception("Autolykos v1 is not supported") //todo: more specific exception?
+    } else {
+      Autolykos2PowValidation.checkPoWForVersion2(this)
+    }
   }
 
 }
