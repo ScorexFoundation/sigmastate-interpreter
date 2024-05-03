@@ -7,7 +7,7 @@ import sigma.ast.SType
 import sigma.crypto.Platform
 import sigma.data._
 import sigma.js.Value.toRuntimeData
-import sigma.serialization.{CoreDataSerializer, CoreSerializer, DataSerializer, SigmaSerializer}
+import sigma.serialization.{DataSerializer, SigmaSerializer}
 import sigma.util.Extensions.BigIntOps
 import sigma.{Coll, Colls, Evaluation}
 import sigmastate.fleetSdkCommon.distEsmTypesBoxesMod.{Box => FBox}

@@ -1,36 +1,28 @@
 package org.ergoplatform.sdk.js
 
-import org.ergoplatform.ErgoBox._
 import org.ergoplatform._
 import org.ergoplatform.sdk.ExtendedInputBox
-import org.ergoplatform.sdk.JavaHelpers.UniversalConverter
 import org.ergoplatform.sdk.wallet.protocol.context
-import scorex.crypto.authds.ADKey
-import scorex.util.ModifierId
-import scorex.util.encode.Base16
-import sigma.Extensions.CollBytesOps
-import sigma.ast.syntax.GroupElementConstant
-import sigma.ast.{Constant, GroupElementConstant, SType}
+import sigma.ast.{Constant, SType}
+import sigma.data.Iso
 import sigma.data.Iso.{isoStringToArray, isoStringToColl}
-import sigma.data.{CBigInt, CGroupElement, Digest32Coll, Digest32CollRType, Iso}
+import sigma.data.js.{Isos => DataIsos}
 import sigma.interpreter.{ContextExtension, ProverResult}
-import sigma.js.{AvlTree, GroupElement}
-import sigma.serialization.{ErgoTreeSerializer, ValueSerializer}
-import sigma.{Coll, Colls}
+import sigma.js.AvlTree
 import sigmastate.eval.{CHeader, CPreHeader}
 import sigmastate.fleetSdkCommon.distEsmTypesBoxesMod.Box
-import sigmastate.fleetSdkCommon.distEsmTypesCommonMod.HexString
 import sigmastate.fleetSdkCommon.distEsmTypesRegistersMod.NonMandatoryRegisters
 import sigmastate.fleetSdkCommon.distEsmTypesTokenMod.TokenAmount
 import sigmastate.fleetSdkCommon.distEsmTypesTransactionsMod.{SignedTransaction, UnsignedTransaction}
-import sigmastate.fleetSdkCommon.{distEsmTypesBoxesMod => boxesMod, distEsmTypesCommonMod => commonMod, distEsmTypesContextExtensionMod => contextExtensionMod, distEsmTypesInputsMod => inputsMod, distEsmTypesProverResultMod => proverResultMod, distEsmTypesRegistersMod => registersMod, distEsmTypesTokenMod => tokenMod}
-import sigma.data.js.{Isos => DataIsos}
-import java.math.BigInteger
+import sigmastate.fleetSdkCommon.{distEsmTypesCommonMod => commonMod, distEsmTypesContextExtensionMod => contextExtensionMod, distEsmTypesInputsMod => inputsMod, distEsmTypesProverResultMod => proverResultMod}
+
 import scala.collection.immutable.ListMap
 import scala.scalajs.js
 import scala.scalajs.js.Object
 
-/** Definitions of isomorphisms for sigma-sdk module. */
+/** Definitions of isomorphisms for sigma-sdk module.
+  * @see sigma.data.Iso
+  */
 object Isos {
   implicit val isoHeader: Iso[Header, sigma.Header] = new Iso[Header, sigma.Header] {
     override def to(a: Header): sigma.Header = {

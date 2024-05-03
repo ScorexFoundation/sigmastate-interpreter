@@ -1,15 +1,9 @@
 package sigma.data.js
 
-import org.ergoplatform.{ErgoBox, ErgoBoxCandidate}
 import org.ergoplatform.ErgoBox._
+import org.ergoplatform.{ErgoBox, ErgoBoxCandidate}
 import scorex.crypto.authds.ADKey
-import scorex.util.ModifierId
 import scorex.util.encode.Base16
-import sigma.{Coll, Colls}
-import sigmastate.fleetSdkCommon.distEsmTypesBoxesMod.{Box => FBox}
-import sigmastate.fleetSdkCommon.distEsmTypesCommonMod.{Amount, HexString}
-import sigmastate.fleetSdkCommon.distEsmTypesRegistersMod.NonMandatoryRegisters
-import sigmastate.fleetSdkCommon.{distEsmTypesBoxesMod => boxesMod, distEsmTypesCommonMod => commonMod, distEsmTypesRegistersMod => registersMod, distEsmTypesTokenMod => tokenMod}
 import sigma.Extensions._
 import sigma.ast.syntax.GroupElementConstant
 import sigma.ast.{Constant, GroupElementConstant, SType}
@@ -17,10 +11,16 @@ import sigma.data.Iso.isoStringToArray
 import sigma.data.{CGroupElement, Digest32Coll, Iso}
 import sigma.js.GroupElement
 import sigma.serialization.{ErgoTreeSerializer, ValueSerializer}
+import sigma.{Coll, Colls}
+import sigmastate.fleetSdkCommon.distEsmTypesCommonMod.HexString
+import sigmastate.fleetSdkCommon.distEsmTypesRegistersMod.NonMandatoryRegisters
+import sigmastate.fleetSdkCommon.{distEsmTypesBoxesMod => boxesMod, distEsmTypesCommonMod => commonMod, distEsmTypesRegistersMod => registersMod, distEsmTypesTokenMod => tokenMod}
 
 import scala.scalajs.js
 
-/** Definitions of isomorphisms for sigma-data module. */
+/** Definitions of isomorphisms for sigma-data module.
+  * @see sigma.data.Iso
+  */
 object Isos {
 
   val isoStringToGroupElement: Iso[String, sigma.GroupElement] = new Iso[String, sigma.GroupElement] {
