@@ -4,6 +4,9 @@ import sigma.VersionContext
 import sigma.ast._
 import sigma.validation.ValidationException
 
+import scala.util.Try
+
+
 class MethodCallSerializerSpecification extends SerializationSpecification {
 
   property("MethodCall deserialization round trip") {
@@ -48,8 +51,8 @@ class MethodCallSerializerSpecification extends SerializationSpecification {
 
   property("MethodCall deserialization round trip for Header.checkPow") {
     def code = {
-      val bi = HeaderConstant(headerGen.sample.get)
-      val expr = MethodCall(bi,
+      val h = HeaderConstant(headerGen.sample.get)
+      val expr = MethodCall(h,
         SHeaderMethods.checkPowMethod,
         Vector(),
         Map()
@@ -61,11 +64,12 @@ class MethodCallSerializerSpecification extends SerializationSpecification {
       code
     }
 
-    an[ValidationException] should be thrownBy (
+    // sigma.serialization.SerializerException: Don't know how to serialize (sigma.data.CHeader@51dbec76, SHeader)
+    an[SerializerException] should be thrownBy (
       VersionContext.withVersions((VersionContext.V6SoftForkVersion - 1).toByte, 1) {
         code
       }
-      )
+    )
   }
 
 }

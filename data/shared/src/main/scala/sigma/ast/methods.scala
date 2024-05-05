@@ -1460,7 +1460,7 @@ case object SHeaderMethods extends MonoTypeMethods {
   lazy val checkPowMethod = SMethod(
     this, "checkPow", SFunc(Array(SHeader), SBoolean), 16, GroupGenerator.costKind) // todo: cost
     .withIRInfo(MethodCallIrBuilder)
-    .withInfo(Xor, "Byte-wise XOR of two collections of bytes") // todo: desc
+    .withInfo(Xor, "Check PoW of this header") // todo: desc
 
   def checkPow_eval(mc: MethodCall, G: SigmaDslBuilder, header: Header)
                  (implicit E: ErgoTreeEvaluator): Boolean = {

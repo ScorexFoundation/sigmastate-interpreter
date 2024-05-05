@@ -6,7 +6,7 @@ import org.scalacheck.Arbitrary._
 import sigma.data.{DataValueComparer, RType, SigmaBoolean, TupleColl}
 import sigma.ast.SCollection.SByteArray
 import sigmastate.eval._
-import sigma.{AvlTree, Colls, Evaluation}
+import sigma.{AvlTree, Colls, Evaluation, Header, VersionContext}
 import sigma.ast.SType.AnyOps
 import sigma.ast._
 import org.scalacheck.Gen
@@ -14,7 +14,7 @@ import sigma.Extensions.ArrayOps
 import sigma.crypto.EcPointType
 import sigma.eval.SigmaDsl
 import sigma.util.Extensions.{BigIntegerOps, EcpOps, SigmaBooleanOps}
-import sigmastate.interpreter.{CostAccumulator, CErgoTreeEvaluator}
+import sigmastate.interpreter.{CErgoTreeEvaluator, CostAccumulator}
 import sigmastate.interpreter.CErgoTreeEvaluator.DefaultProfiler
 import sigmastate.utils.Helpers
 
@@ -132,6 +132,20 @@ class DataSerializerSpecification extends SerializationSpecification {
       t.isInstanceOf[SerializerException] &&
           t.getMessage.contains(s"BigInt value doesn't not fit into ${SBigInt.MaxSizeInBytes} bytes")
     })
-
   }
+
+  property("header roundtrip") {
+    VersionContext.withVersions(VersionContext.V6SoftForkVersion, 1) {
+      forAll { x: Header => roundtrip[SHeader.type](x, SHeader) }
+    }
+
+    an[SerializerException] should be thrownBy (
+      VersionContext.withVersions((VersionContext.V6SoftForkVersion - 1).toByte, 1) {
+        val h = headerGen.sample.get
+        val res = roundtrip[SHeader.type](h, SHeader)
+        println("r: " + res)
+        res
+      })
+  }
+
 }

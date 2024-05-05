@@ -12,7 +12,7 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ModifierId
 import sigma.ast._
 import sigma.Extensions.ArrayOps
-import sigmastate.eval.{CHeader, CPreHeader}
+import sigmastate.eval.CPreHeader
 import sigmastate.helpers.TestingCommons
 import sigma.serialization.ErgoTreeSerializer
 import sigma.serialization.generators.ObjectGenerators
@@ -268,7 +268,7 @@ trait SigmaTestingData extends TestingCommons with ObjectGenerators {
 
     val h1: Header = create_h1()
 
-    val h2: Header = create_h1().asInstanceOf[CHeader].copy(height = 2)
+    val h2: Header = new CHeader(h1.asInstanceOf[CHeader].wrappedValue.copy(height = 2))
 
     val dlog_instances = new CloneSet(1000, ProveDlog(
       SigmaDsl.toECPoint(create_ge1()).asInstanceOf[EcPointType]

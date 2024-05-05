@@ -21,7 +21,11 @@ class HeaderWithoutPow(val version:  Byte, // 1 byte
                        val height: Int,
                        val extensionRoot: Digest32,
                        val votes: Array[Byte], //3 bytes
-                       val unparsedBytes: Array[Byte])
+                       val unparsedBytes: Array[Byte]) {
+  def toHeader(powSolution: AutolykosSolution, bytes: Array[Byte]): ErgoHeader =
+    ErgoHeader(version, parentId, ADProofsRoot, stateRoot, transactionsRoot, timestamp,
+      nBits, height, extensionRoot, powSolution, votes, unparsedBytes, bytes)
+}
 
 object HeaderWithoutPow {
 
