@@ -113,6 +113,7 @@ class SigmaTyperTest extends AnyPropSpec
     typecheck(env, "min(HEIGHT, INPUTS.size)") shouldBe SInt
     typecheck(env, "max(1, 2)") shouldBe SInt
     typecheck(env, "max(1L, 2)") shouldBe SLong
+    typecheck(env, """bigInt("1111")""") shouldBe SBigInt
     typecheck(env, """fromBase16("1111")""") shouldBe SByteArray
     typecheck(env, """fromBase58("111")""") shouldBe SByteArray
     typecheck(env, """fromBase64("111")""") shouldBe SByteArray
