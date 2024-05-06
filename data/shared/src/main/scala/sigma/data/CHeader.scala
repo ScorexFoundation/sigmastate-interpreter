@@ -11,7 +11,7 @@ import sigma.{AvlTree, BigInt, Coll, Colls, GroupElement, Header}
   *
   * @see [[Header]] for detailed descriptions
   */
-class CHeader(val ergoHeader: ErgoHeader) extends Header with WrapperOf[ErgoHeader] {
+case class CHeader(ergoHeader: ErgoHeader) extends Header with WrapperOf[ErgoHeader] {
 
   /** Bytes representation of ModifierId of this Header */
   override lazy val id: Coll[Byte] = ergoHeader.id
@@ -81,12 +81,8 @@ class CHeader(val ergoHeader: ErgoHeader) extends Header with WrapperOf[ErgoHead
     }
   }
 
-  override def hashCode(): Int = id.hashCode()
+  override def bytes: Coll[Byte] = Colls.fromArray(ergoHeader.bytes)
 
-  override def equals(other: Any): Boolean = other match {
-    case ch: CHeader => ch.id == this.id
-    case _ => false
-  }
 }
 
 object CHeader {
@@ -115,7 +111,7 @@ object CHeader {
       powNonce.toArray,
       powDistance.asInstanceOf[CBigInt].wrappedValue)
 
-    val h = ErgoHeader(version, bytesToId(parentId.toArray), Digest32 @@ ADProofsRoot.toArray,
+    val h = new ErgoHeader(version, bytesToId(parentId.toArray), Digest32 @@ ADProofsRoot.toArray,
       ADDigest @@ stateRoot.digest.toArray, Digest32 @@ transactionsRoot.toArray, timestamp, nBits, height,
       Digest32 @@ extensionRoot.toArray, solution, votes.toArray, unparsedBytes.toArray, null)
 

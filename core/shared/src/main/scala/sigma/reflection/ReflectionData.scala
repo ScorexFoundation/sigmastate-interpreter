@@ -349,6 +349,9 @@ object ReflectionData {
         },
         mkMethod(clazz, "checkPow", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Header].checkPow
+        },
+        mkMethod(clazz, "bytes", Array[Class[_]]()) { (obj, _) =>
+          obj.asInstanceOf[Header].bytes
         }
       )
     )

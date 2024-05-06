@@ -5,7 +5,7 @@ import scorex.crypto.authds.ADDigest
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ModifierId
 import sigma.Colls
-import sigma.crypto.{CryptoConstants, CryptoFacade, EcPointType}
+import sigma.crypto.{CryptoConstants, EcPointType}
 import sigma.serialization.{GroupElementSerializer, SigmaByteReader, SigmaByteWriter, SigmaSerializer}
 
 
@@ -90,7 +90,7 @@ object AutolykosSolution {
   * @param votes - votes for changing system parameters
   * @param _bytes - serialized bytes of the header when not `null`
   */
-case class ErgoHeader(override val version: ErgoHeader.Version,
+class ErgoHeader(override val version: ErgoHeader.Version,
                   override val parentId: ModifierId,
                   override val ADProofsRoot: Digest32,
                   override val stateRoot: ADDigest, //33 bytes! extra byte with tree height here!
@@ -99,7 +99,7 @@ case class ErgoHeader(override val version: ErgoHeader.Version,
                   override val nBits: Long, //actually it is unsigned int
                   override val height: Int,
                   override val extensionRoot: Digest32,
-                  powSolution: AutolykosSolution,
+                  val powSolution: AutolykosSolution,
                   override val votes: Array[Byte], //3 bytes
                   override val unparsedBytes: Array[Byte],
                   _bytes: Array[Byte]) extends
@@ -116,6 +116,12 @@ case class ErgoHeader(override val version: ErgoHeader.Version,
 
     lazy val id = Colls.fromArray(serializedId)
 
+    override def hashCode(): Int = id.hashCode()
+
+    override def equals(other: Any): Boolean = other match {
+        case h: ErgoHeader => h.id == this.id
+        case _ => false
+    }
 }
 
 

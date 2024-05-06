@@ -20,7 +20,7 @@ import sigma.serialization.{ErgoTreeSerializer, ValueSerializer}
 import sigma.validation.SigmaValidationSettings
 import sigma.{AnyValue, Coll, Colls, Header, PreHeader, SigmaException}
 import sigmastate.eval.{CPreHeader, _}
-import sigmastate.utils.Helpers._
+import sigmastate.utils.Helpers._   // required for Scala 2.11
 
 import java.math.BigInteger
 import scala.collection.mutable
@@ -148,7 +148,7 @@ trait JsonCodecs {
       powDistance <- cursor.downField("powDistance").as[sigma.BigInt]
       votes <- cursor.downField("votes").as[Coll[Byte]]
       unparsedBytes <- cursor.downField("unparsedBytes").as[Option[Coll[Byte]]]
-    } yield new CHeader(id, version, parentId, adProofsRoot, stateRoot, transactionsRoot, timestamp, nBits,
+    } yield CHeader(id, version, parentId, adProofsRoot, stateRoot, transactionsRoot, timestamp, nBits,
       height, extensionRoot, SigmaDsl.decodePoint(minerPk), SigmaDsl.decodePoint(powOnetimePk), powNonce, powDistance,
       votes, unparsedBytes.getOrElse(Colls.emptyColl))
   })

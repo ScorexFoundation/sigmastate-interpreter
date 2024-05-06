@@ -1371,6 +1371,13 @@ object Header extends EntityObject("Header") {
         ArraySeq.empty,
         true, false, element[Boolean]))
     }
+
+    override def bytes: Ref[Coll[Byte]] = {
+      asRep[Coll[Byte]](mkMethodCall(self,
+        HeaderClass.getMethod("bytes"),
+        ArraySeq.empty,
+        true, false, element[Coll[Byte]]))
+    }
   }
 
   implicit object LiftableHeader
@@ -1501,6 +1508,13 @@ object Header extends EntityObject("Header") {
         HeaderClass.getMethod("checkPow"),
         ArraySeq.empty,
         true, true, element[Boolean]))
+    }
+
+    def bytes: Ref[Coll[Byte]] = {
+      asRep[Coll[Byte]](mkMethodCall(source,
+        HeaderClass.getMethod("bytes"),
+        ArraySeq.empty,
+        true, true, element[Coll[Byte]]))
     }
   }
 

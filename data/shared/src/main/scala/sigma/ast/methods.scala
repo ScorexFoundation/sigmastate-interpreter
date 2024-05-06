@@ -1457,10 +1457,13 @@ case object SHeaderMethods extends MonoTypeMethods {
   lazy val powDistanceMethod      = propertyCall("powDistance", SBigInt, 14, FixedCost(JitCost(10)))
   lazy val votesMethod            = propertyCall("votes", SByteArray, 15, FixedCost(JitCost(10)))
 
+  // methods added in 6.0 below
   lazy val checkPowMethod = SMethod(
     this, "checkPow", SFunc(Array(SHeader), SBoolean), 16, GroupGenerator.costKind) // todo: cost
     .withIRInfo(MethodCallIrBuilder)
     .withInfo(Xor, "Check PoW of this header") // todo: desc
+
+  lazy val bytesMethod = propertyCall("bytes", SByteArray, 17, FixedCost(JitCost(10)))
 
   def checkPow_eval(mc: MethodCall, G: SigmaDslBuilder, header: Header)
                  (implicit E: ErgoTreeEvaluator): Boolean = {
@@ -1469,11 +1472,11 @@ case object SHeaderMethods extends MonoTypeMethods {
 
   protected override def getMethods() = {
     if (VersionContext.current.isV6SoftForkActivated) {
-      // 6.0 : checkPow method added
+      // 6.0 : checkPow & bytes methods added
       super.getMethods() ++ Seq(
         idMethod, versionMethod, parentIdMethod, ADProofsRootMethod, stateRootMethod, transactionsRootMethod,
         timestampMethod, nBitsMethod, heightMethod, extensionRootMethod, minerPkMethod, powOnetimePkMethod,
-        powNonceMethod, powDistanceMethod, votesMethod, checkPowMethod)
+        powNonceMethod, powDistanceMethod, votesMethod, checkPowMethod, bytesMethod)
     } else {
       super.getMethods() ++ Seq(
         idMethod, versionMethod, parentIdMethod, ADProofsRootMethod, stateRootMethod, transactionsRootMethod,

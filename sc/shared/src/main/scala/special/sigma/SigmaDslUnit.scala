@@ -77,6 +77,7 @@ package sigma {
       def powDistance: Ref[BigInt];
       def votes: Ref[Coll[Byte]]
       def checkPow: Ref[Boolean]
+      def bytes: Ref[Coll[Byte]]
     };
     trait Context extends Def[Context] {
       def OUTPUTS: Ref[Coll[Box]];

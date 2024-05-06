@@ -466,6 +466,7 @@ trait Header {
 
   def checkPow: Boolean
 
+  def bytes: Coll[Byte]
 }
 
 /** Runtime representation of Context ErgoTree type.
