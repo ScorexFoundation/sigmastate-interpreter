@@ -19,6 +19,7 @@ import sigmastate.interpreter.Interpreter._
 import sigma.ast.Apply
 import sigma.eval.EvalSettings
 import sigma.exceptions.InvalidType
+import sigma.serialization.ValueSerializer
 import sigmastate.utils.Helpers._
 
 import java.math.BigInteger
@@ -154,6 +155,17 @@ class BasicOpsSpecification extends CompilerTestingCommons
       additionalRegistersOpt = Some(Map(
         reg1 -> UnitConstant.instance
       ))
+    )
+  }
+
+  property("executeFromVar") {
+    val script = GT(Height, IntConstant(1)).toSigmaProp
+    val scriptBytes = ValueSerializer.serialize(script)
+    val customExt = Seq(21.toByte -> ByteArrayConstant(scriptBytes))
+    test("executeFromVar", env, customExt,
+      "executeFromVar[SigmaProp](21)",
+      null,
+      true
     )
   }
 
