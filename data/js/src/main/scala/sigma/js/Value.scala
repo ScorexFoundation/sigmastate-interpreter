@@ -7,9 +7,10 @@ import sigma.ast.SType
 import sigma.crypto.Platform
 import sigma.data._
 import sigma.js.Value.toRuntimeData
-import sigma.serialization.{CoreDataSerializer, CoreSerializer}
+import sigma.serialization.{DataSerializer, SigmaSerializer}
 import sigma.util.Extensions.BigIntOps
 import sigma.{Coll, Colls, Evaluation}
+import sigmastate.fleetSdkCommon.distEsmTypesBoxesMod.{Box => FBox}
 
 import java.math.BigInteger
 import scala.scalajs.js
@@ -55,9 +56,9 @@ class Value(val data: Any, val tpe: Type) extends js.Object {
   def toHex(): String = {
     val stype = Evaluation.rtypeToSType(tpe.rtype)
     val value = runtimeData.asInstanceOf[SType#WrappedType]
-    val w = CoreSerializer.startWriter()
+    val w = SigmaSerializer.startWriter()
     w.putType(stype)
-    CoreDataSerializer.serialize(value, stype, w)
+    DataSerializer.serialize(value, stype, w)
     Base16.encode(w.toBytes)
   }
 }
@@ -89,6 +90,9 @@ object Value extends js.Object {
     case sigma.AvlTreeRType =>
       val t = data.asInstanceOf[AvlTree]
       AvlTree.isoAvlTree.to(t)
+    case sigma.BoxRType =>
+      val t = data.asInstanceOf[Box]
+      CBox(Box.isoBox.to(t.box))
     case ct: CollType[a] =>
       val xs = data.asInstanceOf[js.Array[Any]]
       implicit val cT = ct.tItem.classTag
@@ -124,6 +128,9 @@ object Value extends js.Object {
       new SigmaProp(value.asInstanceOf[CSigmaProp].wrappedValue)
     case sigma.AvlTreeRType =>
       AvlTree.isoAvlTree.from(value.asInstanceOf[CAvlTree])
+    case sigma.BoxRType =>
+      val fleetBox = Box.isoBox.from(value.asInstanceOf[CBox].wrappedValue)
+      new Box(fleetBox)
     case ct: CollType[a] =>
       val arr = value.asInstanceOf[Coll[a]].toArray
       js.Array(arr.map(x => fromRuntimeData(x, ct.tItem)):_*)
@@ -220,6 +227,13 @@ object Value extends js.Object {
     new Value(sp, Type.SigmaProp)
   }
 
+  /** Creates a Value of Box type from a [[FBox]] instance.
+    * @param fleetBox a Fleet box to be wrapped in a [[Value]]
+    */
+  def ofBox(fleetBox: Box.FleetBox): Value = {
+    new Value(new Box(fleetBox), Type.Box)
+  }
+
   /** Create Pair value from two values. */
   def pairOf(l: Value, r: Value): Value = {
     val data = js.Array(l.data, r.data) // the l and r data have been validated
@@ -251,9 +265,9 @@ object Value extends js.Object {
     */
   def fromHex(hex: String): Value = {
     val bytes   = Base16.decode(hex).fold(t => throw t, identity)
-    val r       = CoreSerializer.startReader(bytes)
+    val r       = SigmaSerializer.startReader(bytes)
     val stype   = r.getType()
-    val value   = CoreDataSerializer.deserialize(stype, r)
+    val value   = DataSerializer.deserialize(stype, r)
     val rtype   = Evaluation.stypeToRType(stype)
     val jsvalue = Value.fromRuntimeData(value, rtype)
     new Value(jsvalue, new Type(rtype))
