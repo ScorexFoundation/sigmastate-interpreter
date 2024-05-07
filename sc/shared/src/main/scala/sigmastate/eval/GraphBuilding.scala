@@ -2,6 +2,7 @@ package sigmastate.eval
 
 import org.ergoplatform._
 import scalan.MutableLazy
+import sigma.ast.SCollection.SByteArray
 import sigma.{SigmaException, ast}
 import sigma.ast.TypeCodes.LastConstantCode
 import sigma.ast.Value.Typed
@@ -535,6 +536,11 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
       case GetVar(id, optTpe) =>
         val e = stypeToElem(optTpe.elemType)
         ctx.getVar(id)(e)
+
+      case DeserializeContext(id, tpe) =>
+        val e = stypeToElem(tpe)
+        val og = OptionGet(mkGetVar(id, SByteArray))
+        sigmaDslBuilder.deserialize(asRep[Coll[Byte]](eval(og)))(e)
 
       case ValUse(valId, _) =>
         env.getOrElse(valId, !!!(s"ValUse $valId not found in environment $env"))

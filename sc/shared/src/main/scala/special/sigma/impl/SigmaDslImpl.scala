@@ -1941,6 +1941,13 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         Array[AnyRef](l, r),
         true, false, element[Coll[Byte]]))
     }
+
+    override def deserialize[T](l: Ref[Coll[Byte]])(implicit cT: Elem[T]): Ref[T] = {
+      asRep[T](mkMethodCall(self,
+        SigmaDslBuilderClass.getMethod("deserialize", classOf[Sym], classOf[Elem[_]]),
+        Array[AnyRef](l, cT),
+        true, false, element[T]))
+    }
   }
 
   implicit object LiftableSigmaDslBuilder
@@ -2099,6 +2106,13 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         SigmaDslBuilderClass.getMethod("xor", classOf[Sym], classOf[Sym]),
         Array[AnyRef](l, r),
         true, true, element[Coll[Byte]]))
+    }
+
+    def deserialize[T](bytes: Ref[Coll[Byte]])(implicit cT: Elem[T]): Ref[T] = {
+      asRep[T](mkMethodCall(source,
+        SigmaDslBuilderClass.getMethod("deserialize", classOf[Sym], classOf[Elem[_]]),
+        Array[AnyRef](bytes, cT),
+        true, true, element[T]))
     }
   }
 

@@ -5,10 +5,12 @@ import org.ergoplatform.ErgoBox
 import org.ergoplatform.validation.ValidationRules
 import scorex.crypto.hash.{Blake2b256, Sha256}
 import scorex.utils.Longs
-import sigma.ast.{AtLeast, SubstConstants}
+import sigma.Evaluation.stypeToRType
+import sigma.ast.{AtLeast, EvaluatedValue, SType, SubstConstants, Value}
 import sigma.crypto.{CryptoConstants, EcPointType, Ecp}
-import sigma.eval.Extensions.EvalCollOps
-import sigma.serialization.{GroupElementSerializer, SigmaSerializer}
+import sigma.eval.Extensions.{EvalCollOps, toAnyValue}
+import sigma.exceptions.InvalidType
+import sigma.serialization.{GroupElementSerializer, SigmaSerializer, ValueSerializer}
 import sigma.util.Extensions.BigIntegerOps
 import sigma.validation.SigmaValidationSettings
 import sigma.{AvlTree, BigInt, Box, Coll, CollBuilder, GroupElement, SigmaDslBuilder, SigmaProp, VersionContext}
@@ -199,6 +201,15 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
     val r = SigmaSerializer.startReader(encoded.toArray)
     val p = GroupElementSerializer.parse(r)
     this.GroupElement(p)
+  }
+
+  def deserialize[T](bytes: Coll[Byte])(implicit cT: RType[T]): T = {
+    val v = ValueSerializer.deserialize(bytes.toArray)
+    if(stypeToRType(v.tpe) == cT) {
+      v.asInstanceOf[EvaluatedValue[_]].value.asInstanceOf[T]
+    } else {
+      throw new InvalidType(s"Cannot deserialize($bytes): invalid type of value: $cT")
+    }
   }
 }
 

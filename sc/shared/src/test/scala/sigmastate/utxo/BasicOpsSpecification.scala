@@ -60,7 +60,8 @@ class BasicOpsSpecification extends CompilerTestingCommons
     "proofVar2" -> CAnyValue(propVar2)
     )
 
-  def test(name: String, env: ScriptEnv,
+  def test(name: String,
+           env: ScriptEnv,
            ext: Seq[VarBinding],
            script: String,
            propExp: SValue,
