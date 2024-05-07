@@ -4,8 +4,9 @@ import org.ergoplatform._
 import org.ergoplatform.validation._
 import sigma._
 import sigma.ast.SCollection.{SBooleanArray, SBoxArray, SByteArray, SByteArray2, SHeaderArray}
+import sigma.ast.SContextMethods.ContextFuncDom
 import sigma.ast.SMethod.{MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
-import sigma.ast.SType.TypeCode
+import sigma.ast.SType.{TypeCode, paramT, tT}
 import sigma.ast.syntax.{SValue, ValueOps}
 import sigma.data.OverloadHack.Overloaded1
 import sigma.data.{DataValueComparer, KeyValueColl, Nullable, RType, SigmaConstants}
@@ -1510,6 +1511,11 @@ case object SGlobalMethods extends MonoTypeMethods {
     .withInfo(Xor, "Byte-wise XOR of two collections of bytes",
       ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))
 
+  lazy val deserializeMethod = SMethod(
+    this, "deserialize", SFunc(Array(SGlobal, SByteArray), tT, Array(paramT)), 3, Xor.costKind) // todo: cost
+    .withInfo(Xor, "Byte-wise XOR of two collections of bytes",
+      ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))
+
   /** Implements evaluation of Global.xor method call ErgoTree node.
     * Called via reflection based on naming convention.
     * @see SMethod.evalMethod, Xor.eval, Xor.xorWithCosting
@@ -1519,9 +1525,27 @@ case object SGlobalMethods extends MonoTypeMethods {
     Xor.xorWithCosting(ls, rs)
   }
 
-  protected override def getMethods() = super.getMethods() ++ Seq(
-    groupGeneratorMethod,
-    xorMethod
-  )
+
+  def deserialize_eval[T](mc: MethodCall, G: SigmaDslBuilder, bytes: Coll[Byte], cT: RType[T])
+              (implicit E: ErgoTreeEvaluator): T = {
+    E.addSeqCost(Xor.costKind, bytes.length, Xor.opDesc) { () =>    // todo: cost
+      G.deserialize(bytes)(cT)
+    }
+  }
+
+  protected override def getMethods() = super.getMethods() ++ {
+    if (VersionContext.current.isV6SoftForkActivated) {
+      Seq(
+        groupGeneratorMethod,
+        xorMethod,
+        deserializeMethod
+      )
+    } else {
+      Seq(
+        groupGeneratorMethod,
+        xorMethod
+      )
+    }
+  }
 }
 

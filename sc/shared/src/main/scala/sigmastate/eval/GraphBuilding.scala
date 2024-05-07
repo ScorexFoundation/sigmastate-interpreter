@@ -3,7 +3,7 @@ package sigmastate.eval
 import org.ergoplatform._
 import scalan.MutableLazy
 import sigma.ast.SCollection.SByteArray
-import sigma.{SigmaException, ast}
+import sigma.{SigmaException, VersionContext, ast}
 import sigma.ast.TypeCodes.LastConstantCode
 import sigma.ast.Value.Typed
 import sigma.ast._
@@ -1139,6 +1139,10 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
               val c1 = asRep[Coll[Byte]](argsV(0))
               val c2 = asRep[Coll[Byte]](argsV(1))
               g.xor(c1, c2)
+            case SGlobalMethods.deserializeMethod.name if VersionContext.current.isV6SoftForkActivated =>
+              val c1 = asRep[Coll[Byte]](argsV(0))
+              val c2 = argsV(1).asInstanceOf[Elem[_]]
+              g.deserialize(c1)(c2)
             case _ => throwError
           }
           case _ => throwError

@@ -2,7 +2,9 @@ package sigmastate.utxo
 
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, R6, R8}
 import org.ergoplatform._
+import scorex.util.encode.Base16
 import sigma.Extensions.ArrayOps
+import sigma.VersionContext.V6SoftForkVersion
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.SType.AnyOps
 import sigma.data.{AvlTreeData, CAnyValue, CSigmaDslBuilder}
@@ -157,6 +159,27 @@ class BasicOpsSpecification extends CompilerTestingCommons
         reg1 -> UnitConstant.instance
       ))
     )
+  }
+
+  property("deserialize - int") {
+
+    val bytes = Base16.encode(ValueSerializer.serialize(IntConstant(5.toShort)))
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      /* an [sigmastate.exceptions.MethodNotFound] should be thrownBy {
+        test("executeFromVar", env, ext,
+          s"Global.deserialize[Int](fromBase16(\"$bytes\")) == 5",
+          null,
+          true
+        )
+      } */
+    } else {
+      test("executeFromVar", env, ext,
+        s"Global.deserialize[Int](fromBase16(\"$bytes\")) == 5",
+        null,
+        true
+      )
+    }
   }
 
   property("executeFromVar") {
