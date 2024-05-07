@@ -332,7 +332,6 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
       ), true)
     },
 
-
     { // SBigInt inherit methods from SNumericType.methods
       // however they are not resolvable via SBigInt.typeId
       import SNumericTypeMethods._

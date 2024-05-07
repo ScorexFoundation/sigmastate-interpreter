@@ -9,9 +9,15 @@ import scala.collection.mutable
 import scala.collection.immutable
 
 /** Reflection metadata and global dictionaries to access it.
-  * For each class of this module that needs reflection metadata,
-  * we register a class entry with the necessary information.
+  * Such metadata is only used on JS platform to support reflection-like interfaces of
+  * RClass, RMethod, RConstructor. These interfaces implemented on JVM using Java
+  * reflection.
+  *
+  * For each class that needs reflection metadata, we register a class entry using
+  * `registerClassEntry` method with the necessary information such as constructors and
+  * methods.
   * Only information that is needed at runtime is registered.
+  * @see mkConstructor, mkMethod
   */
 object ReflectionData {
   /** Descriptors of classes. */

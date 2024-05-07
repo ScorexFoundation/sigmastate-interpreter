@@ -29,8 +29,7 @@ trait CompilerTestingCommons extends TestingCommons
     with TestUtils with TestContexts with ValidationSpecification
     with CompilerTestsBase {
 
-  class TestingIRContext extends TestContext with IRContext {
-  }
+  class TestingIRContext extends TestContext with IRContext
 
   case class CompiledFunc[A,B]
     (script: String, bindings: Seq[VarBinding], expr: SValue, compiledTree: SValue, func: A => (B, CostDetails))

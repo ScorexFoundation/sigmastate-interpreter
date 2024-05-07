@@ -9,9 +9,6 @@ package sigma {
     * for details.
     */
   trait Colls extends Base { self: Library =>
-    import Coll._;
-    import CollBuilder._;
-    import WOption._;
     trait Coll[A] extends Def[Coll[A]] {
       implicit def eA: Elem[A];
       def length: Ref[Int];
@@ -37,7 +34,5 @@ package sigma {
       def xor(left: Ref[Coll[Byte]], right: Ref[Coll[Byte]]): Ref[Coll[Byte]];
       def replicate[T](n: Ref[Int], v: Ref[T]): Ref[Coll[T]];
     };
-    trait CollCompanion;
-    trait CollBuilderCompanion
   }
 }
