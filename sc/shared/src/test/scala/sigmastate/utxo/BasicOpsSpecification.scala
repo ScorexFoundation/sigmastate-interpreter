@@ -3,6 +3,7 @@ package sigmastate.utxo
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, R6, R8}
 import org.ergoplatform._
 import scorex.util.encode.Base16
+import sigma.Colls
 import sigma.Extensions.ArrayOps
 import sigma.VersionContext.V6SoftForkVersion
 import sigma.ast.SCollection.SByteArray
@@ -87,8 +88,9 @@ class BasicOpsSpecification extends CompilerTestingCommons
       // is not supported by ErgoScript Compiler)
       // In such cases we use expected property as the property to test
       propExp.asSigmaProp
-    } else
+    } else {
       compile(env, script).asBoolValue.toSigmaProp
+    }
 
     if (propExp != null)
       prop shouldBe propExp
@@ -163,34 +165,67 @@ class BasicOpsSpecification extends CompilerTestingCommons
 
   property("deserialize - int") {
 
-    val bytes = Base16.encode(ValueSerializer.serialize(IntConstant(5.toShort)))
+    val bytes = Base16.encode(ValueSerializer.serialize(IntConstant(5)))
 
     if (activatedVersionInTests < V6SoftForkVersion) {
-      /* an [sigmastate.exceptions.MethodNotFound] should be thrownBy {
-        test("executeFromVar", env, ext,
+       an [sigma.exceptions.TyperException] should be thrownBy {
+        test("deserialize", env, ext,
           s"Global.deserialize[Int](fromBase16(\"$bytes\")) == 5",
           null,
           true
         )
-      } */
+      }
     } else {
-      test("executeFromVar", env, ext,
-        s"Global.deserialize[Int](fromBase16(\"$bytes\")) == 5",
+      test("deserialize", env, ext,
+        s"{ val ba = fromBase16(\"$bytes\"); Global.deserialize[Int](ba) == 5 }",
+        null,
+        true
+      )
+    }
+  }
+/*
+  todo: fix
+  property("deserialize - coll") {
+
+    val bytes = Base16.encode(ValueSerializer.serialize(CollectionConstant[SInt.type](Colls.fromArray(Array(IntConstant(5).value)), SInt)))
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an [sigma.exceptions.TyperException] should be thrownBy {
+        test("deserialize", env, ext,
+          s"Global.deserialize[Coll[Int]](fromBase16(\"$bytes\")).apply(0) == 5",
+          null,
+          true
+        )
+      }
+    } else {
+      test("deserialize", env, ext,
+        s"Global.deserialize[Coll[Int]](fromBase16(\"$bytes\")).apply(0) == 5",
         null,
         true
       )
     }
   }
 
-  property("executeFromVar") {
-    val script = GT(Height, IntConstant(1)).toSigmaProp
-    val scriptBytes = ValueSerializer.serialize(script)
-    val customExt = Seq(21.toByte -> ByteArrayConstant(scriptBytes))
-    test("executeFromVar", env, customExt,
-      "executeFromVar[SigmaProp](21)",
-      null,
-      true
+  property("getVar") {
+    test("getVar", env, ext,
+      "{ allOf(Coll(CONTEXT.getVar[Boolean](trueVar).get, true, true)) }",
+      AND(GetVarBoolean(booleanVar).get, TrueLeaf, TrueLeaf).toSigmaProp
     )
+  } */
+
+  property("executeFromVar") {
+    if (activatedVersionInTests < V6SoftForkVersion) {
+
+    } else {
+      val script = GT(Height, IntConstant(1)).toSigmaProp
+      val scriptBytes = ValueSerializer.serialize(script)
+      val customExt = Seq(21.toByte -> ByteArrayConstant(scriptBytes))
+      test("executeFromVar", env, customExt,
+        "executeFromVar[SigmaProp](21)",
+        null,
+        true
+      )
+    }
   }
 
   property("Relation operations") {

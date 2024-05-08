@@ -2,9 +2,9 @@ package sigma.ast
 
 import org.ergoplatform._
 import org.ergoplatform.validation._
+import sigma.Evaluation.stypeToRType
 import sigma._
 import sigma.ast.SCollection.{SBooleanArray, SBoxArray, SByteArray, SByteArray2, SHeaderArray}
-import sigma.ast.SContextMethods.ContextFuncDom
 import sigma.ast.SMethod.{MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
 import sigma.ast.SType.{TypeCode, paramT, tT}
 import sigma.ast.syntax.{SValue, ValueOps}
@@ -1511,8 +1511,11 @@ case object SGlobalMethods extends MonoTypeMethods {
     .withInfo(Xor, "Byte-wise XOR of two collections of bytes",
       ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))
 
+  lazy val desJava = ownerType.reprClass.getMethod("deserialize", classOf[Coll[Byte]], classOf[RType[_]])
+
   lazy val deserializeMethod = SMethod(
     this, "deserialize", SFunc(Array(SGlobal, SByteArray), tT, Array(paramT)), 3, Xor.costKind) // todo: cost
+    .copy(irInfo = MethodIRInfo(None, Some(desJava), None))
     .withInfo(Xor, "Byte-wise XOR of two collections of bytes",
       ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))
 
@@ -1526,8 +1529,9 @@ case object SGlobalMethods extends MonoTypeMethods {
   }
 
 
-  def deserialize_eval[T](mc: MethodCall, G: SigmaDslBuilder, bytes: Coll[Byte], cT: RType[T])
-              (implicit E: ErgoTreeEvaluator): T = {
+  def deserialize_eval(mc: MethodCall, G: SigmaDslBuilder, bytes: Coll[Byte])
+              (implicit E: ErgoTreeEvaluator): Any = {
+    val cT = stypeToRType(mc.tpe)
     E.addSeqCost(Xor.costKind, bytes.length, Xor.opDesc) { () =>    // todo: cost
       G.deserialize(bytes)(cT)
     }

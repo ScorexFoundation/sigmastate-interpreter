@@ -1,11 +1,12 @@
 package sigma.serialization
 
 import sigma.ast.syntax._
-import sigma.ast.{MethodCall, SContextMethods, SMethod, SType, STypeSubst, Value, ValueCompanion}
+import sigma.ast.{MethodCall, SContextMethods, SGlobalMethods, SMethod, SType, STypeSubst, Value, ValueCompanion}
 import sigma.util.safeNewArray
 import SigmaByteWriter._
 import debox.cfor
 import sigma.ast.SContextMethods.BlockchainContextMethodNames
+import sigma.ast.SType.tT
 import sigma.serialization.CoreByteWriter.{ArgInfo, DataInfo}
 
 case class MethodCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value[SType]], STypeSubst) => Value[SType])
@@ -15,6 +16,7 @@ case class MethodCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value[S
   val methodCodeInfo: DataInfo[Byte] = ArgInfo("methodCode", "a code of the method")
   val objInfo: DataInfo[SValue] = ArgInfo("obj", "receiver object of this method call")
   val argsInfo: DataInfo[Seq[SValue]] = ArgInfo("args", "arguments of the method call")
+  val typeInfo: DataInfo[SType] = ArgInfo("type", "expected type of method result")
   val argsItemInfo = valuesItemInfo(argsInfo)
 
   override def serialize(mc: MethodCall, w: SigmaByteWriter): Unit = {
@@ -23,6 +25,9 @@ case class MethodCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value[S
     w.putValue(mc.obj, objInfo)
     assert(mc.args.nonEmpty)
     w.putValues(mc.args, argsInfo, argsItemInfo)
+    if(mc.method.name == SGlobalMethods.deserializeMethod.name){
+      w.putType(mc.tpe, typeInfo)
+    }
   }
 
   /** The SMethod instances in STypeCompanions may have type STypeIdent in methods types,
@@ -57,10 +62,17 @@ case class MethodCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value[S
 
     val specMethod = method.specializeFor(obj.tpe, types)
 
+    val subst: STypeSubst = if(method.name == SGlobalMethods.deserializeMethod.name) {
+      val tpe = r.getType()
+      Map(tT -> tpe)
+    } else {
+      Map.empty
+    }
+
     var isUsingBlockchainContext = specMethod.objType == SContextMethods &&
       BlockchainContextMethodNames.contains(method.name)
     r.wasUsingBlockchainContext ||= isUsingBlockchainContext
 
-    cons(obj, specMethod, args, Map.empty)
+    cons(obj, specMethod, args, subst)
   }
 }

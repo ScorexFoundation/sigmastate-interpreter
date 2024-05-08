@@ -38,7 +38,7 @@ trait CompilerTestsBase extends TestsBase {
   def checkSerializationRoundTrip(v: SValue): Unit = {
     val compiledTreeBytes = ValueSerializer.serialize(v)
     withClue(s"(De)Serialization roundtrip failed for the tree:") {
-      ValueSerializer.deserialize(compiledTreeBytes) shouldEqual v
+       ValueSerializer.deserialize(compiledTreeBytes) shouldEqual v
     }
   }
 
