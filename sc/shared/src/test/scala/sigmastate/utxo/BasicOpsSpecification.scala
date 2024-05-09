@@ -8,7 +8,7 @@ import sigma.Extensions.ArrayOps
 import sigma.VersionContext.V6SoftForkVersion
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.SType.AnyOps
-import sigma.data.{AvlTreeData, CAnyValue, CSigmaDslBuilder}
+import sigma.data.{AvlTreeData, CAnyValue, CSigmaDslBuilder, ProveDlog}
 import sigma.util.StringUtil._
 import sigma.ast._
 import sigma.ast.syntax._
@@ -178,8 +178,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
       deserTest()
     }
   }
-/*
-  todo: fix
+
   property("deserialize - coll") {
 
     val bytes = Base16.encode(ValueSerializer.serialize(CollectionConstant[SInt.type](Colls.fromArray(Array(IntConstant(5).value)), SInt)))
@@ -187,20 +186,21 @@ class BasicOpsSpecification extends CompilerTestingCommons
     if (activatedVersionInTests < V6SoftForkVersion) {
       an [sigma.exceptions.TyperException] should be thrownBy {
         test("deserialize", env, ext,
-          s"Global.deserialize[Coll[Int]](fromBase16(\"$bytes\")).apply(0) == 5",
+          s"{val ba = fromBase16(\"$bytes\"); val coll = Global.deserialize[Coll[Int]](ba); coll(0) == 5 }",
           null,
           true
         )
       }
     } else {
       test("deserialize", env, ext,
-        s"Global.deserialize[Coll[Int]](fromBase16(\"$bytes\")).apply(0) == 5",
+        s"{val ba = fromBase16(\"$bytes\"); val coll = Global.deserialize[Coll[Int]](ba); coll(0) == 5 }",
         null,
         true
       )
     }
   }
 
+  /*
   property("getVar") {
     test("getVar", env, ext,
       "{ allOf(Coll(CONTEXT.getVar[Boolean](trueVar).get, true, true)) }",
@@ -219,17 +219,26 @@ class BasicOpsSpecification extends CompilerTestingCommons
     )
   }
 
-  /* todo: fix
-  property("executeFromVar - Coll[Byte]") {
-    val bytes = ByteArrayConstant(Colls.fromArray(Array.fill(5)(1.toByte)))
-    val valueBytes = ValueSerializer.serialize(bytes)
+  property("executeFromVar - Int") {
+    val valueBytes = ValueSerializer.serialize(Plus(IntConstant(2), IntConstant(3)))
     val customExt = Seq(21.toByte -> ByteArrayConstant(valueBytes))
     test("executeFromVar", env, customExt,
-      "{val ba = executeFromVar[Coll[Byte]](21); ba.size == 5 }",
+      "{ executeFromVar[Int](21) == 5 }",
       null,
       true
     )
-  } */
+  }
+
+  property("executeFromVar - Coll[Byte]") {
+    val bytes = Slice(ByteArrayConstant(Colls.fromArray(Array.fill(5)(1.toByte))), IntConstant(1), IntConstant(3))
+    val valueBytes = ValueSerializer.serialize(bytes)
+    val customExt = Seq(21.toByte -> ByteArrayConstant(valueBytes))
+    test("executeFromVar", env, customExt,
+      "{val ba = executeFromVar[Coll[Byte]](21); ba.size == 2 }",
+      null,
+      true
+    )
+  }
 
   property("Relation operations") {
     test("R1", env, ext,

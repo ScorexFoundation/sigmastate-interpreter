@@ -203,11 +203,11 @@ abstract class Base { scalan: Scalan =>
     }
   }
 
-  case class DeserializeContextDef[V <: SType](d: DeserializeContext[V]) extends Def[V] {
+  case class DeserializeContextDef[V <: SType](d: DeserializeContext[V], e: Elem[V]) extends Def[V] {
     /** Type of a resulting value produced by the operation represented by this definition.
       * For example, if this definition represents application of `+: (Int, Int) => Int` operation
       * then the result type is Int and `resultType` should return IntElement. */
-    override def resultType: Elem[V] = ???
+    override def resultType: Elem[V] = e
   }
 
   /** Base class for virtualized instances of type companions.
