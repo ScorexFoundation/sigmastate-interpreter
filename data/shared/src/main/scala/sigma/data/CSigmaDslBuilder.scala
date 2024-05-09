@@ -16,6 +16,7 @@ import sigma.validation.SigmaValidationSettings
 import sigma.{AvlTree, BigInt, Box, Coll, CollBuilder, GroupElement, SigmaDslBuilder, SigmaProp, VersionContext}
 
 import java.math.BigInteger
+import scala.reflect.ClassTag
 
 /** A default implementation of [[SigmaDslBuilder]] interface.
   *
@@ -204,11 +205,15 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
   }
 
   def deserialize[T](bytes: Coll[Byte])(implicit cT: RType[T]): T = {
-    val v = ValueSerializer.deserialize(bytes.toArray)
-    if(stypeToRType(v.tpe) == cT) {
-      v.asInstanceOf[EvaluatedValue[_]].value.asInstanceOf[T]
-    } else {
+    if(!cT.isInstanceOf[PrimitiveType[_]]) {
       throw new InvalidType(s"Cannot deserialize($bytes): invalid type of value: $cT")
+    }
+
+    cT.classTag match {
+      case ClassTag.Int => scorex.utils.Ints.fromByteArray(bytes.toArray).asInstanceOf[T]
+      case BoxClassTag => scorex.utils.Ints.fromByteArray(bytes.toArray).asInstanceOf[T]
+      case _ =>
+        throw new InvalidType(s"Cannot deserialize($bytes): invalid type of value: $cT")
     }
   }
 }

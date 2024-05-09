@@ -3,7 +3,8 @@ package sigmastate.utxo
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, R6, R8}
 import org.ergoplatform._
 import scorex.util.encode.Base16
-import sigma.Colls
+import scorex.utils.Ints
+import sigma.{Colls, SigmaProp}
 import sigma.Extensions.ArrayOps
 import sigma.VersionContext.V6SoftForkVersion
 import sigma.ast.SCollection.SByteArray
@@ -164,8 +165,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
   }
 
   property("deserialize - int") {
-
-    val bytes = Base16.encode(ValueSerializer.serialize(IntConstant(5)))
+    val bytes = Base16.encode(Ints.toByteArray(5))
     def deserTest() = {test("deserialize", env, ext,
       s"{ val ba = fromBase16(\"$bytes\"); Global.deserialize[Int](ba) == 5 }",
       null,
@@ -183,22 +183,41 @@ class BasicOpsSpecification extends CompilerTestingCommons
 
     val bytes = Base16.encode(ValueSerializer.serialize(CollectionConstant[SInt.type](Colls.fromArray(Array(IntConstant(5).value)), SInt)))
 
-    if (activatedVersionInTests < V6SoftForkVersion) {
-      an [sigma.exceptions.TyperException] should be thrownBy {
-        test("deserialize", env, ext,
-          s"{val ba = fromBase16(\"$bytes\"); val coll = Global.deserialize[Coll[Int]](ba); coll(0) == 5 }",
-          null,
-          true
-        )
-      }
-    } else {
+    def deserTest() = {
       test("deserialize", env, ext,
         s"{val ba = fromBase16(\"$bytes\"); val coll = Global.deserialize[Coll[Int]](ba); coll(0) == 5 }",
         null,
         true
       )
     }
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an [sigma.exceptions.TyperException] should be thrownBy deserTest()
+    } else {
+      an [java.lang.reflect.InvocationTargetException] should be thrownBy deserTest()
+    }
   }
+
+  property("deserialize - long roundtrip") {
+    
+  }
+
+  property("deserialize - box") {
+
+  }
+
+  property("deserialize - bigint") {
+
+  }
+
+  property("deserialize - header") {
+
+  }
+
+  property("deserialize - short") {
+
+  }
+
 
   /*
   property("getVar") {
@@ -235,6 +254,17 @@ class BasicOpsSpecification extends CompilerTestingCommons
     val customExt = Seq(21.toByte -> ByteArrayConstant(valueBytes))
     test("executeFromVar", env, customExt,
       "{val ba = executeFromVar[Coll[Byte]](21); ba.size == 2 }",
+      null,
+      true
+    )
+  }
+
+  property("executeFromVar - deserialize") {
+    val script = DeserializeContext(21.toByte, SSigmaProp)
+    val scriptBytes = ValueSerializer.serialize(script)
+    val customExt = Seq(21.toByte -> ByteArrayConstant(scriptBytes))
+    an [Exception] should be thrownBy test("executeFromVar", env, customExt,
+      "executeFromVar[SigmaProp](21)",
       null,
       true
     )
