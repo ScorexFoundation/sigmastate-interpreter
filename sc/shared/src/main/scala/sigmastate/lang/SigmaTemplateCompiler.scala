@@ -2,9 +2,9 @@ package sigmastate.lang
 
 import fastparse.Parsed
 import org.ergoplatform.sdk.ContractTemplate
-import sigmastate.eval.CompiletimeIRContext
+import sigmastate.eval.{CompiletimeIRContext, msgCostLimitError}
 import org.ergoplatform.sdk.Parameter
-import sigma.ast.SourceContext
+import sigma.ast.{Constant, SType, SourceContext}
 import sigma.ast.syntax.SValue
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.parsers.ParserException
@@ -23,7 +23,11 @@ class SigmaTemplateCompiler(networkPrefix: Byte) {
     ContractParser.parse(source) match {
       case Parsed.Success(template, _) => {
         implicit val ir = new CompiletimeIRContext
-        val result = sigmaCompiler.compileParsed(env, template.body)
+        val mergedEnv = template.signature.params
+            .collect { case ContractParam(name, tpe, Some(defaultValue)) =>
+              name -> defaultValue
+            }.toMap ++ env
+        val result = sigmaCompiler.compileParsed(mergedEnv, template.body)
         assemble(template, result.buildTree)
       }
       case f: Parsed.Failure =>
@@ -46,7 +50,7 @@ class SigmaTemplateCompiler(networkPrefix: Byte) {
       name = parsed.signature.name,
       description = parsed.docs.description,
       constTypes = constTypes.toIndexedSeq,
-      constValues = constValues,
+      constValues = constValues.map(_.map(_.map(_.value))),
       parameters = contractParams.toIndexedSeq,
       expressionTree = expr.toSigmaProp
     )

@@ -34,8 +34,8 @@ class ContractParserSpec extends AnyPropSpec with ScalaCheckPropertyChecks with 
 
     parsed.name shouldBe "contractName"
     parsed.params should contain theSameElementsInOrderAs Seq(
-      ContractParam("p1", SInt, Some(IntConstant(5).asWrappedType)),
-      ContractParam("p2", SString, Some(StringConstant("default string").asWrappedType)),
+      ContractParam("p1", SInt, Some(IntConstant(5))),
+      ContractParam("p2", SString, Some(StringConstant("default string"))),
       ContractParam("param3", SLong, None)
     )
   }
