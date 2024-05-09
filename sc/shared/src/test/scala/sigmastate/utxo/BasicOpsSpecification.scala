@@ -194,12 +194,27 @@ class BasicOpsSpecification extends CompilerTestingCommons
     if (activatedVersionInTests < V6SoftForkVersion) {
       an [sigma.exceptions.TyperException] should be thrownBy deserTest()
     } else {
+      // only primitive types are supported, so the test fails
       an [java.lang.reflect.InvocationTargetException] should be thrownBy deserTest()
     }
   }
 
   property("deserialize - long roundtrip") {
-    
+    def deserTest() = test("deserialize", env, ext,
+      s"""{
+            val l = 5L;
+            val ba = longToByteArray(l);
+            Global.deserialize[Long](ba) == l
+          }""",
+      null,
+      true
+    )
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an [sigma.exceptions.TyperException] should be thrownBy deserTest()
+    } else {
+      deserTest()
+    }
   }
 
   property("deserialize - box") {

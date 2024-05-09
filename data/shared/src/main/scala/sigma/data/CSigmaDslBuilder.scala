@@ -209,12 +209,13 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
       throw new InvalidType(s"Cannot deserialize($bytes): invalid type of value: $cT")
     }
 
-    cT.classTag match {
-      case ClassTag.Int => scorex.utils.Ints.fromByteArray(bytes.toArray).asInstanceOf[T]
-      case BoxClassTag => scorex.utils.Ints.fromByteArray(bytes.toArray).asInstanceOf[T]
+    val res = cT.classTag match {
+      case ClassTag.Int => scorex.utils.Ints.fromByteArray(bytes.toArray)
+      case ClassTag.Long => scorex.utils.Longs.fromByteArray(bytes.toArray)
       case _ =>
         throw new InvalidType(s"Cannot deserialize($bytes): invalid type of value: $cT")
     }
+    res.asInstanceOf[T]
   }
 }
 
