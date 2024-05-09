@@ -202,12 +202,6 @@ abstract class Base { scalan: Scalan =>
     }
   }
 
-  /** Logical AND between two pattern matches of the save value `x`.
-    * Can be used to construct patterns like `case P1 && P2 => ...` */
-  object && {
-    def unapply[T](x: T): Option[(T,T)] = Some((x, x))
-  }
-
   /** Base class for virtualized instances of type companions.
     * Each virtualized entity type (trait or class) may have virtualized companion class. */
   abstract class CompanionDef[T] extends Def[T] {

@@ -402,18 +402,13 @@ trait TreeBuilding extends SigmaLibrary { IR: IRContext =>
         mkMultiplyGroup(obj.asGroupElement, arg.asGroupElement)
 
       // Fallback MethodCall rule: should be the last in this list of cases
-      case d@Def(MethodCall(objSym, m, argSyms, _)) =>
+      case Def(MethodCall(objSym, m, argSyms, _)) =>
         val obj = recurse[SType](objSym)
         val args = argSyms.collect { case argSym: Sym => recurse[SType](argSym) }
         MethodsContainer.getMethod(obj.tpe, m.getName) match {
           case Some(method) =>
             val specMethod = method.specializeFor(obj.tpe, args.map(_.tpe))
-            val typeSubst: STypeSubst = if(m.getName == SGlobalMethods.deserializeMethod.name) {
-              Map.empty
-            } else {
-              Map.empty
-            }
-            builder.mkMethodCall(obj, specMethod, args.toIndexedSeq, typeSubst)
+            builder.mkMethodCall(obj, specMethod, args.toIndexedSeq, Map.empty)
           case None =>
             error(s"Cannot find method ${m.getName} in object $obj")
         }
