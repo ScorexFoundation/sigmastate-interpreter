@@ -105,7 +105,7 @@ object ContractDoc {
  * @param tpe          The type of the parameter.
  * @param defaultValue The default value assigned to the parameter, if it exists.
  */
-case class ContractParam(name: String, tpe: SType, defaultValue: Option[Constant[SType]])
+case class ContractParam(name: String, tpe: SType, defaultValue: Option[SType#WrappedType])
 
 /**
  * Represents the signature of a contract.
@@ -189,7 +189,7 @@ object ContractParser {
 
     def paramDefault[_: P] = P(WL.? ~ `=` ~ WL.? ~ ExprLiteral)
 
-    def param[_: P] = P(WL.? ~ Id.! ~ ":" ~ Type ~ paramDefault.?).map(s => ContractParam(s._1, s._2, s._3))
+    def param[_: P] = P(WL.? ~ Id.! ~ ":" ~ Type ~ paramDefault.?).map(s => ContractParam(s._1, s._2, s._3.map(_.value)))
 
     def params[_: P] = P("(" ~ param.rep(1, ",").? ~ ")")
   }

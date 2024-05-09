@@ -50,7 +50,7 @@ class SigmaTemplateCompiler(networkPrefix: Byte) {
       name = parsed.signature.name,
       description = parsed.docs.description,
       constTypes = constTypes.toIndexedSeq,
-      constValues = constValues.map(_.map(_.map(_.value))),
+      constValues = constValues,
       parameters = contractParams.toIndexedSeq,
       expressionTree = expr.toSigmaProp
     )
