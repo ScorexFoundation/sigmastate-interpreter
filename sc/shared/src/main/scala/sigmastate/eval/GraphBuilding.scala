@@ -560,8 +560,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         sigmaDslBuilder.deserialize(asRep[Coll[Byte]](eval(bytes)))(stypeToElem(tpe))
 
       case d@DeserializeContext(_, _) =>
-        ???
-        // eval(DeserializeBytes(OptionGet(mkGetVar(id, SByteArray)), tpe))
+        DeserializeContextDef(d)
 
       case ValUse(valId, _) =>
         env.getOrElse(valId, !!!(s"ValUse $valId not found in environment $env"))

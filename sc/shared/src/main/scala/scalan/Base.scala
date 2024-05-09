@@ -1,6 +1,7 @@
 package scalan
 
 import debox.{cfor, Buffer => DBuffer}
+import sigma.ast.{DeserializeContext, SType}
 import sigma.data.{AVHashMap, Nullable, RType}
 import sigma.data.OverloadHack.Overloaded1
 import sigma.util.StringUtil
@@ -202,6 +203,13 @@ abstract class Base { scalan: Scalan =>
     }
   }
 
+  case class DeserializeContextDef[V <: SType](d: DeserializeContext[V]) extends Def[V] {
+    /** Type of a resulting value produced by the operation represented by this definition.
+      * For example, if this definition represents application of `+: (Int, Int) => Int` operation
+      * then the result type is Int and `resultType` should return IntElement. */
+    override def resultType: Elem[V] = ???
+  }
+
   /** Base class for virtualized instances of type companions.
     * Each virtualized entity type (trait or class) may have virtualized companion class. */
   abstract class CompanionDef[T] extends Def[T] {
@@ -376,7 +384,6 @@ abstract class Base { scalan: Scalan =>
     /** Returns the string like `x45: Int = Const(10)` */
     def toStringWithDefinition: String
     def varNameWithType = varName + ":" + elem.name
-
   }
 
   /** Untyped shortcut sinonim of Ref, which is used as untyped reference to graph nodes (definitions).

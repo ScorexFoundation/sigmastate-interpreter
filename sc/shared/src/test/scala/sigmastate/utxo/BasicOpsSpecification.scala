@@ -166,21 +166,16 @@ class BasicOpsSpecification extends CompilerTestingCommons
   property("deserialize - int") {
 
     val bytes = Base16.encode(ValueSerializer.serialize(IntConstant(5)))
+    def deserTest() = {test("deserialize", env, ext,
+      s"{ val ba = fromBase16(\"$bytes\"); Global.deserialize[Int](ba) == 5 }",
+      null,
+      true
+    )}
 
     if (activatedVersionInTests < V6SoftForkVersion) {
-       an [sigma.exceptions.TyperException] should be thrownBy {
-        test("deserialize", env, ext,
-          s"Global.deserialize[Int](fromBase16(\"$bytes\")) == 5",
-          null,
-          true
-        )
-      }
+       an [sigma.exceptions.TyperException] should be thrownBy deserTest()
     } else {
-      test("deserialize", env, ext,
-        s"{ val ba = fromBase16(\"$bytes\"); Global.deserialize[Int](ba) == 5 }",
-        null,
-        true
-      )
+      deserTest()
     }
   }
 /*
@@ -213,20 +208,28 @@ class BasicOpsSpecification extends CompilerTestingCommons
     )
   } */
 
-  property("executeFromVar") {
-    if (activatedVersionInTests < V6SoftForkVersion) {
-
-    } else {
-      val script = GT(Height, IntConstant(1)).toSigmaProp
-      val scriptBytes = ValueSerializer.serialize(script)
-      val customExt = Seq(21.toByte -> ByteArrayConstant(scriptBytes))
-      test("executeFromVar", env, customExt,
-        "executeFromVar[SigmaProp](21)",
-        null,
-        true
-      )
-    }
+  property("executeFromVar - SigmaProp") {
+    val script = GT(Height, IntConstant(-1)).toSigmaProp
+    val scriptBytes = ValueSerializer.serialize(script)
+    val customExt = Seq(21.toByte -> ByteArrayConstant(scriptBytes))
+    test("executeFromVar", env, customExt,
+      "executeFromVar[SigmaProp](21)",
+      null,
+      true
+    )
   }
+
+  /* todo: fix
+  property("executeFromVar - Coll[Byte]") {
+    val bytes = ByteArrayConstant(Colls.fromArray(Array.fill(5)(1.toByte)))
+    val valueBytes = ValueSerializer.serialize(bytes)
+    val customExt = Seq(21.toByte -> ByteArrayConstant(valueBytes))
+    test("executeFromVar", env, customExt,
+      "{val ba = executeFromVar[Coll[Byte]](21); ba.size == 5 }",
+      null,
+      true
+    )
+  } */
 
   property("Relation operations") {
     test("R1", env, ext,
