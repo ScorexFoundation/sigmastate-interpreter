@@ -94,11 +94,11 @@ class SigmaTemplateCompilerTest extends AnyPropSpec with ScalaCheckPropertyCheck
     val template = compiler.compile(Map.empty, source)
 
     template.parameters should contain theSameElementsInOrderAs IndexedSeq(
-      Parameter("p", "", 0),
+      Parameter("p", "", 0)
     )
     template.constTypes should contain theSameElementsInOrderAs Seq(SBoolean)
     template.constValues.get should contain theSameElementsInOrderAs IndexedSeq(
-      Some(true),
+      Some(true)
     )
 
     val sigmaCompiler = new SigmaCompiler(ErgoAddressEncoder.MainnetNetworkPrefix)
@@ -119,13 +119,13 @@ class SigmaTemplateCompilerTest extends AnyPropSpec with ScalaCheckPropertyCheck
 
     template.parameters should contain theSameElementsInOrderAs IndexedSeq(
       Parameter("low", "", 0),
-      Parameter("high", "", 1),
+      Parameter("high", "", 1)
     )
     template.constTypes should contain theSameElementsInOrderAs Seq(SInt, SInt)
     // check parsed default values
     template.constValues.get should contain theSameElementsInOrderAs IndexedSeq(
       Some(0),
-      None,
+      None
     )
 
     val sigmaCompiler = new SigmaCompiler(ErgoAddressEncoder.MainnetNetworkPrefix)
