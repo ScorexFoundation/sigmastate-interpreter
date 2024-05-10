@@ -5,18 +5,18 @@ import org.ergoplatform.ErgoBox
 import org.ergoplatform.validation.ValidationRules
 import scorex.crypto.hash.{Blake2b256, Sha256}
 import scorex.utils.Longs
-import sigma.Evaluation.stypeToRType
-import sigma.ast.{AtLeast, BoxConstant, EvaluatedValue, SType, SubstConstants, Value}
+import sigma.ast.{AtLeast, SubstConstants}
 import sigma.crypto.{CryptoConstants, EcPointType, Ecp}
-import sigma.eval.Extensions.{EvalCollOps, toAnyValue}
+import sigma.eval.Extensions.EvalCollOps
 import sigma.exceptions.InvalidType
-import sigma.serialization.{GroupElementSerializer, SigmaSerializer, ValueSerializer}
+import sigma.serialization.{GroupElementSerializer, SigmaSerializer}
 import sigma.util.Extensions.BigIntegerOps
 import sigma.validation.SigmaValidationSettings
 import sigma.{AvlTree, BigInt, Box, Coll, CollBuilder, GroupElement, SigmaDslBuilder, SigmaProp, VersionContext}
 
 import java.math.BigInteger
-import scala.reflect.{ClassTag, classTag}
+import java.nio.ByteBuffer
+import scala.reflect.ClassTag
 
 /** A default implementation of [[SigmaDslBuilder]] interface.
   *
@@ -205,7 +205,9 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
   }
 
   def deserialize[T](bytes: Coll[Byte])(implicit cT: RType[T]): T = {
+
     val res = cT.classTag match {
+      case ClassTag.Short => ByteBuffer.wrap(bytes.toArray).getShort
       case ClassTag.Int => scorex.utils.Ints.fromByteArray(bytes.toArray)
       case ClassTag.Long => byteArrayToLong(bytes)
       case sigma.data.BigIntClassTag => byteArrayToBigInt(bytes)

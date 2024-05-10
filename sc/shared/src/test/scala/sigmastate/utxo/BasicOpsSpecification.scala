@@ -3,7 +3,7 @@ package sigmastate.utxo
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, R6, R8}
 import org.ergoplatform._
 import scorex.util.encode.Base16
-import scorex.utils.Ints
+import scorex.utils.{Ints, Shorts}
 import sigma.{Colls, SigmaProp}
 import sigma.Extensions.ArrayOps
 import sigma.VersionContext.V6SoftForkVersion
@@ -252,13 +252,51 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
+  property("deserialize - short") {
+    val s = (-1925).toShort
+    def deserTest() = test("deserialize", env, ext,
+      s"""{
+            val ba = fromBase16("${Base16.encode(Shorts.toByteArray(s))}");
+            Global.deserialize[Short](ba) == -1925
+          }""",
+      null,
+      true
+    )
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an [sigma.exceptions.TyperException] should be thrownBy deserTest()
+    } else {
+      deserTest()
+    }
+  }
+
+  property("deserialize - group element") {
+    val s = (-1925).toShort
+    def deserTest() = test("deserialize", env, ext,
+      s"""{
+            val ba = fromBase16("${Base16.encode(Shorts.toByteArray(s))}");
+            Global.deserialize[Short](ba) == -1925
+          }""",
+      null,
+      true
+    )
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an [sigma.exceptions.TyperException] should be thrownBy deserTest()
+    } else {
+      deserTest()
+    }
+  }
+
+  property("deserialize - avltree") {
+
+  }
+
   property("deserialize - header") {
 
   }
 
-  property("deserialize - short") {
 
-  }
 
 
   /*
