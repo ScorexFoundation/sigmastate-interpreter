@@ -6,7 +6,7 @@ import org.ergoplatform.validation.ValidationRules
 import scorex.crypto.hash.{Blake2b256, Sha256}
 import scorex.utils.Longs
 import sigma.Evaluation.stypeToRType
-import sigma.ast.{AtLeast, EvaluatedValue, SType, SubstConstants, Value}
+import sigma.ast.{AtLeast, BoxConstant, EvaluatedValue, SType, SubstConstants, Value}
 import sigma.crypto.{CryptoConstants, EcPointType, Ecp}
 import sigma.eval.Extensions.{EvalCollOps, toAnyValue}
 import sigma.exceptions.InvalidType
@@ -16,7 +16,7 @@ import sigma.validation.SigmaValidationSettings
 import sigma.{AvlTree, BigInt, Box, Coll, CollBuilder, GroupElement, SigmaDslBuilder, SigmaProp, VersionContext}
 
 import java.math.BigInteger
-import scala.reflect.ClassTag
+import scala.reflect.{ClassTag, classTag}
 
 /** A default implementation of [[SigmaDslBuilder]] interface.
   *
@@ -205,15 +205,14 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
   }
 
   def deserialize[T](bytes: Coll[Byte])(implicit cT: RType[T]): T = {
-    if(!cT.isInstanceOf[PrimitiveType[_]]) {
-      throw new InvalidType(s"Cannot deserialize($bytes): invalid type of value: $cT")
-    }
+    val ba = bytes.toArray
 
     val res = cT.classTag match {
-      case ClassTag.Int => scorex.utils.Ints.fromByteArray(bytes.toArray)
-      case ClassTag.Long => scorex.utils.Longs.fromByteArray(bytes.toArray)
+      case ClassTag.Int => scorex.utils.Ints.fromByteArray(ba)
+      case ClassTag.Long => scorex.utils.Longs.fromByteArray(ba)
+      case sigma.data.BoxClassTag => CBox(ErgoBox.sigmaSerializer.fromBytes(ba))
       case _ =>
-        throw new InvalidType(s"Cannot deserialize($bytes): invalid type of value: $cT")
+        throw new InvalidType(s"Cannot deserialize($bytes): invalid type of value: ${cT.classTag}")
     }
     res.asInstanceOf[T]
   }

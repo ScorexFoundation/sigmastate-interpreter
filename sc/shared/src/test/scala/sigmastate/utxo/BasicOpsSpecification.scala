@@ -217,8 +217,22 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
-  property("deserialize - box") {
+  property("deserialize - box rountrip") {
+    def deserTest() = test("deserialize", env, ext,
+      s"""{
+            val b = INPUTS(0);
+            val ba = b.bytes;
+            Global.deserialize[Box](ba) == b
+          }""",
+      null,
+      true
+    )
 
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an [sigma.exceptions.TyperException] should be thrownBy deserTest()
+    } else {
+      deserTest()
+    }
   }
 
   property("deserialize - bigint") {
