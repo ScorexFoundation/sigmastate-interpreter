@@ -212,6 +212,7 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
       case ClassTag.Long => byteArrayToLong(bytes)
       case sigma.data.BigIntClassTag => byteArrayToBigInt(bytes)
       case sigma.data.BoxClassTag => CBox(ErgoBox.sigmaSerializer.fromBytes(bytes.toArray))
+      case sigma.data.GroupElementClassTag => CGroupElement(GroupElementSerializer.fromBytes(bytes.toArray))
       case _ =>
         throw new InvalidType(s"Cannot deserialize($bytes): invalid type of value: ${cT.classTag}")
     }

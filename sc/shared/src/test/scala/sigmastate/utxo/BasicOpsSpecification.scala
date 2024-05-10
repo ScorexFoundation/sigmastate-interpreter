@@ -24,6 +24,7 @@ import sigma.ast.Apply
 import sigma.eval.EvalSettings
 import sigma.exceptions.InvalidType
 import sigma.serialization.ValueSerializer
+import sigmastate.utils.Helpers
 import sigmastate.utils.Helpers._
 
 import java.math.BigInteger
@@ -271,18 +272,21 @@ class BasicOpsSpecification extends CompilerTestingCommons
   }
 
   property("deserialize - group element") {
-    val s = (-1925).toShort
-    def deserTest() = test("deserialize", env, ext,
+    val ge = Helpers.decodeGroupElement("026930cb9972e01534918a6f6d6b8e35bc398f57140d13eb3623ea31fbd069939b")
+    val ba = Base16.encode(ge.getEncoded.toArray)
+    def deserTest() = test("deserialize", env, Seq(21.toByte -> GroupElementConstant(ge)),
       s"""{
-            val ba = fromBase16("${Base16.encode(Shorts.toByteArray(s))}");
-            Global.deserialize[Short](ba) == -1925
+            val ge = getVar[GroupElement](21).get
+            val ba = fromBase16("$ba");
+            val ge2 = Global.deserialize[GroupElement](ba)
+            ba == ge2.getEncoded && ge == ge2
           }""",
       null,
       true
     )
 
     if (activatedVersionInTests < V6SoftForkVersion) {
-      an [sigma.exceptions.TyperException] should be thrownBy deserTest()
+       an [sigma.exceptions.TyperException] should be thrownBy deserTest()
     } else {
       deserTest()
     }
