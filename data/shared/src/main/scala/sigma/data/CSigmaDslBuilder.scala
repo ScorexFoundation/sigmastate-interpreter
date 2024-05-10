@@ -205,12 +205,11 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
   }
 
   def deserialize[T](bytes: Coll[Byte])(implicit cT: RType[T]): T = {
-    val ba = bytes.toArray
-
     val res = cT.classTag match {
-      case ClassTag.Int => scorex.utils.Ints.fromByteArray(ba)
-      case ClassTag.Long => scorex.utils.Longs.fromByteArray(ba)
-      case sigma.data.BoxClassTag => CBox(ErgoBox.sigmaSerializer.fromBytes(ba))
+      case ClassTag.Int => scorex.utils.Ints.fromByteArray(bytes.toArray)
+      case ClassTag.Long => byteArrayToLong(bytes)
+      case sigma.data.BigIntClassTag => byteArrayToBigInt(bytes)
+      case sigma.data.BoxClassTag => CBox(ErgoBox.sigmaSerializer.fromBytes(bytes.toArray))
       case _ =>
         throw new InvalidType(s"Cannot deserialize($bytes): invalid type of value: ${cT.classTag}")
     }

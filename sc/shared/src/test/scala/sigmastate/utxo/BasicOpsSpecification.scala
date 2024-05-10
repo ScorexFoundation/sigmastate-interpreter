@@ -236,7 +236,20 @@ class BasicOpsSpecification extends CompilerTestingCommons
   }
 
   property("deserialize - bigint") {
+    def deserTest() = test("deserialize", env, ext,
+      s"""{
+            val ba = fromBase16("028a5b7f7f7f7f7f7f6c");
+            Global.deserialize[BigInt](ba) == byteArrayToBigInt(ba)
+          }""",
+      null,
+      true
+    )
 
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an [sigma.exceptions.TyperException] should be thrownBy deserTest()
+    } else {
+      deserTest()
+    }
   }
 
   property("deserialize - header") {
