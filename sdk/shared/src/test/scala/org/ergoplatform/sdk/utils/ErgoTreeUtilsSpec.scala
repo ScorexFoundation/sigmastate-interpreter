@@ -16,7 +16,7 @@ class ErgoTreeUtilsSpec extends AnyPropSpec with ScalaCheckPropertyChecks with M
          |Bit 3: 1 	-- size of the whole tree is serialized after the header byte
          |Bit 4: 1 	-- constant segregation is used for this ErgoTree
          |Bit 5: 0 	-- reserved (should be 0)
-         |Bit 6: 0 	-- reserved for GZIP compression (should be 0)
+         |Bit 6: 0 	-- reserved (should be 0)
          |Bit 7: 0 	-- header contains more than 1 byte (default == 0)
          |""".stripMargin
   }
