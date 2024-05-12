@@ -23,7 +23,7 @@ import sigmastate.interpreter.Interpreter._
 import sigma.ast.Apply
 import sigma.eval.EvalSettings
 import sigma.exceptions.InvalidType
-import sigma.serialization.ValueSerializer
+import sigma.serialization.{ErgoTreeSerializer, ValueSerializer}
 import sigmastate.utils.Helpers
 import sigmastate.utils.Helpers._
 
@@ -318,6 +318,29 @@ class BasicOpsSpecification extends CompilerTestingCommons
       an [sigma.exceptions.TyperException] should be thrownBy deserTest()
     } else {
       deserTest()
+    }
+  }
+
+  property("deserialize - sigmaprop roundtrip - non evaluated") {
+
+    val script = GT(Height, IntConstant(-1)).toSigmaProp
+    val scriptBytes = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(ErgoTree.fromProposition(script))
+    val customExt = Seq(21.toByte -> ByteArrayConstant(scriptBytes))
+
+    def deserTest() = test("deserialize", env, customExt,
+      s"""{
+            val ba = getVar[Coll[Byte]](21).get
+            val prop = Global.deserialize[SigmaProp](ba)
+            prop
+          }""",
+      null,
+      true
+    )
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an [sigma.exceptions.TyperException] should be thrownBy deserTest()
+    } else {
+      an [Exception] should be thrownBy deserTest()
     }
   }
 

@@ -216,8 +216,13 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
       case sigma.data.SigmaPropClassTag =>
         //todo : better exception, check for isInstance [EvaluatedValue[_]]
         ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(bytes.toArray).root match {
-          case Left(_) => throw new InvalidType(s"Cannot deserialize($bytes): invalid type of value: ${cT.classTag}")
-          case Right(prop) => prop.asInstanceOf[EvaluatedValue[_]].value
+          case Left(_) => throw new InvalidType(s"Cannot deserialize($bytes): unparsed tree provided")
+          case Right(prop) =>
+            if(prop.isInstanceOf[EvaluatedValue[_]]) {
+              prop.asInstanceOf[EvaluatedValue[_]].value
+            } else {
+              throw new InvalidType(s"Cannot deserialize($bytes): prop is not evaluated: $prop}")
+            }
         }
       case _ =>
         throw new InvalidType(s"Cannot deserialize($bytes): invalid type of value: ${cT.classTag}")
