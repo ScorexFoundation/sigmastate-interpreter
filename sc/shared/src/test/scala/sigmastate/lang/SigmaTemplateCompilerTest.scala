@@ -197,7 +197,6 @@ class SigmaTemplateCompilerTest extends AnyPropSpec with ScalaCheckPropertyCheck
       """/**/
        |@contract def contractName(low: Int = 0, high: Int) = sigmaProp(low < HEIGHT && HEIGHT < high) && condition
        |""".stripMargin
-    val env: ScriptEnv = Map.empty // no value for "high"
     assertExceptionThrown(
       templateCompiler.compile(source),
       exceptionLike[TyperException]("Cannot assign type for variable 'condition' because it is not found in env")

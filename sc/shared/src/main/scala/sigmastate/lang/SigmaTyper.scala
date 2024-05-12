@@ -13,8 +13,11 @@ import sigma.serialization.OpCodes
 
 import scala.collection.mutable.ArrayBuffer
 
-/**
-  * Type inference and analysis for Sigma expressions.
+/** Type inference and analysis for Sigma expressions.
+  * @param builder SigmaBuilder instance to create new nodes
+  * @param predefFuncRegistry predefined functions registry used to resolve names
+  * @param typeEnv environment with types of variables/names
+  * @param lowerMethodCalls if true, then MethodCall nodes are lowered to the corresponding ErgoTree nodes
   */
 class SigmaTyper(val builder: SigmaBuilder,
                  predefFuncRegistry: PredefinedFuncRegistry,
