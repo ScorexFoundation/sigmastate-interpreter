@@ -183,6 +183,10 @@ trait TreeBuilding extends SigmaLibrary { IR: IRContext =>
           case None =>
             mkConstant[tpe.type](x.asInstanceOf[tpe.WrappedType], tpe)
         }
+      case Def(IR.ConstantPlaceholder(id, elem)) =>
+        val tpe = elemToSType(elem)
+        mkConstantPlaceholder[tpe.type](id, tpe)
+
       case Def(wc: LiftedConst[a,_]) =>
         val tpe = elemToSType(s.elem)
         mkConstant[tpe.type](wc.constValue.asInstanceOf[tpe.WrappedType], tpe)

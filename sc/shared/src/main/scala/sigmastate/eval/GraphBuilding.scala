@@ -381,6 +381,18 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
   def error(msg: String) = throw new GraphBuildingException(msg, None)
   def error(msg: String, srcCtx: Option[SourceContext]) = throw new GraphBuildingException(msg, srcCtx)
 
+  /** Graph node to represent a placeholder of a constant in ErgoTree.
+    * @param id Zero based index in ErgoTree.constants array.
+    * @param resultType type descriptor of the constant value.
+    */
+  case class ConstantPlaceholder[T](id: Int, resultType: Elem[T]) extends Def[T]
+
+  /** Smart constructor method for [[ConstantPlaceholder]], should be used instead of the
+    * class constructor.
+    */
+  @inline def constantPlaceholder[T](id: Int, eT: Elem[T]): Ref[T] = ConstantPlaceholder(id, eT)
+
+
   /** Translates the given typed expression to IR graph representing a function from
     * Context to some type T.
     * @param env contains values for each named constant used
@@ -465,6 +477,8 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
           val resV = toRep(v)(e)
           resV
       }
+      case sigma.ast.ConstantPlaceholder(id, tpe) =>
+        constantPlaceholder(id, stypeToElem(tpe))
       case sigma.ast.Context => ctx
       case Global => sigmaDslBuilder
       case Height => ctx.HEIGHT

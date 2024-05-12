@@ -9,8 +9,9 @@ import sigma.ast.syntax.{SValue, SigmaPropValue}
 import sigma.serialization.ValueSerializer
 import sigmastate.eval.IRContext
 import sigma.ast.syntax.ValueOps
+import sigmastate.helpers.{NegativeTesting, SigmaPPrint}
 
-trait CompilerTestsBase extends TestsBase {
+trait CompilerTestsBase extends TestsBase with NegativeTesting {
   protected val _lowerMethodCalls = new DynamicVariable[Boolean](true)
 
   /** Returns true if MethodCall nodes should be lowered by TypeChecker to the
@@ -62,5 +63,13 @@ trait CompilerTestsBase extends TestsBase {
     prop shouldBe expected
     val tree = mkTestErgoTree(prop)
     (tree, prop)
+  }
+
+  /** Checks expectation pretty printing the actual value if there is a difference. */
+  def checkEquals[T](actual: T, expected: T): Unit = {
+    if (expected != actual) {
+      SigmaPPrint.pprintln(actual, width = 100)
+    }
+    actual shouldBe expected
   }
 }

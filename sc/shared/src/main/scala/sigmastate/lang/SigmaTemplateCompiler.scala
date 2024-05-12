@@ -1,12 +1,10 @@
 package sigmastate.lang
 
 import fastparse.Parsed
-import org.ergoplatform.sdk.ContractTemplate
-import sigmastate.eval.CompiletimeIRContext
-import org.ergoplatform.sdk.Parameter
+import org.ergoplatform.sdk.{ContractTemplate, Parameter}
 import sigma.ast.SourceContext
 import sigma.ast.syntax.SValue
-import sigmastate.interpreter.Interpreter.ScriptEnv
+import sigmastate.eval.CompiletimeIRContext
 import sigmastate.lang.parsers.ParserException
 
 /** Compiler which compiles Ergo contract templates into a [[ContractTemplate]]. */
@@ -19,13 +17,14 @@ class SigmaTemplateCompiler(networkPrefix: Byte) {
    * @param source The ErgoScript contract source code.
    * @return The contract template.
    */
-  def compile(env: ScriptEnv, source: String): ContractTemplate = {
+  def compile(source: String): ContractTemplate = {
     ContractParser.parse(source) match {
-      case Parsed.Success(template, _) => {
+      case Parsed.Success(parsedTemplate, _) =>
         implicit val ir = new CompiletimeIRContext
-        val result = sigmaCompiler.compileParsed(env, template.body)
-        assemble(template, result.buildTree)
-      }
+        val parEnv = parsedTemplate.signature.params.map { p => p.name -> p.tpe }.toMap
+        val result = sigmaCompiler.compileParsed(parEnv, parsedTemplate.body)
+        assemble(parsedTemplate, result.buildTree)
+
       case f: Parsed.Failure =>
         throw new ParserException(s"Contract template syntax error: $f", Some(SourceContext.fromParserFailure(f)))
     }
