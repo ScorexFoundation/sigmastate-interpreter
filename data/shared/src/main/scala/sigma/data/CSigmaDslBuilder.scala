@@ -5,11 +5,11 @@ import org.ergoplatform.ErgoBox
 import org.ergoplatform.validation.ValidationRules
 import scorex.crypto.hash.{Blake2b256, Sha256}
 import scorex.utils.Longs
-import sigma.ast.{AtLeast, SubstConstants}
+import sigma.ast.{AtLeast, EvaluatedValue, SigmaPropConstant, SubstConstants}
 import sigma.crypto.{CryptoConstants, EcPointType, Ecp}
 import sigma.eval.Extensions.EvalCollOps
 import sigma.exceptions.InvalidType
-import sigma.serialization.{GroupElementSerializer, SigmaSerializer}
+import sigma.serialization.{ErgoTreeSerializer, GroupElementSerializer, SigmaSerializer}
 import sigma.util.Extensions.BigIntegerOps
 import sigma.validation.SigmaValidationSettings
 import sigma.{AvlTree, BigInt, Box, Coll, CollBuilder, GroupElement, SigmaDslBuilder, SigmaProp, VersionContext}
@@ -213,6 +213,12 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
       case sigma.data.BigIntClassTag => byteArrayToBigInt(bytes)
       case sigma.data.BoxClassTag => CBox(ErgoBox.sigmaSerializer.fromBytes(bytes.toArray))
       case sigma.data.GroupElementClassTag => CGroupElement(GroupElementSerializer.fromBytes(bytes.toArray))
+      case sigma.data.SigmaPropClassTag =>
+        //todo : better exception, check for isInstance [EvaluatedValue[_]]
+        ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(bytes.toArray).root match {
+          case Left(_) => throw new InvalidType(s"Cannot deserialize($bytes): invalid type of value: ${cT.classTag}")
+          case Right(prop) => prop.asInstanceOf[EvaluatedValue[_]].value
+        }
       case _ =>
         throw new InvalidType(s"Cannot deserialize($bytes): invalid type of value: ${cT.classTag}")
     }

@@ -9,7 +9,7 @@ import sigma.Extensions.ArrayOps
 import sigma.VersionContext.V6SoftForkVersion
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.SType.AnyOps
-import sigma.data.{AvlTreeData, CAnyValue, CSigmaDslBuilder, ProveDlog}
+import sigma.data.{AvlTreeData, CAND, CAnyValue, CSigmaDslBuilder, CSigmaProp, ProveDlog}
 import sigma.util.StringUtil._
 import sigma.ast._
 import sigma.ast.syntax._
@@ -48,7 +48,9 @@ class BasicOpsSpecification extends CompilerTestingCommons
   val booleanVar = 9.toByte
   val propVar1 = 10.toByte
   val propVar2 = 11.toByte
-  val lastExtVar = propVar2
+  val propVar3 = 12.toByte
+  val propBytesVar1 = 13.toByte
+  val lastExtVar = propBytesVar1
 
   val ext: Seq[VarBinding] = Seq(
     (intVar1, IntConstant(1)), (intVar2, IntConstant(2)),
@@ -77,7 +79,14 @@ class BasicOpsSpecification extends CompilerTestingCommons
       override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = {
         val p1 = dlogSecrets(0).publicImage
         val p2 = dlogSecrets(1).publicImage
-        (ext ++ Seq(propVar1 -> SigmaPropConstant(p1), propVar2 -> SigmaPropConstant(p2))).toMap
+        val d1 = dhSecrets(0).publicImage
+
+        (ext ++ Seq(
+          propVar1 -> SigmaPropConstant(p1),
+          propVar2 -> SigmaPropConstant(p2),
+          propVar3 -> SigmaPropConstant(CSigmaProp(CAND(Seq(p1, d1)))),
+          propBytesVar1 -> ByteArrayConstant(CSigmaProp(CAND(Seq(p1, d1))).propBytes)
+        )).toMap
       }
       override val evalSettings: EvalSettings = DefaultEvalSettings.copy(
         isMeasureOperationTime = true,
@@ -240,7 +249,8 @@ class BasicOpsSpecification extends CompilerTestingCommons
     def deserTest() = test("deserialize", env, ext,
       s"""{
             val ba = fromBase16("028a5b7f7f7f7f7f7f6c");
-            Global.deserialize[BigInt](ba) == byteArrayToBigInt(ba)
+            val b = Global.deserialize[BigInt](ba)
+            b == byteArrayToBigInt(ba)
           }""",
       null,
       true
@@ -292,6 +302,25 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
+  property("deserialize - sigmaprop roundtrip") {
+
+    def deserTest() = test("deserialize", env, ext,
+      s"""{
+            val ba = getVar[Coll[Byte]]($propBytesVar1).get
+            val prop = Global.deserialize[SigmaProp](ba)
+            prop == getVar[SigmaProp]($propVar3).get && prop
+          }""",
+      null,
+      true
+    )
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an [sigma.exceptions.TyperException] should be thrownBy deserTest()
+    } else {
+      deserTest()
+    }
+  }
+
   property("deserialize - avltree") {
 
   }
@@ -300,16 +329,6 @@ class BasicOpsSpecification extends CompilerTestingCommons
 
   }
 
-
-
-
-  /*
-  property("getVar") {
-    test("getVar", env, ext,
-      "{ allOf(Coll(CONTEXT.getVar[Boolean](trueVar).get, true, true)) }",
-      AND(GetVarBoolean(booleanVar).get, TrueLeaf, TrueLeaf).toSigmaProp
-    )
-  } */
 
   property("executeFromVar - SigmaProp") {
     val script = GT(Height, IntConstant(-1)).toSigmaProp
