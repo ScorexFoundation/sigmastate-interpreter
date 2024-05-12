@@ -1,6 +1,5 @@
 package sigmastate.lang
 
-import org.ergoplatform._
 import sigma.ast.SCollection.{SBooleanArray, SByteArray}
 import sigma.ast._
 import sigma.ast.syntax.SValue
@@ -19,6 +18,7 @@ import scala.collection.mutable.ArrayBuffer
   */
 class SigmaTyper(val builder: SigmaBuilder,
                  predefFuncRegistry: PredefinedFuncRegistry,
+                 typeEnv: Map[String, SType],
                  lowerMethodCalls: Boolean) {
   import SigmaTyper._
   import builder._
@@ -28,8 +28,10 @@ class SigmaTyper(val builder: SigmaBuilder,
 
   import SType.tT
 
-  private val predefinedEnv: Map[String, SType] =
-      predefFuncRegistry.funcs.map { case (k, f) => k -> f.declaration.tpe }.toMap
+  private val predefinedEnv: Map[String, SType] = {
+      val predefFuncs = predefFuncRegistry.funcs.map { case (k, f) => k -> f.declaration.tpe }.toMap
+      predefFuncs ++ typeEnv
+  }
 
   private def processGlobalMethod(srcCtx: Nullable[SourceContext],
                                   method: SMethod,
