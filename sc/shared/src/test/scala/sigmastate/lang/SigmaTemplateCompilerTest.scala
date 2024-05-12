@@ -4,7 +4,9 @@ import org.ergoplatform.ErgoAddressEncoder
 import org.ergoplatform.sdk.Parameter
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import sigma.ast.{BinAnd, BoolToSigmaProp, ConstantPlaceholder, Height, LT, SBoolean, SInt, SLong, SString, TrueLeaf}
+import sigma.VersionContext
+import sigma.ast.ErgoTree.HeaderType
+import sigma.ast.{BinAnd, BoolToSigmaProp, ConstantPlaceholder, ErgoTree, FalseLeaf, Height, LT, SBoolean, SInt, SLong, SString, TrueLeaf}
 import sigma.exceptions.TyperException
 import sigmastate.helpers.SigmaPPrint
 import sigmastate.interpreter.Interpreter.ScriptEnv
@@ -96,6 +98,27 @@ class SigmaTemplateCompilerTest extends AnyPropSpec with ScalaCheckPropertyCheck
 
     val expectedExpr = BoolToSigmaProp(ConstantPlaceholder(0, SBoolean))
     template.expressionTree shouldBe expectedExpr
+
+    val expectedTree = new ErgoTree(
+      HeaderType @@ 26.toByte,   // use ErgoTreeUtils to get explanation
+      Vector(TrueLeaf),
+      Right(BoolToSigmaProp(ConstantPlaceholder(0, SBoolean))))
+
+    expectedTree.version shouldBe VersionContext.JitActivationVersion
+    expectedTree.hasSize shouldBe true
+    expectedTree.isConstantSegregation shouldBe true
+
+    // apply using default values declared in the parameters
+    template.applyTemplate(
+      version = Some(VersionContext.JitActivationVersion),
+      paramValues = Map.empty
+    ) shouldBe expectedTree
+
+    // apply overriding the default values
+    template.applyTemplate(
+      version = Some(VersionContext.JitActivationVersion),
+      paramValues = Map("p" -> FalseLeaf)
+    ) shouldBe expectedTree.copy(constants = Vector(FalseLeaf))
   }
 
   property("uses given environment when provided (overriding default value)") {
@@ -115,8 +138,6 @@ class SigmaTemplateCompilerTest extends AnyPropSpec with ScalaCheckPropertyCheck
       Some(0),
       None
     )
-
-    SigmaPPrint.pprintln(template.expressionTree, 100)
 
     val expectedExpr = BoolToSigmaProp(
       BinAnd(
