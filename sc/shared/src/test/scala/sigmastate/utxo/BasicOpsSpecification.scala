@@ -2,14 +2,17 @@ package sigmastate.utxo
 
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, R6, R8}
 import org.ergoplatform._
+import scorex.crypto.authds.{ADKey, ADValue}
+import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.encode.Base16
-import scorex.utils.{Ints, Shorts}
+import scorex.utils.{Ints, Longs, Shorts}
 import sigma.{Colls, SigmaProp}
 import sigma.Extensions.ArrayOps
 import sigma.VersionContext.V6SoftForkVersion
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.SType.AnyOps
-import sigma.data.{AvlTreeData, CAND, CAnyValue, CSigmaDslBuilder, CSigmaProp, ProveDlog}
+import sigma.data.{AvlTreeClassTag, AvlTreeData, AvlTreeFlags, CAND, CAnyValue, CSigmaDslBuilder, CSigmaProp, ProveDlog}
 import sigma.util.StringUtil._
 import sigma.ast._
 import sigma.ast.syntax._
@@ -345,7 +348,27 @@ class BasicOpsSpecification extends CompilerTestingCommons
   }
 
   property("deserialize - avltree") {
+    val elements = Seq(123, 22)
+    val treeElements = elements.map(i => Longs.toByteArray(i)).map(s => (ADKey @@@ Blake2b256(s), ADValue @@ s))
+    val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
+    treeElements.foreach(s => avlProver.performOneOperation(Insert(s._1, s._2)))
+    avlProver.generateProof()
+    val treeData = new AvlTreeData(avlProver.digest.toColl, AvlTreeFlags.ReadOnly, 32, None)
+    val treeBytes = AvlTreeData.serializer.toBytes(treeData)
 
+    val customExt = Seq(21.toByte -> ByteArrayConstant(treeBytes))
+
+    def deserTest() = test("deserialize", env, customExt,
+      s"""{
+            val ba = getVar[Coll[Byte]](21).get
+            val tree = Global.deserialize[AvlTree](ba)
+            tree.digest == fromBase16(${Base16.encode(treeData.digest.toArray)}) && tree.enabledOperations ==  0
+          }""",
+      null,
+      true
+    )
+
+    an [Exception] should be thrownBy deserTest()
   }
 
   property("deserialize - header") {
