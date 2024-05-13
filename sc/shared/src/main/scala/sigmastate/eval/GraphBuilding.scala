@@ -550,6 +550,10 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val e = stypeToElem(optTpe.elemType)
         ctx.getVar(id)(e)
 
+      case d: DeserializeContext[T] =>
+        val e = stypeToElem(d.tpe).asInstanceOf[Elem[T]]
+        DeserializeContextDef(d, e)
+
       case ValUse(valId, _) =>
         env.getOrElse(valId, !!!(s"ValUse $valId not found in environment $env"))
 
