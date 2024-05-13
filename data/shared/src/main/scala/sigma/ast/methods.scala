@@ -1203,6 +1203,10 @@ case object SAvlTreeMethods extends MonoTypeMethods {
          |
         """.stripMargin)
 
+  lazy val toBytesMethod = SMethod(this, "toBytes", SFunc(SAvlTree, SByteArray), 1, FixedCost(JitCost(50)))
+    .withIRInfo(MethodCallIrBuilder)
+
+
   /** The proof may contain keys, labels and values, we don't know for sure how many,
     * but we assume the cost is O(proof.length).
     * So the following is an approximation of the proof parsing cost.
