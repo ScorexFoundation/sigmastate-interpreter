@@ -10,7 +10,6 @@ import SigmaPredef._
 import sigma.ast.syntax._
 import sigma.exceptions.TyperException
 import sigma.serialization.OpCodes
-import sigmastate.eval.DeserializeBytes
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -133,19 +132,6 @@ class SigmaTyper(val builder: SigmaBuilder,
       val newObj = assignType(env, obj)
       val newArgs = args.map(assignType(env, _))
       obj.tpe match {
-        case SGlobal =>
-          SGlobalMethods.method(n) match {
-            case Some(method) =>
-              val srcCtx = sel.sourceContext
-              if(method.name == SGlobalMethods.deserializeMethod.name) {
-                val global = Global.withPropagatedSrcCtx(srcCtx)
-                DeserializeBytes(args(0).asInstanceOf[Value[SByteArray]], rangeTpe)
-              } else {
-                processGlobalMethod(srcCtx, method, newArgs)
-              }
-            case _ =>
-              error(s"Cannot find Global method: $n", bound.sourceContext)
-          }
         case p: SProduct =>
           MethodsContainer.getMethod(p, n) match {
             case Some(method @ SMethod(_, _, genFunTpe @ SFunc(_, _, _), _, _, _, _, _)) =>

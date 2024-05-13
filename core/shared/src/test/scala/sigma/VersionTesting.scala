@@ -6,11 +6,13 @@ import scala.util.DynamicVariable
 
 trait VersionTesting {
 
-  /** Tests run for both version 2 & version 3 */
+  /** In v5.x we run test for only one activated version on the network (== 2).
+    * In the branch for v6.0 the new version 3 should be added so that the tests run for both.
+    */
   protected val activatedVersions: Seq[Byte] =
     (0 to VersionContext.MaxSupportedScriptVersion).map(_.toByte).toArray[Byte]
 
-  private[sigma] val _currActivatedVersion = new DynamicVariable[Byte](3) // v6.x by default
+  private[sigma] val _currActivatedVersion = new DynamicVariable[Byte](2) // v5.x by default
 
   /** Current activated version used in tests. */
   def activatedVersionInTests: Byte = _currActivatedVersion.value
@@ -39,10 +41,9 @@ trait VersionTesting {
           _ + 1) { j =>
           val treeVersion = ergoTreeVers(j)
           // for each tree version up to currently activated, set it up and execute block
-          _currErgoTreeVersion.withValue(treeVersion) {
-            VersionContext.withVersions(activatedVersion, treeVersion)(block)
-          }
+          _currErgoTreeVersion.withValue(treeVersion)(block)
         }
+
       }
     }
   }

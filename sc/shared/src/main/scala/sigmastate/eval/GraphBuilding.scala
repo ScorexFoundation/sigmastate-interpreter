@@ -2,8 +2,7 @@ package sigmastate.eval
 
 import org.ergoplatform._
 import scalan.MutableLazy
-import sigma.ast.SCollection.SByteArray
-import sigma.{SigmaException, VersionContext, ast}
+import sigma.{SigmaException, ast}
 import sigma.ast.TypeCodes.LastConstantCode
 import sigma.ast.Value.Typed
 import sigma.ast._
@@ -19,25 +18,6 @@ import sigma.exceptions.GraphBuildingException
 import sigma.serialization.OpCodes
 
 import scala.collection.mutable.ArrayBuffer
-
-
-case class DeserializeBytes[V <: SType](bytes: Value[SByteArray], tpe: V) extends NotReadyValue[V] {
-  /** The companion node descriptor with opCode, cost and other metadata. */
-  override def companion: ValueCompanion = ???
-
-  /** Every value represents an operation and that operation can be associated with a function type,
-    * describing functional meaning of the operation, kind of operation signature.
-    * Thus, we can obtain global operation identifiers by combining Value.opName with Value.opType,
-    * so that if (v1.opName == v2.opName) && (v1.opType == v2.opType) then v1 and v2 are functionally
-    * point-wise equivalent.
-    * This in particular means that if two _different_ ops have the same opType they _should_ have
-    * different opNames.
-    * Thus defined op ids are used in a v4.x Cost Model - a table of all existing primitives coupled with
-    * performance parameters.
-    * */
-  override def opType: SFunc = Value.notSupportedError(this, "opType")
-}
-
 
 /** Perform translation of typed expression given by [[Value]] to a graph in IRContext.
   * Which be than be translated to [[ErgoTree]] by using [[TreeBuilding]].
@@ -556,9 +536,6 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val e = stypeToElem(optTpe.elemType)
         ctx.getVar(id)(e)
 
-      case DeserializeBytes(bytes, tpe) =>
-        sigmaDslBuilder.deserialize(asRep[Coll[Byte]](eval(bytes)))(stypeToElem(tpe))
-
       case d: DeserializeContext[T] =>
         val e = stypeToElem(d.tpe).asInstanceOf[Elem[T]]
         DeserializeContextDef(d, e)
@@ -942,7 +919,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         sigmaDslBuilder.decodePoint(bytes)
 
       // fallback rule for MethodCall, should be the last case in the list
-      case sigma.ast.MethodCall(obj, method, args, typeSubst) =>
+      case sigma.ast.MethodCall(obj, method, args, _) =>
         val objV = eval(obj)
         val argsV = args.map(eval)
         (objV, method.objType) match {
@@ -1160,10 +1137,6 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
               val c1 = asRep[Coll[Byte]](argsV(0))
               val c2 = asRep[Coll[Byte]](argsV(1))
               g.xor(c1, c2)
-            case SGlobalMethods.deserializeMethod.name if VersionContext.current.isV6SoftForkActivated =>
-              val c1 = asRep[Coll[Byte]](argsV(0))
-              val c2 = stypeToElem(method.stype.tRange.withSubstTypes(typeSubst))
-              g.deserialize(c1)(c2)
             case _ => throwError
           }
           case _ => throwError

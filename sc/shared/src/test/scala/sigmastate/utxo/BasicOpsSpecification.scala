@@ -2,17 +2,11 @@ package sigmastate.utxo
 
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, R6, R8}
 import org.ergoplatform._
-import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert}
-import scorex.crypto.hash.{Blake2b256, Digest32}
-import scorex.util.encode.Base16
-import scorex.utils.{Ints, Longs, Shorts}
-import sigma.{Colls, SigmaProp}
+import sigma.Colls
 import sigma.Extensions.ArrayOps
-import sigma.VersionContext.V6SoftForkVersion
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.SType.AnyOps
-import sigma.data.{AvlTreeClassTag, AvlTreeData, AvlTreeFlags, CAND, CAnyValue, CSigmaDslBuilder, CSigmaProp, ProveDlog}
+import sigma.data.{AvlTreeData, CAnyValue, CSigmaDslBuilder}
 import sigma.util.StringUtil._
 import sigma.ast._
 import sigma.ast.syntax._
@@ -26,8 +20,7 @@ import sigmastate.interpreter.Interpreter._
 import sigma.ast.Apply
 import sigma.eval.EvalSettings
 import sigma.exceptions.InvalidType
-import sigma.serialization.{ErgoTreeSerializer, ValueSerializer}
-import sigmastate.utils.Helpers
+import sigma.serialization.ValueSerializer
 import sigmastate.utils.Helpers._
 
 import java.math.BigInteger
@@ -51,9 +44,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
   val booleanVar = 9.toByte
   val propVar1 = 10.toByte
   val propVar2 = 11.toByte
-  val propVar3 = 12.toByte
-  val propBytesVar1 = 13.toByte
-  val lastExtVar = propBytesVar1
+  val lastExtVar = propVar2
 
   val ext: Seq[VarBinding] = Seq(
     (intVar1, IntConstant(1)), (intVar2, IntConstant(2)),
@@ -70,8 +61,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
     "proofVar2" -> CAnyValue(propVar2)
     )
 
-  def test(name: String,
-           env: ScriptEnv,
+  def test(name: String, env: ScriptEnv,
            ext: Seq[VarBinding],
            script: String,
            propExp: SValue,
@@ -82,14 +72,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
       override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = {
         val p1 = dlogSecrets(0).publicImage
         val p2 = dlogSecrets(1).publicImage
-        val d1 = dhSecrets(0).publicImage
-
-        (ext ++ Seq(
-          propVar1 -> SigmaPropConstant(p1),
-          propVar2 -> SigmaPropConstant(p2),
-          propVar3 -> SigmaPropConstant(CSigmaProp(CAND(Seq(p1, d1)))),
-          propBytesVar1 -> ByteArrayConstant(CSigmaProp(CAND(Seq(p1, d1))).propBytes)
-        )).toMap
+        (ext ++ Seq(propVar1 -> SigmaPropConstant(p1), propVar2 -> SigmaPropConstant(p2))).toMap
       }
       override val evalSettings: EvalSettings = DefaultEvalSettings.copy(
         isMeasureOperationTime = true,
@@ -102,9 +85,8 @@ class BasicOpsSpecification extends CompilerTestingCommons
       // is not supported by ErgoScript Compiler)
       // In such cases we use expected property as the property to test
       propExp.asSigmaProp
-    } else {
+    } else
       compile(env, script).asBoolValue.toSigmaProp
-    }
 
     if (propExp != null)
       prop shouldBe propExp
@@ -177,205 +159,6 @@ class BasicOpsSpecification extends CompilerTestingCommons
     )
   }
 
-  property("deserialize - int") {
-    val bytes = Base16.encode(Ints.toByteArray(5))
-    def deserTest() = {test("deserialize", env, ext,
-      s"{ val ba = fromBase16(\"$bytes\"); Global.deserialize[Int](ba) == 5 }",
-      null,
-      true
-    )}
-
-    if (activatedVersionInTests < V6SoftForkVersion) {
-       an [sigma.exceptions.TyperException] should be thrownBy deserTest()
-    } else {
-      deserTest()
-    }
-  }
-
-  property("deserialize - coll") {
-
-    val bytes = Base16.encode(ValueSerializer.serialize(CollectionConstant[SInt.type](Colls.fromArray(Array(IntConstant(5).value)), SInt)))
-
-    def deserTest() = {
-      test("deserialize", env, ext,
-        s"{val ba = fromBase16(\"$bytes\"); val coll = Global.deserialize[Coll[Int]](ba); coll(0) == 5 }",
-        null,
-        true
-      )
-    }
-
-    if (activatedVersionInTests < V6SoftForkVersion) {
-      an [sigma.exceptions.TyperException] should be thrownBy deserTest()
-    } else {
-      // only primitive types are supported, so the test fails
-      an [java.lang.reflect.InvocationTargetException] should be thrownBy deserTest()
-    }
-  }
-
-  property("deserialize - long roundtrip") {
-    def deserTest() = test("deserialize", env, ext,
-      s"""{
-            val l = 5L;
-            val ba = longToByteArray(l);
-            Global.deserialize[Long](ba) == l
-          }""",
-      null,
-      true
-    )
-
-    if (activatedVersionInTests < V6SoftForkVersion) {
-      an [sigma.exceptions.TyperException] should be thrownBy deserTest()
-    } else {
-      deserTest()
-    }
-  }
-
-  property("deserialize - box rountrip") {
-    def deserTest() = test("deserialize", env, ext,
-      s"""{
-            val b = INPUTS(0);
-            val ba = b.bytes;
-            Global.deserialize[Box](ba) == b
-          }""",
-      null,
-      true
-    )
-
-    if (activatedVersionInTests < V6SoftForkVersion) {
-      an [sigma.exceptions.TyperException] should be thrownBy deserTest()
-    } else {
-      deserTest()
-    }
-  }
-
-  property("deserialize - bigint") {
-    def deserTest() = test("deserialize", env, ext,
-      s"""{
-            val ba = fromBase16("028a5b7f7f7f7f7f7f6c");
-            val b = Global.deserialize[BigInt](ba)
-            b == byteArrayToBigInt(ba)
-          }""",
-      null,
-      true
-    )
-
-    if (activatedVersionInTests < V6SoftForkVersion) {
-      an [sigma.exceptions.TyperException] should be thrownBy deserTest()
-    } else {
-      deserTest()
-    }
-  }
-
-  property("deserialize - short") {
-    val s = (-1925).toShort
-    def deserTest() = test("deserialize", env, ext,
-      s"""{
-            val ba = fromBase16("${Base16.encode(Shorts.toByteArray(s))}");
-            Global.deserialize[Short](ba) == -1925
-          }""",
-      null,
-      true
-    )
-
-    if (activatedVersionInTests < V6SoftForkVersion) {
-      an [sigma.exceptions.TyperException] should be thrownBy deserTest()
-    } else {
-      deserTest()
-    }
-  }
-
-  property("deserialize - group element") {
-    val ge = Helpers.decodeGroupElement("026930cb9972e01534918a6f6d6b8e35bc398f57140d13eb3623ea31fbd069939b")
-    val ba = Base16.encode(ge.getEncoded.toArray)
-    def deserTest() = test("deserialize", env, Seq(21.toByte -> GroupElementConstant(ge)),
-      s"""{
-            val ge = getVar[GroupElement](21).get
-            val ba = fromBase16("$ba");
-            val ge2 = Global.deserialize[GroupElement](ba)
-            ba == ge2.getEncoded && ge == ge2
-          }""",
-      null,
-      true
-    )
-
-    if (activatedVersionInTests < V6SoftForkVersion) {
-       an [sigma.exceptions.TyperException] should be thrownBy deserTest()
-    } else {
-      deserTest()
-    }
-  }
-
-  property("deserialize - sigmaprop roundtrip") {
-
-    def deserTest() = test("deserialize", env, ext,
-      s"""{
-            val ba = getVar[Coll[Byte]]($propBytesVar1).get
-            val prop = Global.deserialize[SigmaProp](ba)
-            prop == getVar[SigmaProp]($propVar3).get && prop
-          }""",
-      null,
-      true
-    )
-
-    if (activatedVersionInTests < V6SoftForkVersion) {
-      an [sigma.exceptions.TyperException] should be thrownBy deserTest()
-    } else {
-      deserTest()
-    }
-  }
-
-  property("deserialize - sigmaprop roundtrip - non evaluated") {
-
-    val script = GT(Height, IntConstant(-1)).toSigmaProp
-    val scriptBytes = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(ErgoTree.fromProposition(script))
-    val customExt = Seq(21.toByte -> ByteArrayConstant(scriptBytes))
-
-    def deserTest() = test("deserialize", env, customExt,
-      s"""{
-            val ba = getVar[Coll[Byte]](21).get
-            val prop = Global.deserialize[SigmaProp](ba)
-            prop
-          }""",
-      null,
-      true
-    )
-
-    if (activatedVersionInTests < V6SoftForkVersion) {
-      an [sigma.exceptions.TyperException] should be thrownBy deserTest()
-    } else {
-      an [Exception] should be thrownBy deserTest()
-    }
-  }
-
-  property("deserialize - avltree") {
-    val elements = Seq(123, 22)
-    val treeElements = elements.map(i => Longs.toByteArray(i)).map(s => (ADKey @@@ Blake2b256(s), ADValue @@ s))
-    val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
-    treeElements.foreach(s => avlProver.performOneOperation(Insert(s._1, s._2)))
-    avlProver.generateProof()
-    val treeData = new AvlTreeData(avlProver.digest.toColl, AvlTreeFlags.ReadOnly, 32, None)
-    val treeBytes = AvlTreeData.serializer.toBytes(treeData)
-
-    val customExt = Seq(21.toByte -> ByteArrayConstant(treeBytes))
-
-    def deserTest() = test("deserialize", env, customExt,
-      s"""{
-            val ba = getVar[Coll[Byte]](21).get
-            val tree = Global.deserialize[AvlTree](ba)
-            tree.digest == fromBase16(${Base16.encode(treeData.digest.toArray)}) && tree.enabledOperations ==  0
-          }""",
-      null,
-      true
-    )
-
-    an [Exception] should be thrownBy deserTest()
-  }
-
-  property("deserialize - header") {
-
-  }
-
-
   property("executeFromVar - SigmaProp") {
     val script = GT(Height, IntConstant(-1)).toSigmaProp
     val scriptBytes = ValueSerializer.serialize(script)
@@ -408,6 +191,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
     )
   }
 
+  // test which is showing impossibility of nested Deserialize*
   property("executeFromVar - deserialize") {
     val script = DeserializeContext(21.toByte, SSigmaProp)
     val scriptBytes = ValueSerializer.serialize(script)

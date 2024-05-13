@@ -3,7 +3,6 @@ package sigmastate.eval
 
 import sigma.ast._
 import org.ergoplatform._
-import sigma.ast.SType.tT
 import sigma.ast.syntax.ValueOps
 import sigma.serialization.OpCodes._
 import sigma.serialization.ConstantStore
@@ -222,10 +221,6 @@ trait TreeBuilding extends SigmaLibrary { IR: IRContext =>
         val tpe = elemToSType(eVar)
         mkGetVar(id, tpe)
 
-      case SDBM.deserialize(g, bytes, eVar) =>
-        val tpe = elemToSType(eVar)
-        builder.mkMethodCall(recurse(g), SGlobalMethods.deserializeMethod, IndexedSeq(recurse(bytes)), Map(tT -> tpe): STypeSubst)
-
       case BIM.subtract(In(x), In(y)) =>
         mkArith(x.asNumValue, y.asNumValue, MinusCode)
       case BIM.add(In(x), In(y)) =>
@@ -411,7 +406,7 @@ trait TreeBuilding extends SigmaLibrary { IR: IRContext =>
         MethodsContainer.getMethod(obj.tpe, m.getName) match {
           case Some(method) =>
             val specMethod = method.specializeFor(obj.tpe, args.map(_.tpe))
-            builder.mkMethodCall(obj, specMethod, args.toIndexedSeq, Map.empty)
+            builder.mkMethodCall(obj, specMethod, args.toIndexedSeq, Map())
           case None =>
             error(s"Cannot find method ${m.getName} in object $obj")
         }

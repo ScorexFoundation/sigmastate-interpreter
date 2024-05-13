@@ -2,11 +2,10 @@ package sigma.ast
 
 import org.ergoplatform._
 import org.ergoplatform.validation._
-import sigma.Evaluation.stypeToRType
 import sigma._
 import sigma.ast.SCollection.{SBooleanArray, SBoxArray, SByteArray, SByteArray2, SHeaderArray}
 import sigma.ast.SMethod.{MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
-import sigma.ast.SType.{TypeCode, paramT, tT}
+import sigma.ast.SType.TypeCode
 import sigma.ast.syntax.{SValue, ValueOps}
 import sigma.data.OverloadHack.Overloaded1
 import sigma.data.{DataValueComparer, KeyValueColl, Nullable, RType, SigmaConstants}
@@ -53,7 +52,7 @@ sealed trait MethodsContainer {
   protected def getMethods(): Seq[SMethod] = Nil
 
   /** Returns all the methods of this type. */
-  def methods: Seq[SMethod] = {                        //todo: consider versioned caching
+  lazy val methods: Seq[SMethod] = {
     val ms = getMethods().toArray
     assert(ms.map(_.name).distinct.length == ms.length, s"Duplicate method names in $this")
     ms.groupBy(_.objType).foreach { case (comp, ms) =>
@@ -61,7 +60,7 @@ sealed trait MethodsContainer {
     }
     ms
   }
-  private def _methodsMap: Map[Byte, Map[Byte, SMethod]] = methods //todo: consider versioned caching
+  private lazy val _methodsMap: Map[Byte, Map[Byte, SMethod]] = methods
       .groupBy(_.objType.typeId)
       .map { case (typeId, ms) => (typeId -> ms.map(m => m.methodId -> m).toMap) }
 
@@ -310,13 +309,6 @@ case object SBigIntMethods extends SNumericTypeMethods {
   /** Type for which this container defines methods. */
   override def ownerType: SMonoType = SBigInt
 
-  final val ToNBitsCostInfo = OperationCostInfo(
-    FixedCost(JitCost(5)), NamedDesc("NBitsMethodCall"))
-
-  //id = 8 to make it after toBits
-  val ToNBits = SMethod(this, "nbits", SFunc(this.ownerType, SLong), 8, ToNBitsCostInfo.costKind)
-                  .withInfo(ModQ, "Encode this big integer value as NBits")
-
   /** The following `modQ` methods are not fully implemented in v4.x and this descriptors.
     * This descritors are remain here in the code and are waiting for full implementation
     * is upcoming soft-forks at which point the cost parameters should be calculated and
@@ -332,26 +324,13 @@ case object SBigIntMethods extends SNumericTypeMethods {
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall, "Multiply this number with \\lst{other} by module Q.", ArgInfo("other", "Number to multiply with this."))
 
-  protected override def getMethods(): Seq[SMethod]  = {
-    if (VersionContext.current.isV6SoftForkActivated) {
-      super.getMethods() ++ Seq(ToNBits)
-      //    ModQMethod,
-      //    PlusModQMethod,
-      //    MinusModQMethod,
-      // TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-      // MultModQMethod,
-    } else {
-      super.getMethods()
-    }
-  }
-
-  /**
-    *
-    */
-  def nbits_eval(mc: MethodCall, bi: sigma.BigInt)(implicit E: ErgoTreeEvaluator): Long = {
-    ???
-  }
-
+  protected override def getMethods() = super.getMethods() ++ Seq(
+//    ModQMethod,
+//    PlusModQMethod,
+//    MinusModQMethod,
+    // TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+    // MultModQMethod,
+  )
 }
 
 /** Methods of type `String`. */
@@ -1511,14 +1490,6 @@ case object SGlobalMethods extends MonoTypeMethods {
     .withInfo(Xor, "Byte-wise XOR of two collections of bytes",
       ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))
 
-  lazy val desJava = ownerType.reprClass.getMethod("deserialize", classOf[Coll[Byte]], classOf[RType[_]])
-
-  lazy val deserializeMethod = SMethod(
-    this, "deserialize", SFunc(Array(SGlobal, SByteArray), tT, Array(paramT)), 3, Xor.costKind) // todo: cost
-    .copy(irInfo = MethodIRInfo(None, Some(desJava), None))
-    .withInfo(Xor, "Byte-wise XOR of two collections of bytes",
-      ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))
-
   /** Implements evaluation of Global.xor method call ErgoTree node.
     * Called via reflection based on naming convention.
     * @see SMethod.evalMethod, Xor.eval, Xor.xorWithCosting
@@ -1528,28 +1499,9 @@ case object SGlobalMethods extends MonoTypeMethods {
     Xor.xorWithCosting(ls, rs)
   }
 
-
-  def deserialize_eval(mc: MethodCall, G: SigmaDslBuilder, bytes: Coll[Byte])
-              (implicit E: ErgoTreeEvaluator): Any = {
-    val cT = stypeToRType(mc.tpe)
-    E.addSeqCost(Xor.costKind, bytes.length, Xor.opDesc) { () =>    // todo: cost
-      G.deserialize(bytes)(cT)
-    }
-  }
-
-  protected override def getMethods() = super.getMethods() ++ {
-    if (VersionContext.current.isV6SoftForkActivated) {
-      Seq(
-        groupGeneratorMethod,
-        xorMethod,
-        deserializeMethod
-      )
-    } else {
-      Seq(
-        groupGeneratorMethod,
-        xorMethod
-      )
-    }
-  }
+  protected override def getMethods() = super.getMethods() ++ Seq(
+    groupGeneratorMethod,
+    xorMethod
+  )
 }
 
