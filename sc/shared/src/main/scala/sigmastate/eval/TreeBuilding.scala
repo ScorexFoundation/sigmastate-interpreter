@@ -188,9 +188,6 @@ trait TreeBuilding extends SigmaLibrary { IR: IRContext =>
         val tpe = elemToSType(s.elem)
         mkConstant[tpe.type](wc.constValue.asInstanceOf[tpe.WrappedType], tpe)
 
-      case Def(DeserializeContextDef(d, _)) =>
-        d
-
       case Def(IsContextProperty(v)) => v
       case s if s == sigmaDslBuilder => Global
 
@@ -411,7 +408,7 @@ trait TreeBuilding extends SigmaLibrary { IR: IRContext =>
         MethodsContainer.getMethod(obj.tpe, m.getName) match {
           case Some(method) =>
             val specMethod = method.specializeFor(obj.tpe, args.map(_.tpe))
-            builder.mkMethodCall(obj, specMethod, args.toIndexedSeq, Map.empty)
+            builder.mkMethodCall(obj, specMethod, args.toIndexedSeq, Map())
           case None =>
             error(s"Cannot find method ${m.getName} in object $obj")
         }

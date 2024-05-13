@@ -138,7 +138,6 @@ class SigmaTyper(val builder: SigmaBuilder,
             case Some(method) =>
               val srcCtx = sel.sourceContext
               if(method.name == SGlobalMethods.deserializeMethod.name) {
-                val global = Global.withPropagatedSrcCtx(srcCtx)
                 DeserializeBytes(args(0).asInstanceOf[Value[SByteArray]], rangeTpe)
               } else {
                 processGlobalMethod(srcCtx, method, newArgs)

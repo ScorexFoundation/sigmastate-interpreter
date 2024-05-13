@@ -7,12 +7,12 @@ import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.encode.Base16
 import scorex.utils.{Ints, Longs, Shorts}
-import sigma.{Colls, SigmaProp}
+import sigma.Colls
 import sigma.Extensions.ArrayOps
 import sigma.VersionContext.V6SoftForkVersion
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.SType.AnyOps
-import sigma.data.{AvlTreeClassTag, AvlTreeData, AvlTreeFlags, CAND, CAnyValue, CSigmaDslBuilder, CSigmaProp, ProveDlog}
+import sigma.data.{AvlTreeData, AvlTreeFlags, CAND, CAnyValue, CSigmaDslBuilder, CSigmaProp}
 import sigma.util.StringUtil._
 import sigma.ast._
 import sigma.ast.syntax._
@@ -373,50 +373,6 @@ class BasicOpsSpecification extends CompilerTestingCommons
 
   property("deserialize - header") {
 
-  }
-
-
-  property("executeFromVar - SigmaProp") {
-    val script = GT(Height, IntConstant(-1)).toSigmaProp
-    val scriptBytes = ValueSerializer.serialize(script)
-    val customExt = Seq(21.toByte -> ByteArrayConstant(scriptBytes))
-    test("executeFromVar", env, customExt,
-      "executeFromVar[SigmaProp](21)",
-      null,
-      true
-    )
-  }
-
-  property("executeFromVar - Int") {
-    val valueBytes = ValueSerializer.serialize(Plus(IntConstant(2), IntConstant(3)))
-    val customExt = Seq(21.toByte -> ByteArrayConstant(valueBytes))
-    test("executeFromVar", env, customExt,
-      "{ executeFromVar[Int](21) == 5 }",
-      null,
-      true
-    )
-  }
-
-  property("executeFromVar - Coll[Byte]") {
-    val bytes = Slice(ByteArrayConstant(Colls.fromArray(Array.fill(5)(1.toByte))), IntConstant(1), IntConstant(3))
-    val valueBytes = ValueSerializer.serialize(bytes)
-    val customExt = Seq(21.toByte -> ByteArrayConstant(valueBytes))
-    test("executeFromVar", env, customExt,
-      "{val ba = executeFromVar[Coll[Byte]](21); ba.size == 2 }",
-      null,
-      true
-    )
-  }
-
-  property("executeFromVar - deserialize") {
-    val script = DeserializeContext(21.toByte, SSigmaProp)
-    val scriptBytes = ValueSerializer.serialize(script)
-    val customExt = Seq(21.toByte -> ByteArrayConstant(scriptBytes))
-    an [Exception] should be thrownBy test("executeFromVar", env, customExt,
-      "executeFromVar[SigmaProp](21)",
-      null,
-      true
-    )
   }
 
   property("Relation operations") {

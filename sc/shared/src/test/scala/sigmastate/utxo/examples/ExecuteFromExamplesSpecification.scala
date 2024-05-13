@@ -38,7 +38,8 @@ class ExecuteFromExamplesSpecification extends CompilerTestingCommons { suite =>
 
   lazy val alice = spec.ProvingParty("Alice")
 
-  property("Execute from var example (ErgoDsl)") {
+  // TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/443
+  ignore("Execute from var example (ErgoDsl)") {
     val contract = OracleContract[spec.type](alice)(spec)
     import contract.spec._
 
