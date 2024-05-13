@@ -1147,6 +1147,10 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
               h.powDistance
             case SHeaderMethods.votesMethod.name =>
               h.votes
+            case SHeaderMethods.checkPowMethod.name if VersionContext.current.isV6SoftForkActivated =>
+              h.checkPow
+            case SHeaderMethods.bytesMethod.name if VersionContext.current.isV6SoftForkActivated =>
+              h.bytes
             case _ => throwError
           }
           case (g: Ref[SigmaDslBuilder]@unchecked, SGlobalMethods) => method.name match {

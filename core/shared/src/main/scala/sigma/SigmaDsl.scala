@@ -459,6 +459,14 @@ trait Header {
 
   /** Miner votes for changing system parameters. */
   def votes: Coll[Byte] //3 bytes
+
+  def unparsedBytes: Coll[Byte]
+
+  def serializeWithoutPoW: Coll[Byte]
+
+  def checkPow: Boolean
+
+  def bytes: Coll[Byte]
 }
 
 /** Runtime representation of Context ErgoTree type.

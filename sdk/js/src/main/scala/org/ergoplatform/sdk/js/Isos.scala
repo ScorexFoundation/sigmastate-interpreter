@@ -41,7 +41,8 @@ object Isos {
         powOnetimePk = DataIsos.isoGroupElement.to(a.powOnetimePk),
         powNonce = isoStringToColl.to(a.powNonce),
         powDistance = sigma.js.Isos.isoBigInt.to(a.powDistance),
-        votes = isoStringToColl.to(a.votes)
+        votes = isoStringToColl.to(a.votes),
+        unparsedBytes = isoStringToColl.to(a.unparsedBytes)
       )
     }
     override def from(b: sigma.Header): Header = {
@@ -61,7 +62,8 @@ object Isos {
         powOnetimePk = DataIsos.isoGroupElement.from(header.powOnetimePk),
         powNonce = isoStringToColl.from(header.powNonce),
         powDistance = sigma.js.Isos.isoBigInt.from(header.powDistance),
-        votes = isoStringToColl.from(header.votes)
+        votes = isoStringToColl.from(header.votes),
+        unparsedBytes = isoStringToColl.from(header.unparsedBytes)
       )
     }
   }

@@ -7,7 +7,7 @@ import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.encode.Base16
 import scorex.utils.{Ints, Longs, Shorts}
-import sigma.Colls
+import sigma.{Colls, SigmaTestingData}
 import sigma.Extensions.ArrayOps
 import sigma.VersionContext.V6SoftForkVersion
 import sigma.ast.SCollection.SByteArray
@@ -207,7 +207,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
     if (activatedVersionInTests < V6SoftForkVersion) {
       an [sigma.exceptions.TyperException] should be thrownBy deserTest()
     } else {
-      // only primitive types are supported, so the test fails
+      // only singular types are supported, so the test fails
       an [java.lang.reflect.InvocationTargetException] should be thrownBy deserTest()
     }
   }
@@ -362,7 +362,10 @@ class BasicOpsSpecification extends CompilerTestingCommons
       s"""{
             val ba = getVar[Coll[Byte]](21).get
             val tree = Global.deserialize[AvlTree](ba)
-            tree.digest == fromBase16(${Base16.encode(treeData.digest.toArray)}) && tree.enabledOperations ==  0
+            tree.digest == fromBase16(${Base16.encode(treeData.digest.toArray)})
+              && tree.enabledOperations == 0
+              && tree.keyLength == 32
+              && tree.valueLengthOpt.isEmpty
           }""",
       null,
       true
@@ -372,7 +375,10 @@ class BasicOpsSpecification extends CompilerTestingCommons
   }
 
   property("deserialize - header") {
-
+    val td = new SigmaTestingData {}
+    val h1 = td.TestData.h1
+    val headerBytes = h1.bytes
+    ???
   }
 
   property("Relation operations") {

@@ -1,6 +1,6 @@
 package sigma
 
-import org.ergoplatform.ErgoBox
+import org.ergoplatform.{ErgoBox, ErgoHeader}
 import org.ergoplatform.settings.ErgoAlgos
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen.containerOfN
@@ -12,7 +12,7 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ModifierId
 import sigma.ast._
 import sigma.Extensions.ArrayOps
-import sigmastate.eval.{CHeader, CPreHeader}
+import sigmastate.eval.CPreHeader
 import sigmastate.helpers.TestingCommons
 import sigma.serialization.ErgoTreeSerializer
 import sigma.serialization.generators.ObjectGenerators
@@ -260,14 +260,18 @@ trait SigmaTestingData extends TestingCommons with ObjectGenerators {
       Helpers.decodeGroupElement("0361299207fa392231e23666f6945ae3e867b978e021d8d702872bde454e9abe9c"),
       Helpers.decodeBytes("7f4f09012a807f01"),
       CBigInt(new BigInteger("-e24990c47e15ed4d0178c44f1790cc72155d516c43c3e8684e75db3800a288", 16)),
-      Helpers.decodeBytes("7f0180")
+      Helpers.decodeBytes("7f0180"),
+      Colls.emptyColl[Byte]
     ))
 
     def create_h1(): Header = h1_instances.getNext
 
     val h1: Header = create_h1()
 
-    val h2: Header = create_h1().asInstanceOf[CHeader].copy(height = 2)
+    val eh1 = h1.asInstanceOf[CHeader].ergoHeader
+    val h2: Header = new CHeader(new ErgoHeader(eh1.version, eh1.parentId, eh1.ADProofsRoot, eh1.stateRoot,
+                                eh1.transactionsRoot, eh1.timestamp, eh1.nBits, 2, eh1.extensionRoot,
+                                eh1.powSolution, eh1.votes, eh1.unparsedBytes, null))
 
     val dlog_instances = new CloneSet(1000, ProveDlog(
       SigmaDsl.toECPoint(create_ge1()).asInstanceOf[EcPointType]
