@@ -1,7 +1,7 @@
 package sigma.data
 
 import debox.cfor
-import org.ergoplatform.ErgoBox
+import org.ergoplatform.{ErgoBox, ErgoHeader}
 import org.ergoplatform.validation.ValidationRules
 import scorex.crypto.hash.{Blake2b256, Sha256}
 import scorex.utils.Longs
@@ -226,7 +226,7 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
       case sigma.data.AvlTreeClassTag =>
         CAvlTree(AvlTreeData.serializer.fromBytes(bytes.toArray))
       case sigma.data.HeaderClassTag =>
-        // todo: add header
+        CHeader(ErgoHeader.sigmaSerializer.fromBytes(bytes.toArray))
       case _ =>
         throw new InvalidType(s"Cannot deserialize($bytes): invalid type of value: ${cT.classTag}")
     }

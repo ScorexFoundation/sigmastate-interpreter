@@ -27,6 +27,7 @@ import sigma.ast.Apply
 import sigma.eval.EvalSettings
 import sigma.exceptions.InvalidType
 import sigma.serialization.{ErgoTreeSerializer, ValueSerializer}
+import sigma.util.Extensions
 import sigmastate.utils.Helpers
 import sigmastate.utils.Helpers._
 
@@ -378,7 +379,28 @@ class BasicOpsSpecification extends CompilerTestingCommons
     val td = new SigmaTestingData {}
     val h1 = td.TestData.h1
     val headerBytes = h1.bytes
-    ???
+
+    val headerStateBytes = AvlTreeData.serializer.toBytes(Extensions.CoreAvlTreeOps(h1.stateRoot).toAvlTreeData)
+    val customExt = Seq(21.toByte -> ByteArrayConstant(headerBytes), 22.toByte -> ByteArrayConstant(headerStateBytes))
+
+    def deserTest() = test("deserialize", env, customExt,
+      s"""{
+            val ba = getVar[Coll[Byte]](21).get
+            val header = Global.deserialize[Header](ba)
+            val ba2 = getVar[Coll[Byte]](22).get
+            val tree = Global.deserialize[AvlTree](ba2)
+            val id = fromBase16("${Base16.encode(h1.id.toArray)}")
+            header.height == ${h1.height} && header.stateRoot == tree && header.id == id
+          }""",
+      null,
+      true
+    )
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[sigma.exceptions.TyperException] should be thrownBy deserTest()
+    } else {
+      deserTest()
+    }
   }
 
   property("Relation operations") {
