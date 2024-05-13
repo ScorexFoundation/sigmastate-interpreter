@@ -25,7 +25,7 @@ case class MethodCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value[S
     w.putValue(mc.obj, objInfo)
     assert(mc.args.nonEmpty)
     w.putValues(mc.args, argsInfo, argsItemInfo)
-    if(mc.method.name == SGlobalMethods.deserializeMethod.name){
+    if(mc.method.name == SGlobalMethods.deserializeRawMethod.name){
       w.putType(mc.tpe, typeInfo)
     }
   }
@@ -62,7 +62,7 @@ case class MethodCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value[S
 
     val specMethod = method.specializeFor(obj.tpe, types)
 
-    val subst: STypeSubst = if(method.name == SGlobalMethods.deserializeMethod.name) {
+    val subst: STypeSubst = if(method.name == SGlobalMethods.deserializeRawMethod.name) {
       val tpe = r.getType()
       Map(tT -> tpe)
     } else {

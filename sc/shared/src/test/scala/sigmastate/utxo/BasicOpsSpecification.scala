@@ -178,10 +178,10 @@ class BasicOpsSpecification extends CompilerTestingCommons
     )
   }
 
-  property("deserialize - int") {
+  property("deserializeRaw - int") {
     val bytes = Base16.encode(Ints.toByteArray(5))
-    def deserTest() = {test("deserialize", env, ext,
-      s"{ val ba = fromBase16(\"$bytes\"); Global.deserialize[Int](ba) == 5 }",
+    def deserTest() = {test("deserializeRaw", env, ext,
+      s"{ val ba = fromBase16(\"$bytes\"); Global.deserializeRaw[Int](ba) == 5 }",
       null,
       true
     )}
@@ -193,13 +193,13 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
-  property("deserialize - coll") {
+  property("deserializeRaw - coll") {
 
     val bytes = Base16.encode(ValueSerializer.serialize(CollectionConstant[SInt.type](Colls.fromArray(Array(IntConstant(5).value)), SInt)))
 
     def deserTest() = {
-      test("deserialize", env, ext,
-        s"{val ba = fromBase16(\"$bytes\"); val coll = Global.deserialize[Coll[Int]](ba); coll(0) == 5 }",
+      test("deserializeRaw", env, ext,
+        s"{val ba = fromBase16(\"$bytes\"); val coll = Global.deserializeRaw[Coll[Int]](ba); coll(0) == 5 }",
         null,
         true
       )
@@ -213,12 +213,12 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
-  property("deserialize - long roundtrip") {
-    def deserTest() = test("deserialize", env, ext,
+  property("deserializeRaw - long roundtrip") {
+    def deserTest() = test("deserializeRaw", env, ext,
       s"""{
             val l = 5L;
             val ba = longToByteArray(l);
-            Global.deserialize[Long](ba) == l
+            Global.deserializeRaw[Long](ba) == l
           }""",
       null,
       true
@@ -231,12 +231,12 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
-  property("deserialize - box rountrip") {
-    def deserTest() = test("deserialize", env, ext,
+  property("deserializeRaw - box rountrip") {
+    def deserTest() = test("deserializeRaw", env, ext,
       s"""{
             val b = INPUTS(0);
             val ba = b.bytes;
-            Global.deserialize[Box](ba) == b
+            Global.deserializeRaw[Box](ba) == b
           }""",
       null,
       true
@@ -249,11 +249,11 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
-  property("deserialize - bigint") {
-    def deserTest() = test("deserialize", env, ext,
+  property("deserializeRaw - bigint") {
+    def deserTest() = test("deserializeRaw", env, ext,
       s"""{
             val ba = fromBase16("028a5b7f7f7f7f7f7f6c");
-            val b = Global.deserialize[BigInt](ba)
+            val b = Global.deserializeRaw[BigInt](ba)
             b == byteArrayToBigInt(ba)
           }""",
       null,
@@ -267,12 +267,12 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
-  property("deserialize - short") {
+  property("deserializeRaw - short") {
     val s = (-1925).toShort
-    def deserTest() = test("deserialize", env, ext,
+    def deserTest() = test("deserializeRaw", env, ext,
       s"""{
             val ba = fromBase16("${Base16.encode(Shorts.toByteArray(s))}");
-            Global.deserialize[Short](ba) == -1925
+            Global.deserializeRaw[Short](ba) == -1925
           }""",
       null,
       true
@@ -285,14 +285,14 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
-  property("deserialize - group element") {
+  property("deserializeRaw - group element") {
     val ge = Helpers.decodeGroupElement("026930cb9972e01534918a6f6d6b8e35bc398f57140d13eb3623ea31fbd069939b")
     val ba = Base16.encode(ge.getEncoded.toArray)
-    def deserTest() = test("deserialize", env, Seq(21.toByte -> GroupElementConstant(ge)),
+    def deserTest() = test("deserializeRaw", env, Seq(21.toByte -> GroupElementConstant(ge)),
       s"""{
             val ge = getVar[GroupElement](21).get
             val ba = fromBase16("$ba");
-            val ge2 = Global.deserialize[GroupElement](ba)
+            val ge2 = Global.deserializeRaw[GroupElement](ba)
             ba == ge2.getEncoded && ge == ge2
           }""",
       null,
@@ -306,12 +306,12 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
-  property("deserialize - sigmaprop roundtrip") {
+  property("deserializeRaw - sigmaprop roundtrip") {
 
-    def deserTest() = test("deserialize", env, ext,
+    def deserTest() = test("deserializeRaw", env, ext,
       s"""{
             val ba = getVar[Coll[Byte]]($propBytesVar1).get
-            val prop = Global.deserialize[SigmaProp](ba)
+            val prop = Global.deserializeRaw[SigmaProp](ba)
             prop == getVar[SigmaProp]($propVar3).get && prop
           }""",
       null,
@@ -325,16 +325,16 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
-  property("deserialize - sigmaprop roundtrip - non evaluated") {
+  property("deserializeRaw - sigmaprop roundtrip - non evaluated") {
 
     val script = GT(Height, IntConstant(-1)).toSigmaProp
     val scriptBytes = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(ErgoTree.fromProposition(script))
     val customExt = Seq(21.toByte -> ByteArrayConstant(scriptBytes))
 
-    def deserTest() = test("deserialize", env, customExt,
+    def deserTest() = test("deserializeRaw", env, customExt,
       s"""{
             val ba = getVar[Coll[Byte]](21).get
-            val prop = Global.deserialize[SigmaProp](ba)
+            val prop = Global.deserializeRaw[SigmaProp](ba)
             prop
           }""",
       null,
@@ -348,7 +348,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
-  property("deserialize - avltree") {
+  property("deserializeRaw - avltree") {
     val elements = Seq(123, 22)
     val treeElements = elements.map(i => Longs.toByteArray(i)).map(s => (ADKey @@@ Blake2b256(s), ADValue @@ s))
     val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
@@ -359,10 +359,10 @@ class BasicOpsSpecification extends CompilerTestingCommons
 
     val customExt = Seq(21.toByte -> ByteArrayConstant(treeBytes))
 
-    def deserTest() = test("deserialize", env, customExt,
+    def deserTest() = test("deserializeRaw", env, customExt,
       s"""{
             val ba = getVar[Coll[Byte]](21).get
-            val tree = Global.deserialize[AvlTree](ba)
+            val tree = Global.deserializeRaw[AvlTree](ba)
             tree.digest == fromBase16(${Base16.encode(treeData.digest.toArray)})
               && tree.enabledOperations == 0
               && tree.keyLength == 32
@@ -375,7 +375,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
     an [Exception] should be thrownBy deserTest()
   }
 
-  property("deserialize - header") {
+  property("deserializeRaw - header") {
     val td = new SigmaTestingData {}
     val h1 = td.TestData.h1
     val headerBytes = h1.bytes
@@ -383,12 +383,12 @@ class BasicOpsSpecification extends CompilerTestingCommons
     val headerStateBytes = AvlTreeData.serializer.toBytes(Extensions.CoreAvlTreeOps(h1.stateRoot).toAvlTreeData)
     val customExt = Seq(21.toByte -> ByteArrayConstant(headerBytes), 22.toByte -> ByteArrayConstant(headerStateBytes))
 
-    def deserTest() = test("deserialize", env, customExt,
+    def deserTest() = test("deserializeRaw", env, customExt,
       s"""{
             val ba = getVar[Coll[Byte]](21).get
-            val header = Global.deserialize[Header](ba)
+            val header = Global.deserializeRaw[Header](ba)
             val ba2 = getVar[Coll[Byte]](22).get
-            val tree = Global.deserialize[AvlTree](ba2)
+            val tree = Global.deserializeRaw[AvlTree](ba2)
             val id = fromBase16("${Base16.encode(h1.id.toArray)}")
             header.height == ${h1.height} && header.stateRoot == tree && header.id == id
           }""",

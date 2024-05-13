@@ -204,7 +204,7 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
     this.GroupElement(p)
   }
 
-  def deserialize[T](bytes: Coll[Byte])(implicit cT: RType[T]): T = {
+  def deserializeRaw[T](bytes: Coll[Byte])(implicit cT: RType[T]): T = {
 
     val res = cT.classTag match {
       case ClassTag.Short => ByteBuffer.wrap(bytes.toArray).getShort

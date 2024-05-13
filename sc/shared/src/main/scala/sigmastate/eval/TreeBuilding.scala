@@ -219,9 +219,9 @@ trait TreeBuilding extends SigmaLibrary { IR: IRContext =>
         val tpe = elemToSType(eVar)
         mkGetVar(id, tpe)
 
-      case SDBM.deserialize(g, bytes, eVar) =>
+      case SDBM.deserializeRaw(g, bytes, eVar) =>
         val tpe = elemToSType(eVar)
-        builder.mkMethodCall(recurse(g), SGlobalMethods.deserializeMethod, IndexedSeq(recurse(bytes)), Map(tT -> tpe): STypeSubst)
+        builder.mkMethodCall(recurse(g), SGlobalMethods.deserializeRawMethod, IndexedSeq(recurse(bytes)), Map(tT -> tpe): STypeSubst)
 
       case BIM.subtract(In(x), In(y)) =>
         mkArith(x.asNumValue, y.asNumValue, MinusCode)

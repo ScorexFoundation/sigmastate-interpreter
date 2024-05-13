@@ -450,8 +450,8 @@ object ReflectionData {
         mkMethod(clazz, "decodePoint", Array[Class[_]](cColl)) { (obj, args) =>
           obj.asInstanceOf[SigmaDslBuilder].decodePoint(args(0).asInstanceOf[Coll[Byte]])
         },
-        mkMethod(clazz, "deserialize", Array[Class[_]](cColl, classOf[RType[_]])) { (obj, args) =>
-          obj.asInstanceOf[SigmaDslBuilder].deserialize(args(0).asInstanceOf[Coll[Byte]])(args(1).asInstanceOf[RType[_]])
+        mkMethod(clazz, "deserializeRaw", Array[Class[_]](cColl, classOf[RType[_]])) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].deserializeRaw(args(0).asInstanceOf[Coll[Byte]])(args(1).asInstanceOf[RType[_]])
         }
       )
     )

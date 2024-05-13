@@ -11,7 +11,6 @@ import sigma.ast.syntax.{SValue, ValueOps}
 import sigma.data.OverloadHack.Overloaded1
 import sigma.data.{DataValueComparer, KeyValueColl, Nullable, RType, SigmaConstants}
 import sigma.eval.{CostDetails, ErgoTreeEvaluator, TracedCost}
-import sigma.pow.Autolykos2PowValidation
 import sigma.reflection.RClass
 import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma.utils.SparseArrayContainer
@@ -1534,12 +1533,12 @@ case object SGlobalMethods extends MonoTypeMethods {
     .withInfo(Xor, "Byte-wise XOR of two collections of bytes",
       ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))
 
-  lazy val desJava = ownerType.reprClass.getMethod("deserialize", classOf[Coll[Byte]], classOf[RType[_]])
+  lazy val desJava = ownerType.reprClass.getMethod("deserializeRaw", classOf[Coll[Byte]], classOf[RType[_]])
 
-  lazy val deserializeMethod = SMethod(
-    this, "deserialize", SFunc(Array(SGlobal, SByteArray), tT, Array(paramT)), 3, Xor.costKind) // todo: cost
+  lazy val deserializeRawMethod = SMethod(
+    this, "deserializeRaw", SFunc(Array(SGlobal, SByteArray), tT, Array(paramT)), 3, Xor.costKind) // todo: cost
     .copy(irInfo = MethodIRInfo(None, Some(desJava), None))
-    .withInfo(Xor, "Byte-wise XOR of two collections of bytes",
+    .withInfo(Xor, "Byte-wise XOR of two collections of bytes",  // todo: desc
       ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))
 
   /** Implements evaluation of Global.xor method call ErgoTree node.
@@ -1552,11 +1551,11 @@ case object SGlobalMethods extends MonoTypeMethods {
   }
 
 
-  def deserialize_eval(mc: MethodCall, G: SigmaDslBuilder, bytes: Coll[Byte])
+  def deserializeRaw_eval(mc: MethodCall, G: SigmaDslBuilder, bytes: Coll[Byte])
               (implicit E: ErgoTreeEvaluator): Any = {
     val cT = stypeToRType(mc.tpe)
     E.addSeqCost(Xor.costKind, bytes.length, Xor.opDesc) { () =>    // todo: cost
-      G.deserialize(bytes)(cT)
+      G.deserializeRaw(bytes)(cT)
     }
   }
 
@@ -1565,7 +1564,7 @@ case object SGlobalMethods extends MonoTypeMethods {
       Seq(
         groupGeneratorMethod,
         xorMethod,
-        deserializeMethod
+        deserializeRawMethod
       )
     } else {
       Seq(
