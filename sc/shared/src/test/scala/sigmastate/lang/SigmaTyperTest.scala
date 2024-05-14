@@ -20,6 +20,7 @@ import sigma.serialization.ErgoTreeSerializer
 import sigma.serialization.generators.ObjectGenerators
 import sigma.ast.Select
 import sigma.exceptions.TyperException
+import sigmastate.helpers.SigmaPPrint
 
 class SigmaTyperTest extends AnyPropSpec
   with ScalaCheckPropertyChecks with Matchers with LangTests with ObjectGenerators {
@@ -37,7 +38,12 @@ class SigmaTyperTest extends AnyPropSpec
       val typer = new SigmaTyper(builder, predefinedFuncRegistry, lowerMethodCalls = true)
       val typed = typer.typecheck(bound)
       assertSrcCtxForAllNodes(typed)
-      if (expected != null) typed shouldBe expected
+      if (expected != null) {
+        if (expected != typed) {
+          SigmaPPrint.pprintln(typed, width = 100)
+        }
+        typed shouldBe expected
+      }
       typed.tpe
     } catch {
       case e: Exception => throw e
@@ -506,6 +512,48 @@ class SigmaTyperTest extends AnyPropSpec
 
   property("invalid cast method for numeric types") {
     typefail(env, "1.toSuperBigInteger", 1, 1)
+  }
+
+  property("toBytes method for numeric types") {
+    typecheck(env, "1.toByte.toBytes",
+      expected = MethodCall.typed[Value[SCollection[SByte.type]]](
+        Select(IntConstant(1), "toByte", Some(SByte)),
+        SNumericTypeMethods.getMethodByName("toBytes").withConcreteTypes(Map(STypeVar("TNum") -> SByte)),
+        Vector(),
+        Map()
+      )) shouldBe SByteArray
+
+    typecheck(env, "1.toShort.toBytes",
+      expected = MethodCall.typed[Value[SCollection[SByte.type]]](
+        Select(IntConstant(1), "toShort", Some(SShort)),
+        SNumericTypeMethods.getMethodByName("toBytes").withConcreteTypes(Map(STypeVar("TNum") -> SShort)),
+        Vector(),
+        Map()
+      )) shouldBe SByteArray
+
+    typecheck(env, "1.toBytes",
+      expected = MethodCall.typed[Value[SCollection[SByte.type]]](
+        IntConstant(1),
+        SNumericTypeMethods.getMethodByName("toBytes").withConcreteTypes(Map(STypeVar("TNum") -> SInt)),
+        Vector(),
+        Map()
+      )) shouldBe SByteArray
+
+    typecheck(env, "1.toLong.toBytes",
+      expected = MethodCall.typed[Value[SCollection[SByte.type]]](
+        Select(IntConstant(1), "toLong", Some(SLong)),
+        SNumericTypeMethods.getMethodByName("toBytes").withConcreteTypes(Map(STypeVar("TNum") -> SLong)),
+        Vector(),
+        Map()
+      )) shouldBe SByteArray
+
+    typecheck(env, "1.toBigInt.toBytes",
+      expected = MethodCall.typed[Value[SCollection[SByte.type]]](
+        Select(IntConstant(1), "toBigInt", Some(SBigInt)),
+        SNumericTypeMethods.getMethodByName("toBytes").withConcreteTypes(Map(STypeVar("TNum") -> SBigInt)),
+        Vector(),
+        Map()
+      )) shouldBe SByteArray
   }
 
   property("string concat") {
