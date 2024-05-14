@@ -24,7 +24,7 @@ object GraphIRReflection {
   val reflection = ReflectionData
 
   { val clazz = classOf[wrappers.scala.WOptions#WOption[_]]
-    val ctx = null.asInstanceOf[scalan.Library] // ok! type level only
+    val ctx = null.asInstanceOf[scalan.Scalan] // ok! type level only
     registerClassEntry(clazz,
       methods = Map(
         mkMethod(clazz, "filter", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
@@ -123,7 +123,7 @@ object GraphIRReflection {
   }
 
   { val clazz = classOf[Colls#CollBuilder]
-    val ctx = null.asInstanceOf[Library] // ok! type level only
+    val ctx = null.asInstanceOf[Scalan] // ok! type level only
     registerClassEntry(clazz,
       methods = Map(
         mkMethod(clazz, "xor", Array[Class[_]](classOf[Base#Ref[_]], classOf[Base#Ref[_]])) { (obj, args) =>
@@ -145,7 +145,7 @@ object GraphIRReflection {
 
   {
     val clazz = classOf[Colls#Coll[_]]
-    val ctx = null.asInstanceOf[Library] // ok! type level only
+    val ctx = null.asInstanceOf[Scalan] // ok! type level only
     registerClassEntry(clazz,
       methods = Map(
         mkMethod(clazz, "append", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>

@@ -8,7 +8,7 @@ package sigma {
     * The semantics of each method is the same as in the original class, please look there
     * for details.
     */
-  trait Colls extends Base { self: Library =>
+  trait Colls extends Base { self: Scalan =>
     trait Coll[A] extends Def[Coll[A]] {
       implicit def eA: Elem[A];
       def length: Ref[Int];

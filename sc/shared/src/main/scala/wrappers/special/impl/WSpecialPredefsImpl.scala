@@ -9,8 +9,8 @@ package impl {
   import sigma.reflection.RClass
 
   // Abs -----------------------------------
-trait WSpecialPredefsDefs extends scalan.Scalan with WSpecialPredefs {
-  self: WrappersModule =>
+trait WSpecialPredefsDefs extends Base with WSpecialPredefs {
+  self: Scalan =>
 
   registerModule(WSpecialPredefsModule)
 
@@ -66,4 +66,4 @@ object WSpecialPredefsModule extends scalan.ModuleInfo("wrappers.special", "WSpe
 }
 }
 
-trait WSpecialPredefsModule extends wrappers.special.impl.WSpecialPredefsDefs {self: WrappersModule =>}
+trait WSpecialPredefsModule extends wrappers.special.impl.WSpecialPredefsDefs {self: Scalan =>}

@@ -37,7 +37,7 @@ class InterpreterReflectionGeneratorTests extends AnyPropSpec with Matchers {
   }
 
   property("inner class") {
-    val ctx = null.asInstanceOf[scalan.Library] // ok! type level only
+    val ctx = null.asInstanceOf[scalan.Scalan] // ok! type level only
     val clazz = classOf[ctx.Coll.CollElem[_, _]]
     registerClassEntry(clazz,
       constructors = Array(

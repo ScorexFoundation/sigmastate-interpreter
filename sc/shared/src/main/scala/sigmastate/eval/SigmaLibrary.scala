@@ -1,10 +1,10 @@
 package sigmastate.eval
 
-import scalan.Library
+import scalan.Scalan
 import sigma.SigmaDslModule
 
 /** Main trait which represents sigma operations in graph IR cake. */
-trait SigmaLibrary extends Library
+trait SigmaLibrary extends Scalan
     with sigma.wrappers.WrappersModule
     with SigmaDslModule
 {

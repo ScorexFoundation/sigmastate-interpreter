@@ -41,7 +41,7 @@ class CollsStagingTests extends WrappersTests {
   }
 
   test("invokeUnlifted for Col") {
-    val ctx = new WrappersCtx with Library
+    val ctx = new WrappersCtx with Scalan
     import ctx._
     import Coll._
     import CollBuilder._
@@ -59,7 +59,7 @@ class CollsStagingTests extends WrappersTests {
   }
 
   test("invokeUnlifted for method of Ctor") {
-    val ctx = new WrappersCtx with Library
+    val ctx = new WrappersCtx with Scalan
     import ctx._
     import Coll._
     import CollBuilder._

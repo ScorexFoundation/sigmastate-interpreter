@@ -1,18 +1,20 @@
 package wrappers.scalan
 
-import scala.language.{existentials,implicitConversions}
+import scalan.Scalan
+
+import scala.language.{existentials, implicitConversions}
 import sigma.data.RType
-import special.wrappers.WrappersModule
 import special.wrappers.RTypeWrapSpec
+
 import scala.collection.compat.immutable.ArraySeq
 
 package impl {
-  import scalan.GraphIRReflection
+  import scalan.{Base, GraphIRReflection, Scalan}
   import sigma.reflection.{RClass, RMethod}
 
   // Abs -----------------------------------
-trait WRTypesDefs extends scalan.Scalan with WRTypes {
-  self: WrappersModule =>
+trait WRTypesDefs extends Base with WRTypes {
+  self: Scalan =>
 
   registerModule(WRTypesModule)
 
@@ -116,4 +118,4 @@ object WRTypesModule extends scalan.ModuleInfo("wrappers.scalan", "WRTypes") {
 }
 }
 
-trait WRTypesModule extends wrappers.scalan.impl.WRTypesDefs {self: WrappersModule =>}
+trait WRTypesModule extends wrappers.scalan.impl.WRTypesDefs {self: Scalan =>}

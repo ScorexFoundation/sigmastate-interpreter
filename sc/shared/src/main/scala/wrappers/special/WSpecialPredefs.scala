@@ -1,9 +1,7 @@
 package wrappers.special {
   import scalan._
 
-  import special.wrappers.WrappersModule
-
-  trait WSpecialPredefs extends Base { self: WrappersModule =>
+  trait WSpecialPredefs extends Base { self: Scalan =>
     trait WSpecialPredef extends Def[WSpecialPredef];
     trait WSpecialPredefCompanion {
       def some[A](x: Ref[A]): Ref[WOption[A]];

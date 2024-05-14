@@ -9,8 +9,8 @@ package impl {
   import sigma.reflection.{RClass, RMethod}
 
   // Abs -----------------------------------
-trait CollsDefs extends scalan.Scalan with Colls {
-  self: Library =>
+trait CollsDefs extends Base with Colls {
+  self: Scalan =>
 
   registerModule(CollsModule)
 
@@ -639,4 +639,4 @@ object CollsModule extends scalan.ModuleInfo("sigma", "Colls") {
 }
 }
 
-trait CollsModule extends sigma.impl.CollsDefs {self: Library =>}
+trait CollsModule extends sigma.impl.CollsDefs {self: Scalan =>}

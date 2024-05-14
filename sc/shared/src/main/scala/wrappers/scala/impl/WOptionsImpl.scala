@@ -11,8 +11,8 @@ package impl {
   import sigma.reflection.{RClass, RMethod}
 
   // Abs -----------------------------------
-trait WOptionsDefs extends scalan.Scalan with WOptions {
-  self: WrappersModule =>
+trait WOptionsDefs extends Base with WOptions {
+  self: Scalan =>
 
 class WOptionCls extends EntityObject("WOption") {
   // entityConst: single const for each entity
@@ -240,4 +240,4 @@ object WOptionsModule extends scalan.ModuleInfo("wrappers.scala", "WOptions") {
 }
 }
 
-trait WOptionsModule extends wrappers.scala.impl.WOptionsDefs {self: WrappersModule =>}
+trait WOptionsModule extends wrappers.scala.impl.WOptionsDefs {self: Scalan =>}

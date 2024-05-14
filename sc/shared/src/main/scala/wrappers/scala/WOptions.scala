@@ -3,7 +3,7 @@ package wrappers.scala {
 
   import special.wrappers.WrappersModule
 
-  trait WOptions extends Base { self: WrappersModule =>
+  trait WOptions extends Base { self: Scalan =>
     trait WOption[A] extends Def[WOption[A]] {
       implicit def eA: Elem[A];
       def isDefined: Ref[Boolean];
