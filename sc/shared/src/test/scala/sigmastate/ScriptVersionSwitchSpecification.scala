@@ -276,13 +276,14 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting {
     * 20   | 4        | mined     | Script v3      | v5.0    | skip-accept (rely on majority)
     */
   property("Rules 19,20 | Block v4 | candidate or mined block | Script v3") {
-    forEachActivatedScriptVersion(activatedVers = Array[Byte](3)) // version for Block v4
+    forEachActivatedScriptVersion(activatedVers = Array[Byte](4)) // activated version is greater then MaxSupported
     {
-      forEachErgoTreeVersion(ergoTreeVers = Array[Byte](3, 4)) { // scripts >= v3
+      forEachErgoTreeVersion(ergoTreeVers = Array[Byte](4, 5)) { // tree version >= activated
         val headerFlags = ErgoTree.defaultHeaderWithVersion(ergoTreeVersionInTests)
         val ergoTree = createErgoTree(headerFlags)
 
-        // prover is rejecting, because such context parameters doesn't make sense
+        // prover is rejecting, because it cannot generate proofs for ErgoTrees with version
+        // higher than max supported by the interpreter
         assertExceptionThrown(
           testProve(ergoTree, activatedScriptVersion = activatedVersionInTests),
           exceptionLike[InterpreterException](s"Both ErgoTree version ${ergoTree.version} and activated version $activatedVersionInTests is greater than MaxSupportedScriptVersion $MaxSupportedScriptVersion")
