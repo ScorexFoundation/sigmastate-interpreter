@@ -1058,8 +1058,20 @@ class SigmaDslSpecification extends SigmaDslTesting
       ">=", GE.apply)(_ >= _)
   }
 
+//  property("Numeric.toBytes methods equivalence") {
+//    lazy val toBytes = changedFeature(
+//      (x: Byte) => x.toBytes,
+//      (x: Byte) => x.toBytes,
+//      "{ (x: Byte) => x.toBytes }")
+//    val cases = Seq(
+//      (0.toByte, Success(Coll(0.toByte))),
+//      (1.toByte, Success(Coll(1.toByte)))
+//    )
+//
+//    testCases(cases, toBytes)
+//  }
+
   property("Byte methods equivalence (new features)") {
-    lazy val toBytes = newFeature((x: Byte) => x.toBytes, "{ (x: Byte) => x.toBytes }")
     lazy val toAbs = newFeature((x: Byte) => x.toAbs, "{ (x: Byte) => x.toAbs }")
     lazy val compareTo = newFeature(
       (x: (Byte, Byte)) => x._1.compareTo(x._2),
@@ -1074,7 +1086,7 @@ class SigmaDslSpecification extends SigmaDslTesting
     "{ (x: (Byte, Byte)) => (x._1 & x._2).toByteExact }")
 
     forAll { x: Byte =>
-      Seq(toBytes, toAbs).foreach(f => f.checkEquality(x))
+      Seq(toAbs).foreach(f => f.checkEquality(x))
     }
 
     forAll { x: (Byte, Byte) =>

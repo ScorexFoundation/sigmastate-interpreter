@@ -1,5 +1,6 @@
 package sigma.data
 
+import sigma.{Coll, Colls}
 import sigma.util.Extensions.{ByteOps, ShortOps}
 
 /** Type-class which defines the operations on Integral types (Byte, Short, Int, Long, BigInt)
@@ -37,6 +38,7 @@ object ExactIntegral {
     override def plus(x: Byte, y: Byte): Byte = x.addExact(y)
     override def minus(x: Byte, y: Byte): Byte = x.subtractExact(y)
     override def times(x: Byte, y: Byte): Byte = x.multiplyExact(y)
+    override def toBytes(x: Byte): Coll[Byte] = Colls.fromItems(x)
   }
 
   implicit object ShortIsExactIntegral extends ExactIntegral[Short] {
@@ -44,6 +46,7 @@ object ExactIntegral {
     override def plus(x: Short, y: Short): Short = x.addExact(y)
     override def minus(x: Short, y: Short): Short = x.subtractExact(y)
     override def times(x: Short, y: Short): Short = x.multiplyExact(y)
+    override def toBytes(x: Short): Coll[Byte] = Colls.fromItems((x >> 8).toByte, x.toByte)
   }
 
   implicit object IntIsExactIntegral extends ExactIntegral[Int] {
@@ -51,6 +54,8 @@ object ExactIntegral {
     override def plus(x: Int, y: Int): Int = java7.compat.Math.addExact(x, y)
     override def minus(x: Int, y: Int): Int = java7.compat.Math.subtractExact(x, y)
     override def times(x: Int, y: Int): Int = java7.compat.Math.multiplyExact(x, y)
+    override def toBytes(x: Int): Coll[Byte] =
+      Colls.fromItems((x >> 24).toByte, (x >> 16).toByte, (x >> 8).toByte, x.toByte)
   }
 
   implicit object LongIsExactIntegral extends ExactIntegral[Long] {
@@ -58,5 +63,7 @@ object ExactIntegral {
     override def plus(x: Long, y: Long): Long = java7.compat.Math.addExact(x, y)
     override def minus(x: Long, y: Long): Long = java7.compat.Math.subtractExact(x, y)
     override def times(x: Long, y: Long): Long = java7.compat.Math.multiplyExact(x, y)
+    override def toBytes(x: Long): Coll[Byte] =
+      Colls.fromItems((x >> 56).toByte, (x >> 48).toByte, (x >> 40).toByte, (x >> 32).toByte, (x >> 24).toByte, (x >> 16).toByte, (x >> 8).toByte, x.toByte)
   }
 }

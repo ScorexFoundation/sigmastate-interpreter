@@ -2,6 +2,7 @@ package sigma.data
 
 import sigma._
 import sigma.eval.Extensions.IntExt
+import sigma.util.Extensions.BigIntOps
 
 import scala.math.{Integral, Ordering}
 
@@ -89,6 +90,8 @@ object NumericOps {
       * NOTE: This method should not be used in v4.x
       */
     override def divisionRemainder(x: BigInt, y: BigInt): BigInt = x.mod(y)
+
+    override def toBytes(x: BigInt): Coll[Byte] = Colls.fromArray(x.toBigInteger.toByteArray)
   }
 
   /** The instance of [[scalan.ExactOrdering]] typeclass for [[BigInt]]. */
