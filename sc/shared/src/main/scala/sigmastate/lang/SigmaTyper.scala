@@ -1,6 +1,5 @@
 package sigmastate.lang
 
-import org.ergoplatform._
 import sigma.ast.SCollection.{SBooleanArray, SByteArray}
 import sigma.ast._
 import sigma.ast.syntax.SValue
@@ -14,11 +13,15 @@ import sigma.serialization.OpCodes
 
 import scala.collection.mutable.ArrayBuffer
 
-/**
-  * Type inference and analysis for Sigma expressions.
+/** Type inference and analysis for Sigma expressions.
+  * @param builder SigmaBuilder instance to create new nodes
+  * @param predefFuncRegistry predefined functions registry used to resolve names
+  * @param typeEnv environment with types of variables/names
+  * @param lowerMethodCalls if true, then MethodCall nodes are lowered to the corresponding ErgoTree nodes
   */
 class SigmaTyper(val builder: SigmaBuilder,
                  predefFuncRegistry: PredefinedFuncRegistry,
+                 typeEnv: Map[String, SType],
                  lowerMethodCalls: Boolean) {
   import SigmaTyper._
   import builder._
@@ -28,8 +31,10 @@ class SigmaTyper(val builder: SigmaBuilder,
 
   import SType.tT
 
-  private val predefinedEnv: Map[String, SType] =
-      predefFuncRegistry.funcs.map { case (k, f) => k -> f.declaration.tpe }.toMap
+  private val predefinedEnv: Map[String, SType] = {
+      val predefFuncs = predefFuncRegistry.funcs.map { case (k, f) => k -> f.declaration.tpe }.toMap
+      predefFuncs ++ typeEnv
+  }
 
   private def processGlobalMethod(srcCtx: Nullable[SourceContext],
                                   method: SMethod,

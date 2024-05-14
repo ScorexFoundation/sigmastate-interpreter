@@ -72,7 +72,8 @@ class SigmaCompiler private(settings: CompilerSettings) {
     val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
     val binder = new SigmaBinder(env, builder, networkPrefix, predefinedFuncRegistry)
     val bound = binder.bind(parsed)
-    val typer = new SigmaTyper(builder, predefinedFuncRegistry, settings.lowerMethodCalls)
+    val typeEnv = env.collect { case (k, v: SType) => k -> v }
+    val typer = new SigmaTyper(builder, predefinedFuncRegistry, typeEnv, settings.lowerMethodCalls)
     val typed = typer.typecheck(bound)
     typed
   }
@@ -91,7 +92,12 @@ class SigmaCompiler private(settings: CompilerSettings) {
 
   /** Compiles the given typed expression. */
   def compileTyped(env: ScriptEnv, typedExpr: SValue)(implicit IR: IRContext): CompilerResult[IR.type] = {
-    val compiledGraph = IR.buildGraph(env, typedExpr)
+    val placeholdersEnv = env
+        .collect { case (name, t: SType) => name -> t }
+        .zipWithIndex
+        .map { case ((name, t), index) => name -> ConstantPlaceholder(index, t) }
+        .toMap
+    val compiledGraph = IR.buildGraph(env ++ placeholdersEnv, typedExpr)
     val compiledTree = IR.buildTree(compiledGraph)
     CompilerResult(env, "<no source code>", compiledGraph, compiledTree)
   }

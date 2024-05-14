@@ -35,7 +35,8 @@ class SigmaTyperTest extends AnyPropSpec
       val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
       val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix, predefinedFuncRegistry)
       val bound = binder.bind(parsed)
-      val typer = new SigmaTyper(builder, predefinedFuncRegistry, lowerMethodCalls = true)
+      val typeEnv = env.collect { case (k, v: SType) => k -> v }
+      val typer = new SigmaTyper(builder, predefinedFuncRegistry, typeEnv, lowerMethodCalls = true)
       val typed = typer.typecheck(bound)
       assertSrcCtxForAllNodes(typed)
       if (expected != null) {
@@ -57,7 +58,8 @@ class SigmaTyperTest extends AnyPropSpec
       val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
       val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix, predefinedFuncRegistry)
       val bound = binder.bind(parsed)
-      val typer = new SigmaTyper(builder, predefinedFuncRegistry, lowerMethodCalls = true)
+      val typeEnv = env.collect { case (k, v: SType) => k -> v }
+      val typer = new SigmaTyper(builder, predefinedFuncRegistry, typeEnv, lowerMethodCalls = true)
       typer.typecheck(bound)
     }, {
       case te: TyperException =>
