@@ -10,12 +10,12 @@ import sigma.data.{AvlTreeData, AvlTreeFlags, Digest32Coll, TrivialProp}
 import sigmastate.CompilerCrossVersionProps
 import sigma.ast.{AvlTreeConstant, ByteArrayConstant, LongConstant, SigmaPropConstant}
 import sigma.Extensions.ArrayOps
-import sigmastate.eval.IRContext
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigma.serialization.ErgoTreeSerializer
 import sigma.ast.syntax._
+import sigma.compiler.Scalan
 import sigma.eval.SigmaDsl
 
 import scala.util.Random
@@ -172,7 +172,7 @@ import scala.util.Random
 
 class LetsSpecification extends CompilerTestingCommons with CompilerCrossVersionProps { suite =>
   // Not mixed with TestContext since it is not possible to call compiler.compile outside tests if mixed
-  implicit lazy val IR: IRContext = new TestingIRContext
+  implicit lazy val IR: Scalan = new TestingIRContext
 
   lazy val project = new ErgoLikeTestProvingInterpreter()
 

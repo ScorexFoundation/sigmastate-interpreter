@@ -5,11 +5,11 @@ import sigma.interpreter.{CostedProverResult, ProverResult}
 import sigma.data.{CSigmaDslBuilder, RType}
 import org.ergoplatform.{ErgoBox, ErgoLikeContext}
 import sigma.{Coll, SigmaDslBuilder, SigmaProp}
-import sigmastate.eval.IRContext
 
 import scala.util.Try
 import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition, Token}
 import sigma.ast.{ErgoTree, EvaluatedValue, SType}
+import sigma.compiler.Scalan
 
 import scala.language.implicitConversions
 
@@ -19,7 +19,7 @@ trait ContractSpec {
 
   implicit def Coll[T](items: Array[T])(implicit cT: RType[T]): Coll[T] = Colls.fromArray(items)
 
-  val IR: IRContext
+  val IR: Scalan
 
   trait PropositionSpec {
     def name: String

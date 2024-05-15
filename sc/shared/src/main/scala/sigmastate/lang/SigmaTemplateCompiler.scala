@@ -4,7 +4,7 @@ import fastparse.Parsed
 import org.ergoplatform.sdk.{ContractTemplate, Parameter}
 import sigma.ast.SourceContext
 import sigma.ast.syntax.SValue
-import sigmastate.eval.CompiletimeIRContext
+import sigma.compiler.CompiletimeIRContext
 import sigmastate.lang.parsers.ParserException
 
 /** Compiler which compiles Ergo contract templates into a [[ContractTemplate]]. */

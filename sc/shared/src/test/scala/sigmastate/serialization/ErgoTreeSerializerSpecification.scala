@@ -10,9 +10,9 @@ import sigma.util.Extensions.SigmaPropOps
 import sigma.validation.ValidationException
 import ErgoTree.EmptyConstants
 import ErgoTree.HeaderType
+import sigma.compiler.Scalan
 import sigma.eval.Extensions.SigmaBooleanOps
 import sigmastate._
-import sigmastate.eval.IRContext
 import sigmastate.helpers.CompilerTestingCommons
 import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
 
@@ -25,7 +25,7 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification
     beginPass(noConstPropagationPass)
   }
 
-  private def extractConstants(prop: SigmaPropValue)(implicit IR: IRContext): Seq[ErgoTree] = {
+  private def extractConstants(prop: SigmaPropValue)(implicit IR: Scalan): Seq[ErgoTree] = {
     import ErgoTree._
     val env = Map[String, Any]()
     val res = compiler.compileTyped(env, prop)

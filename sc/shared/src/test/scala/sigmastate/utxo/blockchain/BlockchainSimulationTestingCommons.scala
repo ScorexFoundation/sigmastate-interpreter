@@ -17,6 +17,7 @@ import scorex.util._
 import sigma.Colls
 import sigma.data.{AvlTreeData, AvlTreeFlags}
 import ErgoTree.ZeroHeader
+import sigma.compiler.Scalan
 import sigma.eval.Extensions.SigmaBooleanOps
 import sigma.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
@@ -125,7 +126,7 @@ object BlockchainSimulationTestingCommons extends CompilerTestingCommons {
   }
 
 
-  case class ValidationState(state: BlockchainState, boxesReader: InMemoryErgoBoxReader, activatedVersion: Byte)(implicit IR: IRContext) {
+  case class ValidationState(state: BlockchainState, boxesReader: InMemoryErgoBoxReader, activatedVersion: Byte)(implicit IR: Scalan) {
     val validator = new ErgoTransactionValidator(activatedVersion)
 
     def applyBlock(block: FullBlock, maxCost: Int = MaxBlockCost): Try[ValidationState] = Try {
@@ -165,7 +166,7 @@ object BlockchainSimulationTestingCommons extends CompilerTestingCommons {
       ErgoLikeContextTesting.dummyPubkey
     )
 
-    def initialState(activatedVersion: Byte, block: FullBlock)(implicit IR: IRContext): ValidationState = {
+    def initialState(activatedVersion: Byte, block: FullBlock)(implicit IR: Scalan): ValidationState = {
       val keySize = 32
       val prover = new BatchProver(keySize, None)
 

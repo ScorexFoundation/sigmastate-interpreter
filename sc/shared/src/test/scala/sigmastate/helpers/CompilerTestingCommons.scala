@@ -12,6 +12,7 @@ import sigma.data.{RType, SigmaBoolean}
 import sigma.validation.ValidationException
 import sigma.validation.ValidationRules.CheckSerializableTypeCode
 import sigma.ast.syntax.{SValue, SigmaPropValue}
+import sigma.compiler.Scalan
 import sigma.eval.{CostDetails, EvalSettings, Extensions, GivenCost, TracedCost}
 import sigmastate.helpers.TestingHelpers._
 import sigma.interpreter.ContextExtension.VarBinding
@@ -21,7 +22,7 @@ import sigmastate.interpreter._
 import sigmastate.lang.{CompilerSettings, SigmaCompiler}
 import sigma.serialization.SigmaSerializer
 import sigmastate.CompilerTestsBase
-import sigmastate.eval.{CContext, IRContext}
+import sigmastate.eval.CContext
 
 import scala.util.DynamicVariable
 
@@ -29,7 +30,7 @@ trait CompilerTestingCommons extends TestingCommons
     with TestUtils with TestContexts with ValidationSpecification
     with CompilerTestsBase {
 
-  class TestingIRContext extends TestContext with IRContext
+  class TestingIRContext extends TestContext with Scalan
 
   case class CompiledFunc[A,B]
     (script: String, bindings: Seq[VarBinding], expr: SValue, compiledTree: SValue, func: A => (B, CostDetails))
@@ -90,7 +91,7 @@ trait CompilerTestingCommons extends TestingCommons
   def compileTestScript[A]
       (env: ScriptEnv, funcScript: String)
       (implicit tA: RType[A],
-                IR: IRContext,
+                IR: Scalan,
                 compilerSettings: CompilerSettings): SValue = {
     val code =
       s"""{
@@ -128,7 +129,7 @@ trait CompilerTestingCommons extends TestingCommons
 
   def funcJitFromExpr[A: RType, B: RType]
       (funcScript: String, expr: SValue, bindings: VarBinding*)
-      (implicit IR: IRContext,
+      (implicit IR: Scalan,
                 evalSettings: EvalSettings,
                 compilerSettings: CompilerSettings): CompiledFunc[A, B] = {
     val f = (in: A) => {
@@ -166,7 +167,7 @@ trait CompilerTestingCommons extends TestingCommons
 
   def funcJit[A: RType, B: RType]
       (funcScript: String, bindings: VarBinding*)
-      (implicit IR: IRContext,
+      (implicit IR: Scalan,
                 evalSettings: EvalSettings,
                 compilerSettings: CompilerSettings): CompiledFunc[A, B] = {
     val compiledTree = compileTestScript[A](Interpreter.emptyEnv, funcScript)

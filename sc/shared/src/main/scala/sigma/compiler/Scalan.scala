@@ -20,6 +20,11 @@ import special.wrappers.WrappersModule
   * At the same time cake design pattern allow to `override` many methods and values
   * in classed derived from `Scalan`, this is significant benefit over
   * *everything is global* design.
+  *
+  * It is not used in v5.0 interpreter and thus not part of consensus.
+  * Used in ErgoScript compiler only.
+  *
+  * @see CompiletimeIRContext
   */
 trait Scalan
   extends TypeDescs
@@ -41,13 +46,22 @@ trait Scalan
   with WrappersModule
   with CollsModule
   with sigma.wrappers.WrappersModule
-  with SigmaDslModule {
+  with SigmaDslModule
+  with TreeBuilding
+  with GraphBuilding {
 
   import Coll._
   import CollBuilder._
   import WOption._
   import WRType._
   import WSpecialPredef._
+
+  /** Pass configuration which is used to turn-off constant propagation.
+    * USED IN TESTS ONLY.
+    * @see `beginPass(noCostPropagationPass)`  */
+  lazy val noConstPropagationPass = new DefaultPass(
+    "noCostPropagationPass",
+    Pass.defaultPassConfig.copy(constantPropagation = false))
 
   type LazyRep[T] = MutableLazy[Ref[T]]
 

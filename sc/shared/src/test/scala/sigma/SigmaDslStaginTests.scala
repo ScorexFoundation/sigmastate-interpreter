@@ -2,6 +2,7 @@ package sigma
 
 import org.scalatest.BeforeAndAfterAll
 import scalan.{BaseCtxTests, BaseLiftableTests}
+import sigma.compiler.Scalan
 import sigma.data.TrivialProp
 import sigma.eval.Extensions.toAnyValue
 import sigmastate.eval._
@@ -9,7 +10,7 @@ import sigmastate.eval._
 import scala.language.reflectiveCalls
 
 class SigmaDslStaginTests extends BaseCtxTests with ErgoScriptTestkit with BaseLiftableTests with BeforeAndAfterAll {
-  class Ctx extends TestContext with IRContext with LiftableTestKit {
+  class Ctx extends TestContext with Scalan with LiftableTestKit {
   }
 
   test("invokeUnlifted") {

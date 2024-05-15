@@ -1,20 +1,20 @@
 package sigmastate.utxo
 
 import sigmastate.CompilerCrossVersionProps
-import sigmastate.eval.IRContext
 import sigma.Extensions.ArrayOps
 import sigma.Context
 import sigmastate.helpers.CompilerTestingCommons
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, TestContractSpec}
 import org.ergoplatform.ErgoBox
 import scorex.crypto.hash.Blake2b256
+import sigma.compiler.Scalan
 import sigma.data.{CSigmaProp, TrivialProp}
 
 class UsingContextPropertiesSpecification extends CompilerTestingCommons
   with CompilerCrossVersionProps { suite =>
   lazy val spec = TestContractSpec(suite)(new TestingIRContext)
   lazy val prover = spec.ProvingParty("Alice")
-  private implicit lazy val IR: IRContext = spec.IR
+  private implicit lazy val IR: Scalan = spec.IR
 
   private val reg1 = ErgoBox.nonMandatoryRegisters(0)
 

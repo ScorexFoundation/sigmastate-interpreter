@@ -4,6 +4,7 @@ import sigmastate.interpreter.Interpreter.ScriptNameProp
 
 import scala.collection.mutable
 import sigma.interpreter.{CostedProverResult, ProverResult}
+
 import scala.collection.mutable.ArrayBuffer
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
 import sigma.data.{AvlTreeData, CAnyValue, CSigmaProp, Nullable}
@@ -14,14 +15,14 @@ import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition, Token}
 import sigma.ast.{ErgoTree, SType}
 import sigma.ast.EvaluatedValue
 import sigma.interpreter.ContextExtension
-import sigmastate.eval.IRContext
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
 import sigmastate.helpers.TestingHelpers._
 import sigma.ast.syntax.ValueOps
 import sigma.{AnyValue, Evaluation, SigmaProp}
 import ErgoTree.ZeroHeader
+import sigma.compiler.Scalan
 
-case class TestContractSpec(testSuite: CompilerTestingCommons)(implicit val IR: IRContext) extends ContractSpec {
+case class TestContractSpec(testSuite: CompilerTestingCommons)(implicit val IR: Scalan) extends ContractSpec {
 
   case class TestPropositionSpec(name: String, dslSpec: Proposition, scriptSpec: ErgoScript) extends PropositionSpec {
     lazy val ergoTree: ErgoTree = {

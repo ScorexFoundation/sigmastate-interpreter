@@ -8,11 +8,12 @@ import scalan.BaseCtxTests
 import sigma.ast.syntax.ValueOps
 import sigmastate.lang.LangTests
 import sigma.ast.Apply
+import sigma.compiler.Scalan
 
 class ErgoTreeBuildingTest extends BaseCtxTests
     with LangTests with ExampleContracts with ErgoScriptTestkit {
 
-  implicit override lazy val IR: TestContext with IRContext = new TestContext with IRContext {
+  implicit override lazy val IR: TestContext with Scalan = new TestContext with Scalan {
     beginPass(noConstPropagationPass)
   }
 

@@ -9,7 +9,6 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigma.ast.SCollection.SByteArray
 import sigma.ast._
 import sigmastate._
-import sigmastate.eval.IRContext
 import sigmastate.eval._
 import sigma.Extensions.ArrayOps
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
@@ -19,6 +18,7 @@ import sigma.ast.syntax._
 import sigma.Coll
 import sigma.ast.SAvlTree
 import sigma.ast.syntax.{GetVarByteArray, OptionValueOps}
+import sigma.compiler.Scalan
 import sigma.data.{AvlTreeData, AvlTreeFlags, CSigmaProp, TrivialProp}
 import sigma.eval.SigmaDsl
 import sigma.interpreter.ProverResult
@@ -31,7 +31,7 @@ class AVLTreeScriptsSpecification extends CompilerTestingCommons
   import org.ergoplatform.dsl.AvlTreeHelpers._
   lazy val spec = TestContractSpec(suite)(new TestingIRContext)
   lazy val prover = spec.ProvingParty("Alice")
-  private implicit lazy val IR: IRContext = spec.IR
+  private implicit lazy val IR: Scalan = spec.IR
 
   private val reg1 = ErgoBox.nonMandatoryRegisters(0)
   private val reg2 = ErgoBox.nonMandatoryRegisters(1)

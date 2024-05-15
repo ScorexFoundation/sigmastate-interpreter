@@ -7,7 +7,7 @@ import sigma.ast.{ErgoTree, SType, TransformingSigmaBuilder, Value}
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import sigma.ast.syntax.{SValue, SigmaPropValue}
 import sigma.serialization.ValueSerializer
-import sigmastate.eval.IRContext
+import sigma.compiler.Scalan
 import sigma.ast.syntax.ValueOps
 import sigmastate.helpers.{NegativeTesting, SigmaPPrint}
 
@@ -44,21 +44,21 @@ trait CompilerTestsBase extends TestsBase with NegativeTesting {
   }
 
   /** Compile the given code to ErgoTree expression. */
-  def compile(env: ScriptEnv, code: String)(implicit IR: IRContext): Value[SType] = {
+  def compile(env: ScriptEnv, code: String)(implicit IR: Scalan): Value[SType] = {
     val res = compiler.compile(env, code)
     checkCompilerResult(res)
     res.buildTree
   }
 
   /** Check the given [[CompilerResult]] meets equality and sanity requirements. */
-  def checkCompilerResult[Ctx <: IRContext](res: CompilerResult[Ctx]): Unit = {
+  def checkCompilerResult[Ctx <: Scalan](res: CompilerResult[Ctx]): Unit = {
     checkSerializationRoundTrip(res.buildTree)
   }
 
 
   /** Compiles the given code and checks the resulting `prop` against `expected`. */
   def compileAndCheck(env: ScriptEnv, code: String, expected: SValue)
-      (implicit IR: IRContext): (ErgoTree, SigmaPropValue) = {
+      (implicit IR: Scalan): (ErgoTree, SigmaPropValue) = {
     val prop = compile(env, code).asSigmaProp
     prop shouldBe expected
     val tree = mkTestErgoTree(prop)

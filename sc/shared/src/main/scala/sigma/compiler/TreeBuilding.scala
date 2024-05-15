@@ -7,7 +7,6 @@ import sigma.data.{ProveDHTuple, ProveDlog}
 import sigma.serialization.ConstantStore
 import sigma.serialization.OpCodes._
 import sigma.serialization.ValueCodes.OpCode
-import sigmastate.eval.IRContext
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -23,7 +22,7 @@ import scala.collection.mutable.ArrayBuffer
   *
   * @see buildTree method
   * */
-trait TreeBuilding extends Scalan { IR: IRContext =>
+trait TreeBuilding extends Base { IR: Scalan =>
   import BigInt._
   import Box._
   import Coll._

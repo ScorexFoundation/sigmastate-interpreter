@@ -25,12 +25,13 @@ import sigma.ast._
 import sigma.eval.{CostDetails, EvalSettings, SigmaDsl}
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.crypto.SigmaProtocolPrivateInput
-import sigmastate.eval.{CContext, CompiletimeIRContext, IRContext}
+import sigmastate.eval.CContext
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaPPrint}
 import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
 import sigmastate.interpreter._
 import sigma.ast.Apply
+import sigma.compiler.{CompiletimeIRContext, Scalan}
 import sigma.eval.Extensions.SigmaBooleanOps
 import sigma.interpreter.{ContextExtension, ProverResult}
 import sigma.serialization.ValueSerializer
@@ -54,7 +55,7 @@ class SigmaDslTesting extends AnyPropSpec
 
   override def contractEnv: ScriptEnv = Map()
 
-  def createIR(): IRContext = new TestingIRContext {
+  def createIR(): Scalan = new TestingIRContext {
     override val okMeasureOperationTime: Boolean = true
   }
 
@@ -495,7 +496,7 @@ class SigmaDslTesting extends AnyPropSpec
     expectedExpr: Option[SValue],
     printExpectedExpr: Boolean = true,
     logScript: Boolean = LogScriptDefault
-  )(implicit IR: IRContext, val tA: RType[A], val tB: RType[B],
+  )(implicit IR: Scalan, val tA: RType[A], val tB: RType[B],
              override val evalSettings: EvalSettings) extends Feature[A, B] {
 
     implicit val cs = compilerSettingsInTests
@@ -665,7 +666,7 @@ class SigmaDslTesting extends AnyPropSpec
     logScript: Boolean = LogScriptDefault,
     allowNewToSucceed: Boolean = false,
     override val allowDifferentErrors: Boolean = false
-  )(implicit IR: IRContext, override val evalSettings: EvalSettings, val tA: RType[A], val tB: RType[B])
+  )(implicit IR: Scalan, override val evalSettings: EvalSettings, val tA: RType[A], val tB: RType[B])
     extends Feature[A, B] { feature =>
 
     implicit val cs = compilerSettingsInTests
@@ -839,7 +840,7 @@ class SigmaDslTesting extends AnyPropSpec
     expectedExpr: Option[SValue],
     printExpectedExpr: Boolean = true,
     logScript: Boolean = LogScriptDefault
-  )(implicit IR: IRContext, override val evalSettings: EvalSettings, val tA: RType[A], val tB: RType[B])
+  )(implicit IR: Scalan, override val evalSettings: EvalSettings, val tA: RType[A], val tB: RType[B])
     extends Feature[A, B] {
     override def scalaFunc: A => B = { x =>
       sys.error(s"Semantic Scala function is not defined for old implementation: $this")
@@ -1012,7 +1013,7 @@ class SigmaDslTesting extends AnyPropSpec
   def existingFeature[A: RType, B: RType]
       (scalaFunc: A => B, script: String,
        expectedExpr: SValue = null)
-      (implicit IR: IRContext, evalSettings: EvalSettings): Feature[A, B] = {
+      (implicit IR: Scalan, evalSettings: EvalSettings): Feature[A, B] = {
     ExistingFeature(
       script, scalaFunc, Option(expectedExpr))
   }
@@ -1035,7 +1036,7 @@ class SigmaDslTesting extends AnyPropSpec
        expectedExpr: SValue = null,
        allowNewToSucceed: Boolean = false,
        allowDifferentErrors: Boolean = false)
-      (implicit IR: IRContext, evalSettings: EvalSettings): Feature[A, B] = {
+      (implicit IR: Scalan, evalSettings: EvalSettings): Feature[A, B] = {
     ChangedFeature(script, scalaFunc, scalaFuncNew, Option(expectedExpr),
       allowNewToSucceed = allowNewToSucceed,
       allowDifferentErrors = allowDifferentErrors)
@@ -1052,7 +1053,7 @@ class SigmaDslTesting extends AnyPropSpec
     */
   def newFeature[A: RType, B: RType]
       (scalaFunc: A => B, script: String, expectedExpr: SValue = null)
-      (implicit IR: IRContext, es: EvalSettings): Feature[A, B] = {
+      (implicit IR: Scalan, es: EvalSettings): Feature[A, B] = {
     NewFeature(script, scalaFunc, Option(expectedExpr))
   }
 
@@ -1150,7 +1151,7 @@ class SigmaDslTesting extends AnyPropSpec
 
   def benchmarkCases[A: Ordering : Arbitrary : ClassTag, B]
       (cases: Seq[A], f: Feature[A, B], nIters: Int, formatter: MeasureFormatter[A])
-      (implicit IR: IRContext, evalSettings: EvalSettings): Seq[Long] = {
+      (implicit IR: Scalan, evalSettings: EvalSettings): Seq[Long] = {
     val fNew = f.newF
     implicit val tA = fNew.tA
     implicit val tB = fNew.tB
