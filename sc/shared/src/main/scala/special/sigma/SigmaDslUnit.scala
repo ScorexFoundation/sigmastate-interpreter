@@ -1,8 +1,7 @@
 package sigma {
   import scalan._
-  import sigmastate.eval.SigmaLibrary
 
-  trait SigmaDsl extends Base { self: SigmaLibrary =>
+  trait SigmaDsl extends Base { self: Scalan =>
     trait BigInt extends Def[BigInt] {
       def add(that: Ref[BigInt]): Ref[BigInt];
       def subtract(that: Ref[BigInt]): Ref[BigInt];

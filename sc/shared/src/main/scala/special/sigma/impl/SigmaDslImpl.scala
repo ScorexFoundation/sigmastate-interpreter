@@ -2,18 +2,16 @@ package sigma
 
 import scala.language.{existentials, implicitConversions}
 import scalan._
-import sigmastate.eval.SigmaLibrary
 
 import scala.collection.compat.immutable.ArraySeq
 
 package impl {
   import sigma.data.{Nullable, RType}
   import sigma.reflection.{RClass, RMethod}
-  import sigmastate.eval.SigmaLibrary
 
   // Abs -----------------------------------
-trait SigmaDslDefs extends scalan.Scalan with SigmaDsl {
-  self: SigmaLibrary =>
+trait SigmaDslDefs extends Base with SigmaDsl {
+  self: Scalan =>
 
   registerModule(SigmaDslModule)
 
@@ -2326,4 +2324,4 @@ object SigmaDslModule extends scalan.ModuleInfo("sigma", "SigmaDsl") {
 }
 }
 
-trait SigmaDslModule extends sigma.impl.SigmaDslDefs {self: SigmaLibrary =>}
+trait SigmaDslModule extends sigma.impl.SigmaDslDefs {self: Scalan =>}

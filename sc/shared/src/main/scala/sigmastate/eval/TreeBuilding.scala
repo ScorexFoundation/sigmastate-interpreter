@@ -3,6 +3,7 @@ package sigmastate.eval
 
 import sigma.ast._
 import org.ergoplatform._
+import scalan.Scalan
 import sigma.ast.syntax.ValueOps
 import sigma.serialization.OpCodes._
 import sigma.serialization.ConstantStore
@@ -24,7 +25,7 @@ import sigma.serialization.ValueCodes.OpCode
   *
   * @see buildTree method
   * */
-trait TreeBuilding extends SigmaLibrary { IR: IRContext =>
+trait TreeBuilding extends Scalan { IR: IRContext =>
   import Liftables._
   import Context._
   import SigmaProp._

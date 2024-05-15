@@ -2,7 +2,7 @@ package scalan
 
 import scalan.primitives._
 import scalan.staged.Transforming
-import sigma.CollsModule
+import sigma.{CollsModule, SigmaDslModule}
 import sigma.data.{Nullable, RType}
 import sigma.util.MemoizedFunc
 import special.wrappers.WrappersModule
@@ -20,7 +20,7 @@ import special.wrappers.WrappersModule
   * in classed derived from `Scalan`, this is significant benefit over
   * *everything is global* design.
   */
- trait Scalan
+trait Scalan
   extends TypeDescs
   with MethodCalls
   with Tuples
@@ -38,7 +38,9 @@ import special.wrappers.WrappersModule
   with Modules
   with DefRewriting
   with WrappersModule
-  with CollsModule {
+  with CollsModule
+  with sigma.wrappers.WrappersModule
+  with SigmaDslModule {
 
   import WOption._
   import WRType._
@@ -71,6 +73,11 @@ import special.wrappers.WrappersModule
   private val SPCM = WSpecialPredefCompanionMethods
 
   def colBuilder: Ref[CollBuilder]
+
+  implicit lazy val wRTypeAnyElement: Elem[WRType[Any]] = wRTypeElement(AnyElement)
+
+  /** During compilation represent a global value Global, see also SGlobal type. */
+  def sigmaDslBuilder: Ref[SigmaDslBuilder]
 
   object IsNumericToInt {
     def unapply(d: Def[_]): Nullable[Ref[A] forSome {type A}] = d match {
@@ -146,7 +153,6 @@ import special.wrappers.WrappersModule
     case _ =>
       super.invokeUnlifted(e, mc, dataEnv)
   }
-
 
 }
 

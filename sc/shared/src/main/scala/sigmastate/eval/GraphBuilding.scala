@@ -1,7 +1,7 @@
 package sigmastate.eval
 
 import org.ergoplatform._
-import scalan.MutableLazy
+import scalan.{MutableLazy, Scalan}
 import sigma.{SigmaException, ast}
 import sigma.ast.TypeCodes.LastConstantCode
 import sigma.ast.Value.Typed
@@ -27,7 +27,7 @@ import scala.collection.mutable.ArrayBuffer
   * CSE however means the original structure of source code may not be preserved in the
   * resulting ErgoTree.
   * */
-trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
+trait GraphBuilding extends Scalan { IR: IRContext =>
   import AvlTree._
   import BigInt._
   import Box._
