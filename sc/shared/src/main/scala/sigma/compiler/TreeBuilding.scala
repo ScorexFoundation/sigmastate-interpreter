@@ -1,17 +1,15 @@
-package sigmastate.eval
+package sigma.compiler
 
-
-import sigma.ast._
 import org.ergoplatform._
-import sigma.ast.syntax.ValueOps
-import sigma.serialization.OpCodes._
-import sigma.serialization.ConstantStore
-import sigma.ast.syntax._
-import sigma.compiler.Scalan
+import sigma.ast._
+import sigma.ast.syntax.{ValueOps, _}
 import sigma.data.{ProveDHTuple, ProveDlog}
+import sigma.serialization.ConstantStore
+import sigma.serialization.OpCodes._
+import sigma.serialization.ValueCodes.OpCode
+import sigmastate.eval.IRContext
 
 import scala.collection.mutable.ArrayBuffer
-import sigma.serialization.ValueCodes.OpCode
 
 /** Implementation of IR-graph to ErgoTree expression translation.
   * This, in a sense, is inverse to [[GraphBuilding]], however roundtrip identity is not
@@ -26,16 +24,16 @@ import sigma.serialization.ValueCodes.OpCode
   * @see buildTree method
   * */
 trait TreeBuilding extends Scalan { IR: IRContext =>
-  import Liftables._
-  import Context._
-  import SigmaProp._
-  import Coll._
-  import Box._
-  import CollBuilder._
-  import SigmaDslBuilder._
   import BigInt._
-  import WOption._
+  import Box._
+  import Coll._
+  import CollBuilder._
+  import Context._
   import GroupElement._
+  import Liftables._
+  import SigmaDslBuilder._
+  import SigmaProp._
+  import WOption._
 
   /** Convenience synonyms for easier pattern matching. */
   private val ContextM = ContextMethods

@@ -1,22 +1,21 @@
-package sigmastate.eval
+package sigma.compiler
 
 import org.ergoplatform._
 import scalan.MutableLazy
-import sigma.{SigmaException, ast}
 import sigma.ast.TypeCodes.LastConstantCode
 import sigma.ast.Value.Typed
-import sigma.ast._
 import sigma.ast.syntax.{SValue, ValueOps}
+import sigma.ast._
 import sigma.crypto.EcPointType
 import sigma.data.ExactIntegral.{ByteIsExactIntegral, IntIsExactIntegral, LongIsExactIntegral, ShortIsExactIntegral}
 import sigma.data.ExactOrdering.{ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering, ShortIsExactOrdering}
 import sigma.data.{CSigmaDslBuilder, ExactIntegral, ExactNumeric, ExactOrdering, Lazy, Nullable}
-import sigma.util.Extensions.ByteOps
-import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigma.ast.{Ident, Select, Val}
-import sigma.compiler.Scalan
 import sigma.exceptions.GraphBuildingException
 import sigma.serialization.OpCodes
+import sigma.util.Extensions.ByteOps
+import sigma.{SigmaException, ast}
+import sigmastate.eval.IRContext
+import sigmastate.interpreter.Interpreter.ScriptEnv
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -43,8 +42,8 @@ trait GraphBuilding extends Scalan { IR: IRContext =>
   import SigmaProp._
   import WOption._
 
-  /** Should be specified in the final cake */
-  val builder: SigmaBuilder
+  /** Builder used to create ErgoTree nodes. */
+  val builder = TransformingSigmaBuilder
   import builder._
 
   val okMeasureOperationTime: Boolean = false

@@ -1,6 +1,7 @@
 package sigmastate.eval
 
 import sigma.ast.TransformingSigmaBuilder
+import sigma.compiler.{GraphBuilding, TreeBuilding}
 
 /** Main interface of graph IR context which contain both GraphBuilding and TreeBuilding
   * methods.
@@ -11,7 +12,6 @@ import sigma.ast.TransformingSigmaBuilder
   * @see CompiletimeIRContext
   */
 trait IRContext extends TreeBuilding with GraphBuilding {
-  override val builder = TransformingSigmaBuilder
 
   /** Pass configuration which is used to turn-off constant propagation.
     * USED IN TESTS ONLY.
