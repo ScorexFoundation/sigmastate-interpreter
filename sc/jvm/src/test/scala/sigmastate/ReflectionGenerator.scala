@@ -1,6 +1,6 @@
 package sigmastate
 
-import scalan.{Base, TypeDescs}
+import sigma.compiler.{Base, TypeDescs}
 import sigma.reflection._
 import scala.annotation.unused
 import scala.collection.mutable

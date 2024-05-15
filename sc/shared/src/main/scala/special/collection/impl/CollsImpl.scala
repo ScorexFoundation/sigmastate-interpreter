@@ -1,10 +1,13 @@
 package sigma
 
-import scala.language.{existentials,implicitConversions}
+import scala.language.{existentials, implicitConversions}
 import scalan._
+import sigma.compiler.Scalan
+
 import scala.collection.compat.immutable.ArraySeq
 
 package impl {
+  import sigma.compiler.{Base, GraphIRReflection, ModuleInfo, Scalan}
   import sigma.data.{Nullable, RType}
   import sigma.reflection.{RClass, RMethod}
 
@@ -634,7 +637,7 @@ object CollBuilder extends EntityObject("CollBuilder") {
 
 }
 
-object CollsModule extends scalan.ModuleInfo("sigma", "Colls") {
+object CollsModule extends ModuleInfo("sigma", "Colls") {
   val reflection = GraphIRReflection
 }
 }

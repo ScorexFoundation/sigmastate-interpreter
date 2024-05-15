@@ -1,6 +1,6 @@
-package scalan.primitives
+package sigma.compiler.primitives
 
-import scalan.{Base, Scalan}
+import sigma.compiler.{Base, Scalan}
 
 trait UniversalOps extends Base { scalan: Scalan =>
   case class HashCode[A]() extends UnOp[A, Int]("hashCode") {

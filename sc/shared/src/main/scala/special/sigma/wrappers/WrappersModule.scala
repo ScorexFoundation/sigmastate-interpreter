@@ -1,6 +1,6 @@
 package sigma.wrappers
 
-import scalan.Scalan
+import sigma.compiler.Scalan
 
 trait WrappersModule
   extends special.wrappers.WrappersModule { self: Scalan => }

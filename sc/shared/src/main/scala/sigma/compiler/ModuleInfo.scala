@@ -1,4 +1,4 @@
-package scalan
+package sigma.compiler
 
 import scalan.meta.SSymName
 

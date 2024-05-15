@@ -1,10 +1,10 @@
-package scalan.staged
+package sigma.compiler.staged
 
-import scalan.Scalan
-import debox.{Buffer => DBuffer}
-import sigma.util.GraphUtil
-import debox.cfor
+import debox.{cfor, Buffer => DBuffer}
+import sigma.compiler.Scalan
 import sigma.data.{DFunc, Nullable}
+import sigma.util.GraphUtil
+
 import scala.collection.compat.immutable.ArraySeq
 
 trait ProgramGraphs extends AstGraphs { self: Scalan =>

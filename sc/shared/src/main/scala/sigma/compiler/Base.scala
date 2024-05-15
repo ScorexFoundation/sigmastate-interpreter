@@ -1,14 +1,15 @@
-package scalan
+package sigma.compiler
 
 import debox.{cfor, Buffer => DBuffer}
-import sigma.data.{AVHashMap, Nullable, RType}
+import scalan.MutableLazy
 import sigma.data.OverloadHack.Overloaded1
-import sigma.util.StringUtil
+import sigma.data.{AVHashMap, Nullable, RType}
 import sigma.reflection.RConstructor
+import sigma.util.StringUtil
 
 import java.util.Arrays
-import scala.annotation.{implicitNotFound, unused}
 import scala.annotation.unchecked.uncheckedVariance
+import scala.annotation.{implicitNotFound, unused}
 import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
 import scala.language.implicitConversions
@@ -51,7 +52,7 @@ abstract class Base { scalan: Scalan =>
 
   /** Base class for all IR nodes/operations/definitions. */
   abstract class Node extends Product {
-    private[scalan] var _nodeId: Int = freshId
+    private[compiler] var _nodeId: Int = freshId
 
     /** Unique id of the graph node assigned for each new instance using
       * `freshId` generator.
@@ -365,8 +366,8 @@ abstract class Base { scalan: Scalan =>
 
     /** Most of the references are initialized when created.
       * These methods are used in core to assign new value for the reference.*/
-    private[scalan] def assignDef[B >: T](d: Def[B]): Unit
-    private[scalan] def assignDefFrom[B >: T](ref: Ref[B]): Unit
+    private[compiler] def assignDef[B >: T](d: Def[B]): Unit
+    private[compiler] def assignDefFrom[B >: T](ref: Ref[B]): Unit
 
     /** Whether the underlying node is Placeholder. */
     @inline final def isPlaceholder: Boolean = node.isInstanceOf[Placeholder[_]]
@@ -550,7 +551,7 @@ abstract class Base { scalan: Scalan =>
   }
 
   /** Prepend owner parameter depending on its kind. */
-  private[scalan] def addOwnerParameter(ownerType: OwnerKind, params: Seq[Any]): Seq[AnyRef] = {
+  private[compiler] def addOwnerParameter(ownerType: OwnerKind, params: Seq[Any]): Seq[AnyRef] = {
     val finalParams = (ownerType match {
       case EntityObjectOwner(obj) => obj +: params
       case ScalanOwner => scalan +: params
@@ -601,7 +602,7 @@ abstract class Base { scalan: Scalan =>
     override def elem: Elem[T @uncheckedVariance] = _node.resultType
     override def node: Def[T] = _node
 
-    private[scalan] def assignDefInternal[B >: T](d: Def[B]): Unit = {
+    private[compiler] def assignDefInternal[B >: T](d: Def[B]): Unit = {
       assert(_node.isInstanceOf[Placeholder[_]])
       assert(_node.nodeId > 0)
       val tab = _symbolTable
@@ -612,12 +613,12 @@ abstract class Base { scalan: Scalan =>
       _node = d.asInstanceOf[Def[T]]
     }
 
-    private[scalan] def assignDef[B >: T](d: Def[B]): Unit = {
+    private[compiler] def assignDef[B >: T](d: Def[B]): Unit = {
       assignDefInternal(d)
       updateSymbolTable(this, d)
     }
 
-    private[scalan] def assignDefFrom[B >: T](sym: Ref[B]): Unit = {
+    private[compiler] def assignDefFrom[B >: T](sym: Ref[B]): Unit = {
       assignDefInternal(sym.node)
     }
 
@@ -670,7 +671,7 @@ abstract class Base { scalan: Scalan =>
   }
 
   /** Should be invoked to reset IR global node counter. */
-  @inline final private[scalan] def resetIdCounter() = { currId = 0 }
+  @inline final private[compiler] def resetIdCounter() = { currId = 0 }
 
   /** Create or find symbol (node Ref) which refers to the given node in the table of all created symbols.
     * The d.nodeId is the index in the _symbolTable which is DBuffer (backed by Array)
@@ -825,7 +826,7 @@ abstract class Base { scalan: Scalan =>
     * @tparam T
     * @return The symbol of the graph which is semantically(up to rewrites) equivalent to d
     */
-  protected[scalan] def toExp[T](d: Def[T], newSym: => Ref[T]): Ref[T] = {
+  protected[compiler] def toExp[T](d: Def[T], newSym: => Ref[T]): Ref[T] = {
     var res = findOrCreateDefinition(d, newSym)
     var currSym = res
     var currDef = d

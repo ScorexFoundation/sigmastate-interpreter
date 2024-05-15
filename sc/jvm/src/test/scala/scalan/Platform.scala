@@ -3,6 +3,7 @@ package scalan
 import scalan.compilation.GraphVizExport
 import sigma.util.FileUtil
 import org.scalatest.Assertions
+import sigma.compiler.Scalan
 
 object Platform {
   /** Output graph given by symbols in `sfs` to files.

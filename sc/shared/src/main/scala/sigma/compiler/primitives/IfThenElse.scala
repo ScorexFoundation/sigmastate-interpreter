@@ -1,6 +1,6 @@
-package scalan.primitives
+package sigma.compiler.primitives
 
-import scalan.{Base, Scalan}
+import sigma.compiler.{Base, Scalan}
 
 trait IfThenElse extends Base { self: Scalan =>
 

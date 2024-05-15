@@ -1,5 +1,7 @@
 package scalan
 
+import sigma.compiler.Scalan
+
 trait BaseLiftableTests { self: BaseCtxTests =>
 
   trait LiftableTestKit { scalan: Scalan =>

@@ -1,5 +1,6 @@
 package scalan
 
+import sigma.compiler.Scalan
 import sigma.util.BenchmarkUtil.{measure, measureTime}
 
 class Benchmark[T <: Scalan](createContext: => T) {

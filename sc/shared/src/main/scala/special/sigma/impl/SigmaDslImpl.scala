@@ -2,10 +2,12 @@ package sigma
 
 import scala.language.{existentials, implicitConversions}
 import scalan._
+import sigma.compiler.Scalan
 
 import scala.collection.compat.immutable.ArraySeq
 
 package impl {
+  import sigma.compiler.{Base, GraphIRReflection, ModuleInfo, Scalan}
   import sigma.data.{Nullable, RType}
   import sigma.reflection.{RClass, RMethod}
 
@@ -2319,7 +2321,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
   registerEntityObject("SigmaDslBuilder", SigmaDslBuilder)
 }
 
-object SigmaDslModule extends scalan.ModuleInfo("sigma", "SigmaDsl") {
+object SigmaDslModule extends ModuleInfo("sigma", "SigmaDsl") {
   val reflection = GraphIRReflection
 }
 }

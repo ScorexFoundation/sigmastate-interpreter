@@ -1,11 +1,10 @@
-package scalan
+package sigma.compiler
 
-import scalan.primitives.Thunks
+import sigma.compiler.primitives.Thunks
+import sigma.{Colls, SigmaDsl}
+import sigma.data.RType
 import sigma.reflection.ReflectionData.registerClassEntry
 import sigma.reflection.{ReflectionData, mkConstructor, mkMethod}
-import sigma.Colls
-import sigma.SigmaDsl
-import sigma.data.RType
 import special.wrappers.{OptionWrapSpec, RTypeWrapSpec}
 import wrappers.scalan.WRTypes
 
@@ -23,7 +22,7 @@ object GraphIRReflection {
   val reflection = ReflectionData
 
   { val clazz = classOf[wrappers.scala.WOptions#WOption[_]]
-    val ctx = null.asInstanceOf[scalan.Scalan] // ok! type level only
+    val ctx = null.asInstanceOf[Scalan] // ok! type level only
     registerClassEntry(clazz,
       methods = Map(
         mkMethod(clazz, "filter", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>

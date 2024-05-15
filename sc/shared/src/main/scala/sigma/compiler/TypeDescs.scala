@@ -1,16 +1,16 @@
-package scalan
+package sigma.compiler
 
-import scala.language.implicitConversions
-import scala.annotation.implicitNotFound
-import scala.collection.immutable.ListMap
-
-import scala.collection.mutable
 import debox.cfor
 import scalan.core.{Contravariant, Covariant, Variance}
 import sigma.data.{AVHashMap, Lazy, Nullable, RType}
 import sigma.reflection.{RClass, RConstructor, RMethod}
 import sigma.util.CollectionUtil
 import special.wrappers.WrapSpec
+
+import scala.annotation.implicitNotFound
+import scala.collection.immutable.ListMap
+import scala.collection.mutable
+import scala.language.implicitConversions
 
 abstract class TypeDescs extends Base { self: Scalan =>
 
@@ -267,7 +267,7 @@ abstract class TypeDescs extends Base { self: Scalan =>
     e.invokeUnlifted(mc, dataEnv)
 
   /** Get first (and the only) constructor of the `clazz`. */
-  private[scalan] final def getConstructor(clazz: RClass[_]): RConstructor[_] = {
+  private[compiler] final def getConstructor(clazz: RClass[_]): RConstructor[_] = {
     val constructors = clazz.getConstructors()
     if (constructors.length != 1)
       !!!(s"Element class $clazz has ${constructors.length} constructors, 1 expected")
@@ -297,7 +297,7 @@ abstract class TypeDescs extends Base { self: Scalan =>
     
   protected val elemCache = AVHashMap[RClass[_], ElemCacheEntry](1000)
 
-  private[scalan] final def cachedElem0(clazz: RClass[_], optConstructor: Nullable[RConstructor[_]], args: Seq[AnyRef]): Elem[_] = {
+  private[compiler] final def cachedElem0(clazz: RClass[_], optConstructor: Nullable[RConstructor[_]], args: Seq[AnyRef]): Elem[_] = {
     val entry = elemCache.get(clazz) match {
       case Nullable(entry) => entry
       case _ =>

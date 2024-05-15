@@ -1,6 +1,6 @@
 package special.wrappers
 
-import scalan.Scalan
+import sigma.compiler.Scalan
 import wrappers.scala.WOptionsModule
 import wrappers.scalan.WRTypesModule
 import wrappers.special.WSpecialPredefsModule

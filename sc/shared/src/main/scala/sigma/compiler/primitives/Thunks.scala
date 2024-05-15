@@ -1,15 +1,14 @@
-package scalan.primitives
+package sigma.compiler.primitives
 
-import scala.language.{existentials, implicitConversions}
-import scalan._
-import debox.{Buffer => DBuffer, Set => DSet}
-import debox.cfor
+import debox.{cfor, Buffer => DBuffer, Set => DSet}
 import scalan.core.Covariant
+import sigma.compiler.Scalan
 import sigma.data.{AVHashMap, DFunc, Lazy, Nullable, RType}
 import sigma.reflection.RClass
 import sigma.util.GraphUtil
 
 import scala.collection.Seq
+import scala.language.{existentials, implicitConversions}
 
 /** Slice in the [[Scalan]] cake with definitions of Thunk operations.
   * See https://en.wikipedia.org/wiki/Thunk.

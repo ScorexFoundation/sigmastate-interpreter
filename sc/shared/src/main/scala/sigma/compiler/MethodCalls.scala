@@ -1,11 +1,11 @@
-package scalan
+package sigma.compiler
 
-import scala.annotation.{tailrec, unused}
-import scala.reflect.ClassTag
-import debox.{Buffer => DBuffer}
-import debox.cfor
+import debox.{cfor, Buffer => DBuffer}
+import scalan.DelayInvokeException
 import sigma.reflection.RMethod
 import sigma.util.CollectionUtil.TraversableOps
+
+import scala.annotation.{tailrec, unused}
 
 trait MethodCalls extends Base { self: Scalan =>
 
@@ -116,7 +116,7 @@ trait MethodCalls extends Base { self: Scalan =>
   def rewriteNonInvokableMethodCall(@unused mc: MethodCall): Ref[_] = null
 
   /** Generic helper to call the given method on the given receiver node. */
-  private[scalan] def invokeMethod[A](receiver: Sym, m: RMethod, args: Array[AnyRef],
+  private[compiler] def invokeMethod[A](receiver: Sym, m: RMethod, args: Array[AnyRef],
                               onInvokeSuccess: Any => A,
                               onInvokeException: Throwable => A,
                               onInvokeImpossible: => A): A = {

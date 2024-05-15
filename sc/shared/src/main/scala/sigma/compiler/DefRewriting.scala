@@ -1,5 +1,6 @@
-package scalan
+package sigma.compiler
 
+import scalan.DelayInvokeException
 import sigma.data.ExactNumeric
 
 trait DefRewriting { scalan: Scalan =>

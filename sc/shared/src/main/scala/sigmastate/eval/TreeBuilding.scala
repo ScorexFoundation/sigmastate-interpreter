@@ -3,11 +3,11 @@ package sigmastate.eval
 
 import sigma.ast._
 import org.ergoplatform._
-import scalan.Scalan
 import sigma.ast.syntax.ValueOps
 import sigma.serialization.OpCodes._
 import sigma.serialization.ConstantStore
 import sigma.ast.syntax._
+import sigma.compiler.Scalan
 import sigma.data.{ProveDHTuple, ProveDlog}
 
 import scala.collection.mutable.ArrayBuffer

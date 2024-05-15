@@ -2,8 +2,8 @@ package scalan.compilation
 
 import java.awt.Desktop
 import java.io.{File, PrintWriter}
-import scalan.Scalan
 import scalan.core.ScalaNameUtil
+import sigma.compiler.Scalan
 import sigma.util.{FileUtil, ProcessUtil, StringUtil}
 
 import scala.annotation.unused

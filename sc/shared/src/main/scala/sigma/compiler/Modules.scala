@@ -1,4 +1,4 @@
-package scalan
+package sigma.compiler
 
 trait Modules extends Base { self: Scalan =>
 

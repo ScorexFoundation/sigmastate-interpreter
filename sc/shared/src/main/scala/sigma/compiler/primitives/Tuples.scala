@@ -2,11 +2,12 @@
  * Author: Alexander Slesarenko
  * Date: 7/25/12
  */
-package scalan.primitives
+package sigma.compiler.primitives
 
-import scalan.{Base, Scalan}
+import sigma.compiler.{Base, Scalan}
+import sigma.data.AVHashMap
+
 import scala.language.implicitConversions
-import sigma.data.{AVHashMap}
 
 trait Tuples extends Base { self: Scalan =>
   object Pair {

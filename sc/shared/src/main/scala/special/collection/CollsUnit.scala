@@ -1,5 +1,6 @@
 package sigma {
   import scalan._
+  import sigma.compiler.{Base, Scalan}
 
   /** Staged version of collection interfaces which is used in graph-based IR to represent
     * methods of Coll and CollBuilder.

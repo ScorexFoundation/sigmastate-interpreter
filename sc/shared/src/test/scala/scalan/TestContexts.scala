@@ -1,5 +1,6 @@
 package scalan
 
+import sigma.compiler.{GraphIRReflection, Scalan}
 import sigma.reflection.RMethod
 import sigma.{BaseNestedTests, BaseShouldTests, BaseTests, TestUtils}
 

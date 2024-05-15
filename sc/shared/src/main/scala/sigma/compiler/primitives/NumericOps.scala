@@ -1,6 +1,6 @@
-package scalan.primitives
+package sigma.compiler.primitives
 
-import scalan.{Base, Scalan}
+import sigma.compiler.{Base, Scalan}
 import sigma.data.{ExactIntegral, ExactNumeric}
 
 /** Slice in Scala cake with definitions of numeric operations. */

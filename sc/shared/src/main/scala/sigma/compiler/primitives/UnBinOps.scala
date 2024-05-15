@@ -1,6 +1,6 @@
-package scalan.primitives
+package sigma.compiler.primitives
 
-import scalan.{Scalan, Base}
+import sigma.compiler.{Base, Scalan}
 
 trait UnBinOps extends Base { self: Scalan =>
 

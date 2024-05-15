@@ -1,14 +1,13 @@
-package scalan.primitives
+package sigma.compiler.primitives
 
-import java.util
-import scalan.staged.ProgramGraphs
-import scalan.{Base, Scalan}
-import debox.{Buffer => DBuffer}
-
-import scala.language.implicitConversions
-import debox.cfor
+import debox.{cfor, Buffer => DBuffer}
+import sigma.compiler.staged.ProgramGraphs
+import sigma.compiler.{Base, Scalan}
 import sigma.data.{Lazy, Nullable, emptyDBufferOfInt}
 import sigma.util.GraphUtil
+
+import java.util
+import scala.language.implicitConversions
 
 trait Functions extends Base with ProgramGraphs { self: Scalan =>
 

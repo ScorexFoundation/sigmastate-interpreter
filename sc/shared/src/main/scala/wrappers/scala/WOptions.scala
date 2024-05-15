@@ -1,6 +1,6 @@
 package wrappers.scala {
   import scalan._
-
+  import sigma.compiler.{Base, Scalan}
   import special.wrappers.WrappersModule
 
   trait WOptions extends Base { self: Scalan =>

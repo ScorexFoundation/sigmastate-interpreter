@@ -1,5 +1,6 @@
 package wrappers.scalan {
   import scalan._
+  import sigma.compiler.{Base, Scalan}
 
 
   trait WRTypes extends Base { self: Scalan =>

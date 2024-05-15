@@ -4,7 +4,6 @@ import fastparse.Parsed
 import fastparse.Parsed.Success
 import sigma.kiama.rewriting.Rewriter.{everywherebu, rewrite, rule}
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
-import scalan.GraphIRReflection
 import sigma.ast.{Exponentiate, MultiplyGroup, SCollectionMethods, SGlobalMethods, SGroupElementMethods, Value, Xor}
 import sigmastate.eval.IRContext
 import sigmastate.interpreter.Interpreter.ScriptEnv
@@ -14,6 +13,7 @@ import sigmastate.lang.parsers.ParserException
 import sigma.ast._
 import sigma.ast.syntax.SValue
 import SCollectionMethods.{ExistsMethod, ForallMethod, MapMethod}
+import sigma.compiler.GraphIRReflection
 import sigmastate.InterpreterReflection
 
 /**

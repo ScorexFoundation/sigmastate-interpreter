@@ -3,6 +3,7 @@ package sigma
 import scala.language.reflectiveCalls
 import special.wrappers.WrappersTests
 import scalan._
+import sigma.compiler.Scalan
 import sigma.data.CollOverArrayBuilder
 
 class CollsStagingTests extends WrappersTests {

@@ -1,6 +1,6 @@
-package scalan.primitives
+package sigma.compiler.primitives
 
-import scalan.{Base, Scalan}
+import sigma.compiler.{Base, Scalan}
 
 /** Slice in Scala cake with definitions of logical operations. */
 trait LogicalOps extends Base { self: Scalan =>

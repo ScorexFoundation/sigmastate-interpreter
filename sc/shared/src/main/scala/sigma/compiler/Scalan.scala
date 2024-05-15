@@ -1,10 +1,11 @@
-package scalan
+package sigma.compiler
 
-import scalan.primitives._
-import scalan.staged.Transforming
-import sigma.{CollsModule, SigmaDslModule}
+import scalan._
+import sigma.compiler.primitives.{Equal, Functions, IfThenElse, LogicalOps, NumericOps, OrderingOps, Thunks, Tuples, UnBinOps, UniversalOps}
+import sigma.compiler.staged.Transforming
 import sigma.data.{Nullable, RType}
 import sigma.util.MemoizedFunc
+import sigma.{CollsModule, SigmaDslModule}
 import special.wrappers.WrappersModule
 
 /** Aggregate cake with all inter-dependent modules assembled together.
@@ -42,9 +43,10 @@ trait Scalan
   with sigma.wrappers.WrappersModule
   with SigmaDslModule {
 
+  import Coll._
+  import CollBuilder._
   import WOption._
   import WRType._
-  import Coll._; import CollBuilder._;
   import WSpecialPredef._
 
   type LazyRep[T] = MutableLazy[Ref[T]]

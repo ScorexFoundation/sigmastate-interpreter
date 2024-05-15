@@ -1,7 +1,7 @@
 package sigmastate.eval
 
 import org.ergoplatform._
-import scalan.{MutableLazy, Scalan}
+import scalan.MutableLazy
 import sigma.{SigmaException, ast}
 import sigma.ast.TypeCodes.LastConstantCode
 import sigma.ast.Value.Typed
@@ -14,6 +14,7 @@ import sigma.data.{CSigmaDslBuilder, ExactIntegral, ExactNumeric, ExactOrdering,
 import sigma.util.Extensions.ByteOps
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigma.ast.{Ident, Select, Val}
+import sigma.compiler.Scalan
 import sigma.exceptions.GraphBuildingException
 import sigma.serialization.OpCodes
 

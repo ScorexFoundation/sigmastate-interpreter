@@ -1,5 +1,7 @@
 package scalan
 
+import sigma.compiler.Scalan
+
 import scala.annotation.unused
 
 object Platform {

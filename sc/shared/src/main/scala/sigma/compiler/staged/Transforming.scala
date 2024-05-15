@@ -1,12 +1,12 @@
-package scalan.staged
+package sigma.compiler.staged
+
+import debox.{cfor, Buffer => DBuffer}
+import sigma.compiler.Scalan
+import sigma.data.{Lazy, Nullable}
+import sigma.reflection.RMethod
 
 import java.util
 import scala.language.existentials
-import scalan.Scalan
-import debox.{Buffer => DBuffer}
-import debox.cfor
-import sigma.data.{Lazy, Nullable}
-import sigma.reflection.RMethod
 
 trait Transforming { self: Scalan =>
 
