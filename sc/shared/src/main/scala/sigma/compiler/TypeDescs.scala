@@ -12,7 +12,7 @@ import scala.collection.immutable.ListMap
 import scala.collection.mutable
 import scala.language.implicitConversions
 
-abstract class TypeDescs extends Base { self: Scalan =>
+abstract class TypeDescs extends Base { self: IRContext =>
 
   /** Helper type case method. */
   @inline final def asElem[T](d: TypeDesc): Elem[T] = d.asInstanceOf[Elem[T]]

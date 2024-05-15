@@ -1,6 +1,6 @@
 package sigma.compiler
 
-trait Modules extends Base { self: Scalan =>
+trait Modules extends Base { self: IRContext =>
 
   /** Whether staged modules should be registered when cake is constructed and initialized. */
   def okRegisterModules: Boolean = false

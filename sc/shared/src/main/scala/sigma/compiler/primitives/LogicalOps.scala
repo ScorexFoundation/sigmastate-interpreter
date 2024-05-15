@@ -1,9 +1,9 @@
 package sigma.compiler.primitives
 
-import sigma.compiler.{Base, Scalan}
+import sigma.compiler.{Base, IRContext}
 
 /** Slice in Scala cake with definitions of logical operations. */
-trait LogicalOps extends Base { self: Scalan =>
+trait LogicalOps extends Base { self: IRContext =>
   /** Logical AND binary operation. */
   val And = new EndoBinOp[Boolean]("&&") {
     override def applySeq(x: Boolean, y: Boolean): Boolean = x && y

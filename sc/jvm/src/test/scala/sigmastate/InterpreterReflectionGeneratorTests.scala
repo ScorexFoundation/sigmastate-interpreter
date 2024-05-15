@@ -2,7 +2,7 @@ package sigmastate
 
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
-import sigma.compiler.{Scalan, TypeDescs}
+import sigma.compiler.{IRContext, TypeDescs}
 import sigma.reflection.ReflectionData.registerClassEntry
 import sigma.reflection.SRConstructor
 
@@ -37,7 +37,7 @@ class InterpreterReflectionGeneratorTests extends AnyPropSpec with Matchers {
   }
 
   property("inner class") {
-    val ctx = null.asInstanceOf[Scalan] // ok! type level only
+    val ctx = null.asInstanceOf[IRContext] // ok! type level only
     val clazz = classOf[ctx.Coll.CollElem[_, _]]
     registerClassEntry(clazz,
       constructors = Array(

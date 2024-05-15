@@ -2,7 +2,7 @@ package sigma.compiler.primitives
 
 import debox.{cfor, Buffer => DBuffer, Set => DSet}
 import scalan.core.Covariant
-import sigma.compiler.Scalan
+import sigma.compiler.IRContext
 import sigma.data.{AVHashMap, DFunc, Lazy, Nullable, RType}
 import sigma.reflection.RClass
 import sigma.util.GraphUtil
@@ -10,12 +10,13 @@ import sigma.util.GraphUtil
 import scala.collection.Seq
 import scala.language.{existentials, implicitConversions}
 
-/** Slice in the [[Scalan]] cake with definitions of Thunk operations.
+/** Slice in the [[IRContext]] cake with definitions of Thunk operations.
   * See https://en.wikipedia.org/wiki/Thunk.
   * Thunks are used to represent lazy operations in the graph IR.
+ *
   * @see ApplyBinOpLazy, IfThenElseLazy
   */
-trait Thunks extends Functions { self: Scalan =>
+trait Thunks extends Functions { self: IRContext =>
 
   type Th[+T] = Ref[Thunk[T]]
 

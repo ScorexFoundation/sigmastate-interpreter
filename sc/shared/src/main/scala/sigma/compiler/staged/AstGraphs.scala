@@ -1,13 +1,13 @@
 package sigma.compiler.staged
 
 import debox.{cfor, Buffer => DBuffer, Map => DMap, Set => DSet}
-import sigma.compiler.Scalan
+import sigma.compiler.IRContext
 import sigma.data.emptyDBufferOfInt
 
 import scala.collection._
 
 
-trait AstGraphs extends Transforming { self: Scalan =>
+trait AstGraphs extends Transforming { self: IRContext =>
 
   /** GraphNode is created for each symbol of the AstGraph and represents graph linking structure */
   case class GraphNode(

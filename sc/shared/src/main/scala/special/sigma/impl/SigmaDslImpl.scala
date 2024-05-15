@@ -2,18 +2,18 @@ package sigma
 
 import scala.language.{existentials, implicitConversions}
 import scalan._
-import sigma.compiler.Scalan
+import sigma.compiler.IRContext
 
 import scala.collection.compat.immutable.ArraySeq
 
 package impl {
-  import sigma.compiler.{Base, GraphIRReflection, ModuleInfo, Scalan}
+  import sigma.compiler.{Base, GraphIRReflection, ModuleInfo, IRContext}
   import sigma.data.{Nullable, RType}
   import sigma.reflection.{RClass, RMethod}
 
   // Abs -----------------------------------
 trait SigmaDslDefs extends Base with SigmaDsl {
-  self: Scalan =>
+  self: IRContext =>
 
   registerModule(SigmaDslModule)
 
@@ -2326,4 +2326,4 @@ object SigmaDslModule extends ModuleInfo("sigma", "SigmaDsl") {
 }
 }
 
-trait SigmaDslModule extends sigma.impl.SigmaDslDefs {self: Scalan =>}
+trait SigmaDslModule extends sigma.impl.SigmaDslDefs {self: IRContext =>}

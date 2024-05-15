@@ -12,7 +12,7 @@ import sigma.data.{RType, SigmaBoolean}
 import sigma.validation.ValidationException
 import sigma.validation.ValidationRules.CheckSerializableTypeCode
 import sigma.ast.syntax.{SValue, SigmaPropValue}
-import sigma.compiler.Scalan
+import sigma.compiler.IRContext
 import sigma.eval.{CostDetails, EvalSettings, Extensions, GivenCost, TracedCost}
 import sigmastate.helpers.TestingHelpers._
 import sigma.interpreter.ContextExtension.VarBinding
@@ -30,7 +30,7 @@ trait CompilerTestingCommons extends TestingCommons
     with TestUtils with TestContexts with ValidationSpecification
     with CompilerTestsBase {
 
-  class TestingIRContext extends TestContext with Scalan
+  class TestingIRContext extends TestContext with IRContext
 
   case class CompiledFunc[A,B]
     (script: String, bindings: Seq[VarBinding], expr: SValue, compiledTree: SValue, func: A => (B, CostDetails))
@@ -91,7 +91,7 @@ trait CompilerTestingCommons extends TestingCommons
   def compileTestScript[A]
       (env: ScriptEnv, funcScript: String)
       (implicit tA: RType[A],
-                IR: Scalan,
+                IR: IRContext,
                 compilerSettings: CompilerSettings): SValue = {
     val code =
       s"""{
@@ -129,7 +129,7 @@ trait CompilerTestingCommons extends TestingCommons
 
   def funcJitFromExpr[A: RType, B: RType]
       (funcScript: String, expr: SValue, bindings: VarBinding*)
-      (implicit IR: Scalan,
+      (implicit IR: IRContext,
                 evalSettings: EvalSettings,
                 compilerSettings: CompilerSettings): CompiledFunc[A, B] = {
     val f = (in: A) => {
@@ -167,7 +167,7 @@ trait CompilerTestingCommons extends TestingCommons
 
   def funcJit[A: RType, B: RType]
       (funcScript: String, bindings: VarBinding*)
-      (implicit IR: Scalan,
+      (implicit IR: IRContext,
                 evalSettings: EvalSettings,
                 compilerSettings: CompilerSettings): CompiledFunc[A, B] = {
     val compiledTree = compileTestScript[A](Interpreter.emptyEnv, funcScript)

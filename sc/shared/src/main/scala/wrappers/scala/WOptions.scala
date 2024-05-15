@@ -1,9 +1,9 @@
 package wrappers.scala {
   import scalan._
-  import sigma.compiler.{Base, Scalan}
+  import sigma.compiler.{Base, IRContext}
   import special.wrappers.WrappersModule
 
-  trait WOptions extends Base { self: Scalan =>
+  trait WOptions extends Base { self: IRContext =>
     trait WOption[A] extends Def[WOption[A]] {
       implicit def eA: Elem[A];
       def isDefined: Ref[Boolean];

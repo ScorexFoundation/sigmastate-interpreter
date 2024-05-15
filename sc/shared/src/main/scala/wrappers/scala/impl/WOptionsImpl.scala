@@ -2,20 +2,20 @@ package wrappers.scala
 
 import scala.language.{existentials, implicitConversions}
 import scalan._
-import sigma.compiler.Scalan
+import sigma.compiler.IRContext
 import special.wrappers.WrappersModule
 import special.wrappers.OptionWrapSpec
 
 import scala.collection.compat.immutable.ArraySeq
 
 package impl {
-  import sigma.compiler.{Base, GraphIRReflection, ModuleInfo, Scalan}
+  import sigma.compiler.{Base, GraphIRReflection, ModuleInfo, IRContext}
   import sigma.data.{Nullable, RType}
   import sigma.reflection.{RClass, RMethod}
 
   // Abs -----------------------------------
 trait WOptionsDefs extends Base with WOptions {
-  self: Scalan =>
+  self: IRContext =>
 
 class WOptionCls extends EntityObject("WOption") {
   // entityConst: single const for each entity
@@ -243,4 +243,4 @@ object WOptionsModule extends ModuleInfo("wrappers.scala", "WOptions") {
 }
 }
 
-trait WOptionsModule extends wrappers.scala.impl.WOptionsDefs {self: Scalan =>}
+trait WOptionsModule extends wrappers.scala.impl.WOptionsDefs {self: IRContext =>}

@@ -1,10 +1,10 @@
 package sigma.compiler.primitives
 
-import sigma.compiler.{Base, Scalan}
+import sigma.compiler.{Base, IRContext}
 import sigma.data.{ExactIntegral, ExactNumeric}
 
 /** Slice in Scala cake with definitions of numeric operations. */
-trait NumericOps extends Base { self: Scalan =>
+trait NumericOps extends Base { self: IRContext =>
 
   /** Extension methods over `Ref[T]` where T is instance of ExactNumeric type-class. */
   implicit class NumericOpsCls[T](x: Ref[T])(implicit val n: ExactNumeric[T]) {

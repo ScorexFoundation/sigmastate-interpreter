@@ -14,7 +14,7 @@ import sigmastate.interpreter.CErgoTreeEvaluator.DefaultEvalSettings
 import sigma.eval.EvalSettings.EvaluationMode
 import sigmastate.interpreter._
 import sigma.ast.syntax.ValueOps
-import sigma.compiler.Scalan
+import sigma.compiler.IRContext
 import sigma.data.CBox
 import sigma.eval.EvalSettings
 import sigma.exceptions.InterpreterException
@@ -33,7 +33,7 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting {
       costTracingEnabled = true  // should always be enabled in tests (and false by default)
     )
 
-  implicit def IR: Scalan = createIR()
+  implicit def IR: IRContext = createIR()
 
   lazy val b1 = CBox(
     new ErgoBox(
@@ -52,7 +52,7 @@ class ScriptVersionSwitchSpecification extends SigmaDslTesting {
   )
 
   /** Creates ErgoTree with segregated constants and also the given header flags. */
-  def createErgoTree(header: HeaderType)(implicit IR: Scalan): ErgoTree = {
+  def createErgoTree(header: HeaderType)(implicit IR: IRContext): ErgoTree = {
     val code =
       s"""{
         |  val func = { (x: Coll[Box]) => x.filter({(b: Box) => b.value > 1 }) }

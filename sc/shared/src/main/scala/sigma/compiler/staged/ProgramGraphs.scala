@@ -1,13 +1,13 @@
 package sigma.compiler.staged
 
 import debox.{cfor, Buffer => DBuffer}
-import sigma.compiler.Scalan
+import sigma.compiler.IRContext
 import sigma.data.{DFunc, Nullable}
 import sigma.util.GraphUtil
 
 import scala.collection.compat.immutable.ArraySeq
 
-trait ProgramGraphs extends AstGraphs { self: Scalan =>
+trait ProgramGraphs extends AstGraphs { self: IRContext =>
 
   type PGraph = ProgramGraph
 

@@ -1,14 +1,14 @@
 package sigma.compiler.staged
 
 import debox.{cfor, Buffer => DBuffer}
-import sigma.compiler.Scalan
+import sigma.compiler.IRContext
 import sigma.data.{Lazy, Nullable}
 import sigma.reflection.RMethod
 
 import java.util
 import scala.language.existentials
 
-trait Transforming { self: Scalan =>
+trait Transforming { self: IRContext =>
 
   /** Descriptor of a current compiler pass.
     * Compiler can be configured to perform one pass after another.

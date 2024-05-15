@@ -1,6 +1,6 @@
 package special.wrappers
 
-import sigma.compiler.Scalan
+import sigma.compiler.IRContext
 import wrappers.scala.WOptionsModule
 import wrappers.scalan.WRTypesModule
 import wrappers.special.WSpecialPredefsModule
@@ -8,4 +8,4 @@ import wrappers.special.WSpecialPredefsModule
 trait WrappersModule
   extends WSpecialPredefsModule
   with WOptionsModule
-  with WRTypesModule { self: Scalan => }
+  with WRTypesModule { self: IRContext => }

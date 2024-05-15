@@ -18,7 +18,7 @@ import scala.language.implicitConversions
   * The Base trait houses common AST nodes. It also manages a list of encountered definitions which
   * allows for common sub-expression elimination (CSE).
   */
-abstract class Base { scalan: Scalan =>
+abstract class Base { thisIR: IRContext =>
   type |[+A, +B] = Either[A, B]
   type RFunc[-A,+B] = Ref[Function1[A,B]]
   type RPair[+A, +B] = Ref[(A,B)]
@@ -554,7 +554,7 @@ abstract class Base { scalan: Scalan =>
   private[compiler] def addOwnerParameter(ownerType: OwnerKind, params: Seq[Any]): Seq[AnyRef] = {
     val finalParams = (ownerType match {
       case EntityObjectOwner(obj) => obj +: params
-      case ScalanOwner => scalan +: params
+      case ScalanOwner => thisIR +: params
       case NoOwner => params
     })
     finalParams.asInstanceOf[Seq[AnyRef]]

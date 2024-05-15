@@ -22,7 +22,7 @@ import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingIn
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.interpreter.Interpreter
 import sigma.ast.syntax._
-import sigma.compiler.Scalan
+import sigma.compiler.IRContext
 import sigma.eval.SigmaDsl
 import sigma.serialization.ErgoTreeSerializer
 import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
@@ -242,7 +242,7 @@ class IcoExample extends CompilerTestingCommons
   with CompilerCrossVersionProps with BeforeAndAfterAll { suite =>
 
   // Not mixed with TestContext since it is not possible to call commpiler.compile outside tests if mixed
-  implicit lazy val IR: Scalan = new Scalan {}
+  implicit lazy val IR: IRContext = new IRContext {}
 
   lazy val spec = TestContractSpec(suite)
   lazy val project = new ErgoLikeTestProvingInterpreter()

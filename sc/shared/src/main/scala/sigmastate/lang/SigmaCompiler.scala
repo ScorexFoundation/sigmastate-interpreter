@@ -12,7 +12,7 @@ import sigmastate.lang.parsers.ParserException
 import sigma.ast._
 import sigma.ast.syntax.SValue
 import SCollectionMethods.{ExistsMethod, ForallMethod, MapMethod}
-import sigma.compiler.{GraphIRReflection, Scalan}
+import sigma.compiler.{GraphIRReflection, IRContext}
 import sigmastate.InterpreterReflection
 
 /**
@@ -37,7 +37,7 @@ case class CompilerSettings(
   * @param compiledGraph graph obtained by using new [[GraphBuilding]]
   * @param buildTree ErgoTree expression obtained from graph created by [[GraphBuilding]]
   */
-case class CompilerResult[Ctx <: Scalan](
+case class CompilerResult[Ctx <: IRContext](
   env: ScriptEnv,
   code: String,
   compiledGraph: Ctx#Ref[Ctx#Context => Any],
@@ -83,14 +83,14 @@ class SigmaCompiler private(settings: CompilerSettings) {
   }
 
   /** Compiles the given ErgoScript source code. */
-  def compile(env: ScriptEnv, code: String)(implicit IR: Scalan): CompilerResult[IR.type] = {
+  def compile(env: ScriptEnv, code: String)(implicit IR: IRContext): CompilerResult[IR.type] = {
     val typed = typecheck(env, code)
     val res = compileTyped(env, typed).copy(code = code)
     res
   }
 
   /** Compiles the given typed expression. */
-  def compileTyped(env: ScriptEnv, typedExpr: SValue)(implicit IR: Scalan): CompilerResult[IR.type] = {
+  def compileTyped(env: ScriptEnv, typedExpr: SValue)(implicit IR: IRContext): CompilerResult[IR.type] = {
     val placeholdersEnv = env
         .collect { case (name, t: SType) => name -> t }
         .zipWithIndex
@@ -102,7 +102,7 @@ class SigmaCompiler private(settings: CompilerSettings) {
   }
 
   /** Compiles the given parsed contract source. */
-  def compileParsed(env: ScriptEnv, parsedExpr: SValue)(implicit IR: Scalan): CompilerResult[IR.type] = {
+  def compileParsed(env: ScriptEnv, parsedExpr: SValue)(implicit IR: IRContext): CompilerResult[IR.type] = {
     val typed = typecheck(env, parsedExpr)
     compileTyped(env, typed)
   }

@@ -26,7 +26,7 @@ import scala.collection.mutable.ArrayBuffer
   * CSE however means the original structure of source code may not be preserved in the
   * resulting ErgoTree.
   * */
-trait GraphBuilding extends Base with DefRewriting { IR: Scalan =>
+trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
   import AvlTree._
   import BigInt._
   import Box._
@@ -58,7 +58,7 @@ trait GraphBuilding extends Base with DefRewriting { IR: Scalan =>
     * In v5.x this code is taken from CheckTupleType validation rule which is no longer
     * part of consensus.
     */
-  def checkTupleType[Ctx <: Scalan, T](ctx: Ctx)(e: ctx.Elem[_]): Unit = {
+  def checkTupleType[Ctx <: IRContext, T](ctx: Ctx)(e: ctx.Elem[_]): Unit = {
     val condition = e match {
       case _: ctx.PairElem[_, _] => true
       case _ => false

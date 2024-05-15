@@ -3,7 +3,7 @@ package sigma
 import scala.language.reflectiveCalls
 import special.wrappers.WrappersTests
 import scalan._
-import sigma.compiler.Scalan
+import sigma.compiler.IRContext
 import sigma.data.CollOverArrayBuilder
 
 class CollsStagingTests extends WrappersTests {
@@ -42,7 +42,7 @@ class CollsStagingTests extends WrappersTests {
   }
 
   test("invokeUnlifted for Col") {
-    val ctx = new WrappersCtx with Scalan
+    val ctx = new WrappersCtx with IRContext
     import ctx._
     import Coll._
     import CollBuilder._
@@ -60,7 +60,7 @@ class CollsStagingTests extends WrappersTests {
   }
 
   test("invokeUnlifted for method of Ctor") {
-    val ctx = new WrappersCtx with Scalan
+    val ctx = new WrappersCtx with IRContext
     import ctx._
     import Coll._
     import CollBuilder._

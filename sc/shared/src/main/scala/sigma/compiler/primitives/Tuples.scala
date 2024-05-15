@@ -4,12 +4,12 @@
  */
 package sigma.compiler.primitives
 
-import sigma.compiler.{Base, Scalan}
+import sigma.compiler.{Base, IRContext}
 import sigma.data.AVHashMap
 
 import scala.language.implicitConversions
 
-trait Tuples extends Base { self: Scalan =>
+trait Tuples extends Base { self: IRContext =>
   object Pair {
     def apply[A, B](a: Ref[A], b: Ref[B]) = zipPair[A, B]((a, b))
     def unapply[A, B](p: Ref[(A, B)]) = Some(unzipPair[A, B](p))

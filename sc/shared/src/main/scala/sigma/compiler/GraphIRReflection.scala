@@ -22,7 +22,7 @@ object GraphIRReflection {
   val reflection = ReflectionData
 
   { val clazz = classOf[wrappers.scala.WOptions#WOption[_]]
-    val ctx = null.asInstanceOf[Scalan] // ok! type level only
+    val ctx = null.asInstanceOf[IRContext] // ok! type level only
     registerClassEntry(clazz,
       methods = Map(
         mkMethod(clazz, "filter", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
@@ -46,8 +46,8 @@ object GraphIRReflection {
 
   registerClassEntry(classOf[TypeDescs#FuncElem[_,_]],
     constructors = Array(
-      mkConstructor(Array(classOf[Scalan], classOf[TypeDescs#Elem[_]], classOf[TypeDescs#Elem[_]])) { args =>
-        val ctx = args(0).asInstanceOf[Scalan]
+      mkConstructor(Array(classOf[IRContext], classOf[TypeDescs#Elem[_]], classOf[TypeDescs#Elem[_]])) { args =>
+        val ctx = args(0).asInstanceOf[IRContext]
         new ctx.FuncElem(args(1).asInstanceOf[ctx.Elem[_]], args(2).asInstanceOf[ctx.Elem[_]])
       }
     )
@@ -55,8 +55,8 @@ object GraphIRReflection {
 
   registerClassEntry(classOf[TypeDescs#PairElem[_,_]],
     constructors = Array(
-      mkConstructor(Array(classOf[Scalan], classOf[TypeDescs#Elem[_]], classOf[TypeDescs#Elem[_]])) { args =>
-        val ctx = args(0).asInstanceOf[Scalan]
+      mkConstructor(Array(classOf[IRContext], classOf[TypeDescs#Elem[_]], classOf[TypeDescs#Elem[_]])) { args =>
+        val ctx = args(0).asInstanceOf[IRContext]
         new ctx.PairElem(args(1).asInstanceOf[ctx.Elem[_]], args(2).asInstanceOf[ctx.Elem[_]])
       }
     )
@@ -64,8 +64,8 @@ object GraphIRReflection {
 
   registerClassEntry(classOf[Thunks#ThunkElem[_]],
     constructors = Array(
-      mkConstructor(Array(classOf[Scalan], classOf[TypeDescs#Elem[_]])) { args =>
-        val ctx = args(0).asInstanceOf[Scalan]
+      mkConstructor(Array(classOf[IRContext], classOf[TypeDescs#Elem[_]])) { args =>
+        val ctx = args(0).asInstanceOf[IRContext]
         new ctx.ThunkElem(args(1).asInstanceOf[ctx.Elem[_]])
       }
     )
@@ -121,7 +121,7 @@ object GraphIRReflection {
   }
 
   { val clazz = classOf[Colls#CollBuilder]
-    val ctx = null.asInstanceOf[Scalan] // ok! type level only
+    val ctx = null.asInstanceOf[IRContext] // ok! type level only
     registerClassEntry(clazz,
       methods = Map(
         mkMethod(clazz, "xor", Array[Class[_]](classOf[Base#Ref[_]], classOf[Base#Ref[_]])) { (obj, args) =>
@@ -143,7 +143,7 @@ object GraphIRReflection {
 
   {
     val clazz = classOf[Colls#Coll[_]]
-    val ctx = null.asInstanceOf[Scalan] // ok! type level only
+    val ctx = null.asInstanceOf[IRContext] // ok! type level only
     registerClassEntry(clazz,
       methods = Map(
         mkMethod(clazz, "append", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
@@ -209,7 +209,7 @@ object GraphIRReflection {
   }
   {
     val clazz = classOf[SigmaDsl#AvlTree]
-    val ctx = null.asInstanceOf[Scalan] // ok! type level only
+    val ctx = null.asInstanceOf[IRContext] // ok! type level only
     registerClassEntry(clazz,
       methods = Map(
         mkMethod(clazz, "updateOperations", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
@@ -267,7 +267,7 @@ object GraphIRReflection {
   }
 
   { val clazz = classOf[SigmaDsl#Box]
-    val ctx = null.asInstanceOf[Scalan] // ok! type level only
+    val ctx = null.asInstanceOf[IRContext] // ok! type level only
     registerClassEntry(clazz,
       methods = Map(
         mkMethod(clazz, "value", Array[Class[_]]()) { (obj, _) =>
@@ -300,7 +300,7 @@ object GraphIRReflection {
 
   {
     val clazz = classOf[SigmaDsl#Context]
-    val ctx = null.asInstanceOf[Scalan] // ok! type level only
+    val ctx = null.asInstanceOf[IRContext] // ok! type level only
     registerClassEntry(clazz,
       methods = Map(
         mkMethod(clazz, "LastBlockUtxoRootHash", Array[Class[_]]()) { (obj, args) =>
@@ -341,7 +341,7 @@ object GraphIRReflection {
   }
   
   { val clazz = classOf[SigmaDsl#GroupElement]
-    val ctx = null.asInstanceOf[Scalan] // ok! type level only
+    val ctx = null.asInstanceOf[IRContext] // ok! type level only
     registerClassEntry(clazz,
       methods = Map(
         mkMethod(clazz, "exp", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
@@ -361,7 +361,7 @@ object GraphIRReflection {
   }
   
   { val clazz = classOf[SigmaDsl#Header]
-    val ctx = null.asInstanceOf[Scalan] // ok! type level only
+    val ctx = null.asInstanceOf[IRContext] // ok! type level only
     registerClassEntry(clazz,
       methods = Map(
         mkMethod(clazz, "minerPk", Array[Class[_]]()) { (obj, args) =>
@@ -414,7 +414,7 @@ object GraphIRReflection {
   }
   
   { val clazz = classOf[SigmaDsl#PreHeader]
-    val ctx = null.asInstanceOf[Scalan] // ok! type level only
+    val ctx = null.asInstanceOf[IRContext] // ok! type level only
     registerClassEntry(clazz,
       methods = Map(
         mkMethod(clazz, "minerPk", Array[Class[_]]()) { (obj, _) =>
@@ -443,7 +443,7 @@ object GraphIRReflection {
   }
 
   { val clazz = classOf[SigmaDsl#SigmaDslBuilder]
-    val ctx = null.asInstanceOf[Scalan] // ok! type level only
+    val ctx = null.asInstanceOf[IRContext] // ok! type level only
     registerClassEntry(clazz,
       methods = Map(
         mkMethod(clazz, "byteArrayToLong", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
@@ -510,7 +510,7 @@ object GraphIRReflection {
     )
   }
 
-  { val ctx = null.asInstanceOf[Scalan] // ok! type level only
+  { val ctx = null.asInstanceOf[IRContext] // ok! type level only
     val clazz = classOf[ctx.WOption.WOptionElem[_, _]]
     registerClassEntry(clazz,
       constructors = Array(
@@ -523,7 +523,7 @@ object GraphIRReflection {
   }
 
   { val clazz = classOf[WRTypes#WRType[_]]
-    val ctx = null.asInstanceOf[Scalan] // ok! type level only
+    val ctx = null.asInstanceOf[IRContext] // ok! type level only
     registerClassEntry(clazz,
       methods = Map(
         mkMethod(clazz, "name", Array[Class[_]]()) { (obj, _) =>
@@ -533,7 +533,7 @@ object GraphIRReflection {
     )
   }
 
-  { val ctx = null.asInstanceOf[Scalan] // ok! type level only
+  { val ctx = null.asInstanceOf[IRContext] // ok! type level only
     val clazz = classOf[ctx.WRType.WRTypeElem[_, _]]
     registerClassEntry(clazz,
       constructors = Array(
@@ -545,7 +545,7 @@ object GraphIRReflection {
     )
   }
 
-  { val ctx = null.asInstanceOf[Scalan] // ok! type level only
+  { val ctx = null.asInstanceOf[IRContext] // ok! type level only
     val clazz = classOf[ctx.Coll.CollElem[_, _]]
     registerClassEntry(clazz,
       constructors = Array(
@@ -558,7 +558,7 @@ object GraphIRReflection {
   }
 
   { val clazz = classOf[wrappers.special.WSpecialPredefs#WSpecialPredefCompanion]
-    val ctx = null.asInstanceOf[Scalan] // ok! type level only
+    val ctx = null.asInstanceOf[IRContext] // ok! type level only
     registerClassEntry(clazz,
       methods = Map(
         mkMethod(clazz, "some", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>

@@ -1,6 +1,6 @@
 package sigma.wrappers
 
-import sigma.compiler.Scalan
+import sigma.compiler.IRContext
 
 trait WrappersModule
-  extends special.wrappers.WrappersModule { self: Scalan => }
+  extends special.wrappers.WrappersModule { self: IRContext => }

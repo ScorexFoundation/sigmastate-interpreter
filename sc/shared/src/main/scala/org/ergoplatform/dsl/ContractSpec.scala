@@ -9,7 +9,7 @@ import sigma.{Coll, SigmaDslBuilder, SigmaProp}
 import scala.util.Try
 import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition, Token}
 import sigma.ast.{ErgoTree, EvaluatedValue, SType}
-import sigma.compiler.Scalan
+import sigma.compiler.IRContext
 
 import scala.language.implicitConversions
 
@@ -19,7 +19,7 @@ trait ContractSpec {
 
   implicit def Coll[T](items: Array[T])(implicit cT: RType[T]): Coll[T] = Colls.fromArray(items)
 
-  val IR: Scalan
+  val IR: IRContext
 
   trait PropositionSpec {
     def name: String

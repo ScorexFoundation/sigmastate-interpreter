@@ -1,8 +1,8 @@
 package sigma.compiler.primitives
 
-import sigma.compiler.{Base, Scalan}
+import sigma.compiler.{Base, IRContext}
 
-trait UniversalOps extends Base { scalan: Scalan =>
+trait UniversalOps extends Base { self: IRContext =>
   case class HashCode[A]() extends UnOp[A, Int]("hashCode") {
     override def applySeq(x: A): Int = x.hashCode
   }

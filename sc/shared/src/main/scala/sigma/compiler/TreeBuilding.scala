@@ -22,7 +22,7 @@ import scala.collection.mutable.ArrayBuffer
   *
   * @see buildTree method
   * */
-trait TreeBuilding extends Base { IR: Scalan =>
+trait TreeBuilding extends Base { IR: IRContext =>
   import BigInt._
   import Box._
   import Coll._

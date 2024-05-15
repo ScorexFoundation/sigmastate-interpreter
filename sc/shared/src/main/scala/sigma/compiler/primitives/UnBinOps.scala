@@ -1,8 +1,8 @@
 package sigma.compiler.primitives
 
-import sigma.compiler.{Base, Scalan}
+import sigma.compiler.{Base, IRContext}
 
-trait UnBinOps extends Base { self: Scalan =>
+trait UnBinOps extends Base { self: IRContext =>
 
   /** Base class for descriptors of unary operations. */
   abstract class UnOp[A, R](val opName: String)(implicit val eResult: Elem[R]) {

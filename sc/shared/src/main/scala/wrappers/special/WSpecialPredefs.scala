@@ -1,8 +1,8 @@
 package wrappers.special {
   import scalan._
-  import sigma.compiler.{Base, Scalan}
+  import sigma.compiler.{Base, IRContext}
 
-  trait WSpecialPredefs extends Base { self: Scalan =>
+  trait WSpecialPredefs extends Base { self: IRContext =>
     trait WSpecialPredef extends Def[WSpecialPredef];
     trait WSpecialPredefCompanion {
       def some[A](x: Ref[A]): Ref[WOption[A]];

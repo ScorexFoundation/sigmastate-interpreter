@@ -1,8 +1,8 @@
 package scalan
 
-import sigma.compiler.{GraphIRReflection, Scalan}
+import sigma.compiler.{GraphIRReflection, IRContext}
 
-trait TestLibrary extends Scalan {
+trait TestLibrary extends IRContext {
   import CollBuilder._
   import SigmaDslBuilder._
   val reflection = (GraphIRReflection)

@@ -1,6 +1,6 @@
 package wrappers.scalan
 
-import sigma.compiler.Scalan
+import sigma.compiler.IRContext
 import scala.language.{existentials, implicitConversions}
 import sigma.data.RType
 import special.wrappers.RTypeWrapSpec
@@ -8,12 +8,12 @@ import special.wrappers.RTypeWrapSpec
 import scala.collection.compat.immutable.ArraySeq
 
 package impl {
-  import sigma.compiler.{Base, GraphIRReflection, ModuleInfo, Scalan}
+  import sigma.compiler.{Base, GraphIRReflection, ModuleInfo, IRContext}
   import sigma.reflection.{RClass, RMethod}
 
   // Abs -----------------------------------
 trait WRTypesDefs extends Base with WRTypes {
-  self: Scalan =>
+  self: IRContext =>
 
   registerModule(WRTypesModule)
 
@@ -117,4 +117,4 @@ object WRTypesModule extends ModuleInfo("wrappers.scalan", "WRTypes") {
 }
 }
 
-trait WRTypesModule extends wrappers.scalan.impl.WRTypesDefs {self: Scalan =>}
+trait WRTypesModule extends wrappers.scalan.impl.WRTypesDefs {self: IRContext =>}

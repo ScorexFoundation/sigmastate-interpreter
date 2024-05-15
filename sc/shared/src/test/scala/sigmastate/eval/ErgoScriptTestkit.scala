@@ -14,7 +14,7 @@ import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeConte
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.interpreter.CErgoTreeEvaluator
 import sigma.ast.syntax.ValueOps
-import sigma.compiler.Scalan
+import sigma.compiler.IRContext
 import sigma.interpreter.ContextExtension
 import sigmastate.lang.{CompilerResult, CompilerSettings, LangTests, SigmaCompiler}
 import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
@@ -27,8 +27,8 @@ import scala.util.{Success, Try}
 trait ErgoScriptTestkit extends ContractsTestkit with LangTests
     with ValidationSpecification with CompilerTestsBase { self: BaseCtxTests =>
 
-  implicit lazy val IR: TestContext with Scalan =
-    new TestContext with Scalan
+  implicit lazy val IR: TestContext with IRContext =
+    new TestContext with IRContext
 
   import IR._
   import BigInt._

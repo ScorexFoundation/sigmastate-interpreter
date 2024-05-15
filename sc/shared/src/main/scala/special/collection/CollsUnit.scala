@@ -1,6 +1,5 @@
 package sigma {
-  import scalan._
-  import sigma.compiler.{Base, Scalan}
+  import sigma.compiler.{Base, IRContext}
 
   /** Staged version of collection interfaces which is used in graph-based IR to represent
     * methods of Coll and CollBuilder.
@@ -9,7 +8,7 @@ package sigma {
     * The semantics of each method is the same as in the original class, please look there
     * for details.
     */
-  trait Colls extends Base { self: Scalan =>
+  trait Colls extends Base { self: IRContext =>
     trait Coll[A] extends Def[Coll[A]] {
       implicit def eA: Elem[A];
       def length: Ref[Int];

@@ -2,14 +2,14 @@ package sigma.compiler.primitives
 
 import debox.{cfor, Buffer => DBuffer}
 import sigma.compiler.staged.ProgramGraphs
-import sigma.compiler.{Base, Scalan}
+import sigma.compiler.{Base, IRContext}
 import sigma.data.{Lazy, Nullable, emptyDBufferOfInt}
 import sigma.util.GraphUtil
 
 import java.util
 import scala.language.implicitConversions
 
-trait Functions extends Base with ProgramGraphs { self: Scalan =>
+trait Functions extends Base with ProgramGraphs { self: IRContext =>
 
   implicit class LambdaOps[A,B](f: Ref[A => B]) {
     /** Apply given function symbol to the given argument symbol.

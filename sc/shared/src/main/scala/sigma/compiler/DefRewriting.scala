@@ -3,7 +3,7 @@ package sigma.compiler
 import scalan.DelayInvokeException
 import sigma.data.ExactNumeric
 
-trait DefRewriting { scalan: Scalan =>
+trait DefRewriting { scalan: IRContext =>
 
   /** Rewrites given node to another equivalent node and returns its reference.
     * @param  d  node to be matched against rewrite patterns

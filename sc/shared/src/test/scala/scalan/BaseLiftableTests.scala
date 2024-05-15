@@ -1,10 +1,10 @@
 package scalan
 
-import sigma.compiler.Scalan
+import sigma.compiler.IRContext
 
 trait BaseLiftableTests { self: BaseCtxTests =>
 
-  trait LiftableTestKit { scalan: Scalan =>
+  trait LiftableTestKit { scalan: IRContext =>
     import Liftables._
 
     /** Check the MethodCall reified in f can be mapped to unlifted method which can be invoked.*/

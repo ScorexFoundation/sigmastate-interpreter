@@ -1,8 +1,8 @@
 package sigma.compiler.primitives
 
-import sigma.compiler.{Base, Scalan}
+import sigma.compiler.{Base, IRContext}
 
-trait IfThenElse extends Base { self: Scalan =>
+trait IfThenElse extends Base { self: IRContext =>
 
   /** If c then t else e construction with standard lazy evaluation of branches.
     * The representation uses Thunk for each branch */

@@ -7,7 +7,7 @@ import sigma.util.CollectionUtil.TraversableOps
 
 import scala.annotation.{tailrec, unused}
 
-trait MethodCalls extends Base { self: Scalan =>
+trait MethodCalls extends Base { self: IRContext =>
 
   def delayInvoke = throw new DelayInvokeException
 

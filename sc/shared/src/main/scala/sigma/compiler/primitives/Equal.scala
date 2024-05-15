@@ -1,10 +1,10 @@
 package sigma.compiler.primitives
 
-import sigma.compiler.{Base, Scalan}
+import sigma.compiler.{Base, IRContext}
 
 import scala.annotation.unused
 
-trait Equal extends Base { self: Scalan =>
+trait Equal extends Base { self: IRContext =>
   /** Binary operation representing structural equality between arguments. */
   case class Equals[A: Elem]() extends BinOp[A, Boolean]("==") {
     override def applySeq(x: A, y: A): Boolean = equalValues[A](x, y)

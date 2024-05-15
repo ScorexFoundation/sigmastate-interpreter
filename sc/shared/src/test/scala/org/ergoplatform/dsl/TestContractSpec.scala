@@ -20,9 +20,9 @@ import sigmastate.helpers.TestingHelpers._
 import sigma.ast.syntax.ValueOps
 import sigma.{AnyValue, Evaluation, SigmaProp}
 import ErgoTree.ZeroHeader
-import sigma.compiler.Scalan
+import sigma.compiler.IRContext
 
-case class TestContractSpec(testSuite: CompilerTestingCommons)(implicit val IR: Scalan) extends ContractSpec {
+case class TestContractSpec(testSuite: CompilerTestingCommons)(implicit val IR: IRContext) extends ContractSpec {
 
   case class TestPropositionSpec(name: String, dslSpec: Proposition, scriptSpec: ErgoScript) extends PropositionSpec {
     lazy val ergoTree: ErgoTree = {

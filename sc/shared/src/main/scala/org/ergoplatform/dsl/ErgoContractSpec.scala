@@ -3,10 +3,10 @@ package org.ergoplatform.dsl
 import sigma.Coll
 import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition, Token}
 import org.ergoplatform.ErgoBox.{BoxId, NonMandatoryRegisterId, TokenId}
-import sigma.compiler.Scalan
+import sigma.compiler.IRContext
 import sigma.interpreter.CostedProverResult
 
-class ErgoContractSpec(implicit val IR: Scalan) extends ContractSpec {
+class ErgoContractSpec(implicit val IR: IRContext) extends ContractSpec {
 
   case class ErgoOutBox(tx: TransactionCandidate, boxIndex: Int, value: Long, propSpec: PropositionSpec)
     extends OutBox {

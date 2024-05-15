@@ -2,17 +2,16 @@ package wrappers.special
 
 import scala.language.{existentials, implicitConversions}
 import scalan._
-import sigma.compiler.Scalan
-import special.wrappers.WrappersModule
+import sigma.compiler.IRContext
 
 package impl {
-  import sigma.compiler.{Base, GraphIRReflection, ModuleInfo, Scalan}
+  import sigma.compiler.{Base, GraphIRReflection, ModuleInfo, IRContext}
   import sigma.data.Nullable
   import sigma.reflection.RClass
 
   // Abs -----------------------------------
 trait WSpecialPredefsDefs extends Base with WSpecialPredefs {
-  self: Scalan =>
+  self: IRContext =>
 
   registerModule(WSpecialPredefsModule)
 
@@ -68,4 +67,4 @@ object WSpecialPredefsModule extends ModuleInfo("wrappers.special", "WSpecialPre
 }
 }
 
-trait WSpecialPredefsModule extends wrappers.special.impl.WSpecialPredefsDefs {self: Scalan =>}
+trait WSpecialPredefsModule extends wrappers.special.impl.WSpecialPredefsDefs {self: IRContext =>}

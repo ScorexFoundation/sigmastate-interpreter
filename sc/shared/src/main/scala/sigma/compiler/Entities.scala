@@ -1,7 +1,7 @@
 package sigma.compiler
 
 /** A slice in the Scalan cake with base classes for various descriptors. */
-trait Entities extends TypeDescs { self: Scalan =>
+trait Entities extends TypeDescs { self: IRContext =>
 
   /** Base class for all descriptors of staged traits.
     * See derived classes in `impl` packages.
