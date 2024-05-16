@@ -2,6 +2,7 @@ package sigma
 
 import org.scalatest.BeforeAndAfterAll
 import scalan.{BaseCtxTests, BaseLiftableTests}
+import sigma.compiler.ir.IRContext
 import sigma.data.TrivialProp
 import sigma.eval.Extensions.toAnyValue
 import sigmastate.eval._
