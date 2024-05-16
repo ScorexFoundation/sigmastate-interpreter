@@ -1,5 +1,6 @@
 package sigma.compiler.ir
 
+import sigma.compiler.DelayInvokeException
 import sigma.data.ExactNumeric
 
 trait DefRewriting { scalan: IRContext =>

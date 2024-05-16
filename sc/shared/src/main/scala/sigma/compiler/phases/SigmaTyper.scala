@@ -1,15 +1,14 @@
-package sigmastate.lang
+package sigma.compiler.phases
 
 import sigma.ast.SCollection.{SBooleanArray, SByteArray}
+import sigma.ast.SigmaPredef._
 import sigma.ast._
-import sigma.ast.syntax.SValue
+import sigma.ast.syntax.{SValue, _}
 import sigma.data.{Nullable, SigmaBoolean}
-import sigma.util.Extensions.Ensuring
-import sigmastate.exceptions._
-import SigmaPredef._
-import sigma.ast.syntax._
 import sigma.exceptions.TyperException
 import sigma.serialization.OpCodes
+import sigma.util.Extensions.Ensuring
+import sigmastate.exceptions._
 
 import scala.collection.mutable.ArrayBuffer
 

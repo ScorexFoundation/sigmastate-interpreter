@@ -1,7 +1,6 @@
 package sigmastate
 
 import scala.util.DynamicVariable
-import sigmastate.lang.{CompilerResult, CompilerSettings, SigmaCompiler}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigma.ast.{ErgoTree, SType, TransformingSigmaBuilder, Value}
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
@@ -9,6 +8,7 @@ import sigma.ast.syntax.{SValue, SigmaPropValue}
 import sigma.serialization.ValueSerializer
 import sigma.compiler.ir.IRContext
 import sigma.ast.syntax.ValueOps
+import sigma.compiler.{CompilerResult, CompilerSettings, SigmaCompiler}
 import sigmastate.helpers.{NegativeTesting, SigmaPPrint}
 
 trait CompilerTestsBase extends TestsBase with NegativeTesting {

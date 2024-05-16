@@ -15,7 +15,7 @@ import sigma.ast.syntax.ValueOps
 
 /** Wrapper exported to JS. */
 @JSExportTopLevel("SigmaCompiler")
-class SigmaCompiler(_compiler: sigmastate.lang.SigmaCompiler) extends js.Object {
+class SigmaCompiler(_compiler: sigma.compiler.SigmaCompiler) extends js.Object {
 
   /** Compiles ErgoScript code to ErgoTree.
     *
@@ -59,7 +59,7 @@ object SigmaCompiler extends js.Object {
     * @return SigmaCompiler instance
     */
   private def create(networkPrefix: Byte): SigmaCompiler = {
-    val compiler = sigmastate.lang.SigmaCompiler(networkPrefix)
+    val compiler = sigma.compiler.SigmaCompiler(networkPrefix)
     new SigmaCompiler(compiler)
   }
 }

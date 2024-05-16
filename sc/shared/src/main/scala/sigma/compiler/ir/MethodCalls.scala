@@ -1,6 +1,7 @@
 package sigma.compiler.ir
 
 import debox.{cfor, Buffer => DBuffer}
+import sigma.compiler.DelayInvokeException
 import sigma.reflection.RMethod
 import sigma.util.CollectionUtil.TraversableOps
 

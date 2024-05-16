@@ -1,4 +1,4 @@
-package sigmastate.lang
+package sigma.compiler.phases
 
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import sigma.ast.NoType
