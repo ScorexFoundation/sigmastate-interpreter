@@ -7,7 +7,7 @@ import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ByteArrayBuilder
 import scorex.util.encode.Base16
-import scorex.util.serialization.VLQByteBufferWriter
+import scorex.util.serialization.{VLQByteBufferReader, VLQByteBufferWriter}
 import scorex.utils.{Ints, Longs, Shorts}
 import sigma.{BigInt, Colls, SigmaTestingData}
 import sigma.Extensions.ArrayOps
@@ -28,7 +28,7 @@ import sigmastate.interpreter.Interpreter._
 import sigma.ast.Apply
 import sigma.eval.EvalSettings
 import sigma.exceptions.InvalidType
-import sigma.serialization.{DataSerializer, ErgoTreeSerializer, ValueSerializer}
+import sigma.serialization.{ConstantStore, DataSerializer, ErgoTreeSerializer, SigmaByteReader, SigmaByteWriter, ValueSerializer}
 import sigma.util.Extensions
 import sigmastate.utils.Helpers
 import sigmastate.utils.Helpers._
@@ -197,8 +197,9 @@ class BasicOpsSpecification extends CompilerTestingCommons
   }
 
   property("deserializeRaw - coll") {
-
-    val bytes = Base16.encode(ValueSerializer.serialize(CollectionConstant[SInt.type](Colls.fromArray(Array(IntConstant(5).value)), SInt)))
+    val writer = new SigmaByteWriter(new VLQByteBufferWriter(new ByteArrayBuilder()), None)
+    DataSerializer.serialize[SCollection[SInt.type]](Colls.fromArray(Array(IntConstant(5).value)), SCollection(SInt), writer)
+    val bytes = Base16.encode(writer.toBytes)
 
     def deserTest() = {
       test("deserializeRaw", env, ext,
@@ -211,8 +212,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
     if (activatedVersionInTests < V6SoftForkVersion) {
       an [sigma.exceptions.TyperException] should be thrownBy deserTest()
     } else {
-      // only singular types are supported, so the test fails
-      an [java.lang.reflect.InvocationTargetException] should be thrownBy deserTest()
+      deserTest()
     }
   }
 
