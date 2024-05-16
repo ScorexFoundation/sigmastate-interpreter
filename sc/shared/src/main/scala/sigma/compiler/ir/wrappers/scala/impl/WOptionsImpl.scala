@@ -1,10 +1,10 @@
-package wrappers.scala
+package sigma.compiler.ir.wrappers.scala
 
 import scala.language.{existentials, implicitConversions}
 import scalan._
 import sigma.compiler.ir.IRContext
-import special.wrappers.WrappersModule
-import special.wrappers.OptionWrapSpec
+import sigma.compiler.ir.wrappers.WrappersModule
+import sigma.compiler.ir.wrappers.OptionWrapSpec
 
 import scala.collection.compat.immutable.ArraySeq
 
@@ -239,9 +239,9 @@ class WOptionCls extends EntityObject("WOption") {
   registerEntityObject("WOption", WOption)
 }
 
-object WOptionsModule extends ModuleInfo("wrappers.scala", "WOptions") {
+object WOptionsModule extends ModuleInfo("sigma.compiler.ir.wrappers.scala", "WOptions") {
   val reflection = GraphIRReflection
 }
 }
 
-trait WOptionsModule extends wrappers.scala.impl.WOptionsDefs {self: IRContext =>}
+trait WOptionsModule extends sigma.compiler.ir.wrappers.scala.impl.WOptionsDefs {self: IRContext =>}

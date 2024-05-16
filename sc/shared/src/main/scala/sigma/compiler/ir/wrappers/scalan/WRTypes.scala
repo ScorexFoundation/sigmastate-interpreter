@@ -1,4 +1,4 @@
-package wrappers.scalan {
+package sigma.compiler.ir.wrappers.scalan {
   import scalan._
   import sigma.compiler.ir.{Base, IRContext}
 

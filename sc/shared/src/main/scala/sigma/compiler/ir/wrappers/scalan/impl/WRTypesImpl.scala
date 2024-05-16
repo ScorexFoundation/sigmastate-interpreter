@@ -1,9 +1,9 @@
-package wrappers.scalan
+package sigma.compiler.ir.wrappers.scalan
 
 import sigma.compiler.ir.IRContext
 import scala.language.{existentials, implicitConversions}
 import sigma.data.RType
-import special.wrappers.RTypeWrapSpec
+import sigma.compiler.ir.wrappers.RTypeWrapSpec
 
 import scala.collection.compat.immutable.ArraySeq
 
@@ -118,4 +118,4 @@ object WRTypesModule extends ModuleInfo("wrappers.scalan", "WRTypes") {
 }
 }
 
-trait WRTypesModule extends wrappers.scalan.impl.WRTypesDefs {self: IRContext =>}
+trait WRTypesModule extends sigma.compiler.ir.wrappers.scalan.impl.WRTypesDefs {self: IRContext =>}

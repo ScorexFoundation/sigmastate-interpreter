@@ -1,4 +1,4 @@
-package special.wrappers
+package sigma.compiler.ir.wrappers
 
 import sigma.data.RType
 

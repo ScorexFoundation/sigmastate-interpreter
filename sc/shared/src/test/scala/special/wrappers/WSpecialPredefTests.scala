@@ -2,7 +2,6 @@ package special.wrappers
 
 
 import scala.language.reflectiveCalls
-import sigma.data.RType
 
 class WSpecialPredefTests extends WrappersTests {
 

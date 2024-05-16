@@ -1,4 +1,4 @@
-package wrappers.special
+package sigma.compiler.ir.wrappers.special
 
 import scala.language.{existentials, implicitConversions}
 import scalan._
@@ -64,9 +64,9 @@ object WSpecialPredef extends EntityObject("WSpecialPredef") {
 
 }
 
-object WSpecialPredefsModule extends ModuleInfo("wrappers.special", "WSpecialPredefs") {
+object WSpecialPredefsModule extends ModuleInfo("sigma.compiler.ir.wrappers.special", "WSpecialPredefs") {
   val reflection = GraphIRReflection
 }
 }
 
-trait WSpecialPredefsModule extends wrappers.special.impl.WSpecialPredefsDefs {self: IRContext =>}
+trait WSpecialPredefsModule extends sigma.compiler.ir.wrappers.special.impl.WSpecialPredefsDefs {self: IRContext =>}

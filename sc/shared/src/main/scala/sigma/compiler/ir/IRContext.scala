@@ -6,7 +6,7 @@ import sigma.compiler.ir.primitives._
 import sigma.data.{Nullable, RType}
 import sigma.util.MemoizedFunc
 import sigma.{CollsModule, SigmaDslModule}
-import special.wrappers.WrappersModule
+import sigma.compiler.ir.wrappers.WrappersModule
 
 /** Aggregate cake with all inter-dependent modules assembled together.
   * Each instance of this class contains independent IR context, thus many

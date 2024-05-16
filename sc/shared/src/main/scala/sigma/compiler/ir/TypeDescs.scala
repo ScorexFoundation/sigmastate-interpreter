@@ -5,7 +5,7 @@ import scalan.core.{Contravariant, Covariant, Variance}
 import sigma.data.{AVHashMap, Lazy, Nullable, RType}
 import sigma.reflection.{RClass, RConstructor, RMethod}
 import sigma.util.CollectionUtil
-import special.wrappers.WrapSpec
+import sigma.compiler.ir.wrappers.WrapSpec
 
 import scala.annotation.implicitNotFound
 import scala.collection.immutable.ListMap

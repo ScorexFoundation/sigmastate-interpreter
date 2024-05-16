@@ -3,4 +3,4 @@ package sigma.wrappers
 import sigma.compiler.ir.IRContext
 
 trait WrappersModule
-  extends special.wrappers.WrappersModule { self: IRContext => }
+  extends sigma.compiler.ir.wrappers.WrappersModule { self: IRContext => }
