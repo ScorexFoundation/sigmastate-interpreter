@@ -5,9 +5,11 @@ import org.ergoplatform._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert}
 import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.util.ByteArrayBuilder
 import scorex.util.encode.Base16
+import scorex.util.serialization.VLQByteBufferWriter
 import scorex.utils.{Ints, Longs, Shorts}
-import sigma.{Colls, SigmaTestingData}
+import sigma.{BigInt, Colls, SigmaTestingData}
 import sigma.Extensions.ArrayOps
 import sigma.VersionContext.V6SoftForkVersion
 import sigma.ast.SCollection.SByteArray
@@ -26,7 +28,7 @@ import sigmastate.interpreter.Interpreter._
 import sigma.ast.Apply
 import sigma.eval.EvalSettings
 import sigma.exceptions.InvalidType
-import sigma.serialization.{ErgoTreeSerializer, ValueSerializer}
+import sigma.serialization.{DataSerializer, ErgoTreeSerializer, ValueSerializer}
 import sigma.util.Extensions
 import sigmastate.utils.Helpers
 import sigmastate.utils.Helpers._
@@ -179,15 +181,16 @@ class BasicOpsSpecification extends CompilerTestingCommons
   }
 
   property("deserializeRaw - int") {
-    val bytes = Base16.encode(Ints.toByteArray(5))
+    val value = -109253
+    val bytes = Base16.encode(Ints.toByteArray(value))
     def deserTest() = {test("deserializeRaw", env, ext,
-      s"{ val ba = fromBase16(\"$bytes\"); Global.deserializeRaw[Int](ba) == 5 }",
+      s"{ val ba = fromBase16(\"$bytes\"); Global.deserializeRaw[Int](ba) == $value }",
       null,
       true
     )}
 
     if (activatedVersionInTests < V6SoftForkVersion) {
-       an [sigma.exceptions.TyperException] should be thrownBy deserTest()
+      an [sigma.exceptions.TyperException] should be thrownBy deserTest()
     } else {
       deserTest()
     }
@@ -214,9 +217,11 @@ class BasicOpsSpecification extends CompilerTestingCommons
   }
 
   property("deserializeRaw - long roundtrip") {
+    val value = -1009253
+
     def deserTest() = test("deserializeRaw", env, ext,
       s"""{
-            val l = 5L;
+            val l = ${value}L;
             val ba = longToByteArray(l);
             Global.deserializeRaw[Long](ba) == l
           }""",

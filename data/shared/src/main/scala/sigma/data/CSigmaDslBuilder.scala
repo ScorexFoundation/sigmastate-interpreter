@@ -4,12 +4,13 @@ import debox.cfor
 import org.ergoplatform.{ErgoBox, ErgoHeader}
 import org.ergoplatform.validation.ValidationRules
 import scorex.crypto.hash.{Blake2b256, Sha256}
+import scorex.util.serialization.VLQByteBufferReader
 import scorex.utils.Longs
-import sigma.ast.{AtLeast, EvaluatedValue, SigmaPropConstant, SubstConstants}
+import sigma.ast.{AtLeast, EvaluatedValue, SType, SigmaPropConstant, SubstConstants}
 import sigma.crypto.{CryptoConstants, EcPointType, Ecp}
 import sigma.eval.Extensions.EvalCollOps
 import sigma.exceptions.InvalidType
-import sigma.serialization.{ErgoTreeSerializer, GroupElementSerializer, SigmaSerializer}
+import sigma.serialization.{ConstantStore, CoreByteReader, CoreByteWriter, DataSerializer, ErgoTreeSerializer, GroupElementSerializer, SigmaByteReader, SigmaSerializer}
 import sigma.util.Extensions.BigIntegerOps
 import sigma.validation.SigmaValidationSettings
 import sigma.{AvlTree, BigInt, Box, Coll, CollBuilder, GroupElement, SigmaDslBuilder, SigmaProp, VersionContext}
@@ -204,15 +205,12 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
     this.GroupElement(p)
   }
 
-  def deserializeRaw[T](bytes: Coll[Byte])(implicit cT: RType[T]): T = {
-
+  def deserializeRaw[T](tpe: SType, bytes: Coll[Byte])(implicit cT: RType[T]): T = {
     val res = cT.classTag match {
       case ClassTag.Short => ByteBuffer.wrap(bytes.toArray).getShort
       case ClassTag.Int => scorex.utils.Ints.fromByteArray(bytes.toArray)
       case ClassTag.Long => byteArrayToLong(bytes)
       case sigma.data.BigIntClassTag => byteArrayToBigInt(bytes)
-      case sigma.data.BoxClassTag => CBox(ErgoBox.sigmaSerializer.fromBytes(bytes.toArray))
-      case sigma.data.GroupElementClassTag => CGroupElement(GroupElementSerializer.fromBytes(bytes.toArray))
       case sigma.data.SigmaPropClassTag =>
         ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(bytes.toArray).root match {
           case Left(_) => throw new InvalidType(s"Cannot deserialize($bytes): unparsed tree provided")
@@ -223,12 +221,9 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
               throw new InvalidType(s"Cannot deserialize($bytes): prop is not evaluated: $prop}")
             }
         }
-      case sigma.data.AvlTreeClassTag =>
-        CAvlTree(AvlTreeData.serializer.fromBytes(bytes.toArray))
-      case sigma.data.HeaderClassTag =>
-        CHeader(ErgoHeader.sigmaSerializer.fromBytes(bytes.toArray))
       case _ =>
-        throw new InvalidType(s"Cannot deserialize($bytes): invalid type of value: ${cT.classTag}")
+        val reader = new SigmaByteReader(new VLQByteBufferReader(ByteBuffer.wrap(bytes.toArray)), new ConstantStore(), false)
+        DataSerializer.deserialize(tpe, reader)
     }
     res.asInstanceOf[T]
   }
