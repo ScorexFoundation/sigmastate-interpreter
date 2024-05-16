@@ -9,7 +9,8 @@ import special.wrappers.OptionWrapSpec
 import scala.collection.compat.immutable.ArraySeq
 
 package impl {
-  import sigma.compiler.ir.{Base, GraphIRReflection, ModuleInfo, IRContext}
+  import sigma.compiler.ir.meta.ModuleInfo
+  import sigma.compiler.ir.{Base, GraphIRReflection, IRContext}
   import sigma.data.{Nullable, RType}
   import sigma.reflection.{RClass, RMethod}
 

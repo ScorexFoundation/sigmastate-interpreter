@@ -1,4 +1,4 @@
-package scalan
+package sigma.compiler.ir.core
 
 import scala.language.implicitConversions
 

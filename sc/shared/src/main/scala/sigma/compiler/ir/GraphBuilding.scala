@@ -1,11 +1,11 @@
 package sigma.compiler.ir
 
 import org.ergoplatform._
-import scalan.MutableLazy
 import sigma.ast.TypeCodes.LastConstantCode
 import sigma.ast.Value.Typed
 import sigma.ast.syntax.{SValue, ValueOps}
 import sigma.ast._
+import sigma.compiler.ir.core.MutableLazy
 import sigma.crypto.EcPointType
 import sigma.data.ExactIntegral.{ByteIsExactIntegral, IntIsExactIntegral, LongIsExactIntegral, ShortIsExactIntegral}
 import sigma.data.ExactOrdering.{ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering, ShortIsExactOrdering}

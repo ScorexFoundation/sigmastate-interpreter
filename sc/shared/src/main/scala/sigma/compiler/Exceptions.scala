@@ -1,4 +1,4 @@
-package scalan
+package sigma.compiler.ir
 
 /**
   * Can be thrown in staged method body to prevent body unfolding.

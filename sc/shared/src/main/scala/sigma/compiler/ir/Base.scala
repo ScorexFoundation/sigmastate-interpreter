@@ -1,7 +1,7 @@
 package sigma.compiler.ir
 
 import debox.{cfor, Buffer => DBuffer}
-import scalan.MutableLazy
+import sigma.compiler.ir.core.MutableLazy
 import sigma.data.OverloadHack.Overloaded1
 import sigma.data.{AVHashMap, Nullable, RType}
 import sigma.reflection.RConstructor

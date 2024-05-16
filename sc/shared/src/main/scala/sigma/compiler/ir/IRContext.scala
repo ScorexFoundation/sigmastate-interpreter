@@ -1,6 +1,7 @@
 package sigma.compiler.ir
 
 import scalan._
+import sigma.compiler.ir.core.MutableLazy
 import sigma.compiler.ir.primitives._
 import sigma.data.{Nullable, RType}
 import sigma.util.MemoizedFunc

@@ -1,6 +1,4 @@
-package sigma.compiler.ir
-
-import scalan.meta.SSymName
+package sigma.compiler.ir.meta
 
 /** Information about generated Special library module.
   * Instances are created in generated code.
