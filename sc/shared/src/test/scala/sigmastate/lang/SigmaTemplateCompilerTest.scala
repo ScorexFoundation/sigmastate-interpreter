@@ -7,6 +7,7 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import sigma.VersionContext
 import sigma.ast.ErgoTree.HeaderType
 import sigma.ast.{BinAnd, BoolToSigmaProp, ConstantPlaceholder, ErgoTree, FalseLeaf, GT, Height, IntConstant, LT, SBoolean, SInt, SLong, SString, TrueLeaf}
+import sigma.compiler.SigmaTemplateCompiler
 import sigma.exceptions.TyperException
 import sigmastate.CompilerTestsBase
 import sigmastate.interpreter.Interpreter.ScriptEnv

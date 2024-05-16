@@ -19,6 +19,7 @@ import sigmastate.lang.parsers.ParserException
 import sigma.serialization.ErgoTreeSerializer
 import sigma.serialization.generators.ObjectGenerators
 import sigma.ast.Select
+import sigma.compiler.phases.{SigmaBinder, SigmaTyper}
 import sigma.exceptions.TyperException
 import sigmastate.helpers.SigmaPPrint
 
