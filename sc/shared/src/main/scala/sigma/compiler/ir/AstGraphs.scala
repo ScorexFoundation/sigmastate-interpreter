@@ -6,6 +6,9 @@ import sigma.data.emptyDBufferOfInt
 import scala.collection._
 
 
+/** Defines reusable abstraction of AstGraph, the base class for [[ProgramGraph]],
+ * [[Lambda]] and [[ThunkDef]].
+ */
 trait AstGraphs extends Transforming { self: IRContext =>
 
   /** GraphNode is created for each symbol of the AstGraph and represents graph linking structure */

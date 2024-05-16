@@ -3,6 +3,11 @@ package sigma.compiler.ir
 import sigma.compiler.DelayInvokeException
 import sigma.data.ExactNumeric
 
+/** Defines methods to implement graph rewriting optimization rules.
+  * The rules are defines as a series of pattern matching with stackable overriding.
+  * Can be mixed in into traits to add new rules (pattern cases) and call `super`
+  * implementation as a fallback case.
+  */
 trait DefRewriting { scalan: IRContext =>
 
   /** Rewrites given node to another equivalent node and returns its reference.

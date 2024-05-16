@@ -7,6 +7,11 @@ import sigma.reflection.RMethod
 import java.util
 import scala.language.existentials
 
+/** Implements utilites for graph transformation and rewriting.
+  * @see Pass
+  * @see MapTransformer
+  * @see Rewriter
+  */
 trait Transforming { self: IRContext =>
 
   /** Descriptor of a current compiler pass.

@@ -5,7 +5,7 @@ import sigma.data.ExactOrdering
 
 import scala.language.implicitConversions
 
-/** Slice in Scala cake with definitions of comparison operations. */
+/** Slice in IRContext cake with definitions of comparison operations. */
 trait OrderingOps extends Base { self: IRContext =>
   implicit def repOrderingToOrderingOps[T](x: Ref[T])(implicit n: ExactOrdering[T]) = new OrderingOpsCls(x)
   implicit def OrderingToOrderingOps[T](x: T)(implicit n: ExactOrdering[T], et: Elem[T]) = new OrderingOpsCls(toRep(x))

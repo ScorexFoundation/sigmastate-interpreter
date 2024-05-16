@@ -9,6 +9,7 @@ import sigma.data.AVHashMap
 
 import scala.language.implicitConversions
 
+/** Slice in [[IRContext]] cake with definitions of pairs and tuples. */
 trait Tuples extends Base { self: IRContext =>
   object Pair {
     def apply[A, B](a: Ref[A], b: Ref[B]) = zipPair[A, B]((a, b))

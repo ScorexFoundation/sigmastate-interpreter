@@ -6,6 +6,7 @@ import sigma.util.GraphUtil
 
 import scala.collection.compat.immutable.ArraySeq
 
+/** Defines implementation of [[ProgramGraph]] and related utilities. */
 trait ProgramGraphs extends AstGraphs { self: IRContext =>
 
   type PGraph = ProgramGraph

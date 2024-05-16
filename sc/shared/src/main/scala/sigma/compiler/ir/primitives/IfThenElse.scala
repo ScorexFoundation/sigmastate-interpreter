@@ -2,6 +2,7 @@ package sigma.compiler.ir.primitives
 
 import sigma.compiler.ir.{Base, IRContext}
 
+/** Defines IR representation of conditional expressions `if (c) t else e`. */
 trait IfThenElse extends Base { self: IRContext =>
 
   /** If c then t else e construction with standard lazy evaluation of branches.

@@ -12,6 +12,10 @@ import scala.collection.immutable.ListMap
 import scala.collection.mutable
 import scala.language.implicitConversions
 
+/** Defines [[Elem]] descriptor of types in IRContext together with related utilities.
+  * @see MethodDesc
+  * @see TypeDesc
+  */
 abstract class TypeDescs extends Base { self: IRContext =>
 
   /** Helper type case method. */

@@ -7,6 +7,9 @@ import sigma.util.CollectionUtil.TraversableOps
 
 import scala.annotation.{tailrec, unused}
 
+/** Defines graph-ir representation of method calls, new object creation as well as the
+  * related utility methods.
+  */
 trait MethodCalls extends Base { self: IRContext =>
 
   def delayInvoke = throw new DelayInvokeException

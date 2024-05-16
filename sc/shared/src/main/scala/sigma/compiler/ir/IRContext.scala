@@ -34,7 +34,7 @@ trait IRContext
   with LogicalOps
   with OrderingOps
   with Equal
-  with UniversalOps
+  with MiscelaneousOps
   with Functions
   with IfThenElse
   with Transforming
@@ -90,6 +90,7 @@ trait IRContext
 
   def colBuilder: Ref[CollBuilder]
 
+  /** Type descriptor for [[WRType]] */
   implicit lazy val wRTypeAnyElement: Elem[WRType[Any]] = wRTypeElement(AnyElement)
 
   /** During compilation represent a global value Global, see also SGlobal type. */

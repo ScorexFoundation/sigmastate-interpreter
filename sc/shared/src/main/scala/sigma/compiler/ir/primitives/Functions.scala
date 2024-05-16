@@ -8,6 +8,7 @@ import sigma.util.GraphUtil
 import java.util
 import scala.language.implicitConversions
 
+/** Defines IR representation of functions (Lambdas) and function application. */
 trait Functions extends Base with ProgramGraphs { self: IRContext =>
 
   implicit class LambdaOps[A,B](f: Ref[A => B]) {
@@ -142,10 +143,6 @@ trait Functions extends Base with ProgramGraphs { self: IRContext =>
                 //                val dir = "test-out/errors"
                 //                emitDepGraph(roots, FileUtil.file(cwd, dir), "nested_lambda")(defaultGraphVizConfig)
                 assert(false, s"Invalid nested lambda $l inside $this")
-              }
-            case op @ OpCost(_, _, args, opCost) =>
-              if (args.contains(opCost)) {
-                !!!(s"Invalid OpCost($op)")
               }
             case _ =>
           }

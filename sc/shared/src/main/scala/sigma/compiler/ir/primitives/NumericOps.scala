@@ -3,7 +3,7 @@ package sigma.compiler.ir.primitives
 import sigma.compiler.ir.{Base, IRContext}
 import sigma.data.{ExactIntegral, ExactNumeric}
 
-/** Slice in Scala cake with definitions of numeric operations. */
+/** Slice in IRContext cake with definitions of numeric operations. */
 trait NumericOps extends Base { self: IRContext =>
 
   /** Extension methods over `Ref[T]` where T is instance of ExactNumeric type-class. */

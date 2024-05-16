@@ -2,6 +2,7 @@ package sigma.compiler.ir.primitives
 
 import sigma.compiler.ir.{Base, IRContext}
 
+/** Defines IR representation of unary and binary operations. */
 trait UnBinOps extends Base { self: IRContext =>
 
   /** Base class for descriptors of unary operations. */

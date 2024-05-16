@@ -2,7 +2,7 @@ package sigma.compiler.ir.primitives
 
 import sigma.compiler.ir.{Base, IRContext}
 
-/** Slice in Scala cake with definitions of logical operations. */
+/** Slice in IRContext cake with definitions of logical operations. */
 trait LogicalOps extends Base { self: IRContext =>
   /** Logical AND binary operation. */
   val And = new EndoBinOp[Boolean]("&&") {
