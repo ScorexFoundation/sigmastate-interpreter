@@ -1,8 +1,7 @@
 package sigma.compiler.primitives
 
 import debox.{cfor, Buffer => DBuffer}
-import sigma.compiler.staged.ProgramGraphs
-import sigma.compiler.{Base, IRContext}
+import sigma.compiler.{Base, IRContext, ProgramGraphs}
 import sigma.data.{Lazy, Nullable, emptyDBufferOfInt}
 import sigma.util.GraphUtil
 

@@ -1,7 +1,6 @@
-package sigma.compiler.staged
+package sigma.compiler
 
 import debox.{cfor, Buffer => DBuffer}
-import sigma.compiler.IRContext
 import sigma.data.{DFunc, Nullable}
 import sigma.util.GraphUtil
 

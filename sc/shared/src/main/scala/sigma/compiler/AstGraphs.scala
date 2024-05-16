@@ -1,7 +1,6 @@
-package sigma.compiler.staged
+package sigma.compiler
 
 import debox.{cfor, Buffer => DBuffer, Map => DMap, Set => DSet}
-import sigma.compiler.IRContext
 import sigma.data.emptyDBufferOfInt
 
 import scala.collection._

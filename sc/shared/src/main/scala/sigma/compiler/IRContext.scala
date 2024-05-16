@@ -2,7 +2,6 @@ package sigma.compiler
 
 import scalan._
 import sigma.compiler.primitives._
-import sigma.compiler.staged.Transforming
 import sigma.data.{Nullable, RType}
 import sigma.util.MemoizedFunc
 import sigma.{CollsModule, SigmaDslModule}
