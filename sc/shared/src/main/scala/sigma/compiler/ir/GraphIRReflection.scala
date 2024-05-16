@@ -5,7 +5,7 @@ import sigma.data.RType
 import sigma.reflection.ReflectionData.registerClassEntry
 import sigma.reflection.{ReflectionData, mkConstructor, mkMethod}
 import sigma.compiler.ir.wrappers.{OptionWrapSpec, RTypeWrapSpec}
-import sigma.compiler.ir.wrappers.sigma.{SigmaDsl, WRTypes, WSpecialPredefs}
+import sigma.compiler.ir.wrappers.sigma.{SigmaDsl, WRTypes}
 
 /** Registrations of reflection metadata for graph-ir module (see README.md).
   * Such metadata is only used on JS platform to support reflection-like interfaces of
@@ -556,16 +556,6 @@ object GraphIRReflection {
     )
   }
 
-  { val clazz = classOf[WSpecialPredefs#WSpecialPredefCompanion]
-    val ctx = null.asInstanceOf[IRContext] // ok! type level only
-    registerClassEntry(clazz,
-      methods = Map(
-        mkMethod(clazz, "some", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
-          obj.asInstanceOf[ctx.WSpecialPredefCompanion].some(args(0).asInstanceOf[ctx.Ref[Any]])
-        }
-      )
-    )
-  }
   {
     val clazz = classOf[OptionWrapSpec]
     registerClassEntry(clazz,

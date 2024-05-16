@@ -13,6 +13,7 @@ package impl {
   import sigma.compiler.ir.{Base, GraphIRReflection, IRContext}
   import sigma.reflection.{RClass, RMethod}
 
+/** Implementation of IR nodes related to [[RType]]. */
   // Abs -----------------------------------
 trait WRTypesDefs extends Base with WRTypes {
   self: IRContext =>

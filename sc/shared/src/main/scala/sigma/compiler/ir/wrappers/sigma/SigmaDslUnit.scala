@@ -3,6 +3,7 @@ package sigma.compiler.ir.wrappers.sigma
 import scalan._
   import sigma.compiler.ir.{Base, IRContext}
 
+  /** IR representation of ErgoScript (Sigma) language types and methods. */
   trait SigmaDsl extends Base { self: IRContext =>
     trait BigInt extends Def[BigInt] {
       def add(that: Ref[BigInt]): Ref[BigInt];

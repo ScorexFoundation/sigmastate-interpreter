@@ -1,6 +1,7 @@
 package sigma.compiler.ir.wrappers.scala {
   import sigma.compiler.ir.{Base, IRContext}
 
+  /** Defines IR representation of Option type. */
   trait WOptions extends Base { self: IRContext =>
     trait WOption[A] extends Def[WOption[A]] {
       implicit def eA: Elem[A];

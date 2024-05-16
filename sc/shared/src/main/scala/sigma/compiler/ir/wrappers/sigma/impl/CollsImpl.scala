@@ -12,7 +12,8 @@ package impl {
   import sigma.data.{Nullable, RType}
   import sigma.reflection.{RClass, RMethod}
 
-  // Abs -----------------------------------
+// Abs -----------------------------------
+/** Implementation part of IR represenation related to Coll type and methods. */
 trait CollsDefs extends Base with Colls {
   self: IRContext =>
 

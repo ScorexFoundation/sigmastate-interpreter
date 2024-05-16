@@ -5,7 +5,7 @@ import sigma.compiler.ir.primitives._
 import sigma.data.{Nullable, RType}
 import sigma.util.MemoizedFunc
 import sigma.compiler.ir.wrappers.scala.WOptionsModule
-import sigma.compiler.ir.wrappers.sigma.{CollsModule, SigmaDslModule, WRTypesModule, WSpecialPredefsModule}
+import sigma.compiler.ir.wrappers.sigma.{CollsModule, SigmaDslModule, WRTypesModule}
 
 /** Aggregate cake with all inter-dependent modules assembled together.
   * Each instance of this class contains independent IR context, thus many
@@ -34,7 +34,7 @@ trait IRContext
   with LogicalOps
   with OrderingOps
   with Equal
-  with MiscelaneousOps
+  with MiscOps
   with Functions
   with IfThenElse
   with Transforming
@@ -46,7 +46,6 @@ trait IRContext
   with SigmaDslModule
   with TreeBuilding
   with GraphBuilding
-  with WSpecialPredefsModule
   with WOptionsModule
   with WRTypesModule {
 
@@ -54,7 +53,6 @@ trait IRContext
   import CollBuilder._
   import WOption._
   import WRType._
-  import WSpecialPredef._
 
   /** Pass configuration which is used to turn-off constant propagation.
     * USED IN TESTS ONLY.
@@ -74,11 +72,7 @@ trait IRContext
     _liftElemMemo(eT).asInstanceOf[Ref[WRType[T]]]  // asRep cannot be used for AnyRef
   }
 
-  private val _specialPredef: LazyRep[WSpecialPredefCompanionCtor] = MutableLazy(RWSpecialPredef.value)
-  def specialPredef: Ref[WSpecialPredefCompanionCtor] = _specialPredef.value
-
   override protected def onReset(): Unit = {
-    _specialPredef.reset()
     _liftElemMemo.reset()
     super.onReset()
   }
@@ -86,7 +80,6 @@ trait IRContext
   val CM = CollMethods
   private val CBM = CollBuilderMethods
   private val WOptionM = WOptionMethods
-  private val SPCM = WSpecialPredefCompanionMethods
 
   def colBuilder: Ref[CollBuilder]
 
@@ -150,8 +143,6 @@ trait IRContext
     }
 
     case WOptionM.getOrElse(opt, _) => opt.node match {
-      // Rule: Some(x).getOrElse(_) ==> x
-      case SPCM.some(x) => x
       case WOptionConst(Some(x), lA) => lA.lift(x)
       case _ => super.rewriteDef(d)
     }

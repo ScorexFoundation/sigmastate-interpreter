@@ -128,7 +128,7 @@ trait TreeBuilding extends Base { IR: IRContext =>
     */
   object IsInternalDef {
     def unapply(d: Def[_]): Option[Def[_]] = d match {
-      case _: SigmaDslBuilder | _: CollBuilder | _: WSpecialPredefCompanion => Some(d)
+      case _: SigmaDslBuilder | _: CollBuilder => Some(d)
       case _ => None
     }
   }

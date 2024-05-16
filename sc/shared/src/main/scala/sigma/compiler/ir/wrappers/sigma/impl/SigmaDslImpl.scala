@@ -14,6 +14,7 @@ package impl {
   import sigma.data.{Nullable, RType}
   import sigma.reflection.{RClass, RMethod}
 
+/** Implementation part of IR represenation related to Sigma types and methods. */
   // Abs -----------------------------------
 trait SigmaDslDefs extends Base with SigmaDsl {
   self: IRContext =>

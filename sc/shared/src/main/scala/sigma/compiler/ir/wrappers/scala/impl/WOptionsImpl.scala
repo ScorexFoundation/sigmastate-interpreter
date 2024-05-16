@@ -13,6 +13,7 @@ package impl {
   import sigma.reflection.{RClass, RMethod}
 
   // Abs -----------------------------------
+/** IR representation of Option type and methods. */
 trait WOptionsDefs extends Base with WOptions {
   self: IRContext =>
 

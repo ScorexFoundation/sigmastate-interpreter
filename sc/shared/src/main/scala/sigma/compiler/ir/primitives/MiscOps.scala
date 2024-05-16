@@ -2,7 +2,10 @@ package sigma.compiler.ir.primitives
 
 import sigma.compiler.ir.{Base, IRContext}
 
-trait MiscelaneousOps extends Base { self: IRContext =>
+/** Defines IR representation of miscellaneous operations that doesn't fit into any
+  * specific category.
+  */
+trait MiscOps extends Base { self: IRContext =>
   case class HashCode[A]() extends UnOp[A, Int]("hashCode") {
     override def applySeq(x: A): Int = x.hashCode
   }
