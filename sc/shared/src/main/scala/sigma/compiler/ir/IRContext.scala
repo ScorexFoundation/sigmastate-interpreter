@@ -5,9 +5,7 @@ import sigma.compiler.ir.primitives._
 import sigma.data.{Nullable, RType}
 import sigma.util.MemoizedFunc
 import sigma.compiler.ir.wrappers.scala.WOptionsModule
-import sigma.compiler.ir.wrappers.scalan.WRTypesModule
-import sigma.compiler.ir.wrappers.sigma.{CollsModule, SigmaDslModule}
-import sigma.compiler.ir.wrappers.special.WSpecialPredefsModule
+import sigma.compiler.ir.wrappers.sigma.{CollsModule, SigmaDslModule, WRTypesModule, WSpecialPredefsModule}
 
 /** Aggregate cake with all inter-dependent modules assembled together.
   * Each instance of this class contains independent IR context, thus many

@@ -1,4 +1,4 @@
-package sigma.compiler.ir.wrappers.special
+package sigma.compiler.ir.wrappers.sigma
 
 import scala.language.{existentials, implicitConversions}
 import sigma.compiler.ir.IRContext
@@ -6,6 +6,7 @@ import sigma.compiler.ir.IRContext
 package impl {
   import sigma.compiler.ir.core.MutableLazy
   import sigma.compiler.ir.meta.ModuleInfo
+  import sigma.compiler.ir.wrappers.sigma.WSpecialPredefs
   import sigma.compiler.ir.{Base, GraphIRReflection, IRContext}
   import sigma.data.Nullable
   import sigma.reflection.RClass
@@ -68,4 +69,4 @@ object WSpecialPredefsModule extends ModuleInfo("sigma.compiler.ir.wrappers.spec
 }
 }
 
-trait WSpecialPredefsModule extends sigma.compiler.ir.wrappers.special.impl.WSpecialPredefsDefs {self: IRContext =>}
+trait WSpecialPredefsModule extends sigma.compiler.ir.wrappers.sigma.impl.WSpecialPredefsDefs {self: IRContext =>}

@@ -1,5 +1,6 @@
-package sigma.compiler.ir.wrappers.scalan {
-  import sigma.compiler.ir.{Base, IRContext}
+package sigma.compiler.ir.wrappers.sigma
+
+import sigma.compiler.ir.{Base, IRContext}
 
 
   trait WRTypes extends Base { self: IRContext =>
@@ -9,4 +10,3 @@ package sigma.compiler.ir.wrappers.scalan {
     };
     trait WRTypeCompanion
   }
-}

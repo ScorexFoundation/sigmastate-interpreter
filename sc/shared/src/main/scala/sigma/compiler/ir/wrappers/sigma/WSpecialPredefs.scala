@@ -1,6 +1,6 @@
-package sigma.compiler.ir.wrappers.special {
-  import scalan._
-  import sigma.compiler.ir.{Base, IRContext}
+package sigma.compiler.ir.wrappers.sigma
+
+import sigma.compiler.ir.{Base, IRContext}
 
   trait WSpecialPredefs extends Base { self: IRContext =>
     trait WSpecialPredef extends Def[WSpecialPredef];
@@ -8,4 +8,3 @@ package sigma.compiler.ir.wrappers.special {
       def some[A](x: Ref[A]): Ref[WOption[A]];
     }
   }
-}
