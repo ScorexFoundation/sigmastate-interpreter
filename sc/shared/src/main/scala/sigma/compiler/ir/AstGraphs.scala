@@ -1,4 +1,4 @@
-package sigma.compiler
+package sigma.compiler.ir
 
 import debox.{cfor, Buffer => DBuffer, Map => DMap, Set => DSet}
 import sigma.data.emptyDBufferOfInt

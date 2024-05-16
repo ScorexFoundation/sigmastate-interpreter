@@ -12,7 +12,7 @@ import sigmastate.lang.parsers.ParserException
 import sigma.ast._
 import sigma.ast.syntax.SValue
 import SCollectionMethods.{ExistsMethod, ForallMethod, MapMethod}
-import sigma.compiler.{GraphIRReflection, IRContext}
+import sigma.compiler.ir.{GraphIRReflection, IRContext}
 import sigmastate.InterpreterReflection
 
 /**

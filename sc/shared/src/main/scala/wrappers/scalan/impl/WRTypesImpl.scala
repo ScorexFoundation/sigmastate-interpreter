@@ -1,6 +1,6 @@
 package wrappers.scalan
 
-import sigma.compiler.IRContext
+import sigma.compiler.ir.IRContext
 import scala.language.{existentials, implicitConversions}
 import sigma.data.RType
 import special.wrappers.RTypeWrapSpec
@@ -8,7 +8,7 @@ import special.wrappers.RTypeWrapSpec
 import scala.collection.compat.immutable.ArraySeq
 
 package impl {
-  import sigma.compiler.{Base, GraphIRReflection, ModuleInfo, IRContext}
+  import sigma.compiler.ir.{Base, GraphIRReflection, ModuleInfo, IRContext}
   import sigma.reflection.{RClass, RMethod}
 
   // Abs -----------------------------------

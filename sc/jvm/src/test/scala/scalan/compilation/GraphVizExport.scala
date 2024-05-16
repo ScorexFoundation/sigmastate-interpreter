@@ -3,7 +3,7 @@ package scalan.compilation
 import java.awt.Desktop
 import java.io.{File, PrintWriter}
 import scalan.core.ScalaNameUtil
-import sigma.compiler.IRContext
+import sigma.compiler.ir.IRContext
 import sigma.util.{FileUtil, ProcessUtil, StringUtil}
 
 import scala.annotation.unused

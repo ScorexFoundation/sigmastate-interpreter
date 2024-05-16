@@ -7,7 +7,7 @@ import sigmastate.helpers.CompilerTestingCommons
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, TestContractSpec}
 import org.ergoplatform.ErgoBox
 import scorex.crypto.hash.Blake2b256
-import sigma.compiler.IRContext
+import sigma.compiler.ir.IRContext
 import sigma.data.{CSigmaProp, TrivialProp}
 
 class UsingContextPropertiesSpecification extends CompilerTestingCommons

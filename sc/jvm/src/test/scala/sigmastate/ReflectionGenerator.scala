@@ -1,6 +1,6 @@
 package sigmastate
 
-import sigma.compiler.{Base, TypeDescs}
+import sigma.compiler.ir.{Base, TypeDescs}
 import sigma.reflection._
 import scala.annotation.unused
 import scala.collection.mutable
@@ -30,7 +30,7 @@ object ReflectionGenerator {
   }
 
   val knownPackages = Array(
-    "sigma.compiler.primitives.",
+    "sigma.compiler.ir.primitives.",
     "sigma.",
     "sigma.",
     "special.wrappers.",
@@ -40,7 +40,7 @@ object ReflectionGenerator {
     "sigmastate.utxo.",
     "sigmastate.",
     "wrappers.scala.",
-    "sigma.compiler.",
+    "sigma.compiler.ir.",
     "scala.collection.",
     "scala."
   )

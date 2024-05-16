@@ -1,5 +1,5 @@
 package sigma {
-  import sigma.compiler.{Base, IRContext}
+  import sigma.compiler.ir.{Base, IRContext}
 
   /** Staged version of collection interfaces which is used in graph-based IR to represent
     * methods of Coll and CollBuilder.

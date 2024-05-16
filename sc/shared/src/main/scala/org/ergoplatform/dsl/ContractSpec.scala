@@ -9,7 +9,7 @@ import sigma.{Coll, SigmaDslBuilder, SigmaProp}
 import scala.util.Try
 import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition, Token}
 import sigma.ast.{ErgoTree, EvaluatedValue, SType}
-import sigma.compiler.IRContext
+import sigma.compiler.ir.IRContext
 
 import scala.language.implicitConversions
 

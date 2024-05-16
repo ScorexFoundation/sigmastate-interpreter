@@ -1,8 +1,8 @@
-package sigma.compiler.primitives
+package sigma.compiler.ir.primitives
 
 import debox.{cfor, Buffer => DBuffer, Set => DSet}
 import scalan.core.Covariant
-import sigma.compiler.IRContext
+import sigma.compiler.ir.IRContext
 import sigma.data.{AVHashMap, DFunc, Lazy, Nullable, RType}
 import sigma.reflection.RClass
 import sigma.util.GraphUtil

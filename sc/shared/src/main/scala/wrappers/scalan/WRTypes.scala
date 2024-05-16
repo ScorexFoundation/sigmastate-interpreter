@@ -1,6 +1,6 @@
 package wrappers.scalan {
   import scalan._
-  import sigma.compiler.{Base, IRContext}
+  import sigma.compiler.ir.{Base, IRContext}
 
 
   trait WRTypes extends Base { self: IRContext =>

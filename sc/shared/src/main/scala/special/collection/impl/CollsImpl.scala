@@ -2,12 +2,12 @@ package sigma
 
 import scala.language.{existentials, implicitConversions}
 import scalan._
-import sigma.compiler.IRContext
+import sigma.compiler.ir.IRContext
 
 import scala.collection.compat.immutable.ArraySeq
 
 package impl {
-  import sigma.compiler.{Base, GraphIRReflection, ModuleInfo, IRContext}
+  import sigma.compiler.ir.{Base, GraphIRReflection, ModuleInfo, IRContext}
   import sigma.data.{Nullable, RType}
   import sigma.reflection.{RClass, RMethod}
 

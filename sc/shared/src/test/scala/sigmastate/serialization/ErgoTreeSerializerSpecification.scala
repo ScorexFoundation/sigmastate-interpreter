@@ -10,7 +10,7 @@ import sigma.util.Extensions.SigmaPropOps
 import sigma.validation.ValidationException
 import ErgoTree.EmptyConstants
 import ErgoTree.HeaderType
-import sigma.compiler.IRContext
+import sigma.compiler.ir.IRContext
 import sigma.eval.Extensions.SigmaBooleanOps
 import sigmastate._
 import sigmastate.helpers.CompilerTestingCommons

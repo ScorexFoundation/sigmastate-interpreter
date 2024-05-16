@@ -1,6 +1,6 @@
 package scalan
 
-import sigma.compiler.IRContext
+import sigma.compiler.ir.IRContext
 import sigma.util.BenchmarkUtil.{measure, measureTime}
 
 class Benchmark[T <: IRContext](createContext: => T) {

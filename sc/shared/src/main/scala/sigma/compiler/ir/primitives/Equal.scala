@@ -1,6 +1,6 @@
-package sigma.compiler.primitives
+package sigma.compiler.ir.primitives
 
-import sigma.compiler.{Base, IRContext}
+import sigma.compiler.ir.{Base, IRContext}
 
 import scala.annotation.unused
 

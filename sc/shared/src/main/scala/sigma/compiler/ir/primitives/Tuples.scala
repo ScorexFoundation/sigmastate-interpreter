@@ -2,9 +2,9 @@
  * Author: Alexander Slesarenko
  * Date: 7/25/12
  */
-package sigma.compiler.primitives
+package sigma.compiler.ir.primitives
 
-import sigma.compiler.{Base, IRContext}
+import sigma.compiler.ir.{Base, IRContext}
 import sigma.data.AVHashMap
 
 import scala.language.implicitConversions

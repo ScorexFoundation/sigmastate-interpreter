@@ -2,10 +2,10 @@ package wrappers.special
 
 import scala.language.{existentials, implicitConversions}
 import scalan._
-import sigma.compiler.IRContext
+import sigma.compiler.ir.IRContext
 
 package impl {
-  import sigma.compiler.{Base, GraphIRReflection, ModuleInfo, IRContext}
+  import sigma.compiler.ir.{Base, GraphIRReflection, ModuleInfo, IRContext}
   import sigma.data.Nullable
   import sigma.reflection.RClass
 

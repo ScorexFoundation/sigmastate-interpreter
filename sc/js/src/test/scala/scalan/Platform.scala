@@ -1,6 +1,6 @@
 package scalan
 
-import sigma.compiler.IRContext
+import sigma.compiler.ir.IRContext
 
 import scala.annotation.unused
 

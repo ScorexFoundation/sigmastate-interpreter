@@ -1,6 +1,6 @@
-package sigma.compiler
+package sigma.compiler.ir
 
-import sigma.compiler.primitives.Thunks
+import sigma.compiler.ir.primitives.Thunks
 import sigma.{Colls, SigmaDsl}
 import sigma.data.RType
 import sigma.reflection.ReflectionData.registerClassEntry

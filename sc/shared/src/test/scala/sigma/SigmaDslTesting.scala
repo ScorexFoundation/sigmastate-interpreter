@@ -31,7 +31,7 @@ import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoL
 import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
 import sigmastate.interpreter._
 import sigma.ast.Apply
-import sigma.compiler.{CompiletimeIRContext, IRContext}
+import sigma.compiler.ir.{CompiletimeIRContext, IRContext}
 import sigma.eval.Extensions.SigmaBooleanOps
 import sigma.interpreter.{ContextExtension, ProverResult}
 import sigma.serialization.ValueSerializer

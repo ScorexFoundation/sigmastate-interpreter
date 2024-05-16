@@ -1,6 +1,6 @@
 package scalan
 
-import sigma.compiler.{GraphIRReflection, IRContext}
+import sigma.compiler.ir.{GraphIRReflection, IRContext}
 
 trait TestLibrary extends IRContext {
   import CollBuilder._

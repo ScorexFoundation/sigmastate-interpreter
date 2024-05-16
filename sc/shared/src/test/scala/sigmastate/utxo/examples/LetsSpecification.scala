@@ -15,7 +15,7 @@ import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigma.serialization.ErgoTreeSerializer
 import sigma.ast.syntax._
-import sigma.compiler.IRContext
+import sigma.compiler.ir.IRContext
 import sigma.eval.SigmaDsl
 
 import scala.util.Random

@@ -1,6 +1,6 @@
-package sigma.compiler.primitives
+package sigma.compiler.ir.primitives
 
-import sigma.compiler.{Base, IRContext}
+import sigma.compiler.ir.{Base, IRContext}
 
 /** Slice in Scala cake with definitions of logical operations. */
 trait LogicalOps extends Base { self: IRContext =>

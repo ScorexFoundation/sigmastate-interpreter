@@ -3,7 +3,7 @@ package org.ergoplatform.dsl
 import sigma.Coll
 import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition, Token}
 import org.ergoplatform.ErgoBox.{BoxId, NonMandatoryRegisterId, TokenId}
-import sigma.compiler.IRContext
+import sigma.compiler.ir.IRContext
 import sigma.interpreter.CostedProverResult
 
 class ErgoContractSpec(implicit val IR: IRContext) extends ContractSpec {

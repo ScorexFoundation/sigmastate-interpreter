@@ -1,4 +1,4 @@
-package sigma.compiler
+package sigma.compiler.ir
 
 import org.ergoplatform._
 import scalan.MutableLazy

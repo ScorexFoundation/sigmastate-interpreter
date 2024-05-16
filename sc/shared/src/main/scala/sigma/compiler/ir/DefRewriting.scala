@@ -1,4 +1,4 @@
-package sigma.compiler
+package sigma.compiler.ir
 
 import scalan.DelayInvokeException
 import sigma.data.ExactNumeric

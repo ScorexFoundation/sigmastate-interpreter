@@ -1,6 +1,6 @@
 package scalan
 
-import sigma.compiler.IRContext
+import sigma.compiler.ir.IRContext
 
 trait BaseLiftableTests { self: BaseCtxTests =>
 

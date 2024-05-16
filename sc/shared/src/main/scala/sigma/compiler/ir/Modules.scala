@@ -1,4 +1,4 @@
-package sigma.compiler
+package sigma.compiler.ir
 
 trait Modules extends Base { self: IRContext =>
 

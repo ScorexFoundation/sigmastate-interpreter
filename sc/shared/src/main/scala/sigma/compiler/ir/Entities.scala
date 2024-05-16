@@ -1,4 +1,4 @@
-package sigma.compiler
+package sigma.compiler.ir
 
 /** A slice in the Scalan cake with base classes for various descriptors. */
 trait Entities extends TypeDescs { self: IRContext =>

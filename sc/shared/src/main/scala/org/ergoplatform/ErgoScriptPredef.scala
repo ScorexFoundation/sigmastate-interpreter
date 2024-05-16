@@ -6,7 +6,7 @@ import sigma.ast.SType
 import sigma.ast.syntax.SigmaPropValue
 import sigma.ast.Value
 import sigma.ast.syntax.ValueOps
-import sigma.compiler.IRContext
+import sigma.compiler.ir.IRContext
 
 object ErgoScriptPredef {
   import sigmastate.interpreter.Interpreter._

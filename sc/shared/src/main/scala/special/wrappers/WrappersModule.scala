@@ -1,6 +1,6 @@
 package special.wrappers
 
-import sigma.compiler.IRContext
+import sigma.compiler.ir.IRContext
 import wrappers.scala.WOptionsModule
 import wrappers.scalan.WRTypesModule
 import wrappers.special.WSpecialPredefsModule

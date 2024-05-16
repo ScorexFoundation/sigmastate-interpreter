@@ -18,7 +18,7 @@ import sigma.ast.syntax._
 import sigma.Coll
 import sigma.ast.SAvlTree
 import sigma.ast.syntax.{GetVarByteArray, OptionValueOps}
-import sigma.compiler.IRContext
+import sigma.compiler.ir.IRContext
 import sigma.data.{AvlTreeData, AvlTreeFlags, CSigmaProp, TrivialProp}
 import sigma.eval.SigmaDsl
 import sigma.interpreter.ProverResult

@@ -8,7 +8,7 @@ import scalan.BaseCtxTests
 import sigma.ast.syntax.ValueOps
 import sigmastate.lang.LangTests
 import sigma.ast.Apply
-import sigma.compiler.IRContext
+import sigma.compiler.ir.IRContext
 
 class ErgoTreeBuildingTest extends BaseCtxTests
     with LangTests with ExampleContracts with ErgoScriptTestkit {

@@ -1,6 +1,6 @@
 package sigma {
   import scalan._
-  import sigma.compiler.{Base, IRContext}
+  import sigma.compiler.ir.{Base, IRContext}
 
   trait SigmaDsl extends Base { self: IRContext =>
     trait BigInt extends Def[BigInt] {

@@ -2,7 +2,7 @@ package sigmastate
 
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
-import sigma.compiler.{IRContext, TypeDescs}
+import sigma.compiler.ir.{IRContext, TypeDescs}
 import sigma.reflection.ReflectionData.registerClassEntry
 import sigma.reflection.SRConstructor
 

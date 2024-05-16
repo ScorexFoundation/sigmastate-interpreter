@@ -1,6 +1,6 @@
-package sigma.compiler.primitives
+package sigma.compiler.ir.primitives
 
-import sigma.compiler.{Base, IRContext}
+import sigma.compiler.ir.{Base, IRContext}
 
 trait UniversalOps extends Base { self: IRContext =>
   case class HashCode[A]() extends UnOp[A, Int]("hashCode") {

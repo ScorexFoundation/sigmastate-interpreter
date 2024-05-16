@@ -7,7 +7,7 @@ import sigma.ast.{ErgoTree, SType, TransformingSigmaBuilder, Value}
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import sigma.ast.syntax.{SValue, SigmaPropValue}
 import sigma.serialization.ValueSerializer
-import sigma.compiler.IRContext
+import sigma.compiler.ir.IRContext
 import sigma.ast.syntax.ValueOps
 import sigmastate.helpers.{NegativeTesting, SigmaPPrint}
 

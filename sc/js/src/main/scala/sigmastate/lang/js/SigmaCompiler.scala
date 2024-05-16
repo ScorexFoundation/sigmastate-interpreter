@@ -9,7 +9,7 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
 import sigma.js.Value
 import sigma.ast.ErgoTree.HeaderType
-import sigma.compiler.CompiletimeIRContext
+import sigma.compiler.ir.CompiletimeIRContext
 import sigma.ast.syntax.ValueOps
 
 
