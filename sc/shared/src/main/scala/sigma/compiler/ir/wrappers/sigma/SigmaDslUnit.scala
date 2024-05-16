@@ -1,5 +1,6 @@
-package sigma {
-  import scalan._
+package sigma.compiler.ir.wrappers.sigma
+
+import scalan._
   import sigma.compiler.ir.{Base, IRContext}
 
   trait SigmaDsl extends Base { self: IRContext =>
@@ -125,4 +126,3 @@ package sigma {
     trait SigmaContractCompanion;
     trait SigmaDslBuilderCompanion
   }
-}

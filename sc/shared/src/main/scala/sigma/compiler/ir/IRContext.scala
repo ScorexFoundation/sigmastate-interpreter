@@ -1,12 +1,13 @@
 package sigma.compiler.ir
 
-import scalan._
 import sigma.compiler.ir.core.MutableLazy
 import sigma.compiler.ir.primitives._
 import sigma.data.{Nullable, RType}
 import sigma.util.MemoizedFunc
-import sigma.{CollsModule, SigmaDslModule}
-import sigma.compiler.ir.wrappers.WrappersModule
+import sigma.compiler.ir.wrappers.scala.WOptionsModule
+import sigma.compiler.ir.wrappers.scalan.WRTypesModule
+import sigma.compiler.ir.wrappers.sigma.{CollsModule, SigmaDslModule}
+import sigma.compiler.ir.wrappers.special.WSpecialPredefsModule
 
 /** Aggregate cake with all inter-dependent modules assembled together.
   * Each instance of this class contains independent IR context, thus many
@@ -43,12 +44,13 @@ trait IRContext
   with Entities
   with Modules
   with DefRewriting
-  with WrappersModule
   with CollsModule
-  with sigma.wrappers.WrappersModule
   with SigmaDslModule
   with TreeBuilding
-  with GraphBuilding {
+  with GraphBuilding
+  with WSpecialPredefsModule
+  with WOptionsModule
+  with WRTypesModule {
 
   import Coll._
   import CollBuilder._

@@ -1,9 +1,7 @@
 package sigma.compiler.ir.wrappers.scala
 
 import scala.language.{existentials, implicitConversions}
-import scalan._
 import sigma.compiler.ir.IRContext
-import sigma.compiler.ir.wrappers.WrappersModule
 import sigma.compiler.ir.wrappers.OptionWrapSpec
 
 import scala.collection.compat.immutable.ArraySeq

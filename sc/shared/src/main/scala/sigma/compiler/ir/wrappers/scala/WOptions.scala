@@ -1,7 +1,5 @@
 package sigma.compiler.ir.wrappers.scala {
-  import scalan._
   import sigma.compiler.ir.{Base, IRContext}
-  import sigma.compiler.ir.wrappers.WrappersModule
 
   trait WOptions extends Base { self: IRContext =>
     trait WOption[A] extends Def[WOption[A]] {

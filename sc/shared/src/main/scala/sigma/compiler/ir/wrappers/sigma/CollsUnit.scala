@@ -1,5 +1,6 @@
-package sigma {
-  import sigma.compiler.ir.{Base, IRContext}
+package sigma.compiler.ir.wrappers.sigma
+
+import sigma.compiler.ir.{Base, IRContext}
 
   /** Staged version of collection interfaces which is used in graph-based IR to represent
     * methods of Coll and CollBuilder.
@@ -35,4 +36,3 @@ package sigma {
       def replicate[T](n: Ref[Int], v: Ref[T]): Ref[Coll[T]];
     };
   }
-}

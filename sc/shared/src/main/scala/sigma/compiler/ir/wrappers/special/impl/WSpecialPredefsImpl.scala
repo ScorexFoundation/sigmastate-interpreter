@@ -1,7 +1,6 @@
 package sigma.compiler.ir.wrappers.special
 
 import scala.language.{existentials, implicitConversions}
-import scalan._
 import sigma.compiler.ir.IRContext
 
 package impl {

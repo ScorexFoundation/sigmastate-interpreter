@@ -1,7 +1,5 @@
 package sigma.compiler.ir.wrappers
-
-import sigma.data.RType
-
+import _root_.sigma.data.RType
 /** Base class for wrappers of such types as WOption, WRType etc.
   * Used in graph IR to implement method invocation.
   */

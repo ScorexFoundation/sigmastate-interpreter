@@ -1,12 +1,12 @@
 package sigma.compiler.ir
 
 import sigma.compiler.ir.primitives.Thunks
-import sigma.{Colls, SigmaDsl}
 import sigma.data.RType
 import sigma.reflection.ReflectionData.registerClassEntry
 import sigma.reflection.{ReflectionData, mkConstructor, mkMethod}
 import sigma.compiler.ir.wrappers.{OptionWrapSpec, RTypeWrapSpec}
 import sigma.compiler.ir.wrappers.scalan.WRTypes
+import sigma.compiler.ir.wrappers.sigma.SigmaDsl
 
 /** Registrations of reflection metadata for graph-ir module (see README.md).
   * Such metadata is only used on JS platform to support reflection-like interfaces of
@@ -71,7 +71,7 @@ object GraphIRReflection {
     )
   )
 
-  { val clazz = classOf[sigma.SigmaDsl#SigmaProp]
+  { val clazz = classOf[sigma.compiler.ir.wrappers.sigma.SigmaDsl#SigmaProp]
     val ctx = null.asInstanceOf[SigmaDsl] // ok! type level only
     registerClassEntry(clazz,
       methods = Map(
@@ -120,7 +120,7 @@ object GraphIRReflection {
     )
   }
 
-  { val clazz = classOf[Colls#CollBuilder]
+  { val clazz = classOf[sigma.compiler.ir.wrappers.sigma.Colls#CollBuilder]
     val ctx = null.asInstanceOf[IRContext] // ok! type level only
     registerClassEntry(clazz,
       methods = Map(
@@ -142,7 +142,7 @@ object GraphIRReflection {
   }
 
   {
-    val clazz = classOf[Colls#Coll[_]]
+    val clazz = classOf[sigma.compiler.ir.wrappers.sigma.Colls#Coll[_]]
     val ctx = null.asInstanceOf[IRContext] // ok! type level only
     registerClassEntry(clazz,
       methods = Map(

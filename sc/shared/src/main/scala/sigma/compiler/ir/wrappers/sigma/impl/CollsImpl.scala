@@ -1,8 +1,8 @@
-package sigma
+package sigma.compiler.ir.wrappers.sigma
 
 import scala.language.{existentials, implicitConversions}
-import scalan._
 import sigma.compiler.ir.IRContext
+import sigma.compiler.ir.wrappers.sigma.impl.CollsDefs
 
 import scala.collection.compat.immutable.ArraySeq
 
@@ -643,4 +643,4 @@ object CollsModule extends ModuleInfo("sigma", "Colls") {
 }
 }
 
-trait CollsModule extends sigma.impl.CollsDefs {self: IRContext =>}
+trait CollsModule extends CollsDefs {self: IRContext =>}

@@ -1,13 +1,15 @@
-package sigma
+package sigma.compiler.ir.wrappers.sigma
 
 import scala.language.{existentials, implicitConversions}
 import scalan._
 import sigma.compiler.ir.IRContext
+import sigma.compiler.ir.wrappers.sigma.impl.SigmaDslDefs
 
 import scala.collection.compat.immutable.ArraySeq
 
 package impl {
   import sigma.compiler.ir.meta.ModuleInfo
+  import sigma.compiler.ir.wrappers.sigma.SigmaDsl
   import sigma.compiler.ir.{Base, GraphIRReflection, IRContext}
   import sigma.data.{Nullable, RType}
   import sigma.reflection.{RClass, RMethod}
@@ -2327,4 +2329,4 @@ object SigmaDslModule extends ModuleInfo("sigma", "SigmaDsl") {
 }
 }
 
-trait SigmaDslModule extends sigma.impl.SigmaDslDefs {self: IRContext =>}
+trait SigmaDslModule extends SigmaDslDefs {self: IRContext =>}
