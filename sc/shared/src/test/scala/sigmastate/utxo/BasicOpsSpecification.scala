@@ -311,6 +311,20 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
+  /**
+    *
+    * todo: decide how to deserialize
+    * 
+    * DataSerializer, with it round-trip property with existing serializers (longtoByteArray, .propBytes etc) would be broken. Which would lead to following possible consequences:
+
+    deserialization of those those types (Long, BigInt, SigmaProp) and similar (Short, Int) is corresponding to existing serializers, for other options DataSerializer is used
+
+
+    new "serialize: SAny -> SByteArray" option is introduced , with DataSerializer under the hood, but then there are two coexisting options, old one (longToByteArray/byteArrayToLong), and new one serialize/deserialize, for round-tripping, with the exception for .propBytes which can be deserialized via skipping first two bytes though, like " { val bytes = p1.propBytes; val ba = bytes.slice(2, bytes.size); val prop = Global.deserialize[SigmaProp](ba)}
+
+
+in case of serialize() (which is the better option I support), there is no need for header.bytes. avlTree.bytes, numeric.bytes (and the latter option would be confusing, as producing different bytes from *ToByteArray).
+    */
   property("deserializeRaw - sigmaprop roundtrip") {
 
     def deserTest() = test("deserializeRaw", env, ext,
@@ -318,6 +332,26 @@ class BasicOpsSpecification extends CompilerTestingCommons
             val ba = getVar[Coll[Byte]]($propBytesVar1).get
             val prop = Global.deserializeRaw[SigmaProp](ba)
             prop == getVar[SigmaProp]($propVar3).get && prop
+          }""",
+      null,
+      true
+    )
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an [sigma.exceptions.TyperException] should be thrownBy deserTest()
+    } else {
+      deserTest()
+    }
+  }
+
+  property("deserializeRaw - .propBytes") {
+    def deserTest() = test("deserializeRaw", env, ext,
+      s"""{
+            val p1 = getVar[SigmaProp]($propVar1).get
+            val bytes = p1.propBytes
+            val ba = bytes.slice(2, bytes.size)
+            val prop = Global.deserializeRaw[SigmaProp](ba)
+            prop == p1 && prop
           }""",
       null,
       true

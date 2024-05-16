@@ -211,7 +211,7 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
       case ClassTag.Int => scorex.utils.Ints.fromByteArray(bytes.toArray)
       case ClassTag.Long => byteArrayToLong(bytes)
       case sigma.data.BigIntClassTag => byteArrayToBigInt(bytes)
-      case sigma.data.SigmaPropClassTag =>
+    /*  case sigma.data.SigmaPropClassTag =>
         ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(bytes.toArray).root match {
           case Left(_) => throw new InvalidType(s"Cannot deserialize($bytes): unparsed tree provided")
           case Right(prop) =>
@@ -220,7 +220,7 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
             } else {
               throw new InvalidType(s"Cannot deserialize($bytes): prop is not evaluated: $prop}")
             }
-        }
+        } */
       case _ =>
         val reader = new SigmaByteReader(new VLQByteBufferReader(ByteBuffer.wrap(bytes.toArray)), new ConstantStore(), false)
         DataSerializer.deserialize(tpe, reader)
