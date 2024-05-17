@@ -206,25 +206,8 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
   }
 
   def deserializeRaw[T](tpe: SType, bytes: Coll[Byte])(implicit cT: RType[T]): T = {
-    val res = cT.classTag match {
-      case ClassTag.Short => ByteBuffer.wrap(bytes.toArray).getShort
-      case ClassTag.Int => scorex.utils.Ints.fromByteArray(bytes.toArray)
-      case ClassTag.Long => byteArrayToLong(bytes)
-      case sigma.data.BigIntClassTag => byteArrayToBigInt(bytes)
-    /*  case sigma.data.SigmaPropClassTag =>
-        ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(bytes.toArray).root match {
-          case Left(_) => throw new InvalidType(s"Cannot deserialize($bytes): unparsed tree provided")
-          case Right(prop) =>
-            if(prop.isInstanceOf[EvaluatedValue[_]]) {
-              prop.asInstanceOf[EvaluatedValue[_]].value
-            } else {
-              throw new InvalidType(s"Cannot deserialize($bytes): prop is not evaluated: $prop}")
-            }
-        } */
-      case _ =>
-        val reader = new SigmaByteReader(new VLQByteBufferReader(ByteBuffer.wrap(bytes.toArray)), new ConstantStore(), false)
-        DataSerializer.deserialize(tpe, reader)
-    }
+    val reader = new SigmaByteReader(new VLQByteBufferReader(ByteBuffer.wrap(bytes.toArray)), new ConstantStore(), false)
+    val res = DataSerializer.deserialize(tpe, reader)
     res.asInstanceOf[T]
   }
 }

@@ -18,7 +18,7 @@ import sigma.data.{AvlTreeData, AvlTreeFlags, CAND, CAnyValue, CSigmaDslBuilder,
 import sigma.util.StringUtil._
 import sigma.ast._
 import sigma.ast.syntax._
-import sigma.crypto.CryptoConstants
+import sigma.crypto.{CryptoConstants, SecP256K1Group}
 import sigmastate._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
@@ -182,7 +182,8 @@ class BasicOpsSpecification extends CompilerTestingCommons
 
   property("deserializeRaw - int") {
     val value = -109253
-    val bytes = Base16.encode(Ints.toByteArray(value))
+    val w = new VLQByteBufferWriter(new ByteArrayBuilder()).putInt(value)
+    val bytes = Base16.encode(w.toBytes)
     def deserTest() = {test("deserializeRaw", env, ext,
       s"{ val ba = fromBase16(\"$bytes\"); Global.deserializeRaw[Int](ba) == $value }",
       null,
@@ -196,7 +197,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
-  property("deserializeRaw - coll") {
+  property("deserializeRaw - coll[int]") {
     val writer = new SigmaByteWriter(new VLQByteBufferWriter(new ByteArrayBuilder()), None)
     DataSerializer.serialize[SCollection[SInt.type]](Colls.fromArray(Array(IntConstant(5).value)), SCollection(SInt), writer)
     val bytes = Base16.encode(writer.toBytes)
@@ -216,14 +217,16 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
-  property("deserializeRaw - long roundtrip") {
-    val value = -1009253
+  property("deserializeRaw - long") {
+    val value = -10009253L
+
+    val w = new VLQByteBufferWriter(new ByteArrayBuilder()).putLong(value)
+    val bytes = Base16.encode(w.toBytes)
 
     def deserTest() = test("deserializeRaw", env, ext,
       s"""{
-            val l = ${value}L;
-            val ba = longToByteArray(l);
-            Global.deserializeRaw[Long](ba) == l
+            val ba = fromBase16("$bytes");
+            Global.deserializeRaw[Long](ba) == ${value}L
           }""",
       null,
       true
@@ -255,11 +258,20 @@ class BasicOpsSpecification extends CompilerTestingCommons
   }
 
   property("deserializeRaw - bigint") {
+
+    val bigInt = SecP256K1Group.q.divide(new BigInteger("512"))
+    val biBytes = bigInt.toByteArray
+
+    val w = new VLQByteBufferWriter(new ByteArrayBuilder()).putUShort(biBytes.length)
+    val lengthBytes = w.toBytes
+
+    val bytes = Base16.encode(lengthBytes ++ biBytes)
+
     def deserTest() = test("deserializeRaw", env, ext,
       s"""{
-            val ba = fromBase16("028a5b7f7f7f7f7f7f6c");
+            val ba = fromBase16("$bytes");
             val b = Global.deserializeRaw[BigInt](ba)
-            b == byteArrayToBigInt(ba)
+            b == bigInt("${bigInt.toString}")
           }""",
       null,
       true
@@ -274,9 +286,11 @@ class BasicOpsSpecification extends CompilerTestingCommons
 
   property("deserializeRaw - short") {
     val s = (-1925).toShort
+    val w = new VLQByteBufferWriter(new ByteArrayBuilder()).putShort(s)
+    val bytes = Base16.encode(w.toBytes)
     def deserTest() = test("deserializeRaw", env, ext,
       s"""{
-            val ba = fromBase16("${Base16.encode(Shorts.toByteArray(s))}");
+            val ba = fromBase16("$bytes");
             Global.deserializeRaw[Short](ba) == -1925
           }""",
       null,
@@ -310,26 +324,13 @@ class BasicOpsSpecification extends CompilerTestingCommons
       deserTest()
     }
   }
-
-  /**
-    *
-    * todo: decide how to deserialize
-    * 
-    * DataSerializer, with it round-trip property with existing serializers (longtoByteArray, .propBytes etc) would be broken. Which would lead to following possible consequences:
-
-    deserialization of those those types (Long, BigInt, SigmaProp) and similar (Short, Int) is corresponding to existing serializers, for other options DataSerializer is used
-
-
-    new "serialize: SAny -> SByteArray" option is introduced , with DataSerializer under the hood, but then there are two coexisting options, old one (longToByteArray/byteArrayToLong), and new one serialize/deserialize, for round-tripping, with the exception for .propBytes which can be deserialized via skipping first two bytes though, like " { val bytes = p1.propBytes; val ba = bytes.slice(2, bytes.size); val prop = Global.deserialize[SigmaProp](ba)}
-
-
-in case of serialize() (which is the better option I support), there is no need for header.bytes. avlTree.bytes, numeric.bytes (and the latter option would be confusing, as producing different bytes from *ToByteArray).
-    */
+  
   property("deserializeRaw - sigmaprop roundtrip") {
 
     def deserTest() = test("deserializeRaw", env, ext,
       s"""{
-            val ba = getVar[Coll[Byte]]($propBytesVar1).get
+            val bytes = getVar[Coll[Byte]]($propBytesVar1).get
+            val ba = bytes.slice(2, bytes.size)
             val prop = Global.deserializeRaw[SigmaProp](ba)
             prop == getVar[SigmaProp]($propVar3).get && prop
           }""",
