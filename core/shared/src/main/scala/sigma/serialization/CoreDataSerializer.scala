@@ -68,6 +68,12 @@ class CoreDataSerializer {
         i += 1
       }
 
+    case SOption(elemType) =>
+      val o = v.asInstanceOf[Option[elemType.WrappedType]]
+      w.putOption(o){case (w, v) =>
+        serialize(v, elemType, w)
+      }
+
     // TODO v6.0 (3h): support Option[T] (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/659)
     case _ =>
       CheckSerializableTypeCode(tpe.typeCode)
@@ -118,6 +124,10 @@ class CoreDataSerializer {
         }.toArray[Any]
         val coll = Colls.fromArray(arr)(sigma.AnyType)
         Evaluation.toDslTuple(coll, tuple)
+      case tOption: SOption[_] =>
+        r.getOption[tOption.ElemWrappedType] {
+          deserialize(tOption.elemType, r).asInstanceOf[tOption.ElemWrappedType]
+        }
       case t =>
         CheckSerializableTypeCode(t.typeCode)
         throw new SerializerException(s"Not defined DataSerializer for type $t")
