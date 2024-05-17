@@ -6,7 +6,7 @@ import org.scalacheck.Arbitrary._
 import sigma.data.{DataValueComparer, OptionType, RType, SigmaBoolean, TupleColl}
 import sigma.ast.SCollection.SByteArray
 import sigmastate.eval._
-import sigma.{AvlTree, Colls, Evaluation}
+import sigma.{AvlTree, Colls, Evaluation, VersionContext}
 import sigma.ast.SType.AnyOps
 import sigma.ast._
 import org.scalacheck.Gen
@@ -95,13 +95,24 @@ class DataSerializerSpecification extends SerializationSpecification {
   def testOption[T <: SType](tpe: T) = {
     implicit val wWrapped: Gen[T#WrappedType] = wrappedTypeGen(tpe)
     val tT = Evaluation.stypeToRType(tpe)
-    forAll { in: T#WrappedType =>
-      roundtrip[SType](Some(in).asWrappedType, SOption(tpe))
-      roundtrip[SOption[T]](None, SOption(tpe))
-      roundtrip[SOption[T]](Some(in), SOption(tpe))
-      roundtrip[SOption[SCollection[T]]](Some(Colls.fromItems(in)(tT)), SOption(SCollectionType(tpe)))
-      roundtrip[SCollection[SOption[T]]](Colls.fromItems(Option(in), None.asInstanceOf[Option[T#WrappedType]])(OptionType(tT)), SCollectionType(SOption(tpe)))
-      roundtrip[SOption[SOption[T]]](Some(Some(in)), SOption(SOption(tpe)))
+
+    an[Exception] should be thrownBy (
+      VersionContext.withVersions((VersionContext.V6SoftForkVersion - 1).toByte, 1) {
+        forAll { in: T#WrappedType =>
+          roundtrip[SType](Some(in).asWrappedType, SOption(tpe))
+          roundtrip[SOption[SCollection[T]]](Some(Colls.fromItems(in)(tT)), SOption(SCollectionType(tpe)))
+        }
+      })
+
+    VersionContext.withVersions(VersionContext.V6SoftForkVersion, 1) {
+      forAll { in: T#WrappedType =>
+        roundtrip[SType](Some(in).asWrappedType, SOption(tpe))
+        roundtrip[SOption[T]](None, SOption(tpe))
+        roundtrip[SOption[T]](Some(in), SOption(tpe))
+        roundtrip[SOption[SCollection[T]]](Some(Colls.fromItems(in)(tT)), SOption(SCollectionType(tpe)))
+        roundtrip[SCollection[SOption[T]]](Colls.fromItems(Option(in), None.asInstanceOf[Option[T#WrappedType]])(OptionType(tT)), SCollectionType(SOption(tpe)))
+        roundtrip[SOption[SOption[T]]](Some(Some(in)), SOption(SOption(tpe)))
+      }
     }
   }
 

@@ -68,7 +68,7 @@ class CoreDataSerializer {
         i += 1
       }
 
-    case SOption(elemType) =>
+    case SOption(elemType) if VersionContext.current.isV6SoftForkActivated =>
       val o = v.asInstanceOf[Option[elemType.WrappedType]]
       w.putOption(o){case (w, v) =>
         serialize(v, elemType, w)
@@ -124,7 +124,7 @@ class CoreDataSerializer {
         }.toArray[Any]
         val coll = Colls.fromArray(arr)(sigma.AnyType)
         Evaluation.toDslTuple(coll, tuple)
-      case tOption: SOption[_] =>
+      case tOption: SOption[_] if VersionContext.current.isV6SoftForkActivated =>
         r.getOption[tOption.ElemWrappedType] {
           deserialize(tOption.elemType, r).asInstanceOf[tOption.ElemWrappedType]
         }
