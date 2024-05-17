@@ -442,6 +442,32 @@ in case of serialize() (which is the better option I support), there is no need 
     }
   }
 
+  property("deserializeRaw - header option") {
+    val td = new SigmaTestingData {}
+    val h1 = td.TestData.h1
+    val headerBytes = Colls.fromArray(Array(1.toByte) ++ h1.bytes.toArray)
+
+    val customExt = Seq(21.toByte -> ByteArrayConstant(headerBytes))
+
+    def deserTest() = test("deserializeRaw", env, customExt,
+      s"""{
+            val ba = getVar[Coll[Byte]](21).get
+            val headerOpt = Global.deserializeRaw[Option[Header]](ba)
+            val header = headerOpt.get
+            val id = fromBase16("${Base16.encode(h1.id.toArray)}")
+            header.height == ${h1.height} && header.id == id
+          }""",
+      null,
+      true
+    )
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[sigma.exceptions.TyperException] should be thrownBy deserTest()
+    } else {
+      deserTest()
+    }
+  }
+
   property("Relation operations") {
     test("R1", env, ext,
       "{ allOf(Coll(getVar[Boolean](trueVar).get, true, true)) }",
