@@ -739,6 +739,6 @@ trait SigmaDslBuilder {
   /** Returns a byte-wise XOR of the two collections of bytes. */
   def xor(l: Coll[Byte], r: Coll[Byte]): Coll[Byte]
 
-  def deserializeRaw[T](tpe: SType, bytes: Coll[Byte])(implicit cT: RType[T]): T
+  def deserializeTo[T](tpe: SType, bytes: Coll[Byte])(implicit cT: RType[T]): T
 }
 

@@ -1533,10 +1533,10 @@ case object SGlobalMethods extends MonoTypeMethods {
     .withInfo(Xor, "Byte-wise XOR of two collections of bytes",
       ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))
 
-  lazy val desJava = ownerType.reprClass.getMethod("deserializeRaw", classOf[SType], classOf[Coll[Byte]], classOf[RType[_]])
+  lazy val desJava = ownerType.reprClass.getMethod("deserializeTo", classOf[SType], classOf[Coll[Byte]], classOf[RType[_]])
 
-  lazy val deserializeRawMethod = SMethod(
-    this, "deserializeRaw", SFunc(Array(SGlobal, SByteArray), tT, Array(paramT)), 3, Xor.costKind) // todo: cost
+  lazy val deserializeToMethod = SMethod(
+    this, "deserializeTo", SFunc(Array(SGlobal, SByteArray), tT, Array(paramT)), 3, Xor.costKind) // todo: cost
     .copy(irInfo = MethodIRInfo(None, Some(desJava), None))
     .withInfo(Xor, "Byte-wise XOR of two collections of bytes",  // todo: desc
       ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))
@@ -1551,12 +1551,12 @@ case object SGlobalMethods extends MonoTypeMethods {
   }
 
 
-  def deserializeRaw_eval(mc: MethodCall, G: SigmaDslBuilder, bytes: Coll[Byte])
+  def deserializeTo_eval(mc: MethodCall, G: SigmaDslBuilder, bytes: Coll[Byte])
               (implicit E: ErgoTreeEvaluator): Any = {
     val tpe = mc.tpe
     val cT = stypeToRType(tpe)
     E.addSeqCost(Xor.costKind, bytes.length, Xor.opDesc) { () =>    // todo: cost
-      G.deserializeRaw(tpe, bytes)(cT)
+      G.deserializeTo(tpe, bytes)(cT)
     }
   }
 
@@ -1565,7 +1565,7 @@ case object SGlobalMethods extends MonoTypeMethods {
       Seq(
         groupGeneratorMethod,
         xorMethod,
-        deserializeRawMethod
+        deserializeToMethod
       )
     } else {
       Seq(

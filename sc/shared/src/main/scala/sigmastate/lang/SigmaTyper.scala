@@ -10,7 +10,7 @@ import SigmaPredef._
 import sigma.ast.syntax._
 import sigma.exceptions.TyperException
 import sigma.serialization.OpCodes
-import sigmastate.eval.DeserializeRawBytes
+import sigmastate.eval.deserializeToBytes
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -137,8 +137,8 @@ class SigmaTyper(val builder: SigmaBuilder,
           SGlobalMethods.method(n) match {
             case Some(method) =>
               val srcCtx = sel.sourceContext
-              if(method.name == SGlobalMethods.deserializeRawMethod.name) {
-                DeserializeRawBytes(args(0).asInstanceOf[Value[SByteArray]], rangeTpe)
+              if(method.name == SGlobalMethods.deserializeToMethod.name) {
+                deserializeToBytes(args(0).asInstanceOf[Value[SByteArray]], rangeTpe)
               } else {
                 processGlobalMethod(srcCtx, method, newArgs)
               }

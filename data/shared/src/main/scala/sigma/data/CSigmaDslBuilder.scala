@@ -205,7 +205,7 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
     this.GroupElement(p)
   }
 
-  def deserializeRaw[T](tpe: SType, bytes: Coll[Byte])(implicit cT: RType[T]): T = {
+  def deserializeTo[T](tpe: SType, bytes: Coll[Byte])(implicit cT: RType[T]): T = {
     val reader = new SigmaByteReader(new VLQByteBufferReader(ByteBuffer.wrap(bytes.toArray)), new ConstantStore(), false)
     val res = DataSerializer.deserialize(tpe, reader)
     res.asInstanceOf[T]

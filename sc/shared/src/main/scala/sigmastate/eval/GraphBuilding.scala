@@ -21,7 +21,7 @@ import sigma.serialization.OpCodes
 import scala.collection.mutable.ArrayBuffer
 
 
-case class DeserializeRawBytes[V <: SType](bytes: Value[SByteArray], tpe: V) extends NotReadyValue[V] {
+case class deserializeToBytes[V <: SType](bytes: Value[SByteArray], tpe: V) extends NotReadyValue[V] {
   /** The companion node descriptor with opCode, cost and other metadata. */
   override def companion: ValueCompanion = ???
 
@@ -556,8 +556,8 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val e = stypeToElem(optTpe.elemType)
         ctx.getVar(id)(e)
 
-      case DeserializeRawBytes(bytes, tpe) =>
-        sigmaDslBuilder.deserializeRaw(asRep[Coll[Byte]](eval(bytes)))(stypeToElem(tpe))
+      case deserializeToBytes(bytes, tpe) =>
+        sigmaDslBuilder.deserializeTo(asRep[Coll[Byte]](eval(bytes)))(stypeToElem(tpe))
 
       case ValUse(valId, _) =>
         env.getOrElse(valId, !!!(s"ValUse $valId not found in environment $env"))
@@ -1160,10 +1160,10 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
               val c1 = asRep[Coll[Byte]](argsV(0))
               val c2 = asRep[Coll[Byte]](argsV(1))
               g.xor(c1, c2)
-            case SGlobalMethods.deserializeRawMethod.name if VersionContext.current.isV6SoftForkActivated =>
+            case SGlobalMethods.deserializeToMethod.name if VersionContext.current.isV6SoftForkActivated =>
               val c1 = asRep[Coll[Byte]](argsV(0))
               val c2 = stypeToElem(method.stype.tRange.withSubstTypes(typeSubst))
-              g.deserializeRaw(c1)(c2)
+              g.deserializeTo(c1)(c2)
             case _ => throwError
           }
           case _ => throwError
