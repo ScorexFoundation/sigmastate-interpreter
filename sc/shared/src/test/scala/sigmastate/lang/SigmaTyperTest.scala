@@ -5,7 +5,7 @@ import org.ergoplatform._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import sigma.Colls
+import sigma.{Colls, VersionContext}
 import sigma.ast.SCollection._
 import sigma.ast._
 import sigma.ast.syntax.{SValue, SigmaPropValue, SigmaPropValueOps}
@@ -21,6 +21,8 @@ import sigma.serialization.generators.ObjectGenerators
 import sigma.ast.Select
 import sigma.compiler.phases.{SigmaBinder, SigmaTyper}
 import sigma.exceptions.TyperException
+import sigmastate.exceptions.MethodNotFound
+import sigmastate.helpers.SigmaPPrint
 
 class SigmaTyperTest extends AnyPropSpec
   with ScalaCheckPropertyChecks with Matchers with LangTests with ObjectGenerators {
@@ -39,7 +41,12 @@ class SigmaTyperTest extends AnyPropSpec
       val typer = new SigmaTyper(builder, predefinedFuncRegistry, typeEnv, lowerMethodCalls = true)
       val typed = typer.typecheck(bound)
       assertSrcCtxForAllNodes(typed)
-      if (expected != null) typed shouldBe expected
+      if (expected != null) {
+        if (expected != typed) {
+          SigmaPPrint.pprintln(typed, width = 100)
+        }
+        typed shouldBe expected
+      }
       typed.tpe
     } catch {
       case e: Exception => throw e
@@ -663,4 +670,36 @@ class SigmaTyperTest extends AnyPropSpec
     )
     typecheck(customEnv, "substConstants(scriptBytes, positions, newVals)") shouldBe SByteArray
   }
+
+  property("Global.serialize") {
+    runWithVersion(VersionContext.V6SoftForkVersion) {
+      typecheck(env, "Global.serialize(1)",
+        MethodCall.typed[Value[SCollection[SByte.type]]](
+          Global,
+          SGlobalMethods.getMethodByName("serialize").withConcreteTypes(Map(STypeVar("T") -> SInt)),
+          Array(IntConstant(1)),
+          Map()
+        )) shouldBe SByteArray
+    }
+
+    runWithVersion((VersionContext.V6SoftForkVersion - 1).toByte) {
+      assertExceptionThrown(
+        typecheck(env, "Global.serialize(1)"),
+        exceptionLike[MethodNotFound]("Cannot find method 'serialize' in in the object Global")
+      )
+    }
+  }
+
+  property("predefined serialize") {
+    runWithVersion(VersionContext.V6SoftForkVersion) {
+      typecheck(env, "serialize((1, 2L))",
+        expected = MethodCall.typed[Value[SCollection[SByte.type]]](
+          Global,
+          SGlobalMethods.getMethodByName("serialize").withConcreteTypes(Map(STypeVar("T") -> SPair(SInt, SLong))),
+          Array(Tuple(Vector(IntConstant(1), LongConstant(2L)))),
+          Map()
+        )) shouldBe SByteArray
+    }
+  }
+
 }
