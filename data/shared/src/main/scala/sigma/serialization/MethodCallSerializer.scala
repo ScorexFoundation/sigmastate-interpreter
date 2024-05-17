@@ -8,6 +8,8 @@ import debox.cfor
 import sigma.ast.SContextMethods.BlockchainContextMethodNames
 import sigma.serialization.CoreByteWriter.{ArgInfo, DataInfo}
 
+import scala.collection.compat.immutable.ArraySeq
+
 case class MethodCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value[SType]], STypeSubst) => Value[SType])
   extends ValueSerializer[MethodCall] {
   override def opDesc: ValueCompanion = MethodCall
@@ -23,7 +25,7 @@ case class MethodCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value[S
     w.putValue(mc.obj, objInfo)
     assert(mc.args.nonEmpty)
     w.putValues(mc.args, argsInfo, argsItemInfo)
-    mc.method.runtimeTypeArgs.foreach { a =>
+    mc.method.explicitTypeArgs.foreach { a =>
       val tpe = mc.typeSubst(a)  // existence is checked in MethodCall constructor
       w.putType(tpe)
     }
@@ -46,18 +48,37 @@ case class MethodCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value[S
     val methodId = r.getByte()
     val obj = r.getValue()
     val args = r.getValues()
-    val (method, runtimeTypeArgs) = SMethod.fromIds(typeId, methodId) match {
-      case m if m.isRuntimeGeneric =>
-        val subst = m.runtimeTypeArgs.map { a =>
-          a -> r.getType()  // READ
-        }.toMap
-        (m.withConcreteTypes(subst), subst)
-      case m => (m, Map.empty[STypeVar, SType])
-    }
+    val method = SMethod.fromIds(typeId, methodId)
 
+    val explicitTypes = if (method.hasExplicitTypeArgs) {
+      val nTypes = method.explicitTypeArgs.length
+      val res = safeNewArray[SType](nTypes)
+      cfor(0)(_ < nTypes, _ + 1) { i =>
+        res(i) = r.getType()
+      }
+      ArraySeq.unsafeWrapArray(res)
+    } else SType.EmptySeq
+
+    val explicitTypeSubst = method.explicitTypeArgs.zip(explicitTypes).toMap
+    val specMethod = getSpecializedMethodFor(method, explicitTypeSubst, obj, args)
+
+    var isUsingBlockchainContext = specMethod.objType == SContextMethods &&
+      BlockchainContextMethodNames.contains(method.name)
+    r.wasUsingBlockchainContext ||= isUsingBlockchainContext
+
+    cons(obj, specMethod, args, explicitTypeSubst)
+  }
+
+  def getSpecializedMethodFor(
+    methodTemplate: SMethod,
+    explicitTypeSubst: STypeSubst,
+    obj: SValue,
+    args: Seq[SValue]
+  ): SMethod = {
+    // TODO optimize: avoid repeated transformation of method type
+    val method = methodTemplate.withConcreteTypes(explicitTypeSubst)
     val nArgs = args.length
-
-    val types: Seq[SType] =
+    val argTypes: Seq[SType] =
       if (nArgs == 0) SType.EmptySeq
       else {
         val types = safeNewArray[SType](nArgs)
@@ -67,12 +88,6 @@ case class MethodCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value[S
         types
       }
 
-    val specMethod = method.specializeFor(obj.tpe, types)
-
-    var isUsingBlockchainContext = specMethod.objType == SContextMethods &&
-      BlockchainContextMethodNames.contains(method.name)
-    r.wasUsingBlockchainContext ||= isUsingBlockchainContext
-
-    cons(obj, specMethod, args, runtimeTypeArgs)
+    method.specializeFor(obj.tpe, argTypes)
   }
 }

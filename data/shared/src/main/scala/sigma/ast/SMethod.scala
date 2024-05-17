@@ -57,8 +57,8 @@ case class MethodIRInfo(
   *                        `stype.tRange` - method result type.
   * @param methodId        method code, it should be unique among methods of the same objType.
   * @param costKind        cost descriptor for this method
-  * @param runtimeTypeArgs list of runtime type parameters which require explicit
-  *                        serialization in [[MethodCall]]s
+  * @param explicitTypeArgs list of type parameters which require explicit
+  *                        serialization in [[MethodCall]]s (i.e for deserialize[T], getVar[T], getReg[T])
   * @param irInfo          meta information connecting SMethod with ErgoTree (see [[MethodIRInfo]])
   * @param docInfo         optional human readable method description data
   * @param costFunc        optional specification of how the cost should be computed for the
@@ -70,7 +70,7 @@ case class SMethod(
     stype: SFunc,
     methodId: Byte,
     costKind: CostKind,
-    runtimeTypeArgs: Seq[STypeVar],
+    explicitTypeArgs: Seq[STypeVar],
     irInfo: MethodIRInfo,
     docInfo: Option[OperationInfo],
     costFunc: Option[MethodCostFunc]) {
@@ -79,7 +79,7 @@ case class SMethod(
   lazy val opDesc = MethodDesc(this)
 
   /** Return true if this method has runtime type parameters */
-  def isRuntimeGeneric: Boolean = runtimeTypeArgs.nonEmpty
+  def hasExplicitTypeArgs: Boolean = explicitTypeArgs.nonEmpty
 
   /** Finds and keeps the [[RMethod]] instance which corresponds to this method descriptor.
     * The lazy value is forced only if irInfo.javaMethod == None
@@ -291,10 +291,10 @@ object SMethod {
   def apply(objType: MethodsContainer, name: String, stype: SFunc,
       methodId: Byte,
       costKind: CostKind,
-      runtimeTypeArgs: Seq[STypeVar] = Nil
+      explicitTypeArgs: Seq[STypeVar] = Nil
   ): SMethod = {
     SMethod(
-      objType, name, stype, methodId, costKind, runtimeTypeArgs,
+      objType, name, stype, methodId, costKind, explicitTypeArgs,
       MethodIRInfo(None, None, None), None, None)
   }
 
