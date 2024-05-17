@@ -1298,6 +1298,8 @@ case class MethodCall(
     method: SMethod,
     args: IndexedSeq[Value[SType]],
     typeSubst: Map[STypeVar, SType]) extends Value[SType] {
+  require(method.runtimeTypeArgs.forall(tyArg => typeSubst.contains(tyArg)),
+    s"Runtime Generic method call should have concrete type for each runtime type parameter, but was: $this")
   override def companion = if (args.isEmpty) PropertyCall else MethodCall
 
   override def opType: SFunc = SFunc(obj.tpe +: args.map(_.tpe), tpe)

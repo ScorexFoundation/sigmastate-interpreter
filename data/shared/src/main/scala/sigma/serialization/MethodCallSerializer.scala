@@ -1,7 +1,7 @@
 package sigma.serialization
 
 import sigma.ast.syntax._
-import sigma.ast.{MethodCall, SContextMethods, SMethod, SType, STypeSubst, Value, ValueCompanion}
+import sigma.ast.{MethodCall, SContextMethods, SMethod, SType, STypeSubst, STypeVar, Value, ValueCompanion}
 import sigma.util.safeNewArray
 import SigmaByteWriter._
 import debox.cfor
@@ -23,6 +23,10 @@ case class MethodCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value[S
     w.putValue(mc.obj, objInfo)
     assert(mc.args.nonEmpty)
     w.putValues(mc.args, argsInfo, argsItemInfo)
+    mc.method.runtimeTypeArgs.foreach { a =>
+      val tpe = mc.typeSubst(a)  // existence is checked in MethodCall constructor
+      w.putType(tpe)
+    }
   }
 
   /** The SMethod instances in STypeCompanions may have type STypeIdent in methods types,
@@ -42,7 +46,15 @@ case class MethodCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value[S
     val methodId = r.getByte()
     val obj = r.getValue()
     val args = r.getValues()
-    val method = SMethod.fromIds(typeId, methodId)
+    val (method, runtimeTypeArgs) = SMethod.fromIds(typeId, methodId) match {
+      case m if m.isRuntimeGeneric =>
+        val subst = m.runtimeTypeArgs.map { a =>
+          a -> r.getType()  // READ
+        }.toMap
+        (m.withConcreteTypes(subst), subst)
+      case m => (m, Map.empty[STypeVar, SType])
+    }
+
     val nArgs = args.length
 
     val types: Seq[SType] =
@@ -61,6 +73,6 @@ case class MethodCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value[S
       BlockchainContextMethodNames.contains(method.name)
     r.wasUsingBlockchainContext ||= isUsingBlockchainContext
 
-    cons(obj, specMethod, args, Map.empty)
+    cons(obj, specMethod, args, runtimeTypeArgs)
   }
 }
