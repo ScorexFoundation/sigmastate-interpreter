@@ -6,18 +6,16 @@ import org.ergoplatform.validation.ValidationRules
 import scorex.crypto.hash.{Blake2b256, Sha256}
 import scorex.util.serialization.VLQByteBufferReader
 import scorex.utils.Longs
-import sigma.ast.{AtLeast, EvaluatedValue, SType, SigmaPropConstant, SubstConstants}
+import sigma.ast.{AtLeast, SType, SubstConstants}
 import sigma.crypto.{CryptoConstants, EcPointType, Ecp}
 import sigma.eval.Extensions.EvalCollOps
-import sigma.exceptions.InvalidType
-import sigma.serialization.{ConstantStore, CoreByteReader, CoreByteWriter, DataSerializer, ErgoTreeSerializer, GroupElementSerializer, SigmaByteReader, SigmaSerializer}
+import sigma.serialization.{ConstantStore, DataSerializer, GroupElementSerializer, SigmaByteReader, SigmaSerializer}
 import sigma.util.Extensions.BigIntegerOps
 import sigma.validation.SigmaValidationSettings
 import sigma.{AvlTree, BigInt, Box, Coll, CollBuilder, GroupElement, SigmaDslBuilder, SigmaProp, VersionContext}
 
 import java.math.BigInteger
 import java.nio.ByteBuffer
-import scala.reflect.ClassTag
 
 /** A default implementation of [[SigmaDslBuilder]] interface.
   *
