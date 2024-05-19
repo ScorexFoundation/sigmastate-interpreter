@@ -1,6 +1,7 @@
 package sigma.ast
 
 import org.ergoplatform._
+import org.ergoplatform.validation.ValidationRules.CheckMinimalErgoTreeVersion
 import org.ergoplatform.validation._
 import sigma._
 import sigma.ast.SCollection.{SBooleanArray, SBoxArray, SByteArray, SByteArray2, SHeaderArray}
@@ -1530,10 +1531,12 @@ case object SGlobalMethods extends MonoTypeMethods {
     * Called via reflection based on naming convention.
     * @see SMethod.evalMethod
     */
-  def serialize_eval(mc: MethodCall, G: SigmaDslBuilder, value: Any, tpe: RType[Any])
+  def serialize_eval(mc: MethodCall, G: SigmaDslBuilder, value: SType#WrappedType)
       (implicit E: ErgoTreeEvaluator): Coll[Byte] = {
     // TODO v6.0: accumulate cost
-    G.serialize(value)(tpe)
+    CheckMinimalErgoTreeVersion(E.context.currentErgoTreeVersion, VersionContext.V6SoftForkVersion)
+    val t = Evaluation.stypeToRType(mc.args(0).tpe)
+    G.serialize(value)(t)
   }
 
   protected override def getMethods() = super.getMethods() ++ {

@@ -177,13 +177,13 @@ class SigmaDslTesting extends AnyPropSpec
     }
 
     /** v3 and v4 implementation*/
-    private var _oldF: CompiledFunc[A, B] = _
+    private var _oldF: Try[CompiledFunc[A, B]] = _
     def oldF: CompiledFunc[A, B] = {
       if (_oldF == null) {
-        _oldF = oldImpl()
-        checkExpectedExprIn(_oldF)
+        _oldF = Try(oldImpl())
+        _oldF.foreach(cf => checkExpectedExprIn(cf))
       }
-      _oldF
+      _oldF.getOrThrow
     }
 
     /** v5 implementation*/
@@ -833,8 +833,17 @@ class SigmaDslTesting extends AnyPropSpec
     * This in not yet implemented and will be finished in v6.0.
     * In v5.0 is only checks that some features are NOT implemented, i.e. work for
     * negative tests.
+    *
+    * @param sinceVersion      language version (protocol) when the feature is introduced, see
+    *                          [[VersionContext]]
+    * @param script            the script to be tested against semantic function
+    * @param scalaFuncNew      semantic function which defines expected behavior of the given script
+    * @param expectedExpr      expected ErgoTree expression which corresponds to the given script
+    * @param printExpectedExpr if true, print the test vector for expectedExpr when it is None
+    * @param logScript         if true, log scripts to console
     */
   case class NewFeature[A, B](
+    sinceVersion: Byte,
     script: String,
     override val scalaFuncNew: A => B,
     expectedExpr: Option[SValue],
@@ -842,25 +851,30 @@ class SigmaDslTesting extends AnyPropSpec
     logScript: Boolean = LogScriptDefault
   )(implicit IR: IRContext, override val evalSettings: EvalSettings, val tA: RType[A], val tB: RType[B])
     extends Feature[A, B] {
+
+    def isFeatureShouldWork: Boolean =
+      activatedVersionInTests >= sinceVersion && ergoTreeVersionInTests >= sinceVersion
+
     override def scalaFunc: A => B = { x =>
       sys.error(s"Semantic Scala function is not defined for old implementation: $this")
     }
     implicit val cs = compilerSettingsInTests
 
-    /** in v5.x the old and the new interpreters are the same */
+    /** Starting from v5.x the old and the new interpreters are the same */
     val oldImpl = () => funcJit[A, B](script)
-    val newImpl = oldImpl // funcJit[A, B](script) // TODO v6.0: use actual new implementation here (https://github.com/ScorexFoundation/sigmastate-interpreter/issues/910)
+    val newImpl = oldImpl
 
-    /** In v5.x this method just checks the old implementations fails on the new feature. */
+    /** Check the new implementation works equal to the semantic function.
+      * This method also checks the old implementations fails on the new feature.
+      */
     override def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, CostDetails)] = {
-      val oldRes = Try(oldF(input))
-      oldRes.isFailure shouldBe true
-      if (!(newImpl eq oldImpl)) {
-        val newRes = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
-          checkEq(scalaFuncNew)(newF)(input)
-        }
+      if (this.isFeatureShouldWork) {
+        checkEq(scalaFuncNew)(newF)(input)
+      } else {
+        val oldRes = Try(oldF(input))
+        oldRes.isFailure shouldBe true
+        oldRes
       }
-      oldRes
     }
 
     override def checkExpected(input: A, expected: Expected[B]): Unit = {
@@ -880,7 +894,10 @@ class SigmaDslTesting extends AnyPropSpec
                           printTestCases: Boolean,
                           failOnTestVectors: Boolean): Unit = {
       val res = checkEquality(input, printTestCases).map(_._1)
-      res.isFailure shouldBe true
+      if (this.isFeatureShouldWork) {
+       res shouldBe expectedResult
+      } else
+        res.isFailure shouldBe true
       Try(scalaFuncNew(input)) shouldBe expectedResult
     }
 
@@ -1045,6 +1062,7 @@ class SigmaDslTesting extends AnyPropSpec
   /** Describes a NEW language feature which must NOT be supported in v4 and
     * must BE supported in v5 of the language.
     *
+    * @param sinceVersion language version (protocol) when the feature is introduced, see [[VersionContext]]
     * @param scalaFunc    semantic function which defines expected behavior of the given script
     * @param script       the script to be tested against semantic function
     * @param expectedExpr expected ErgoTree expression which corresponds to the given script
@@ -1052,9 +1070,9 @@ class SigmaDslTesting extends AnyPropSpec
     *         various ways
     */
   def newFeature[A: RType, B: RType]
-      (scalaFunc: A => B, script: String, expectedExpr: SValue = null)
+      (scalaFunc: A => B, script: String, expectedExpr: SValue = null, sinceVersion: Byte = VersionContext.JitActivationVersion)
       (implicit IR: IRContext, es: EvalSettings): Feature[A, B] = {
-    NewFeature(script, scalaFunc, Option(expectedExpr))
+    NewFeature(sinceVersion, script, scalaFunc, Option(expectedExpr))
   }
 
   val contextGen: Gen[Context] = ergoLikeContextGen.map(c => c.toSigmaContext())
