@@ -123,6 +123,9 @@ class SigmaDslTesting extends AnyPropSpec
     /** Type descriptor for type B. */
     def tB: RType[B]
 
+    /** Checks if this feature is supported in the given version context. */
+    def isSupportedIn(vc: VersionContext): Boolean
+
     /** Script containing this feature. */
     def script: String
 
@@ -501,6 +504,8 @@ class SigmaDslTesting extends AnyPropSpec
 
     implicit val cs = compilerSettingsInTests
 
+    override def isSupportedIn(vc: VersionContext): Boolean = true
+
     /** in v5.x the old and the new interpreters are the same */
     override val oldImpl = () => funcJit[A, B](script)
     override val newImpl = () => funcJit[A, B](script)
@@ -670,6 +675,8 @@ class SigmaDslTesting extends AnyPropSpec
     extends Feature[A, B] { feature =>
 
     implicit val cs = compilerSettingsInTests
+
+    override def isSupportedIn(vc: VersionContext): Boolean = true
 
     /** Apply given function to the context variable 1 */
     private def getApplyExpr(funcValue: SValue) = {
@@ -852,8 +859,8 @@ class SigmaDslTesting extends AnyPropSpec
   )(implicit IR: IRContext, override val evalSettings: EvalSettings, val tA: RType[A], val tB: RType[B])
     extends Feature[A, B] {
 
-    def isFeatureShouldWork: Boolean =
-      activatedVersionInTests >= sinceVersion && ergoTreeVersionInTests >= sinceVersion
+    override def isSupportedIn(vc: VersionContext): Boolean =
+      vc.activatedVersion >= sinceVersion && vc.ergoTreeVersion >= sinceVersion
 
     override def scalaFunc: A => B = { x =>
       sys.error(s"Semantic Scala function is not defined for old implementation: $this")
@@ -868,7 +875,7 @@ class SigmaDslTesting extends AnyPropSpec
       * This method also checks the old implementations fails on the new feature.
       */
     override def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, CostDetails)] = {
-      if (this.isFeatureShouldWork) {
+      if (this.isSupportedIn(VersionContext.current)) {
         checkEq(scalaFuncNew)(newF)(input)
       } else {
         val oldRes = Try(oldF(input))
@@ -894,8 +901,8 @@ class SigmaDslTesting extends AnyPropSpec
                           printTestCases: Boolean,
                           failOnTestVectors: Boolean): Unit = {
       val res = checkEquality(input, printTestCases).map(_._1)
-      if (this.isFeatureShouldWork) {
-       res shouldBe expectedResult
+      if (this.isSupportedIn(VersionContext.current)) {
+        res shouldBe expectedResult
       } else
         res.isFailure shouldBe true
       Try(scalaFuncNew(input)) shouldBe expectedResult
