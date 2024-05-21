@@ -5,6 +5,17 @@ import sigma.reflection._
 import scala.annotation.unused
 import scala.collection.mutable
 
+/** Generates code for registering classes in the ReflectionData.
+  * It is not used in the runtime.
+  *
+  * The generated invocations of  `registerClassEntry`, `mkMethod`, `mkConstructor` may
+  * require manual adjustments.
+  *
+  * It uses [[sigma.reflection.Platform.unknownClasses]] to collect classes which were
+  * accessed during runtime
+  *
+  * @see [[ReflectionData]]
+  */
 object ReflectionGenerator {
 
   def normalizeName(name: String): String = {
