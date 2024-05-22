@@ -47,17 +47,6 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
 
   import TestData._
 
-  ///=====================================================
-  ///         CostDetails shared among test cases
-  ///-----------------------------------------------------
-  val traceBase = Array(
-    FixedCostItem(Apply),
-    FixedCostItem(FuncValue),
-    FixedCostItem(GetVar),
-    FixedCostItem(OptionGet),
-    FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
-    FixedCostItem(ValUse)
-  )
   def upcastCostDetails(tpe: SType) = TracedCost(traceBase :+ TypeBasedCostItem(Upcast, tpe))
   def downcastCostDetails(tpe: SType) = TracedCost(traceBase :+ TypeBasedCostItem(Downcast, tpe))
   def arithOpsCostDetails(tpe: SType) = CostDetails(
@@ -4811,7 +4800,9 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
             Seq(0, 1, 2, 3).map(version => version -> res)
           }))
       ),
-      changedFeature({ (x: Context) => x.selfBoxIndex },
+      changedFeature(
+        changedInVersion = VersionContext.JitActivationVersion,
+        { (x: Context) => x.selfBoxIndex },
         { (x: Context) => x.selfBoxIndex }, // see versioning in selfBoxIndex implementation
         "{ (x: Context) => x.selfBoxIndex }",
         FuncValue(
@@ -5012,6 +5003,7 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
         )
       ),
       changedFeature(
+        changedInVersion = VersionContext.JitActivationVersion,
         scalaFunc = { (x: Context) =>
           // this error is expected in v3.x, v4.x
           throw expectedError
@@ -5985,6 +5977,7 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
         )
       },
       changedFeature(
+        changedInVersion = VersionContext.JitActivationVersion,
         (x: Coll[Boolean]) => SigmaDsl.xorOf(x),
         (x: Coll[Boolean]) => SigmaDsl.xorOf(x),
         "{ (x: Coll[Boolean]) => xorOf(x) }",
@@ -6247,6 +6240,7 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
         )
       },
       changedFeature(
+        changedInVersion = VersionContext.JitActivationVersion,
         (x: (Coll[Byte], Coll[Byte])) => SigmaDsl.xor(x._1, x._2),
         (x: (Coll[Byte], Coll[Byte])) => SigmaDsl.xor(x._1, x._2),
         "{ (x: (Coll[Byte], Coll[Byte])) => xor(x._1, x._2) }",
@@ -8816,6 +8810,7 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
         (Some(Long.MaxValue) -> Expected(new ArithmeticException("long overflow")))
       ),
       changedFeature(
+        changedInVersion = VersionContext.JitActivationVersion,
         scalaFunc = { (x: Option[Long]) =>
           def f(opt: Long): Long = n.plus(opt, 1)
           if (x.isDefined) f(x.get)
@@ -9371,6 +9366,7 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
         )
       },
       changedFeature(
+        changedInVersion = VersionContext.JitActivationVersion,
         { (x: (Coll[Byte], Int)) =>
           SigmaDsl.substConstants(x._1, Coll[Int](x._2), Coll[Any](SigmaDsl.sigmaProp(false))(sigma.AnyType))
         },
@@ -9433,103 +9429,104 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
           )
         ),
         changedFeature(
-        { (x: Context) =>
-          throw error
-          true
-        },
-        { (x: Context) =>
-          val headers = x.headers
-          val ids = headers.map({ (h: Header) => h.id })
-          val parentIds = headers.map({ (h: Header) => h.parentId })
-          headers.indices.slice(0, headers.size - 1).forall({ (i: Int) =>
-            val parentId = parentIds(i)
-            val id = ids(i + 1)
-            parentId == id
-          })
-        },
-        """{
-         |(x: Context) =>
-         |  val headers = x.headers
-         |  val ids = headers.map({(h: Header) => h.id })
-         |  val parentIds = headers.map({(h: Header) => h.parentId })
-         |  headers.indices.slice(0, headers.size - 1).forall({ (i: Int) =>
-         |    val parentId = parentIds(i)
-         |    val id = ids(i + 1)
-         |    parentId == id
-         |  })
-         |}""".stripMargin,
-        FuncValue(
-          Array((1, SContext)),
-          BlockValue(
-            Array(
-              ValDef(
-                3,
-                List(),
-                MethodCall.typed[Value[SCollection[SHeader.type]]](
-                  ValUse(1, SContext),
-                  SContextMethods.getMethodByName("headers"),
-                  Vector(),
-                  Map()
-                )
-              )
-            ),
-            ForAll(
-              Slice(
-                MethodCall.typed[Value[SCollection[SInt.type]]](
-                  ValUse(3, SCollectionType(SHeader)),
-                  SCollectionMethods.getMethodByName("indices").withConcreteTypes(Map(STypeVar("IV") -> SHeader)),
-                  Vector(),
-                  Map()
-                ),
-                IntConstant(0),
-                ArithOp(
-                  SizeOf(ValUse(3, SCollectionType(SHeader))),
-                  IntConstant(1),
-                  OpCode @@ (-103.toByte)
+          changedInVersion = VersionContext.JitActivationVersion,
+          { (x: Context) =>
+            throw error
+            true
+          },
+          { (x: Context) =>
+            val headers = x.headers
+            val ids = headers.map({ (h: Header) => h.id })
+            val parentIds = headers.map({ (h: Header) => h.parentId })
+            headers.indices.slice(0, headers.size - 1).forall({ (i: Int) =>
+              val parentId = parentIds(i)
+              val id = ids(i + 1)
+              parentId == id
+            })
+          },
+          """{
+           |(x: Context) =>
+           |  val headers = x.headers
+           |  val ids = headers.map({(h: Header) => h.id })
+           |  val parentIds = headers.map({(h: Header) => h.parentId })
+           |  headers.indices.slice(0, headers.size - 1).forall({ (i: Int) =>
+           |    val parentId = parentIds(i)
+           |    val id = ids(i + 1)
+           |    parentId == id
+           |  })
+           |}""".stripMargin,
+          FuncValue(
+            Array((1, SContext)),
+            BlockValue(
+              Array(
+                ValDef(
+                  3,
+                  List(),
+                  MethodCall.typed[Value[SCollection[SHeader.type]]](
+                    ValUse(1, SContext),
+                    SContextMethods.getMethodByName("headers"),
+                    Vector(),
+                    Map()
+                  )
                 )
               ),
-              FuncValue(
-                Array((4, SInt)),
-                EQ(
-                  ByIndex(
-                    MapCollection(
-                      ValUse(3, SCollectionType(SHeader)),
-                      FuncValue(
-                        Array((6, SHeader)),
-                        MethodCall.typed[Value[SCollection[SByte.type]]](
-                          ValUse(6, SHeader),
-                          SHeaderMethods.getMethodByName("parentId"),
-                          Vector(),
-                          Map()
-                        )
-                      )
-                    ),
-                    ValUse(4, SInt),
-                    None
+              ForAll(
+                Slice(
+                  MethodCall.typed[Value[SCollection[SInt.type]]](
+                    ValUse(3, SCollectionType(SHeader)),
+                    SCollectionMethods.getMethodByName("indices").withConcreteTypes(Map(STypeVar("IV") -> SHeader)),
+                    Vector(),
+                    Map()
                   ),
-                  ByIndex(
-                    MapCollection(
-                      ValUse(3, SCollectionType(SHeader)),
-                      FuncValue(
-                        Array((6, SHeader)),
-                        MethodCall.typed[Value[SCollection[SByte.type]]](
-                          ValUse(6, SHeader),
-                          SHeaderMethods.getMethodByName("id"),
-                          Vector(),
-                          Map()
+                  IntConstant(0),
+                  ArithOp(
+                    SizeOf(ValUse(3, SCollectionType(SHeader))),
+                    IntConstant(1),
+                    OpCode @@ (-103.toByte)
+                  )
+                ),
+                FuncValue(
+                  Array((4, SInt)),
+                  EQ(
+                    ByIndex(
+                      MapCollection(
+                        ValUse(3, SCollectionType(SHeader)),
+                        FuncValue(
+                          Array((6, SHeader)),
+                          MethodCall.typed[Value[SCollection[SByte.type]]](
+                            ValUse(6, SHeader),
+                            SHeaderMethods.getMethodByName("parentId"),
+                            Vector(),
+                            Map()
+                          )
                         )
-                      )
+                      ),
+                      ValUse(4, SInt),
+                      None
                     ),
-                    ArithOp(ValUse(4, SInt), IntConstant(1), OpCode @@ (-102.toByte)),
-                    None
+                    ByIndex(
+                      MapCollection(
+                        ValUse(3, SCollectionType(SHeader)),
+                        FuncValue(
+                          Array((6, SHeader)),
+                          MethodCall.typed[Value[SCollection[SByte.type]]](
+                            ValUse(6, SHeader),
+                            SHeaderMethods.getMethodByName("id"),
+                            Vector(),
+                            Map()
+                          )
+                        )
+                      ),
+                      ArithOp(ValUse(4, SInt), IntConstant(1), OpCode @@ (-102.toByte)),
+                      None
+                    )
                   )
                 )
               )
             )
-          )
-        ),
-        allowDifferentErrors = true,
-        allowNewToSucceed = true
+          ),
+          allowDifferentErrors = true,
+          allowNewToSucceed = true
         ),
         preGeneratedSamples = Some(ArraySeq.empty)
       )

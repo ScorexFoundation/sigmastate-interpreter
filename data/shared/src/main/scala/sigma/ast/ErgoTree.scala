@@ -228,6 +228,11 @@ object ErgoTree {
 
   type HeaderType = HeaderType.Type
 
+  implicit class HeaderTypeOps(val header: HeaderType) extends AnyVal {
+    def withVersion(version: Byte): HeaderType = ErgoTree.headerWithVersion(header, version)
+    def withConstantSegregation: HeaderType = ErgoTree.setConstantSegregation(header)
+  }
+
   /** Current version of ErgoTree serialization format (aka bite-code language version) */
   val VersionFlag: Byte = VersionContext.MaxSupportedScriptVersion
 
