@@ -929,42 +929,6 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
       ">=", GE.apply)(_ >= _)
   }
 
-//  property("Numeric.toBytes methods equivalence") {
-//    lazy val toBytes = changedFeature(
-//      (x: Byte) => x.toBytes,
-//      (x: Byte) => x.toBytes,
-//      "{ (x: Byte) => x.toBytes }")
-//    val cases = Seq(
-//      (0.toByte, Success(Coll(0.toByte))),
-//      (1.toByte, Success(Coll(1.toByte)))
-//    )
-//
-//    testCases(cases, toBytes)
-//  }
-
-  property("Byte methods equivalence (new features)") {
-    lazy val toAbs = newFeature((x: Byte) => x.toAbs, "{ (x: Byte) => x.toAbs }")
-    lazy val compareTo = newFeature(
-      (x: (Byte, Byte)) => x._1.compareTo(x._2),
-      "{ (x: (Byte, Byte)) => x._1.compareTo(x._2) }")
-
-    lazy val bitOr = newFeature(
-    { (x: (Byte, Byte)) => (x._1 | x._2).toByteExact },
-    "{ (x: (Byte, Byte)) => (x._1 | x._2).toByteExact }")
-
-    lazy val bitAnd = newFeature(
-    { (x: (Byte, Byte)) => (x._1 & x._2).toByteExact },
-    "{ (x: (Byte, Byte)) => (x._1 & x._2).toByteExact }")
-
-    forAll { x: Byte =>
-      Seq(toAbs).foreach(f => f.checkEquality(x))
-    }
-
-    forAll { x: (Byte, Byte) =>
-      Seq(compareTo, bitOr, bitAnd).foreach(_.checkEquality(x))
-    }
-  }
-
   property("Short methods equivalence") {
     SShort.upcast(0.toShort) shouldBe 0.toShort  // boundary test case
     SShort.downcast(0.toShort) shouldBe 0.toShort  // boundary test case

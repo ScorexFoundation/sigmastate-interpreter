@@ -10,6 +10,7 @@ import sigma.eval.{CostDetails, SigmaDsl, TracedCost}
 import sigma.serialization.ErgoTreeSerializer
 import sigma.util.Extensions.{BooleanOps, ByteOps, IntOps, LongOps}
 import sigmastate.exceptions.MethodNotFound
+import sigmastate.utils.Extensions.ByteOpsForSigma
 import sigmastate.utils.Helpers
 
 import java.math.BigInteger
@@ -473,4 +474,19 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
     tree.constants.length shouldBe t2.constants.length
     tree.root shouldBe t2.root
   }
+
+    property("Numeric.toBytes methods equivalence") {
+      lazy val toBytes = newFeature(
+        { (x: Byte) => x.toBigEndianBytes },
+        "{ (x: Byte) => x.toBytes }",
+        sinceVersion = VersionContext.V6SoftForkVersion)
+      val cases = Seq(
+        (0.toByte, Success(Coll(0.toByte))),
+        (1.toByte, Success(Coll(1.toByte)))
+      )
+
+      testCases(cases, toBytes)
+    }
+
+
 }
