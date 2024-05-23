@@ -68,7 +68,7 @@ The following sections describe ErgoScript and its operations.
 #### Operations and constructs overview
 
 - Binary operations: `>, <, >=, <=, +, -, &&, ||, ==, !=, |, &, *, /, %, ^, ++`
-- predefined primitives: `blake2b256`, `byteArrayToBigInt`, `proveDlog` etc. 
+- predefined primitives: `serialize`, `blake2b256`, `byteArrayToBigInt`, `proveDlog` etc. 
 - val declarations: `val h = blake2b256(pubkey)`
 - if-then-else clause: `if (x > 0) 1 else 0`
 - collection literals: `Coll(1, 2, 3, 4)`
@@ -1041,6 +1041,11 @@ def deserialize[T](string: String): T
   *         replaced and all other bytes remain exactly the same
   */
 def substConstants[T](scriptBytes: Coll[Byte], positions: Coll[Int], newValues: Coll[T]): Coll[Byte]
+
+/** Serializes an instance of type T using default serialization format. 
+  * See https://github.com/ScorexFoundation/sigmastate-interpreter/issues/988 for more details 
+  */
+def serialize[T](value: T): Coll[Byte]
 ```
 
 ## Examples

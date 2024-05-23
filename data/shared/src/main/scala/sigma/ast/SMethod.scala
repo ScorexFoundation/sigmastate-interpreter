@@ -50,17 +50,19 @@ case class MethodIRInfo(
 
 /** Represents method descriptor.
   *
-  * @param objType type or type constructor descriptor
-  * @param name    method name
-  * @param stype   method signature type,
-  *                where `stype.tDom`` - argument type and
-  *                `stype.tRange` - method result type.
-  * @param methodId method code, it should be unique among methods of the same objType.
-  * @param costKind cost descriptor for this method
-  * @param irInfo  meta information connecting SMethod with ErgoTree (see [[MethodIRInfo]])
-  * @param docInfo optional human readable method description data
-  * @param costFunc optional specification of how the cost should be computed for the
-  *                 given method call (See ErgoTreeEvaluator.calcCost method).
+  * @param objType         type or type constructor descriptor
+  * @param name            method name
+  * @param stype           method signature type,
+  *                        where `stype.tDom`` - argument type and
+  *                        `stype.tRange` - method result type.
+  * @param methodId        method code, it should be unique among methods of the same objType.
+  * @param costKind        cost descriptor for this method
+  * @param explicitTypeArgs list of type parameters which require explicit
+  *                        serialization in [[MethodCall]]s (i.e for deserialize[T], getVar[T], getReg[T])
+  * @param irInfo          meta information connecting SMethod with ErgoTree (see [[MethodIRInfo]])
+  * @param docInfo         optional human readable method description data
+  * @param costFunc        optional specification of how the cost should be computed for the
+  *                        given method call (See ErgoTreeEvaluator.calcCost method).
   */
 case class SMethod(
     objType: MethodsContainer,
@@ -68,12 +70,16 @@ case class SMethod(
     stype: SFunc,
     methodId: Byte,
     costKind: CostKind,
+    explicitTypeArgs: Seq[STypeVar],
     irInfo: MethodIRInfo,
     docInfo: Option[OperationInfo],
     costFunc: Option[MethodCostFunc]) {
 
   /** Operation descriptor of this method. */
   lazy val opDesc = MethodDesc(this)
+
+  /** Return true if this method has runtime type parameters */
+  def hasExplicitTypeArgs: Boolean = explicitTypeArgs.nonEmpty
 
   /** Finds and keeps the [[RMethod]] instance which corresponds to this method descriptor.
     * The lazy value is forced only if irInfo.javaMethod == None
@@ -284,9 +290,11 @@ object SMethod {
   /** Convenience factory method. */
   def apply(objType: MethodsContainer, name: String, stype: SFunc,
       methodId: Byte,
-      costKind: CostKind): SMethod = {
+      costKind: CostKind,
+      explicitTypeArgs: Seq[STypeVar] = Nil
+  ): SMethod = {
     SMethod(
-      objType, name, stype, methodId, costKind,
+      objType, name, stype, methodId, costKind, explicitTypeArgs,
       MethodIRInfo(None, None, None), None, None)
   }
 
