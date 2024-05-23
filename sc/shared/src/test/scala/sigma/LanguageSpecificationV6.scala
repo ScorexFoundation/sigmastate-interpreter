@@ -1,11 +1,13 @@
 package sigma
 
+import org.ergoplatform.sdk.utils.ErgoTreeUtils
 import sigma.ast.ErgoTree.ZeroHeader
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.syntax.TrueSigmaProp
 import sigma.ast.{BoolToSigmaProp, CompanionDesc, ConcreteCollection, Constant, ConstantPlaceholder, Downcast, ErgoTree, FalseLeaf, FixedCostItem, FuncValue, Global, JitCost, MethodCall, PerItemCost, SBigInt, SByte, SCollection, SGlobalMethods, SInt, SLong, SPair, SShort, SSigmaProp, STypeVar, SelectField, SubstConstants, ValUse, Value}
 import sigma.data.{CBigInt, ExactNumeric, RType}
 import sigma.eval.{CostDetails, SigmaDsl, TracedCost}
+import sigma.serialization.ErgoTreeSerializer
 import sigma.util.Extensions.{BooleanOps, ByteOps, IntOps, LongOps}
 import sigmastate.exceptions.MethodNotFound
 import sigmastate.utils.Helpers
@@ -20,6 +22,11 @@ import scala.util.Success
   */
 class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
   override def languageVersion: Byte = VersionContext.V6SoftForkVersion
+
+  def expectedSuccessForAllTreeVersions[A](value: A, cost: Int, costDetails: CostDetails) = {
+    val res = ExpectedResult(Success(value), Some(cost)) -> Some(costDetails)
+    Seq(0, 1, 2, 3).map(version => version -> res)
+  }
 
   def mkSerializeFeature[A: RType]: Feature[A, Coll[Byte]] = {
     val tA = RType[A]
@@ -414,32 +421,25 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
     val expectedTreeBytes_V6 = Helpers.decodeBytes("1b050108d27300")
 
     verifyCases(
-      {
-        def success[T](v: T, cd: CostDetails, cost: Int ) = Expected(Success(v), cost, cd, cost)
-
-        Seq(
-          // for tree v0, the result is the same for all versions
-          (Coll(t1.bytes: _*), 0) -> Expected(
-            Success(Helpers.decodeBytes("100108d27300")),
-            cost = 1793,
-            expectedDetails = CostDetails.ZeroCost,
-            newCost = 1793,
-            newVersionedResults = {
-              val res = (ExpectedResult(Success(Helpers.decodeBytes("100108d27300")), Some(1793)) -> Some(costDetails(1)))
-              Seq(0, 1, 2, 3).map(version => version -> res)
-            }),
-          // for tree version > 0, the result depend on activated version
+      Seq(
+        // for tree v0, the result is the same for all versions
+        (Coll(t1.bytes: _*), 0) -> Expected(
+          Success(Helpers.decodeBytes("100108d27300")),
+          cost = 1793,
+          expectedDetails = CostDetails.ZeroCost,
+          newCost = 1793,
+          newVersionedResults = expectedSuccessForAllTreeVersions(Helpers.decodeBytes("100108d27300"), 1793, costDetails(1))
+         ),
+        // for tree version > 0, the result depend on activated version
+        {
           (Coll(t2.bytes: _*), 0) -> Expected(
             Success(expectedTreeBytes_beforeV6),
             cost = 1793,
             expectedDetails = CostDetails.ZeroCost,
             newCost = 1793,
-            newVersionedResults = {
-              val res = (ExpectedResult(Success(expectedTreeBytes_V6), Some(1793)) -> Some(costDetails(1)))
-              Seq(0, 1, 2, 3).map(version => version -> res)
-            })
-        )
-      },
+            newVersionedResults = expectedSuccessForAllTreeVersions(expectedTreeBytes_V6, 1793, costDetails(1)))
+        }
+      ),
       changedFeature(
         changedInVersion = VersionContext.V6SoftForkVersion,
         { (x: (Coll[Byte], Int)) =>
@@ -462,5 +462,15 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
         )
       )
     )
+
+    // before v6.0 the expected tree is not parsable
+    ErgoTree.fromBytes(expectedTreeBytes_beforeV6.toArray).isRightParsed shouldBe false
+
+    // in v6.0 the expected tree should be parsable and similar to the original tree
+    val tree = ErgoTree.fromBytes(expectedTreeBytes_V6.toArray)
+    tree.isRightParsed shouldBe true
+    tree.header shouldBe t2.header
+    tree.constants.length shouldBe t2.constants.length
+    tree.root shouldBe t2.root
   }
 }
