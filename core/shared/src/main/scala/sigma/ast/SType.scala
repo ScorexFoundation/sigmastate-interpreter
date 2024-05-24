@@ -4,10 +4,10 @@ import sigma.Evaluation.stypeToRType
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.SType.TypeCode
 import sigma.data.OverloadHack.Overloaded1
-import sigma.data.{CBigInt, Nullable, SigmaConstants}
+import sigma.data.{CBigInt, CUnsignedBigInt, Nullable, SigmaConstants}
 import sigma.reflection.{RClass, RMethod, ReflectionData}
 import sigma.util.Extensions.{IntOps, LongOps, ShortOps}
-import sigma.{AvlTree, BigInt, Box, Coll, Context, Evaluation, GroupElement, Header, PreHeader, SigmaDslBuilder, SigmaProp}
+import sigma.{AvlTree, BigInt, Box, Coll, Context, Evaluation, GroupElement, Header, PreHeader, SigmaDslBuilder, SigmaProp, UnsignedBigInt}
 
 import java.math.BigInteger
 
@@ -156,6 +156,7 @@ object SType {
     case SInt => x.isInstanceOf[Int]
     case SLong => x.isInstanceOf[Long]
     case SBigInt => x.isInstanceOf[BigInt]
+    case SUnsignedBigInt => x.isInstanceOf[UnsignedBigInt]
     case SGroupElement => x.isInstanceOf[GroupElement]
     case SSigmaProp => x.isInstanceOf[SigmaProp]
     case SBox => x.isInstanceOf[Box]
@@ -448,13 +449,12 @@ case object SLong extends SPrimType with SEmbeddable with SNumericType with SMon
   }
 }
 
-/** Type of 256 bit integet values. Implemented using [[java.math.BigInteger]]. */
+/** Type of 256-bit  signed integer values. Implemented using [[java.math.BigInteger]]. */
 case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SMonoType {
   override type WrappedType = BigInt
   override val typeCode: TypeCode = 6: Byte
   override val reprClass: RClass[_] = RClass(classOf[BigInt])
   override def typeId = typeCode
-  implicit def typeBigInt: SBigInt.type = this
 
   /** Type of Relation binary op like GE, LE, etc. */
   val RelationOpType = SFunc(Array(SBigInt, SBigInt), SBoolean)
@@ -483,6 +483,43 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
       case _ => sys.error(s"Cannot downcast value $v to the type $this")
     }
     CBigInt(bi)
+  }
+}
+
+/** Type of 256-bit unsigned integer values. Implemented using [[java.math.BigInteger]]. */
+case object SUnsignedBigInt extends SPrimType with SEmbeddable with SNumericType with SMonoType {
+  override type WrappedType = UnsignedBigInt
+  override val typeCode: TypeCode = 9: Byte
+  override val reprClass: RClass[_] = RClass(classOf[BigInt])
+  override def typeId = typeCode
+
+  /** Type of Relation binary op like GE, LE, etc. */
+  val RelationOpType = SFunc(Array(SUnsignedBigInt, SUnsignedBigInt), SBoolean)
+
+  /** The maximum size of BigInteger value in byte array representation. */
+  val MaxSizeInBytes: Long = SigmaConstants.MaxBigIntSizeInBytes.value // todo: 256 bits or more?
+
+  override def numericTypeIndex: Int = 5
+
+  override def upcast(v: AnyVal): UnsignedBigInt = {
+    val bi = v match {
+      case x: Byte => BigInteger.valueOf(x.toLong)
+      case x: Short => BigInteger.valueOf(x.toLong)
+      case x: Int => BigInteger.valueOf(x.toLong)
+      case x: Long => BigInteger.valueOf(x)
+      case _ => sys.error(s"Cannot upcast value $v to the type $this")
+    }
+    CUnsignedBigInt(bi)
+  }
+  override def downcast(v: AnyVal): UnsignedBigInt = {
+    val bi = v match {
+      case x: Byte => BigInteger.valueOf(x.toLong)
+      case x: Short => BigInteger.valueOf(x.toLong)
+      case x: Int => BigInteger.valueOf(x.toLong)
+      case x: Long => BigInteger.valueOf(x)
+      case _ => sys.error(s"Cannot downcast value $v to the type $this")
+    }
+    CUnsignedBigInt(bi)
   }
 }
 

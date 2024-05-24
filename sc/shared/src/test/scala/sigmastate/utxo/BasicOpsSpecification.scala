@@ -2,14 +2,17 @@ package sigmastate.utxo
 
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, R6, R8}
 import org.ergoplatform._
+import scorex.util.encode.Base16
 import sigma.Extensions.ArrayOps
+import sigma.GroupElement
+import sigma.VersionContext.V6SoftForkVersion
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.SType.AnyOps
-import sigma.data.{AvlTreeData, CAnyValue, CSigmaDslBuilder}
+import sigma.data.{AvlTreeData, CAnyValue, CBigInt, CGroupElement, CSigmaDslBuilder}
 import sigma.util.StringUtil._
 import sigma.ast._
 import sigma.ast.syntax._
-import sigma.crypto.CryptoConstants
+import sigma.crypto.{CryptoConstants, SecP256K1Group}
 import sigmastate._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
@@ -22,6 +25,8 @@ import sigma.exceptions.InvalidType
 import sigmastate.utils.Helpers._
 
 import java.math.BigInteger
+import java.security.SecureRandom
+import scala.annotation.tailrec
 
 class BasicOpsSpecification extends CompilerTestingCommons
   with CompilerCrossVersionProps {
@@ -133,6 +138,111 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
     val verifyEnv = env + (ScriptNameProp -> s"${name}_verify_ext")
     flexVerifier.verify(verifyEnv, tree, ctxExt, pr.proof, fakeMessage).get._1 shouldBe true
+  }
+
+  property("group order serialization") {
+    val value = SecP256K1Group.q.divide(new BigInteger("2"))
+
+    def deserTest() = {test("big int - q", env, ext,
+      s"{ val b = bigInt(\"${value.toString}\"); b > 1 }",
+      null,
+      true
+    )}
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      deserTest()
+    } else {
+      deserTest()
+    }
+  }
+
+  property("restoring unsigned 256 bits") {
+    val b = new BigInteger("92805629300808893548929804498612226467505866636839045998233220279839291898608")
+    val ub = new BigInteger(1, b.toByteArray)
+
+    def deserTest() = {test("restoring", env, ext,
+      s"{ val b = unsignedBigInt(\"${ub.toString}\"); b > 1 }",
+      null,
+      true
+    )}
+
+    deserTest()
+  }
+
+  property("signed <-> unsigned bigint conversion") {
+
+  }
+
+  property("schnorr sig check") {
+
+    val g = CGroupElement(SecP256K1Group.generator)
+
+    def randBigInt: BigInt = {
+      val random = new SecureRandom()
+      val values = new Array[Byte](32)
+      random.nextBytes(values)
+      BigInt(values).mod(SecP256K1Group.q)
+    }
+
+    @tailrec
+    def sign(msg: Array[Byte], secretKey: BigInt): (GroupElement, BigInt) = {
+      val r = randBigInt
+
+      val a: GroupElement = g.exp(CBigInt(r.bigInteger))
+      val z = (r + secretKey * BigInt(scorex.crypto.hash.Blake2b256(msg))) % CryptoConstants.groupOrder
+
+      if(z.bitLength > 255) {
+        println("z: " + z)
+        (a, z)
+      } else {
+        sign(msg,secretKey)
+      }
+    }
+
+    val holderSecret = randBigInt
+    val holderPk = g.exp(CBigInt(holderSecret.bigInteger))
+
+    val message = Array.fill(5)(1.toByte)
+
+    val (a,z) = sign(message, holderSecret)
+
+    val customExt: Seq[(Byte, EvaluatedValue[_ <: SType])] = Map(
+      0.toByte -> GroupElementConstant(holderPk),
+      1.toByte -> GroupElementConstant(a),
+      2.toByte -> ByteArrayConstant(z.bigInteger.toByteArray)
+    ).toSeq
+
+    def deserTest() = {test("schnorr", env, customExt,
+      s"""{
+         |
+         |      val g: GroupElement = groupGenerator
+         |      val holder = getVar[GroupElement](0).get
+         |
+         |      val message = fromBase16("${Base16.encode(message)}")
+         |      val e: Coll[Byte] = blake2b256(message) // weak Fiat-Shamir
+         |      val eInt = byteArrayToBigInt(e) // challenge as big integer
+         |
+         |      // a of signature in (a, z)
+         |      val a = getVar[GroupElement](1).get
+         |      val aBytes = a.getEncoded
+         |
+         |      // z of signature in (a, z)
+         |      val zBytes = getVar[Coll[Byte]](2).get
+         |      val z = byteArrayToBigInt(zBytes)
+         |
+         |      // Signature is valid if g^z = a * x^e
+         |      val properSignature = g.exp(z) == a.multiply(holder.exp(eInt))
+         |      sigmaProp(properSignature)
+         |}""".stripMargin,
+      null,
+      true
+    )}
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      deserTest()
+    } else {
+      deserTest()
+    }
   }
 
   property("Unit register") {

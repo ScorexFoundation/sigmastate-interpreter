@@ -263,6 +263,159 @@ object BigInt extends EntityObject("BigInt") {
 } // of object BigInt
   registerEntityObject("BigInt", BigInt)
 
+object UnsignedBigInt extends EntityObject("UnsignedBigInt") {
+  import Liftables._
+
+  type SUnsignedBigInt = sigma.UnsignedBigInt
+  unsignedBigIntElement
+
+  case class UnsignedBigIntConst(constValue: SUnsignedBigInt)
+      extends LiftedConst[SUnsignedBigInt, UnsignedBigInt] with UnsignedBigInt
+        with Def[UnsignedBigInt] with UnsignedBigIntConstMethods {
+    val liftable: Liftable[SUnsignedBigInt, UnsignedBigInt] = LiftableUnsignedBigInt
+    val resultType: Elem[UnsignedBigInt] = liftable.eW
+  }
+
+  trait UnsignedBigIntConstMethods extends UnsignedBigInt  { thisConst: Def[_] =>
+
+    private val UnsignedBigIntClass = RClass(classOf[UnsignedBigInt])
+
+    override def add(that: Ref[UnsignedBigInt]): Ref[UnsignedBigInt] = {
+      asRep[UnsignedBigInt](mkMethodCall(self,
+        UnsignedBigIntClass.getMethod("add", classOf[Sym]),
+        Array[AnyRef](that),
+        true, false, element[UnsignedBigInt]))
+    }
+
+    override def subtract(that: Ref[UnsignedBigInt]): Ref[UnsignedBigInt] = {
+      asRep[UnsignedBigInt](mkMethodCall(self,
+        UnsignedBigIntClass.getMethod("subtract", classOf[Sym]),
+        Array[AnyRef](that),
+        true, false, element[UnsignedBigInt]))
+    }
+
+    override def multiply(that: Ref[UnsignedBigInt]): Ref[UnsignedBigInt] = {
+      asRep[UnsignedBigInt](mkMethodCall(self,
+        UnsignedBigIntClass.getMethod("multiply", classOf[Sym]),
+        Array[AnyRef](that),
+        true, false, element[UnsignedBigInt]))
+    }
+
+    override def divide(that: Ref[UnsignedBigInt]): Ref[UnsignedBigInt] = {
+      asRep[UnsignedBigInt](mkMethodCall(self,
+        UnsignedBigIntClass.getMethod("divide", classOf[Sym]),
+        Array[AnyRef](that),
+        true, false, element[UnsignedBigInt]))
+    }
+
+    override def mod(m: Ref[UnsignedBigInt]): Ref[UnsignedBigInt] = {
+      asRep[UnsignedBigInt](mkMethodCall(self,
+        UnsignedBigIntClass.getMethod("mod", classOf[Sym]),
+        Array[AnyRef](m),
+        true, false, element[UnsignedBigInt]))
+    }
+
+    override def min(that: Ref[UnsignedBigInt]): Ref[UnsignedBigInt] = {
+      asRep[UnsignedBigInt](mkMethodCall(self,
+        UnsignedBigIntClass.getMethod("min", classOf[Sym]),
+        Array[AnyRef](that),
+        true, false, element[UnsignedBigInt]))
+    }
+
+    override def max(that: Ref[UnsignedBigInt]): Ref[UnsignedBigInt] = {
+      asRep[UnsignedBigInt](mkMethodCall(self,
+        UnsignedBigIntClass.getMethod("max", classOf[Sym]),
+        Array[AnyRef](that),
+        true, false, element[UnsignedBigInt]))
+    }
+  }
+
+
+  implicit object LiftableUnsignedBigInt extends Liftable[SUnsignedBigInt, UnsignedBigInt] {
+    lazy val eW: Elem[UnsignedBigInt] = unsignedBigIntElement
+    lazy val sourceType: RType[SUnsignedBigInt] = {
+      RType[SUnsignedBigInt]
+    }
+
+    def lift(x: SUnsignedBigInt): Ref[UnsignedBigInt] = UnsignedBigIntConst(x)
+  }
+
+  private val UnsignedBigIntClass = RClass(classOf[UnsignedBigInt])
+
+  // entityAdapter for BigInt trait
+  case class UnsignedBigIntAdapter(source: Ref[UnsignedBigInt])
+    extends Node with UnsignedBigInt
+      with Def[UnsignedBigInt] {
+    val resultType: Elem[UnsignedBigInt] = element[UnsignedBigInt]
+
+    override def transform(t: Transformer) = UnsignedBigIntAdapter(t(source))
+
+    def add(that: Ref[UnsignedBigInt]): Ref[UnsignedBigInt] = {
+      asRep[UnsignedBigInt](mkMethodCall(source,
+        UnsignedBigIntClass.getMethod("add", classOf[Sym]),
+        Array[AnyRef](that),
+        true, true, element[UnsignedBigInt]))
+    }
+
+    def subtract(that: Ref[UnsignedBigInt]): Ref[UnsignedBigInt] = {
+      asRep[UnsignedBigInt](mkMethodCall(source,
+        UnsignedBigIntClass.getMethod("subtract", classOf[Sym]),
+        Array[AnyRef](that),
+        true, true, element[UnsignedBigInt]))
+    }
+
+    def multiply(that: Ref[UnsignedBigInt]): Ref[UnsignedBigInt] = {
+      asRep[UnsignedBigInt](mkMethodCall(source,
+        UnsignedBigIntClass.getMethod("multiply", classOf[Sym]),
+        Array[AnyRef](that),
+        true, true, element[UnsignedBigInt]))
+    }
+
+    def divide(that: Ref[UnsignedBigInt]): Ref[UnsignedBigInt] = {
+      asRep[UnsignedBigInt](mkMethodCall(source,
+        UnsignedBigIntClass.getMethod("divide", classOf[Sym]),
+        Array[AnyRef](that),
+        true, true, element[UnsignedBigInt]))
+    }
+
+    def mod(m: Ref[UnsignedBigInt]): Ref[UnsignedBigInt] = {
+      asRep[UnsignedBigInt](mkMethodCall(source,
+        UnsignedBigIntClass.getMethod("mod", classOf[Sym]),
+        Array[AnyRef](m),
+        true, true, element[UnsignedBigInt]))
+    }
+
+    def min(that: Ref[UnsignedBigInt]): Ref[UnsignedBigInt] = {
+      asRep[UnsignedBigInt](mkMethodCall(source,
+        UnsignedBigIntClass.getMethod("min", classOf[Sym]),
+        Array[AnyRef](that),
+        true, true, element[UnsignedBigInt]))
+    }
+
+    def max(that: Ref[UnsignedBigInt]): Ref[UnsignedBigInt] = {
+      asRep[UnsignedBigInt](mkMethodCall(source,
+        UnsignedBigIntClass.getMethod("max", classOf[Sym]),
+        Array[AnyRef](that),
+        true, true, element[UnsignedBigInt]))
+    }
+  }
+
+  class UnsignedBigIntElem[To <: UnsignedBigInt]
+    extends EntityElem[To] {
+    override val liftable: Liftables.Liftable[_, To] = asLiftable[SUnsignedBigInt, To](LiftableUnsignedBigInt)
+
+    override protected def collectMethods: Map[RMethod, MethodDesc] = {
+      super.collectMethods ++
+        Elem.declaredMethods(RClass(classOf[UnsignedBigInt]), RClass(classOf[UnsignedBigInt]), Set(
+          "add", "subtract", "multiply", "divide", "mod", "min", "max"
+        ))
+    }
+  }
+
+  implicit lazy val unsignedBigIntElement: Elem[UnsignedBigInt] = new UnsignedBigIntElem[UnsignedBigInt]
+}   // of object BigInt
+    registerEntityObject("UnsignedBigInt", UnsignedBigInt)
+
 object GroupElement extends EntityObject("GroupElement") {
   // entityConst: single const for each entity
   import Liftables._

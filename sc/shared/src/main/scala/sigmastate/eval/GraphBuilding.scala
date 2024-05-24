@@ -14,6 +14,7 @@ import sigma.data.{CSigmaDslBuilder, ExactIntegral, ExactNumeric, ExactOrdering,
 import sigma.util.Extensions.ByteOps
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigma.ast.{Ident, Select, Val}
+import sigma.data.UnsignedBigIntNumericOps.{UnsignedBigIntIsExactIntegral, UnsignedBigIntIsExactOrdering}
 import sigma.exceptions.GraphBuildingException
 import sigma.serialization.OpCodes
 
@@ -30,6 +31,7 @@ import scala.collection.mutable.ArrayBuffer
 trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
   import AvlTree._
   import BigInt._
+  import UnsignedBigInt._
   import Box._
   import Coll._
   import CollBuilder._
@@ -255,6 +257,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
     case SString => StringElement
     case SAny => AnyElement
     case SBigInt => bigIntElement
+    case SUnsignedBigInt => unsignedBigIntElement
     case SBox => boxElement
     case SContext => contextElement
     case SGlobal => sigmaDslBuilderElement
@@ -281,6 +284,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
     case StringElement => SString
     case AnyElement => SAny
     case _: BigIntElem[_] => SBigInt
+    case _: UnsignedBigIntElem[_] => SUnsignedBigInt
     case _: GroupElementElem[_] => SGroupElement
     case _: AvlTreeElem[_] => SAvlTree
     case oe: WOptionElem[_, _] => SOption(elemToSType(oe.eItem))
@@ -308,6 +312,7 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
     case StringElement => StringIsLiftable
     case UnitElement => UnitIsLiftable
     case _: BigIntElem[_] => LiftableBigInt
+    case _: UnsignedBigIntElem[_] => LiftableUnsignedBigInt
     case _: GroupElementElem[_] => LiftableGroupElement
     case ce: CollElem[t,_] =>
       implicit val lt = liftableFromElem[t](ce.eItem)
@@ -328,7 +333,8 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
     (ShortElement, ShortIsExactIntegral),
     (IntElement, IntIsExactIntegral),
     (LongElement, LongIsExactIntegral),
-    (bigIntElement, BigIntIsExactIntegral)
+    (bigIntElement, BigIntIsExactIntegral),
+    (unsignedBigIntElement, UnsignedBigIntIsExactIntegral)
   )
   private lazy val elemToExactIntegralMap = Map[Elem[_], ExactIntegral[_]](
     (ByteElement,   ByteIsExactIntegral),
@@ -341,7 +347,8 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
     (ShortElement,  ShortIsExactOrdering),
     (IntElement,    IntIsExactOrdering),
     (LongElement,   LongIsExactOrdering),
-    (bigIntElement, BigIntIsExactOrdering)
+    (bigIntElement, BigIntIsExactOrdering),
+    (unsignedBigIntElement, UnsignedBigIntIsExactOrdering)
   )
 
   /** @return [[ExactNumeric]] instance for the given type */
@@ -438,6 +445,10 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         case bi: SBigInt =>
           assert(tpe == SBigInt)
           val resV = liftConst(bi)
+          resV
+        case ubi: SUnsignedBigInt =>
+          assert(tpe == SUnsignedBigInt)
+          val resV = liftConst(ubi)
           resV
         case p: SGroupElement =>
           assert(tpe == SGroupElement)

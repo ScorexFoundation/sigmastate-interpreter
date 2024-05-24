@@ -11,7 +11,7 @@ import sigma.eval.Extensions.EvalCollOps
 import sigma.serialization.{GroupElementSerializer, SigmaSerializer}
 import sigma.util.Extensions.BigIntegerOps
 import sigma.validation.SigmaValidationSettings
-import sigma.{AvlTree, BigInt, Box, Coll, CollBuilder, GroupElement, SigmaDslBuilder, SigmaProp, VersionContext}
+import sigma.{AvlTree, BigInt, Box, Coll, CollBuilder, GroupElement, SigmaDslBuilder, SigmaProp, UnsignedBigInt, VersionContext}
 
 import java.math.BigInteger
 
@@ -25,6 +25,8 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
   override val Colls: CollBuilder = sigma.Colls
 
   override def BigInt(n: BigInteger): BigInt = CBigInt(n)
+
+  override def UnsignedBigInt(n: BigInteger): UnsignedBigInt = CUnsignedBigInt(n)
 
   override def toBigInteger(n: BigInt): BigInteger = n.asInstanceOf[CBigInt].wrappedValue
 

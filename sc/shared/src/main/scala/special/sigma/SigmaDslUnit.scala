@@ -12,6 +12,15 @@ package sigma {
       def min(that: Ref[BigInt]): Ref[BigInt];
       def max(that: Ref[BigInt]): Ref[BigInt];
     };
+    trait UnsignedBigInt extends Def[UnsignedBigInt] {
+      def add(that: Ref[UnsignedBigInt]): Ref[UnsignedBigInt];
+      def subtract(that: Ref[UnsignedBigInt]): Ref[UnsignedBigInt];
+      def multiply(that: Ref[UnsignedBigInt]): Ref[UnsignedBigInt];
+      def divide(that: Ref[UnsignedBigInt]): Ref[UnsignedBigInt];
+      def mod(m: Ref[UnsignedBigInt]): Ref[UnsignedBigInt];
+      def min(that: Ref[UnsignedBigInt]): Ref[UnsignedBigInt];
+      def max(that: Ref[UnsignedBigInt]): Ref[UnsignedBigInt];
+    };
     trait GroupElement extends Def[GroupElement] {
       def exp(k: Ref[BigInt]): Ref[GroupElement];
       def multiply(that: Ref[GroupElement]): Ref[GroupElement];
