@@ -192,7 +192,6 @@ class BasicOpsSpecification extends CompilerTestingCommons
       val z = (r + secretKey * BigInt(scorex.crypto.hash.Blake2b256(msg))) % CryptoConstants.groupOrder
 
       if(z.bitLength > 255) {
-        println("z: " + z)
         (a, z)
       } else {
         sign(msg,secretKey)
@@ -209,7 +208,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
     val customExt: Seq[(Byte, EvaluatedValue[_ <: SType])] = Map(
       0.toByte -> GroupElementConstant(holderPk),
       1.toByte -> GroupElementConstant(a),
-      2.toByte -> ByteArrayConstant(z.bigInteger.toByteArray)
+      2.toByte -> UnsignedBigIntConstant(z.bigInteger)
     ).toSeq
 
     def deserTest() = {test("schnorr", env, customExt,
@@ -227,8 +226,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
          |      val aBytes = a.getEncoded
          |
          |      // z of signature in (a, z)
-         |      val zBytes = getVar[Coll[Byte]](2).get
-         |      val z = byteArrayToBigInt(zBytes)
+         |      val z = getVar[UnsignedBigInt](2).get
          |
          |      // Signature is valid if g^z = a * x^e
          |      val properSignature = g.exp(z) == a.multiply(holder.exp(eInt))
