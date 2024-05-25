@@ -541,6 +541,11 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit with C
     )
   }
 
+  property("SNumericType.typeId resolves to SGlobal") {
+    SNumericType.typeId shouldBe SGlobal.typeId
+    SMethod.fromIds(SNumericType.typeId, 1) shouldBe SGlobalMethods.groupGeneratorMethod
+  }
+
   property("MethodCall Codes") {
     forAll(methods) { (typeId, methods, canHaveMethods) =>
       SType.types.get(typeId) match {

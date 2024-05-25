@@ -118,24 +118,29 @@ object SType {
     *
     * @note on versioning:
     * In v3.x-5.x SNumericType.typeId is silently shadowed by SGlobal.typeId as part of
-    * `toMap` operation. As a result, the methods collected into SByte.methods cannot be
+    * `toMap` operation. As a result, SNumericTypeMethods container cannot be resolved by
+    * typeId = 106, because SNumericType was being silently removed when `_types` map is
+    * constructed. See `property("SNumericType.typeId resolves to SGlobal")`.
+    * In addition, the methods associated with the concrete numeric types cannot be
     * resolved (using SMethod.fromIds()) for all numeric types (SByte, SShort, SInt,
-    * SLong, SBigInt). See the corresponding regression `property("MethodCall on numerics")`.
+    * SLong) because these types are not registered in the `_types` map.
+    * See the corresponding property("MethodCall on numerics")`.
     * However, this "shadowing" is not a problem since all casting methods are implemented
-    * via Downcast, Upcast opcodes and the remaining `toBytes`, `toBits` methods are not
-    * implemented at all.
+    * via lowering to Downcast, Upcast opcodes and the remaining `toBytes`, `toBits`
+    * methods are not implemented at all.
     *
-    * Starting from v6.0 the SNumericType.typeId is not used as receiver of object of
-    * method call, instead, all methods from SNumericTypeMethods are copied to all the
-    * concrete numeric types (SByte, SShort, SInt, SLong, SBigInt) and the generic tNum
-    * type parameter is specialized accordingly. This difference in behaviour is tested by
-    * `property("MethodCall on numerics")`.
+    * Starting from v6.0 the SNumericType.typeId is demoted as a receiver object of
+    * method calls and:
+    * 1) numeric type SByte, SShort, SInt, SLong are promoted as receivers and added to
+    * the _types map.
+    * 2) all methods from SNumericTypeMethods are copied to all the concrete numeric types
+    * (SByte, SShort, SInt, SLong, SBigInt) and the generic tNum type parameter is
+    * specialized accordingly.
+    *
+    * This difference in behaviour is tested by `property("MethodCall on numerics")`.
     *
     * The regression tests in `property("MethodCall Codes")` should pass.
     */
-  // TODO v6.0: should contain all numeric types (including also SNumericType)
-  //  to support method calls like 10.toByte which encoded as MethodCall with typeId = 4, methodId = 1
-  //  see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/667
   private val _types: Versioned[Map[Byte, STypeCompanion]] = Versioned({ version =>
     val v5x = Seq(
       SBoolean, SString, STuple, SGroupElement, SSigmaProp, SContext, SGlobal, SHeader, SPreHeader,
