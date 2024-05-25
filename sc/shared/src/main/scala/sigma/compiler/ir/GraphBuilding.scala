@@ -1,6 +1,7 @@
 package sigma.compiler.ir
 
 import org.ergoplatform._
+import sigma.Evaluation.stypeToRType
 import sigma.ast.TypeCodes.LastConstantCode
 import sigma.ast.Value.Typed
 import sigma.ast.syntax.{SValue, ValueOps}
@@ -437,8 +438,8 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
       }
       Nullable(res)
     }}
-    def throwError =
-      error(s"Don't know how to buildNode($node)", node.sourceContext.toOption)
+    def throwError(clue: String = "") =
+      error((if (clue.nonEmpty) clue + ": " else "") + s"Don't know how to buildNode($node)", node.sourceContext.toOption)
 
     val res: Ref[Any] = node match {
       case Constant(v, tpe) => v match {
@@ -985,7 +986,7 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
               val i = asRep[Int](argsV(0))
               val d = asRep[t](argsV(1))
               xs.getOrElse(i, d)
-            case _ => throwError
+            case _ => throwError()
           }
           case (opt: ROption[t]@unchecked, SOptionMethods) => method.name match {
             case SOptionMethods.GetMethod.name =>
@@ -999,7 +1000,7 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
               opt.map(asRep[t => Any](argsV(0)))
             case SOptionMethods.FilterMethod.name =>
               opt.filter(asRep[t => Boolean](argsV(0)))
-            case _ => throwError
+            case _ => throwError()
           }
           case (ge: Ref[GroupElement]@unchecked, SGroupElementMethods) => method.name match {
             case SGroupElementMethods.GetEncodedMethod.name =>
@@ -1012,12 +1013,12 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
             case SGroupElementMethods.ExponentiateMethod.name =>
               val k = asRep[BigInt](argsV(0))
               ge.exp(k)
-            case _ => throwError
+            case _ => throwError()
           }
           case (box: Ref[Box]@unchecked, SBoxMethods) => method.name match {
             case SBoxMethods.tokensMethod.name =>
               box.tokens
-            case _ => throwError
+            case _ => throwError()
           }
           case (ctx: Ref[Context]@unchecked, SContextMethods) => method.name match {
             case SContextMethods.dataInputsMethod.name =>
@@ -1040,7 +1041,7 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
               ctx.LastBlockUtxoRootHash
             case SContextMethods.minerPubKeyMethod.name =>
               ctx.minerPubKey
-            case _ => throwError
+            case _ => throwError()
           }
           case (tree: Ref[AvlTree]@unchecked, SAvlTreeMethods) => method.name match {
             case SAvlTreeMethods.digestMethod.name =>
@@ -1087,7 +1088,7 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
               val operations = asRep[Coll[(Coll[Byte], Coll[Byte])]](argsV(0))
               val proof = asRep[Coll[Byte]](argsV(1))
               tree.update(operations, proof)
-            case _ => throwError
+            case _ => throwError()
           }
           case (ph: Ref[PreHeader]@unchecked, SPreHeaderMethods) => method.name match {
             case SPreHeaderMethods.versionMethod.name =>
@@ -1104,7 +1105,7 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
               ph.minerPk
             case SPreHeaderMethods.votesMethod.name =>
               ph.votes
-            case _ => throwError
+            case _ => throwError()
           }
           case (h: Ref[Header]@unchecked, SHeaderMethods) => method.name match {
             case SHeaderMethods.idMethod.name =>
@@ -1137,7 +1138,7 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
               h.powDistance
             case SHeaderMethods.votesMethod.name =>
               h.votes
-            case _ => throwError
+            case _ => throwError()
           }
           case (g: Ref[SigmaDslBuilder]@unchecked, SGlobalMethods) => method.name match {
             case SGlobalMethods.groupGeneratorMethod.name =>
@@ -1149,19 +1150,19 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
             case SGlobalMethods.serializeMethod.name =>
               val value = asRep[Any](argsV(0))
               g.serialize(value)
-            case _ => throwError
+            case _ => throwError()
           }
-          case (x: Ref[tNum], SNumericTypeMethods) => method.name match {
+          case (x: Ref[tNum], _: SNumericTypeMethods) => method.name match {
             case SNumericTypeMethods.ToBytesMethod.name =>
               val op = NumericToBigEndianBytes(elemToExactNumeric(x.elem))
               ApplyUnOp(op, x)
-            case _ => throwError
+            case _ => throwError()
           }
-          case _ => throwError
+          case _ => throwError(s"Type ${stypeToRType(obj.tpe).name} doesn't have methods")
         }
 
       case _ =>
-        throwError
+        throwError()
     }
     val resC = asRep[T#WrappedType](res)
     resC
