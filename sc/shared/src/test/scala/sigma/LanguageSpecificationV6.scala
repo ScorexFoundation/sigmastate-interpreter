@@ -475,18 +475,18 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
     tree.root shouldBe t2.root
   }
 
-    property("Numeric.toBytes methods equivalence") {
-      lazy val toBytes = newFeature(
-        { (x: Byte) => x.toBigEndianBytes },
-        "{ (x: Byte) => x.toBytes }",
-        sinceVersion = VersionContext.V6SoftForkVersion)
-      val cases = Seq(
-        (0.toByte, Success(Coll(0.toByte))),
-        (1.toByte, Success(Coll(1.toByte)))
-      )
+  property("Numeric.toBytes methods equivalence") {
+    lazy val toBytes = newFeature(
+      { (x: Byte) => x.toBigEndianBytes },
+      "{ (x: Byte) => x.toBytes }",
+      sinceVersion = VersionContext.V6SoftForkVersion)
+    val cases = Seq(
+      (0.toByte, Success(Coll(0.toByte))),
+      (1.toByte, Success(Coll(1.toByte)))
+    )
 
-      testCases(cases, toBytes)
-    }
+    testCases(cases, toBytes)
+  }
 
 
 }

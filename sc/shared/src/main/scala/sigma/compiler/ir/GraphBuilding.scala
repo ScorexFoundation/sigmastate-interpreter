@@ -1151,6 +1151,12 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
               g.serialize(value)
             case _ => throwError
           }
+          case (x: Ref[tNum], SNumericTypeMethods) => method.name match {
+            case SNumericTypeMethods.ToBytesMethod.name =>
+              val op = NumericToBigEndianBytes(elemToExactNumeric(x.elem))
+              ApplyUnOp(op, x)
+            case _ => throwError
+          }
           case _ => throwError
         }
 

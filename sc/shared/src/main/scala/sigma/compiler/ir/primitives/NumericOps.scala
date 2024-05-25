@@ -14,6 +14,7 @@ trait NumericOps extends Base { self: IRContext =>
     def unary_- : Ref[T] = NumericNegate(n)(x.elem).apply(x)
     def toInt: Ref[Int] = NumericToInt(n).apply(x)
     def toLong: Ref[Long] = NumericToLong(n).apply(x)
+    def toBigEndianBytes: Ref[Coll[Byte]] = NumericToBigEndianBytes(n).apply(x)
   }
 
   /** Extension methods over `Ref[T]` where T is instance of ExactIntegral type-class. */
@@ -64,6 +65,14 @@ trait NumericOps extends Base { self: IRContext =>
   /** Descriptor of unary `ToLong` conversion operation. */
   case class NumericToLong[T](n: ExactNumeric[T]) extends UnOp[T,Long]("ToLong") {
     override def applySeq(x: T): Long = n.toLong(x)
+  }
+
+  import Coll._
+  /** Descriptor of unary `ToBigEndianBytes` conversion operation. */
+  case class NumericToBigEndianBytes[T](n: ExactNumeric[T])
+    extends UnOp[T, Coll[Byte]]("ToBigEndianBytes")(element[Coll[Byte]]) {
+    override def applySeq(x: T): Coll[Byte] =
+      n.toBigEndianBytes(x).asInstanceOf[Coll[Byte]]
   }
 
   /** Descriptor of binary `/` operation (integral division). */

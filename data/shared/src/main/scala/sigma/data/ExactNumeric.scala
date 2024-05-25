@@ -35,7 +35,7 @@ trait ExactNumeric[T] {
     * For example, the `Int` value `0x12131415` would yield the
     * collection of bytes [0x12, 0x13, 0x14, 0x15]
     */
-  def toBytes(x: T): Coll[Byte]
+  def toBigEndianBytes(x: T): Coll[Byte]
 
   /** A value of type T which corresponds to integer 0. */
   lazy val zero: T = fromInt(0)

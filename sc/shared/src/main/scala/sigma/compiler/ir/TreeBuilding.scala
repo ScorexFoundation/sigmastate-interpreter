@@ -106,6 +106,13 @@ trait TreeBuilding extends Base { IR: IRContext =>
   object IsNumericUnOp {
     def unapply(op: UnOp[_,_]): Option[SValue => SValue] = op match {
       case NumericNegate(_) => Some({ v: SValue => builder.mkNegation(v.asNumValue) })
+      case NumericToBigEndianBytes(_) =>
+        val mkNode = { v: SValue =>
+          val specMethod = SNumericTypeMethods.ToBytesMethod
+            .withConcreteTypes(Map(SNumericTypeMethods.tNum -> v.tpe))
+          builder.mkMethodCall(v.asNumValue, specMethod, IndexedSeq.empty)
+        }
+        Some(mkNode)
       case _ => None
     }
   }

@@ -13,6 +13,7 @@ import sigma.data.{DataValueComparer, KeyValueColl, Nullable, RType, SigmaConsta
 import sigma.eval.{CostDetails, ErgoTreeEvaluator, TracedCost}
 import sigma.reflection.RClass
 import sigma.serialization.CoreByteWriter.ArgInfo
+import sigma.util.Versioned
 import sigma.utils.SparseArrayContainer
 
 import scala.annotation.unused
@@ -157,11 +158,23 @@ trait MonoTypeMethods extends MethodsContainer {
 
 trait SNumericTypeMethods extends MonoTypeMethods {
   import SNumericTypeMethods.tNum
-  protected override def getMethods(): Seq[SMethod] = {
-    super.getMethods() ++ SNumericTypeMethods.methods.map {
-      m => m.copy(stype = applySubst(m.stype, Map(tNum -> this.ownerType)).asFunc)
-    }
-  }
+  private val _getMethods = Versioned({ version =>
+    val subst = Map(tNum -> this.ownerType)
+    val numericMethods = if (version < VersionContext.V6SoftForkVersion)
+      SNumericTypeMethods.methods.map { m =>
+        m.copy(stype = applySubst(m.stype, subst).asFunc )
+      }
+    else
+      SNumericTypeMethods.methods.map { m =>
+        m.copy(
+          objType = this, // associate the method with the concrete numeric type
+          stype = applySubst(m.stype, subst).asFunc
+        )}
+    super.getMethods() ++ numericMethods
+  })
+
+  protected override def getMethods(): Seq[SMethod] =
+    _getMethods.get(VersionContext.current.activatedVersion)
 }
 
 object SNumericTypeMethods extends MethodsContainer {
@@ -313,8 +326,8 @@ case object SBigIntMethods extends SNumericTypeMethods {
   final val ToNBitsCostInfo = OperationCostInfo(
     FixedCost(JitCost(5)), NamedDesc("NBitsMethodCall"))
 
-  //id = 8 to make it after toBits
-  val ToNBits = SMethod(this, "nbits", SFunc(this.ownerType, SLong), 8, ToNBitsCostInfo.costKind)
+  //id = 20 to make it after toBits and reserve space for future methods at SNumericTypeMethods
+  val ToNBits = SMethod(this, "nbits", SFunc(this.ownerType, SLong), 20, ToNBitsCostInfo.costKind)
                   .withInfo(ModQ, "Encode this big integer value as NBits")
 
   /** The following `modQ` methods are not fully implemented in v4.x and this descriptors.

@@ -7,7 +7,8 @@ import sigma.data.OverloadHack.Overloaded1
 import sigma.data.{CBigInt, Nullable, SigmaConstants}
 import sigma.reflection.{RClass, RMethod, ReflectionData}
 import sigma.util.Extensions.{IntOps, LongOps, ShortOps}
-import sigma.{AvlTree, BigInt, Box, Coll, Context, Evaluation, GroupElement, Header, PreHeader, SigmaDslBuilder, SigmaProp}
+import sigma.util.Versioned
+import sigma.{AvlTree, BigInt, Box, Coll, Context, Evaluation, GroupElement, Header, PreHeader, SigmaDslBuilder, SigmaProp, VersionContext}
 
 import java.math.BigInteger
 
@@ -113,27 +114,40 @@ object SType {
     * typeId this map contains a companion object which can be used to access the list of
     * corresponding methods.
     *
-    * NOTE: in the current implementation only monomorphic methods are supported (without
-    * type parameters)
+    * @note starting from v6.0 methods with type parameters are also supported.
     *
-    * NOTE2: in v3.x SNumericType.typeId is silently shadowed by SGlobal.typeId as part of
+    * @note on versioning:
+    * In v3.x-5.x SNumericType.typeId is silently shadowed by SGlobal.typeId as part of
     * `toMap` operation. As a result, the methods collected into SByte.methods cannot be
     * resolved (using SMethod.fromIds()) for all numeric types (SByte, SShort, SInt,
     * SLong, SBigInt). See the corresponding regression `property("MethodCall on numerics")`.
     * However, this "shadowing" is not a problem since all casting methods are implemented
     * via Downcast, Upcast opcodes and the remaining `toBytes`, `toBits` methods are not
     * implemented at all.
-    * In order to allow MethodCalls on numeric types in future versions the SNumericType.typeId
-    * should be changed and SGlobal.typeId should be preserved. The regression tests in
-    * `property("MethodCall Codes")` should pass.
+    *
+    * Starting from v6.0 the SNumericType.typeId is not used as receiver of object of
+    * method call, instead, all methods from SNumericTypeMethods are copied to all the
+    * concrete numeric types (SByte, SShort, SInt, SLong, SBigInt) and the generic tNum
+    * type parameter is specialized accordingly. This difference in behaviour is tested by
+    * `property("MethodCall on numerics")`.
+    *
+    * The regression tests in `property("MethodCall Codes")` should pass.
     */
   // TODO v6.0: should contain all numeric types (including also SNumericType)
   //  to support method calls like 10.toByte which encoded as MethodCall with typeId = 4, methodId = 1
   //  see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/667
-  lazy val types: Map[Byte, STypeCompanion] = Seq(
-    SBoolean, SNumericType, SString, STuple, SGroupElement, SSigmaProp, SContext, SGlobal, SHeader, SPreHeader,
-    SAvlTree, SBox, SOption, SCollection, SBigInt
-  ).map { t => (t.typeId, t) }.toMap
+  private val _types: Versioned[Map[Byte, STypeCompanion]] = Versioned({ version =>
+    val v5x = Seq(
+      SBoolean, SString, STuple, SGroupElement, SSigmaProp, SContext, SGlobal, SHeader, SPreHeader,
+      SAvlTree, SBox, SOption, SCollection, SBigInt
+    )
+    val v6 = if (version >= VersionContext.V6SoftForkVersion)
+      Seq(SByte, SShort, SInt, SLong)
+    else
+      Seq.empty
+    (v5x ++ v6).map { t => (t.typeId, t) }.toMap
+  })
+  def types: Map[Byte, STypeCompanion] = _types.get(VersionContext.current.activatedVersion)
 
   /** Checks that the type of the value corresponds to the descriptor `tpe`.
     * If the value has complex structure only root type constructor is checked.
