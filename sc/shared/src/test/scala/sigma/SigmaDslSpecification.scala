@@ -7216,15 +7216,6 @@ class SigmaDslSpecification extends SigmaDslTesting
         ast.SeqCostItem(MethodDesc(SCollectionMethods.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 0)
       )
     )
-    val costDetails1 = TracedCost(
-      traceBase ++ Array(
-        FixedCostItem(MethodCall),
-        FixedCostItem(FuncValue),
-        FixedCostItem(NamedDesc("MatchSingleArgMethodCall"), FixedCost(JitCost(30))),
-        ast.SeqCostItem(NamedDesc("CheckFlatmapBody"), PerItemCost(JitCost(20), JitCost(20), 1), 1),
-        ast.SeqCostItem(MethodDesc(SCollectionMethods.FlatMapMethod), PerItemCost(JitCost(60), JitCost(10), 8), 0)
-      )
-    )
     val costDetails2 = TracedCost(
       traceBase ++ Array(
         FixedCostItem(MethodCall),
