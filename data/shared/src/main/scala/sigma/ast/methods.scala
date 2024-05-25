@@ -8,6 +8,7 @@ import sigma.ast.SCollection.{SBooleanArray, SBoxArray, SByteArray, SByteArray2,
 import sigma.ast.SMethod.{MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
 import sigma.ast.SType.{TypeCode, paramT, tT}
 import sigma.ast.syntax.{SValue, ValueOps}
+import sigma.data.ExactIntegral.{ByteIsExactIntegral, IntIsExactIntegral, LongIsExactIntegral, ShortIsExactIntegral}
 import sigma.data.OverloadHack.Overloaded1
 import sigma.data.{DataValueComparer, KeyValueColl, Nullable, RType, SigmaConstants}
 import sigma.eval.{CostDetails, ErgoTreeEvaluator, TracedCost}
@@ -230,6 +231,15 @@ object SNumericTypeMethods extends MethodsContainer {
   val ToBytesMethod: SMethod = SMethod(
     this, "toBytes", SFunc(tNum, SByteArray), 6, ToBytes_CostKind)
       .withIRInfo(MethodCallIrBuilder)
+      .withUserDefinedInvoke({ (m: SMethod, obj: Any, _: Array[Any]) =>
+        m.objType match {
+          case SByteMethods => ByteIsExactIntegral.toBigEndianBytes(obj.asInstanceOf[Byte])
+          case SShortMethods => ShortIsExactIntegral.toBigEndianBytes(obj.asInstanceOf[Short])
+          case SIntMethods => IntIsExactIntegral.toBigEndianBytes(obj.asInstanceOf[Int])
+          case SLongMethods => LongIsExactIntegral.toBigEndianBytes(obj.asInstanceOf[Long])
+          case SBigIntMethods => obj.asInstanceOf[BigInt].toBytes
+        }
+      })
       .withInfo(PropertyCall,
         """ Returns a big-endian representation of this numeric value in a collection of bytes.
          | For example, the \lst{Int} value \lst{0x12131415} would yield the
@@ -1547,7 +1557,6 @@ case object SGlobalMethods extends MonoTypeMethods {
   def serialize_eval(mc: MethodCall, G: SigmaDslBuilder, value: SType#WrappedType)
       (implicit E: ErgoTreeEvaluator): Coll[Byte] = {
     // TODO v6.0: accumulate cost
-    CheckMinimalErgoTreeVersion(E.context.currentErgoTreeVersion, VersionContext.V6SoftForkVersion)
     val t = Evaluation.stypeToRType(mc.args(0).tpe)
     G.serialize(value)(t)
   }

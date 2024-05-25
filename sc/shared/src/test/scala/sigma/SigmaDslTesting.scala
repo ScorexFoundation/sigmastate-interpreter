@@ -126,8 +126,8 @@ class SigmaDslTesting extends AnyPropSpec
     /** Checks if this feature is supported in the given version context. */
     def isSupportedIn(vc: VersionContext): Boolean
 
-    /** Version in which the feature is first implemented of changed. */
-    def sinceVersion: Byte
+    /** Version in which the feature is first implemented or changed. */
+    def sinceVersion: VersionContext
 
     /** Script containing this feature. */
     def script: String
@@ -400,7 +400,7 @@ class SigmaDslTesting extends AnyPropSpec
         ctx
       }
 
-      val (expectedResult, expectedCost) = if (activatedVersionInTests < sinceVersion)
+      val (expectedResult, expectedCost) = if (activatedVersionInTests < sinceVersion.activatedVersion)
         (expected.oldResult, expected.verificationCostOpt)
       else {
         val res = expected.newResults(ergoTreeVersionInTests)
@@ -507,7 +507,7 @@ class SigmaDslTesting extends AnyPropSpec
 
     implicit val cs = compilerSettingsInTests
 
-    override def sinceVersion: Byte = 0
+    override def sinceVersion: VersionContext = VersionContext(0, 0) // has always been supported
 
     override def isSupportedIn(vc: VersionContext): Boolean = true
 
@@ -669,7 +669,7 @@ class SigmaDslTesting extends AnyPropSpec
     * @param allowDifferentErrors if true, allow v4.x and v5.0 to fail with different error
     */
   case class ChangedFeature[A, B](
-    changedInVersion: Byte,
+    changedInVersion: VersionContext,
     script: String,
     scalaFunc: A => B,
     override val scalaFuncNew: A => B,
@@ -683,7 +683,7 @@ class SigmaDslTesting extends AnyPropSpec
 
     implicit val cs = compilerSettingsInTests
 
-    override def sinceVersion: Byte = changedInVersion
+    override def sinceVersion: VersionContext = changedInVersion
 
     override def isSupportedIn(vc: VersionContext): Boolean = true
 
@@ -764,7 +764,7 @@ class SigmaDslTesting extends AnyPropSpec
         checkEq(scalaFuncNew)(newF)(input)
       }
 
-      if (VersionContext.current.activatedVersion < changedInVersion) {
+      if (VersionContext.current.activatedVersion < changedInVersion.activatedVersion) {
         // check the old implementation with Scala semantic
         val expectedOldRes = expected.value
 
@@ -859,7 +859,7 @@ class SigmaDslTesting extends AnyPropSpec
     * @param logScript         if true, log scripts to console
     */
   case class NewFeature[A, B](
-    sinceVersion: Byte,
+    sinceVersion: VersionContext,
     script: String,
     override val scalaFuncNew: A => B,
     expectedExpr: Option[SValue],
@@ -869,7 +869,7 @@ class SigmaDslTesting extends AnyPropSpec
     extends Feature[A, B] {
 
     override def isSupportedIn(vc: VersionContext): Boolean =
-      vc.activatedVersion >= sinceVersion && vc.ergoTreeVersion >= sinceVersion
+      sinceVersion <= vc
 
     override def scalaFunc: A => B = { x =>
       sys.error(s"Semantic Scala function is not defined for old implementation: $this")
@@ -1063,7 +1063,7 @@ class SigmaDslTesting extends AnyPropSpec
     *         various ways
     */
   def changedFeature[A: RType, B: RType]
-      (changedInVersion: Byte,
+      (changedInVersion: VersionContext,
        scalaFunc: A => B,
        scalaFuncNew: A => B,
        script: String,
@@ -1088,7 +1088,8 @@ class SigmaDslTesting extends AnyPropSpec
     *         various ways
     */
   def newFeature[A: RType, B: RType]
-      (scalaFunc: A => B, script: String, expectedExpr: SValue = null, sinceVersion: Byte = VersionContext.JitActivationVersion)
+      (scalaFunc: A => B, script: String, expectedExpr: SValue = null,
+       sinceVersion: VersionContext = VersionContext(VersionContext.JitActivationVersion, 0))
       (implicit IR: IRContext, es: EvalSettings): Feature[A, B] = {
     NewFeature(sinceVersion, script, scalaFunc, Option(expectedExpr))
   }

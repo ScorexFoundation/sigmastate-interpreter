@@ -4802,7 +4802,7 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
           }))
       ),
       changedFeature(
-        changedInVersion = VersionContext.JitActivationVersion,
+        changedInVersion = VersionContext.sinceV5AndTreeVersion(0),
         { (x: Context) => x.selfBoxIndex },
         { (x: Context) => x.selfBoxIndex }, // see versioning in selfBoxIndex implementation
         "{ (x: Context) => x.selfBoxIndex }",
@@ -5004,7 +5004,7 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
         )
       ),
       changedFeature(
-        changedInVersion = VersionContext.JitActivationVersion,
+        changedInVersion = VersionContext.sinceV5AndTreeVersion(0),
         scalaFunc = { (x: Context) =>
           // this error is expected in v3.x, v4.x
           throw expectedError
@@ -5978,7 +5978,7 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
         )
       },
       changedFeature(
-        changedInVersion = VersionContext.JitActivationVersion,
+        changedInVersion = VersionContext.sinceV5AndTreeVersion(0),
         (x: Coll[Boolean]) => SigmaDsl.xorOf(x),
         (x: Coll[Boolean]) => SigmaDsl.xorOf(x),
         "{ (x: Coll[Boolean]) => xorOf(x) }",
@@ -6241,7 +6241,7 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
         )
       },
       changedFeature(
-        changedInVersion = VersionContext.JitActivationVersion,
+        changedInVersion = VersionContext.sinceV5AndTreeVersion(0),
         (x: (Coll[Byte], Coll[Byte])) => SigmaDsl.xor(x._1, x._2),
         (x: (Coll[Byte], Coll[Byte])) => SigmaDsl.xor(x._1, x._2),
         "{ (x: (Coll[Byte], Coll[Byte])) => xor(x._1, x._2) }",
@@ -8811,7 +8811,7 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
         (Some(Long.MaxValue) -> Expected(new ArithmeticException("long overflow")))
       ),
       changedFeature(
-        changedInVersion = VersionContext.JitActivationVersion,
+        changedInVersion = VersionContext.sinceV5AndTreeVersion(0),
         scalaFunc = { (x: Option[Long]) =>
           def f(opt: Long): Long = n.plus(opt, 1)
           if (x.isDefined) f(x.get)
@@ -9367,7 +9367,7 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
         )
       },
       changedFeature(
-        changedInVersion = VersionContext.JitActivationVersion,
+        changedInVersion = VersionContext.sinceV5AndTreeVersion(0),
         { (x: (Coll[Byte], Int)) =>
           SigmaDsl.substConstants(x._1, Coll[Int](x._2), Coll[Any](SigmaDsl.sigmaProp(false))(sigma.AnyType))
         },
@@ -9430,7 +9430,7 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
           )
         ),
         changedFeature(
-          changedInVersion = VersionContext.JitActivationVersion,
+          changedInVersion = VersionContext.sinceV5AndTreeVersion(0),
           { (x: Context) =>
             throw error
             true

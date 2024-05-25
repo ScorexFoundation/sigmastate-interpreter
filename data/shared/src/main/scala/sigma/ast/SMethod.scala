@@ -116,7 +116,7 @@ case class SMethod(
   def invokeFixed(obj: Any, args: Array[Any]): Any = {
     userDefinedInvoke match {
       case Some(h) =>
-        h(obj, args)
+        h(this, obj, args)
       case None =>
         javaMethod.invoke(obj, args.asInstanceOf[Array[AnyRef]]:_*)
     }
@@ -157,6 +157,11 @@ case class SMethod(
       throw new RuntimeException(s"Cannot find eval method def $methodName(${Seq(paramTypes:_*)})", e)
     }
     m
+  }
+
+  /** Create a new instance with the given user-defined invoke handler. */
+  def withUserDefinedInvoke(handler: SMethod.InvokeHandler): SMethod = {
+    copy(userDefinedInvoke = Some(handler))
   }
 
   /** Create a new instance with the given stype. */
@@ -272,7 +277,7 @@ object SMethod {
     * Instances of this type can be attached to [[SMethod]] instances.
     * @see SNumericTypeMethods.ToBytesMethod
     */
-  type InvokeHandler = (Any, Array[Any]) => Any
+  type InvokeHandler = (SMethod, Any, Array[Any]) => Any
 
   /** Return [[Method]] descriptor for the given `methodName` on the given `cT` type.
     * @param methodName the name of the method to lookup
