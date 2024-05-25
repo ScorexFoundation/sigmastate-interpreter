@@ -73,7 +73,9 @@ case class SMethod(
     explicitTypeArgs: Seq[STypeVar],
     irInfo: MethodIRInfo,
     docInfo: Option[OperationInfo],
-    costFunc: Option[MethodCostFunc]) {
+    costFunc: Option[MethodCostFunc],
+    userDefinedInvoke: Option[SMethod.InvokeHandler]
+) {
 
   /** Operation descriptor of this method. */
   lazy val opDesc = MethodDesc(this)
@@ -112,7 +114,12 @@ case class SMethod(
   /** Invoke this method on the given object with the arguments.
     * This is used for methods with FixedCost costKind. */
   def invokeFixed(obj: Any, args: Array[Any]): Any = {
-    javaMethod.invoke(obj, args.asInstanceOf[Array[AnyRef]]:_*)
+    userDefinedInvoke match {
+      case Some(h) =>
+        h(obj, args)
+      case None =>
+        javaMethod.invoke(obj, args.asInstanceOf[Array[AnyRef]]:_*)
+    }
   }
 
   // TODO optimize: avoid lookup when this SMethod is created via `specializeFor`
@@ -261,6 +268,12 @@ object SMethod {
     */
   type InvokeDescBuilder = SFunc => Seq[SType]
 
+  /** Type of user-defined function which is called to handle method invocation.
+    * Instances of this type can be attached to [[SMethod]] instances.
+    * @see SNumericTypeMethods.ToBytesMethod
+    */
+  type InvokeHandler = (Any, Array[Any]) => Any
+
   /** Return [[Method]] descriptor for the given `methodName` on the given `cT` type.
     * @param methodName the name of the method to lookup
     * @param cT the class where to search the methodName
@@ -295,7 +308,7 @@ object SMethod {
   ): SMethod = {
     SMethod(
       objType, name, stype, methodId, costKind, explicitTypeArgs,
-      MethodIRInfo(None, None, None), None, None)
+      MethodIRInfo(None, None, None), None, None, None)
   }
 
 
