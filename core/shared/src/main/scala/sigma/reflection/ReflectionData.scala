@@ -124,6 +124,9 @@ object ReflectionData {
         },
         mkMethod(clazz, "divide", paramTypes) { (obj, args) =>
           obj.asInstanceOf[BigInt].divide(args(0).asInstanceOf[BigInt])
+        },
+        mkMethod(clazz, "nbits", paramTypes) { (obj, _) =>
+          obj.asInstanceOf[BigInt].nbits
         }
       )
     )

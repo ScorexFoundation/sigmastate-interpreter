@@ -8,6 +8,7 @@ import sigma.ast.Value.Typed
 import sigma.ast._
 import sigma.ast.syntax.{SValue, ValueOps}
 import sigma.crypto.EcPointType
+import sigma.VersionContext
 import sigma.data.ExactIntegral.{ByteIsExactIntegral, IntIsExactIntegral, LongIsExactIntegral, ShortIsExactIntegral}
 import sigma.data.ExactOrdering.{ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering, ShortIsExactOrdering}
 import sigma.data.{CSigmaDslBuilder, ExactIntegral, ExactNumeric, ExactOrdering, Lazy, Nullable}
@@ -490,6 +491,9 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         else
           error(s"The type of $obj is expected to be Collection to select 'size' property", obj.sourceContext.toOption)
 
+      case Select(obj, SBigIntMethods.ToNBits.name, _) if obj.tpe == SBigInt && VersionContext.current.isV6SoftForkActivated =>
+        eval(sigma.ast.MethodCall(obj, SBigIntMethods.ToNBits, IndexedSeq.empty, Map.empty))
+
       // Rule: proof.isProven --> IsValid(proof)
       case Select(p, SSigmaPropMethods.IsProven, _) if p.tpe == SSigmaProp =>
         eval(SigmaPropIsProven(p.asSigmaProp))
@@ -919,6 +923,10 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
         val objV = eval(obj)
         val argsV = args.map(eval)
         (objV, method.objType) match {
+          case (bi: Ref[BigInt]@unchecked, SBigIntMethods) => method.name match {
+            case SBigIntMethods.ToNBits.name =>
+              bi.nbits
+          }
           case (xs: RColl[t]@unchecked, SCollectionMethods) => method.name match {
             case SCollectionMethods.IndicesMethod.name =>
               xs.indices

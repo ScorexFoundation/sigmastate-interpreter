@@ -360,7 +360,7 @@ case object SBigIntMethods extends SNumericTypeMethods {
     *
     */
   def nbits_eval(mc: MethodCall, bi: sigma.BigInt)(implicit E: ErgoTreeEvaluator): Long = {
-    ???
+    E.nbits(mc, bi)
   }
 
 }
