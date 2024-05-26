@@ -5081,7 +5081,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           newCost = 1766,
           newVersionedResults = {
             val res = (ExpectedResult(Success(0), Some(1766)) -> Some(selfCostDetails))
-            Seq(0, 1, 2).map(version => version -> res)
+            Seq(0, 1, 2, 3).map(version => version -> res)
           }))
       ),
       changedFeature({ (x: Context) => x.selfBoxIndex },
@@ -5280,7 +5280,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       Seq(
         ctx -> Expected(Failure(expectedError), 0, CostDetails.ZeroCost, 1793,
           newVersionedResults = {
-            Seq.tabulate(3)(v => v -> (ExpectedResult(Success(true), Some(1793)) -> None))
+            Seq.tabulate(4)(v => v -> (ExpectedResult(Success(true), Some(1793)) -> None))
           }
         )
       ),
@@ -6233,7 +6233,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           cost = c,
           expectedDetails = CostDetails.ZeroCost,
           newCost = 1766,
-          newVersionedResults = Seq(0, 1, 2).map(i => i -> (ExpectedResult(Success(newV), Some(1766)) -> Some(cd)))
+          newVersionedResults = Seq(0, 1, 2, 3).map(i => i -> (ExpectedResult(Success(newV), Some(1766)) -> Some(cd)))
         )
         Seq(
           (Coll[Boolean](), successNew(false, 1766, newV = false, costDetails(0))),
@@ -6511,7 +6511,7 @@ class SigmaDslSpecification extends SigmaDslTesting
               newCost = 1769,
               newVersionedResults =  {
                 val res = (ExpectedResult(Success(Helpers.decodeBytes("00")), Some(1769)), Some(costDetails(1)))
-                Seq(0, 1, 2).map(version => version -> res)
+                Seq(0, 1, 2, 3).map(version => version -> res)
               }
             )),
           ((Helpers.decodeBytes("800136fe89afff802acea67128a0ff007fffe3498c8001806080012b"),
@@ -9120,7 +9120,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             cost = 0,
             expectedDetails = CostDetails.ZeroCost,
             newCost = 1766,
-            newVersionedResults = Seq.tabulate(3)(v => v -> (ExpectedResult(Success(5L), Some(1766)) -> Some(costDetails1)))
+            newVersionedResults = Seq.tabulate(4)(v => v -> (ExpectedResult(Success(5L), Some(1766)) -> Some(costDetails1)))
           )),
         (Some(0L) -> Expected(
           Success(1L),
@@ -9679,7 +9679,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             newCost = 1783,
             newVersionedResults = {
               val res = (ExpectedResult(Success(Helpers.decodeBytes("0008d3")), Some(1783)) -> Some(costDetails(0)))
-              Seq(0, 1, 2).map(version => version -> res)
+              Seq(0, 1, 2, 3).map(version => version -> res)
             }),
 
           (Helpers.decodeBytes("000008d3"), 0) -> Expected(
@@ -9690,7 +9690,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             newVersionedResults = {
               // since the tree without constant segregation, substitution has no effect
               val res = (ExpectedResult(Success(Helpers.decodeBytes("000008d3")), Some(1783)) -> Some(costDetails(0)))
-              Seq(0, 1, 2).map(version => version -> res)
+              Seq(0, 1, 2, 3).map(version => version -> res)
             }),
           // tree with segregation flag, empty constants array
           (Coll(t2.bytes:_*), 0) -> success(Helpers.decodeBytes("100008d3"), costDetails(0), 1783),
@@ -9761,7 +9761,7 @@ class SigmaDslSpecification extends SigmaDslTesting
             cost = 1776,
             expectedDetails = CostDetails.ZeroCost,
             newCost = 1776,
-            newVersionedResults = (0 to 2).map(i => i -> (ExpectedResult(Success(true), Some(1776)) -> Some(costDetails)))
+            newVersionedResults = Seq(0, 1, 2, 3).map(i => i -> (ExpectedResult(Success(true), Some(1776)) -> Some(costDetails)))
           )
         ),
         changedFeature(

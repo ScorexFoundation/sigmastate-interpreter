@@ -15,7 +15,6 @@ import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma.utils.SparseArrayContainer
 
 import scala.annotation.unused
-import scala.language.implicitConversions
 
 /** Base type for all companions of AST nodes of sigma lang. */
 trait SigmaNodeCompanion
@@ -61,7 +60,7 @@ sealed trait MethodsContainer {
     }
     ms
   }
-  private lazy val _methodsMap: Map[Byte, Map[Byte, SMethod]] = methods
+  private def _methodsMap: Map[Byte, Map[Byte, SMethod]] = methods //todo: consider versioned caching
       .groupBy(_.objType.typeId)
       .map { case (typeId, ms) => (typeId -> ms.map(m => m.methodId -> m).toMap) }
 
@@ -235,7 +234,7 @@ object SNumericTypeMethods extends MethodsContainer {
          |  Each boolean corresponds to one bit.
           """.stripMargin)
 
-  protected override def getMethods: Seq[SMethod] = Array(
+  protected override def getMethods(): Seq[SMethod] = Array(
     ToByteMethod, // see Downcast
     ToShortMethod, // see Downcast
     ToIntMethod, // see Downcast
@@ -322,6 +321,13 @@ case object SBigIntMethods extends SNumericTypeMethods {
   /** Type for which this container defines methods. */
   override def ownerType: SMonoType = SBigInt
 
+  final val ToNBitsCostInfo = OperationCostInfo(
+    FixedCost(JitCost(5)), NamedDesc("NBitsMethodCall"))
+
+  //id = 8 to make it after toBits
+  val ToNBits = SMethod(this, "nbits", SFunc(this.ownerType, SLong), 8, ToNBitsCostInfo.costKind)
+                  .withInfo(ModQ, "Encode this big integer value as NBits")
+
   /** The following `modQ` methods are not fully implemented in v4.x and this descriptors.
     * This descritors are remain here in the code and are waiting for full implementation
     * is upcoming soft-forks at which point the cost parameters should be calculated and
@@ -337,13 +343,26 @@ case object SBigIntMethods extends SNumericTypeMethods {
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall, "Multiply this number with \\lst{other} by module Q.", ArgInfo("other", "Number to multiply with this."))
 
-  protected override def getMethods() = super.getMethods() ++ Seq(
-//    ModQMethod,
-//    PlusModQMethod,
-//    MinusModQMethod,
-    // TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-    // MultModQMethod,
-  )
+  protected override def getMethods(): Seq[SMethod]  = {
+    if (VersionContext.current.isV6SoftForkActivated) {
+      super.getMethods() ++ Seq(ToNBits)
+      //    ModQMethod,
+      //    PlusModQMethod,
+      //    MinusModQMethod,
+      // TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+      // MultModQMethod,
+    } else {
+      super.getMethods()
+    }
+  }
+
+  /**
+    *
+    */
+  def nbits_eval(mc: MethodCall, bi: sigma.BigInt)(implicit E: ErgoTreeEvaluator): Long = {
+    ???
+  }
+
 }
 
 /** Methods of type `String`. */
@@ -732,7 +751,7 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
     * of flatMap. Other bodies are rejected with throwing exception.
     */
   val flatMap_BodyPatterns = Array[PartialFunction[SValue, Int]](
-    { case MethodCall(ValUse(id, tpe), m, args, _) if args.isEmpty => id },
+    { case MethodCall(ValUse(id, _), _, args, _) if args.isEmpty => id },
     { case ExtractScriptBytes(ValUse(id, _)) => id },
     { case ExtractId(ValUse(id, _)) => id },
     { case SigmaPropBytes(ValUse(id, _)) => id },
@@ -778,7 +797,7 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
       var res: Nullable[(Int, SValue)] = Nullable.None
       E.addFixedCost(MatchSingleArgMethodCall_Info) {
         res = mc match {
-          case MethodCall(_, m, Seq(FuncValue(args, body)), _) if args.length == 1 =>
+          case MethodCall(_, _, Seq(FuncValue(args, body)), _) if args.length == 1 =>
             val id = args(0)._1
             Nullable((id, body))
           case _ =>
@@ -1492,7 +1511,7 @@ case object SGlobalMethods extends MonoTypeMethods {
 
   lazy val groupGeneratorMethod = SMethod(
     this, "groupGenerator", SFunc(SGlobal, SGroupElement), 1, GroupGenerator.costKind)
-    .withIRInfo({ case (builder, obj, method, args, tparamSubst) => GroupGenerator })
+    .withIRInfo({ case (_, _, _, _, _) => GroupGenerator })
     .withInfo(GroupGenerator, "")
 
   lazy val xorMethod = SMethod(
