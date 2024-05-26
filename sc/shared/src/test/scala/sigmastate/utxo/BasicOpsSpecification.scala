@@ -2,6 +2,7 @@ package sigmastate.utxo
 
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, R6, R8}
 import org.ergoplatform._
+import scorex.util.encode.Base16
 import sigma.Extensions.ArrayOps
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.SType.AnyOps
@@ -154,6 +155,45 @@ class BasicOpsSpecification extends CompilerTestingCommons
       additionalRegistersOpt = Some(Map(
         reg1 -> UnitConstant.instance
       ))
+    )
+  }
+
+  property("checking Bitcoin PoW") {
+    val h = "00000020a82ff9c62e69a6cbed277b7f2a9ac9da3c7133a59a6305000000000000000000f6cd5708a6ba38d8501502b5b4e5b93627e8dcc9bd13991894c6e04ade262aa99582815c505b2e17479a751b"
+    val customExt = Map(
+      1.toByte -> ByteArrayConstant(Base16.decode(h).get)
+    ).toSeq
+
+    test("Prop1", env, customExt,
+      """{
+        |    def reverse4(bytes: Coll[Byte]): Coll[Byte] = {
+        |        Coll(bytes(3), bytes(2), bytes(1), bytes(0))
+        |    }
+        |
+        |    def reverse32(bytes: Coll[Byte]): Coll[Byte] = {
+        |        Coll(bytes(31), bytes(30), bytes(29), bytes(28), bytes(27), bytes(26), bytes(25), bytes(24),
+        |             bytes(23), bytes(22), bytes(21), bytes(20), bytes(19), bytes(18), bytes(17), bytes(16),
+        |             bytes(15), bytes(14), bytes(13), bytes(12), bytes(11), bytes(10), bytes(9), bytes(8),
+        |             bytes(7), bytes(6), bytes(5), bytes(4), bytes(3), bytes(2), bytes(1), bytes(0))
+        |    }
+        |
+        |   val bitcoinHeader = getVar[Coll[Byte]](1).get
+        |   val id = reverse32(sha256(sha256(bitcoinHeader)))
+        |   val hit = byteArrayToBigInt(id)
+        |
+        |   val nBitsBytes = reverse4(bitcoinHeader.slice(72, 76))
+        |
+        |   val pad = Coll[Byte](0.toByte, 0.toByte, 0.toByte, 0.toByte)
+        |
+        |   val nbits = byteArrayToLong(pad ++ nBitsBytes)
+        |
+        |   val difficulty = nbits.decodeNbits
+        |
+        |   hit < 500000000000L
+        |}
+        |""".stripMargin,
+      propExp = null,
+      testExceededCost = false
     )
   }
 
