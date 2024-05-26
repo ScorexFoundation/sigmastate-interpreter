@@ -304,7 +304,7 @@ case object SLongMethods extends SNumericTypeMethods {
   override def ownerType: SMonoType = SLong
 
   lazy val DecodeNBitsMethod: SMethod = SMethod(
-    this, "DecodeNBits", SFunc(this.ownerType, SBigInt), 8, FixedCost(JitCost(5)))
+    this, "decodeNbits", SFunc(this.ownerType, SBigInt), 8, FixedCost(JitCost(5)))
     .withInfo(PropertyCall, "Consider this Long value as nbits-encoded BigInt value and decode it to BigInt")
 
   protected override def getMethods(): Seq[SMethod] = {
