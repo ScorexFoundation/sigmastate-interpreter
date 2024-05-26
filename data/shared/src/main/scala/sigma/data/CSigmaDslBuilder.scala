@@ -10,6 +10,7 @@ import sigma.crypto.{CryptoConstants, EcPointType, Ecp}
 import sigma.eval.Extensions.EvalCollOps
 import sigma.serialization.{GroupElementSerializer, SigmaSerializer}
 import sigma.util.Extensions.BigIntegerOps
+import sigma.util.NBitsUtils
 import sigma.validation.SigmaValidationSettings
 import sigma.{AvlTree, BigInt, Box, Coll, CollBuilder, GroupElement, SigmaDslBuilder, SigmaProp, VersionContext}
 
@@ -174,6 +175,10 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
   private lazy val _generatorElement = this.GroupElement(CryptoConstants.dlogGroup.generator)
 
   override def groupGenerator: GroupElement = _generatorElement
+
+  def decodeNbits(l: Long): BigInt = {
+    CBigInt(NBitsUtils.decodeCompactBits(l).bigInteger)
+  }
 
   /**
     * @return the identity of the Dlog group used in ErgoTree

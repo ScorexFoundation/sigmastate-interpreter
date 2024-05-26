@@ -697,6 +697,8 @@ trait SigmaDslBuilder {
     */
   def groupGenerator: GroupElement
 
+  def decodeNbits(l: Long): BigInt
+
   /**
     * Transforms serialized bytes of ErgoTree with segregated constants by replacing constants
     * at given positions with new values. This operation allow to use serialized scripts as

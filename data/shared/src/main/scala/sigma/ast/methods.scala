@@ -8,10 +8,11 @@ import sigma.ast.SMethod.{MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
 import sigma.ast.SType.TypeCode
 import sigma.ast.syntax.{SValue, ValueOps}
 import sigma.data.OverloadHack.Overloaded1
-import sigma.data.{DataValueComparer, KeyValueColl, Nullable, RType, SigmaConstants}
+import sigma.data.{CBigInt, DataValueComparer, KeyValueColl, Nullable, RType, SigmaConstants}
 import sigma.eval.{CostDetails, ErgoTreeEvaluator, TracedCost}
 import sigma.reflection.RClass
 import sigma.serialization.CoreByteWriter.ArgInfo
+import sigma.util.NBitsUtils
 import sigma.utils.SparseArrayContainer
 
 import scala.annotation.unused
@@ -303,17 +304,8 @@ case object SLongMethods extends SNumericTypeMethods {
   /** Type for which this container defines methods. */
   override def ownerType: SMonoType = SLong
 
-  lazy val DecodeNBitsMethod: SMethod = SMethod(
-    this, "decodeNbits", SFunc(this.ownerType, SBigInt), 8, FixedCost(JitCost(5)))
-    .withInfo(PropertyCall, "Consider this Long value as nbits-encoded BigInt value and decode it to BigInt")
+  protected override def getMethods(): Seq[SMethod] = super.getMethods()
 
-  protected override def getMethods(): Seq[SMethod] = {
-    if (VersionContext.current.isV6SoftForkActivated) {
-      super.getMethods() ++ Seq(DecodeNBitsMethod)
-    } else {
-      super.getMethods()
-    }
-  }
 }
 
 /** Methods of BigInt type. Implemented using [[java.math.BigInteger]]. */
@@ -1531,9 +1523,37 @@ case object SGlobalMethods extends MonoTypeMethods {
     Xor.xorWithCosting(ls, rs)
   }
 
-  protected override def getMethods() = super.getMethods() ++ Seq(
-    groupGeneratorMethod,
-    xorMethod
-  )
+  lazy val decodeNBitsMethod: SMethod = SMethod(
+    this, "decodeNbits", SFunc(Array(SGlobal, SLong), SBigInt), 3, FixedCost(JitCost(5)))
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(Xor, "Byte-wise XOR of two collections of bytes", ArgInfo("left", "left operand"))
+
+  /**
+    *
+    */
+  def decodeNbits_eval(mc: MethodCall, G: SigmaDslBuilder, l: Long)(implicit E: ErgoTreeEvaluator): BigInt = {
+    CBigInt(NBitsUtils.decodeCompactBits(l).bigInteger) // todo: costing is ignored here
+  }
+
+  {
+    if (VersionContext.current.isV6SoftForkActivated) {
+      super.getMethods() ++ Seq(decodeNBitsMethod)
+    } else {
+      super.getMethods()
+    }
+  }
+
+  protected override def getMethods() = if (VersionContext.current.isV6SoftForkActivated) {
+    super.getMethods() ++ Seq(
+      groupGeneratorMethod,
+      xorMethod,
+      decodeNBitsMethod
+    )
+  } else {
+    super.getMethods() ++ Seq(
+      groupGeneratorMethod,
+      xorMethod
+    )
+  }
 }
 

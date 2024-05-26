@@ -4,6 +4,7 @@ import org.ergoplatform.ErgoBox.{AdditionalRegisters, R6, R8}
 import org.ergoplatform._
 import scorex.util.encode.Base16
 import sigma.Extensions.ArrayOps
+import sigma.VersionContext.V6SoftForkVersion
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.SType.AnyOps
 import sigma.data.{AvlTreeData, CAnyValue, CSigmaDslBuilder}
@@ -164,37 +165,44 @@ class BasicOpsSpecification extends CompilerTestingCommons
       1.toByte -> ByteArrayConstant(Base16.decode(h).get)
     ).toSeq
 
-    test("Prop1", env, customExt,
-      """{
-        |    def reverse4(bytes: Coll[Byte]): Coll[Byte] = {
-        |        Coll(bytes(3), bytes(2), bytes(1), bytes(0))
-        |    }
-        |
-        |    def reverse32(bytes: Coll[Byte]): Coll[Byte] = {
-        |        Coll(bytes(31), bytes(30), bytes(29), bytes(28), bytes(27), bytes(26), bytes(25), bytes(24),
-        |             bytes(23), bytes(22), bytes(21), bytes(20), bytes(19), bytes(18), bytes(17), bytes(16),
-        |             bytes(15), bytes(14), bytes(13), bytes(12), bytes(11), bytes(10), bytes(9), bytes(8),
-        |             bytes(7), bytes(6), bytes(5), bytes(4), bytes(3), bytes(2), bytes(1), bytes(0))
-        |    }
-        |
-        |   val bitcoinHeader = getVar[Coll[Byte]](1).get
-        |   val id = reverse32(sha256(sha256(bitcoinHeader)))
-        |   val hit = byteArrayToBigInt(id)
-        |
-        |   val nBitsBytes = reverse4(bitcoinHeader.slice(72, 76))
-        |
-        |   val pad = Coll[Byte](0.toByte, 0.toByte, 0.toByte, 0.toByte)
-        |
-        |   val nbits = byteArrayToLong(pad ++ nBitsBytes)
-        |
-        |   val difficulty = nbits.decodeNbits
-        |
-        |   hit < 500000000000L
-        |}
-        |""".stripMargin,
-      propExp = null,
-      testExceededCost = false
-    )
+    def powTest() = {
+      test("Prop1", env, customExt,
+        """{
+          |    def reverse4(bytes: Coll[Byte]): Coll[Byte] = {
+          |        Coll(bytes(3), bytes(2), bytes(1), bytes(0))
+          |    }
+          |
+          |    def reverse32(bytes: Coll[Byte]): Coll[Byte] = {
+          |        Coll(bytes(31), bytes(30), bytes(29), bytes(28), bytes(27), bytes(26), bytes(25), bytes(24),
+          |             bytes(23), bytes(22), bytes(21), bytes(20), bytes(19), bytes(18), bytes(17), bytes(16),
+          |             bytes(15), bytes(14), bytes(13), bytes(12), bytes(11), bytes(10), bytes(9), bytes(8),
+          |             bytes(7), bytes(6), bytes(5), bytes(4), bytes(3), bytes(2), bytes(1), bytes(0))
+          |    }
+          |
+          |   val bitcoinHeader = getVar[Coll[Byte]](1).get
+          |   val id = reverse32(sha256(sha256(bitcoinHeader)))
+          |   val hit = byteArrayToBigInt(id)
+          |
+          |   val nBitsBytes = reverse4(bitcoinHeader.slice(72, 76))
+          |
+          |   val pad = Coll[Byte](0.toByte, 0.toByte, 0.toByte, 0.toByte)
+          |
+          |   val nbits = byteArrayToLong(pad ++ nBitsBytes)
+          |
+          |   val difficulty = Global.decodeNbits(nbits)
+          |
+          |   hit < difficulty
+          |}
+          |""".stripMargin,
+        propExp = null,
+        testExceededCost = false
+      )
+    }
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[sigma.exceptions.TyperException] should be thrownBy powTest()
+    } else {
+      powTest()
+    }
   }
 
   property("Relation operations") {

@@ -1955,6 +1955,13 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         Array[AnyRef](l, r),
         true, false, element[Coll[Byte]]))
     }
+
+    override def decodeNbits(l: Ref[Long]): Ref[BigInt] = {
+      asRep[BigInt](mkMethodCall(self,
+        SigmaDslBuilderClass.getMethod("decodeNbits", classOf[Sym]),
+        Array[AnyRef](),
+        true, false, element[BigInt]))
+    }
   }
 
   implicit object LiftableSigmaDslBuilder
@@ -2113,6 +2120,13 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         SigmaDslBuilderClass.getMethod("xor", classOf[Sym], classOf[Sym]),
         Array[AnyRef](l, r),
         true, true, element[Coll[Byte]]))
+    }
+
+    override def decodeNbits(l: Ref[Long]): Ref[BigInt] = {
+      asRep[BigInt](mkMethodCall(source,
+        SigmaDslBuilderClass.getMethod("decodeNbits", classOf[Sym]),
+        Array[AnyRef](l),
+        true, true, element[BigInt]))
     }
   }
 

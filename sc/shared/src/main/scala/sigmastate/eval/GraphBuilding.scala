@@ -1141,6 +1141,9 @@ trait GraphBuilding extends SigmaLibrary { IR: IRContext =>
               val c1 = asRep[Coll[Byte]](argsV(0))
               val c2 = asRep[Coll[Byte]](argsV(1))
               g.xor(c1, c2)
+            case SGlobalMethods.decodeNBitsMethod.name if VersionContext.current.isV6SoftForkActivated =>
+              val c1 = asRep[Long](argsV(0))
+              g.decodeNbits(c1)
             case _ => throwError
           }
           case _ => throwError

@@ -5,6 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import sigma.ast.{BigIntConstant, ErgoTree, JitCost, MethodCall, SBigIntMethods}
 import sigma.crypto.SecP256K1Group
 import sigma.data.{CBigInt, CSigmaDslBuilder, TrivialProp}
+import sigma.eval.SigmaDsl
 import sigma.util.Extensions.SigmaBooleanOps
 import sigma.util.NBitsUtils
 
