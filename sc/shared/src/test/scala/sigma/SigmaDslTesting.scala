@@ -860,7 +860,7 @@ class SigmaDslTesting extends AnyPropSpec
     extends Feature[A, B] {
 
     override def isSupportedIn(vc: VersionContext): Boolean =
-      vc.activatedVersion >= sinceVersion && vc.ergoTreeVersion >= sinceVersion
+      vc.activatedVersion >= sinceVersion
 
     override def scalaFunc: A => B = { x =>
       sys.error(s"Semantic Scala function is not defined for old implementation: $this")
