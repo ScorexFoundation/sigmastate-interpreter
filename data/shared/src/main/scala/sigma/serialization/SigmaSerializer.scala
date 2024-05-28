@@ -4,6 +4,7 @@ import java.nio.ByteBuffer
 import scorex.util.ByteArrayBuilder
 import scorex.util.serialization._
 import sigma.data.SigmaConstants
+import sigma.serialization.CoreByteWriter.CostLimitChecker
 import sigma.serialization.ValueCodes.OpCode
 
 object SigmaSerializer {
@@ -51,14 +52,14 @@ object SigmaSerializer {
   def startWriter(): SigmaByteWriter = {
     val b = new ByteArrayBuilder()
     val wi = new VLQByteBufferWriter(b)
-    val w = new SigmaByteWriter(wi, constantExtractionStore = None)
+    val w = new SigmaByteWriter(wi, constantExtractionStore = None, checkCostLimitOpt = None)
     w
   }
 
-  def startWriter(constantExtractionStore: ConstantStore): SigmaByteWriter = {
+  def startWriter(constantExtractionStore: ConstantStore, checkCostLimit: Option[CostLimitChecker] = None): SigmaByteWriter = {
     val b = new ByteArrayBuilder()
     val wi = new VLQByteBufferWriter(b)
-    val w = new SigmaByteWriter(wi, constantExtractionStore = Some(constantExtractionStore))
+    val w = new SigmaByteWriter(wi, constantExtractionStore = Some(constantExtractionStore), checkCostLimit)
     w
   }
 }

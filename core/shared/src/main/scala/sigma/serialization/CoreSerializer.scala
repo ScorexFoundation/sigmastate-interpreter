@@ -66,7 +66,7 @@ object CoreSerializer {
   def startWriter(): CoreByteWriter = {
     val b = new ByteArrayBuilder()
     val wi = new VLQByteBufferWriter(b)
-    val w = new CoreByteWriter(wi)
+    val w = new CoreByteWriter(wi, None)
     w
   }
 

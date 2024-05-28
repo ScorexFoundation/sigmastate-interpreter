@@ -3,25 +3,47 @@ package sigma.serialization
 import scorex.util.serialization.Writer.Aux
 import scorex.util.serialization.{VLQByteBufferWriter, Writer}
 import sigma.ast.SType
-import sigma.serialization.CoreByteWriter.{Bits, DataInfo, U, Vlq, ZigZag}
+import sigma.serialization.CoreByteWriter.{Bits, CostLimitChecker, DataInfo, U, Vlq, ZigZag}
 
 /** Implementation of [[Writer]] provided by `sigma-core` module.
-  * @param w destination [[Writer]] to which all the call got delegated.
+  *
+  * @param w              destination [[Writer]] to which all the call got delegated.
+  * @param checkCostLimitOpt callback to check if the cost limit at current writing position
+  *                       is reached. The callback will throw an exception if the limit is reached.
+  *                       Note, the cost of serialization is approximated using formula
+  *                       `this.length * CostPerByte + InitialCost`
   */
-class CoreByteWriter(val w: Writer) extends Writer {
+class CoreByteWriter(val w: Writer, val checkCostLimitOpt: Option[CostLimitChecker]) extends Writer {
   type CH = w.CH
+
+  /** Check the current writer length against the cost limit. */
+  @inline protected def checkCostLimit(): Unit = {
+    if (checkCostLimitOpt.isDefined)
+      checkCostLimitOpt.get(this.length())
+  }
 
   @inline override def length(): Int = w.length()
 
   @inline override def newWriter(): Aux[CH] = w.newWriter()
 
-  @inline override def putChunk(chunk: CH): this.type = { w.putChunk(chunk); this }
+  @inline override def putChunk(chunk: CH): this.type = {
+    w.putChunk(chunk);
+    checkCostLimit()
+    this
+  }
 
   @inline override def result(): CH = w.result()
 
-  @inline def put(x: Byte): this.type = { w.put(x); this }
+  @inline def put(x: Byte): this.type = {
+    w.put(x);
+    checkCostLimit()
+    this
+  }
+
   @inline def put(x: Byte, info: DataInfo[Byte]): this.type = {
-    w.put(x); this
+    w.put(x);
+    checkCostLimit()
+    this
   }
 
   override def putUByte(x: Int): this.type = {
@@ -31,49 +53,105 @@ class CoreByteWriter(val w: Writer) extends Writer {
     super.putUByte(x)
   }
 
-  @inline def putBoolean(x: Boolean): this.type = { w.putBoolean(x); this }
+  @inline def putBoolean(x: Boolean): this.type = {
+    w.putBoolean(x);
+    checkCostLimit()
+    this
+  }
+
   @inline def putBoolean(x: Boolean, info: DataInfo[Boolean]): this.type = {
-    w.putBoolean(x); this
+    w.putBoolean(x);
+    checkCostLimit()
+    this
   }
 
-  @inline def putShort(x: Short): this.type = { w.putShort(x); this }
+  @inline def putShort(x: Short): this.type = {
+    w.putShort(x);
+    checkCostLimit()
+    this
+  }
+
   @inline def putShort(x: Short, info: DataInfo[Short]): this.type = {
-    w.putShort(x); this
+    w.putShort(x);
+    checkCostLimit()
+    this
   }
 
-  @inline def putUShort(x: Int): this.type = { w.putUShort(x); this }
+  @inline def putUShort(x: Int): this.type = {
+    w.putUShort(x);
+    checkCostLimit()
+    this
+  }
+
   @inline def putUShort(x: Int, info: DataInfo[Vlq[U[Short]]]): this.type = {
-    w.putUShort(x); this
+    w.putUShort(x);
+    checkCostLimit()
+    this
   }
 
-  @inline def putInt(x: Int): this.type = { w.putInt(x); this }
+  @inline def putInt(x: Int): this.type = {
+    w.putInt(x);
+    checkCostLimit()
+    this
+  }
+
   @inline def putInt(x: Int, info: DataInfo[Int]): this.type = {
-    w.putInt(x); this
+    w.putInt(x);
+    checkCostLimit()
+    this
   }
 
-  @inline def putUInt(x: Long): this.type = { w.putUInt(x); this }
+  @inline def putUInt(x: Long): this.type = {
+    w.putUInt(x);
+    checkCostLimit()
+    this
+  }
   @inline def putUInt(x: Long, info: DataInfo[Vlq[U[Int]]]): this.type = {
-    w.putUInt(x); this
+    w.putUInt(x);
+    checkCostLimit()
+    this
   }
 
-  @inline def putLong(x: Long): this.type = { w.putLong(x); this }
+  @inline def putLong(x: Long): this.type = {
+    w.putLong(x);
+    checkCostLimit()
+    this
+  }
   @inline def putLong(x: Long, info: DataInfo[Vlq[ZigZag[Long]]]): this.type = {
-    w.putLong(x); this
+    w.putLong(x);
+    checkCostLimit()
+    this
   }
 
-  @inline def putULong(x: Long): this.type = { w.putULong(x); this }
+  @inline def putULong(x: Long): this.type = {
+    w.putULong(x);
+    checkCostLimit()
+    this
+  }
+
   @inline def putULong(x: Long, info: DataInfo[Vlq[U[Long]]]): this.type = {
-    w.putULong(x); this
+    w.putULong(x);
+    checkCostLimit()
+    this
   }
 
   override def putBytes(xs: Array[Byte],
                         offset: Int,
                         length: Int): this.type = {
-    w.putBytes(xs, offset, length); this
+    w.putBytes(xs, offset, length);
+    checkCostLimit()
+    this
   }
-  @inline def putBytes(xs: Array[Byte]): this.type = { w.putBytes(xs); this }
+
+  @inline def putBytes(xs: Array[Byte]): this.type = {
+    w.putBytes(xs);
+    checkCostLimit()
+    this
+  }
   @inline def putBytes(xs: Array[Byte], info: DataInfo[Array[Byte]]): this.type = {
-    w.putBytes(xs); this
+    w.putBytes(xs);
+    checkCostLimit()
+    this
   }
 
   /** Put the two bytes of the big-endian representation of the Short value into the
@@ -81,12 +159,18 @@ class CoreByteWriter(val w: Writer) extends Writer {
   @inline def putShortBytes(value: Short): this.type = {
     w.put((value >> 8).toByte)
     w.put(value.toByte)
+    checkCostLimit()
     this
   }
 
-  @inline def putBits(xs: Array[Boolean]): this.type = { w.putBits(xs); this }
+  @inline def putBits(xs: Array[Boolean]): this.type = {
+    w.putBits(xs);
+    checkCostLimit()
+    this
+  }
   @inline def putBits(xs: Array[Boolean], info: DataInfo[Bits]): this.type = {
     w.putBits(xs);
+    checkCostLimit()
     this
   }
 
@@ -94,25 +178,37 @@ class CoreByteWriter(val w: Writer) extends Writer {
     w.putOption(x) { (_, v) =>
       putValueC(this, v)
     }
+    checkCostLimit()
     this
   }
 
-  @inline def putShortString(s: String): this.type = { w.putShortString(s); this }
+  @inline def putShortString(s: String): this.type = {
+    w.putShortString(s);
+    checkCostLimit()
+    this
+  }
 
   // TODO refactor: move to Writer
   @inline def toBytes: Array[Byte] = w match {
     case wr: VLQByteBufferWriter => wr.toBytes
   }
 
-  @inline def putType[T <: SType](x: T): this.type = { TypeSerializer.serialize(x, this); this }
+  @inline def putType[T <: SType](x: T): this.type = {
+    TypeSerializer.serialize(x, this); // the cost is checked in TypeSerializer
+    this
+  }
   @inline def putType[T <: SType](x: T, info: DataInfo[SType]): this.type = {
-    TypeSerializer.serialize(x, this); this
+    TypeSerializer.serialize(x, this); // the cost is checked in TypeSerializer
+    this
   }
 
 }
 
 object CoreByteWriter {
   import scala.language.implicitConversions
+
+  /** Callback type of cost limit checker. */
+  type CostLimitChecker = Int => Unit
 
   /** Format descriptor type family. */
   trait FormatDescriptor[T] {
