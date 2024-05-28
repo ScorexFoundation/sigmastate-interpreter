@@ -1950,7 +1950,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
       asRep[Coll[Byte]](mkMethodCall(self,
         SigmaDslBuilderClass.getMethod("serialize", classOf[Sym]),
         Array[AnyRef](value),
-        true, true, element[Coll[Byte]]))
+        true, false, element[Coll[Byte]]))
     }
 
   }

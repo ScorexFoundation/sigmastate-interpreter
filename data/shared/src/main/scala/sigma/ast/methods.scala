@@ -1522,7 +1522,7 @@ case object SGlobalMethods extends MonoTypeMethods {
   lazy val serializeMethod = SMethod(this, "serialize",
     SFunc(Array(SGlobal, tT), SByteArray, Array(paramT)), 3, DynamicCost)
       .withIRInfo(MethodCallIrBuilder)
-      .withInfo(MethodCall, "",
+      .withInfo(MethodCall, "Serializes the given `value` into bytes using the default serialization format.",
         ArgInfo("value", "value to be serialized"))
 
 

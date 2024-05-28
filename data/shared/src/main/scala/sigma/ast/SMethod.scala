@@ -78,7 +78,9 @@ case class SMethod(
   /** Operation descriptor of this method. */
   lazy val opDesc = MethodDesc(this)
 
-  /** Return true if this method has runtime type parameters */
+  /** Return true if this method has explicit type parameters, which need to be serialized
+    * as part of [[MethodCall]].
+    */
   def hasExplicitTypeArgs: Boolean = explicitTypeArgs.nonEmpty
 
   /** Finds and keeps the [[RMethod]] instance which corresponds to this method descriptor.

@@ -405,8 +405,8 @@ object SigmaPredef {
 
     val SerializeFunc = PredefinedFunc("serialize",
       Lambda(Seq(paramT), Array("value" -> tT), SByteArray, None),
-      PredefFuncInfo(
-        { case (_, args @ Seq(value)) =>
+      irInfo = PredefFuncInfo(
+        irBuilder = { case (_, args @ Seq(value)) =>
           MethodCall.typed[Value[SCollection[SByte.type]]](
             Global,
             SGlobalMethods.serializeMethod.withConcreteTypes(Map(tT -> value.tpe)),
@@ -414,10 +414,10 @@ object SigmaPredef {
             Map()
           )
         }),
-      OperationInfo(MethodCall,
-        """
+      docInfo = OperationInfo(MethodCall,
+        """Serializes the given `value` into bytes using the default serialization format.
         """.stripMargin,
-        Seq(ArgInfo("value", ""))
+        Seq(ArgInfo("value", "value to serialize"))
       )
     )
 

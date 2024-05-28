@@ -30,6 +30,7 @@ class SigmaTyperTest extends AnyPropSpec
   private val predefFuncRegistry = new PredefinedFuncRegistry(StdSigmaBuilder)
   import predefFuncRegistry._
 
+  /** Checks that parsing, binding and typing of `x` results in the given expected value. */
   def typecheck(env: ScriptEnv, x: String, expected: SValue = null): SType = {
     try {
       val builder = TransformingSigmaBuilder
