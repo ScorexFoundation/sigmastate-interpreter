@@ -25,12 +25,13 @@ import sigma.ast._
 import sigma.eval.{CostDetails, EvalSettings, SigmaDsl}
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.crypto.SigmaProtocolPrivateInput
-import sigmastate.eval.{CContext, CompiletimeIRContext, IRContext}
+import sigmastate.eval.CContext
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaPPrint}
 import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
 import sigmastate.interpreter._
 import sigma.ast.Apply
+import sigma.compiler.ir.{CompiletimeIRContext, IRContext}
 import sigma.eval.Extensions.SigmaBooleanOps
 import sigma.interpreter.{ContextExtension, ProverResult}
 import sigma.serialization.ValueSerializer
