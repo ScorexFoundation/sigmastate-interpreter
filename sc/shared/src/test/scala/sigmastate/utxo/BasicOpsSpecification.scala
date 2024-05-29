@@ -191,7 +191,8 @@ class BasicOpsSpecification extends CompilerTestingCommons
           |
           |   val difficulty = Global.decodeNbits(nbits)
           |
-          |   hit < difficulty
+          |   // <= according to https://bitcoin.stackexchange.com/a/105224
+          |   hit <= difficulty
           |}
           |""".stripMargin,
         propExp = null,
