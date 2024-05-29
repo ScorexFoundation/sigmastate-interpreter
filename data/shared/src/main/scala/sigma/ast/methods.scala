@@ -12,6 +12,7 @@ import sigma.data.{DataValueComparer, KeyValueColl, Nullable, RType, SigmaConsta
 import sigma.eval.{CostDetails, ErgoTreeEvaluator, TracedCost}
 import sigma.reflection.RClass
 import sigma.serialization.CoreByteWriter.ArgInfo
+import sigma.serialization.{DataSerializer, SigmaSerializer}
 import sigma.utils.SparseArrayContainer
 
 import scala.annotation.unused
@@ -1532,9 +1533,17 @@ case object SGlobalMethods extends MonoTypeMethods {
     */
   def serialize_eval(mc: MethodCall, G: SigmaDslBuilder, value: SType#WrappedType)
       (implicit E: ErgoTreeEvaluator): Coll[Byte] = {
-    // TODO v6.0: accumulate cost
-    val t = Evaluation.stypeToRType(mc.args(0).tpe)
-    G.serialize(value)(t)
+
+    val addFixedCostCallback = { (costInfo: OperationCostInfo[FixedCost]) =>
+      E.addCost(costInfo)
+    }
+    val addPerItemCostCallback = { (info: OperationCostInfo[PerItemCost], nItems: Int) =>
+      E.addSeqCostNoOp(info.costKind, nItems, info.opDesc)
+    }
+    val w = SigmaSerializer.startWriter(None,
+      Some(addFixedCostCallback), Some(addPerItemCostCallback))
+    DataSerializer.serialize(value, mc.args(0).tpe, w)
+    Colls.fromArray(w.toBytes)
   }
 
   protected override def getMethods() = super.getMethods() ++ {

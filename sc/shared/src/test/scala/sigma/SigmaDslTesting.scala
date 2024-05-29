@@ -255,11 +255,19 @@ class SigmaDslTesting extends AnyPropSpec
 
           fail(
             s"""Should succeed with the same value or fail with the same exception, but was:
-              |First result: $b1
-              |Second result: $b2
+              |First result: ${errorWithStack(b1)}
+              |Second result: ${errorWithStack(b2)}
               |Root cause: $cause
               |""".stripMargin)
       }
+    }
+
+    private def errorWithStack[A](e: Try[A]): String = e match {
+      case Failure(t) =>
+        val sw = new java.io.StringWriter
+        t.printStackTrace(new java.io.PrintWriter(sw))
+        sw.toString
+      case _ => e.toString
     }
 
     /** Creates a new ErgoLikeContext using given [[CContext]] as template.
