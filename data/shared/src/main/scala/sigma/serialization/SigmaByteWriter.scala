@@ -192,7 +192,7 @@ class SigmaByteWriter(
 
   /** Serializes the given expression using [[ValueSerializer]].
     * @param x the ErgoTree expression to serialize
-    * @param info additional information about the data being serialized
+    * @param info meta information about the data being serialized
     */
   def putValue[T <: SType](x: Value[T], info: DataInfo[SValue]): this.type = {
     ValueSerializer.addArgInfo(info)

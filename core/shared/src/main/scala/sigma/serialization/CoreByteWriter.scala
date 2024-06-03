@@ -7,7 +7,7 @@ import sigma.serialization.CoreByteWriter._
 
 /** Implementation of [[Writer]] provided by `sigma-core` module.
   *
-  * @param w              destination [[Writer]] to which all the call got delegated.
+  * @param w destination [[Writer]] to which all the call got delegated.
   */
 class CoreByteWriter(val w: Writer) extends Writer {
   type CH = w.CH
@@ -26,6 +26,10 @@ class CoreByteWriter(val w: Writer) extends Writer {
     w.put(x); this
   }
 
+  /** Put the given byte into the writer.
+    * @param x the byte to put into the writer
+    * @param info meta information about the data being put into the writer
+    */
   @inline def put(x: Byte, info: DataInfo[Byte]): this.type = {
     w.put(x); this
   }
@@ -34,60 +38,109 @@ class CoreByteWriter(val w: Writer) extends Writer {
     super.putUByte(x)
   }
 
+  /** Encode integer as an unsigned byte asserting the range check
+    * @param x integer value to encode (should be in the range of unsigned byte)
+    * @param info meta information about the data being put into the writer
+    * @return
+    * @throws AssertionError if x is outside of the unsigned byte range
+    */
   def putUByte(x: Int, info: DataInfo[U[Byte]]): this.type = {
     super.putUByte(x)
   }
 
-  @inline def putBoolean(x: Boolean): this.type = {
+  @inline override def putBoolean(x: Boolean): this.type = {
     w.putBoolean(x); this
   }
 
+  /** Encode boolean by delegating to the underlying writer.
+    * @param x boolean value to encode
+    * @param info meta information about the data being put into the writer
+    * @return
+    */
   @inline def putBoolean(x: Boolean, info: DataInfo[Boolean]): this.type = {
     w.putBoolean(x); this
   }
 
-  @inline def putShort(x: Short): this.type = {
+  @inline override def putShort(x: Short): this.type = {
     w.putShort(x); this
   }
 
+  /** Encode signed Short by delegating to the underlying writer.
+    *
+    * Use [[putUShort]] to encode values that are positive.
+    * @param x short value to encode
+    * @param info meta information about the data being put into the writer
+    */
   @inline def putShort(x: Short, info: DataInfo[Short]): this.type = {
     w.putShort(x); this
   }
 
-  @inline def putUShort(x: Int): this.type = {
+  @inline override def putUShort(x: Int): this.type = {
     w.putUShort(x); this
   }
 
+  /** Encode Short that are positive by delegating to the underlying writer.
+    *
+    * Use [[putShort]] to encode values that might be negative.
+    * @param x unsigned short value (represented as Int) to encode
+    * @param info meta information about the data being put into the writer
+    */
   @inline def putUShort(x: Int, info: DataInfo[Vlq[U[Short]]]): this.type = {
     w.putUShort(x); this
   }
 
-  @inline def putInt(x: Int): this.type = {
+  @inline override def putInt(x: Int): this.type = {
     w.putInt(x); this
   }
 
+  /** Encode signed Int by delegating to the underlying writer.
+    * Use [[putUInt]] to encode values that are positive.
+    *
+    * @param x integer value to encode
+    * @param info meta information about the data being put into the writer
+    */
   @inline def putInt(x: Int, info: DataInfo[Int]): this.type = {
     w.putInt(x); this
   }
 
-  @inline def putUInt(x: Long): this.type = {
+  @inline override def putUInt(x: Long): this.type = {
     w.putUInt(x); this
   }
+
+  /** Encode Int that are positive by delegating to the underlying writer.
+    * Use [[putInt]] to encode values that might be negative.
+    *
+    * @param x unsigned integer value (represented as Long) to encode
+    * @param info meta information about the data being put into the writer
+    */
   @inline def putUInt(x: Long, info: DataInfo[Vlq[U[Int]]]): this.type = {
     w.putUInt(x); this
   }
 
-  @inline def putLong(x: Long): this.type = {
+  @inline override def putLong(x: Long): this.type = {
     w.putLong(x); this
   }
+
+  /** Encode signed Long by delegating to the underlying writer.
+    * Use [[putULong]] to encode values that are positive.
+    *
+    * @param x long value to encode
+    * @param info meta information about the data being put into the writer
+    */
   @inline def putLong(x: Long, info: DataInfo[Vlq[ZigZag[Long]]]): this.type = {
     w.putLong(x); this
   }
 
-  @inline def putULong(x: Long): this.type = {
+  @inline override def putULong(x: Long): this.type = {
     w.putULong(x); this
   }
 
+  /** Encode Long that are positive by delegating to the underlying writer.
+    * Use [[putLong]] to encode values that might be negative.
+    *
+    * @param x unsigned long value to encode
+    * @param info meta information about the data being put into the writer
+    */
   @inline def putULong(x: Long, info: DataInfo[Vlq[U[Long]]]): this.type = {
     w.putULong(x); this
   }
@@ -98,9 +151,14 @@ class CoreByteWriter(val w: Writer) extends Writer {
     w.putBytes(xs, offset, length); this
   }
 
-  @inline def putBytes(xs: Array[Byte]): this.type = {
+  @inline override def putBytes(xs: Array[Byte]): this.type = {
     w.putBytes(xs); this
   }
+
+  /** Encode an array of bytes by delegating to the underlying writer.
+    * @param xs array of bytes to encode
+    * @param info meta information about the data being put into the writer
+    */
   @inline def putBytes(xs: Array[Byte], info: DataInfo[Array[Byte]]): this.type = {
     w.putBytes(xs); this
   }
@@ -113,21 +171,27 @@ class CoreByteWriter(val w: Writer) extends Writer {
     this
   }
 
-  @inline def putBits(xs: Array[Boolean]): this.type = {
+  @inline override def putBits(xs: Array[Boolean]): this.type = {
     w.putBits(xs); this
   }
+
+  /** Encode an array of boolean values as a bit array (packing bits into bytes)
+    *
+    * @param xs array of boolean values
+    * @param info meta information about the data being put into the writer
+    */
   @inline def putBits(xs: Array[Boolean], info: DataInfo[Bits]): this.type = {
     w.putBits(xs); this
   }
 
-  @inline def putOption[T](x: Option[T])(putValueC: (this.type, T) => Unit): this.type = {
+  @inline override def putOption[T](x: Option[T])(putValueC: (this.type, T) => Unit): this.type = {
     w.putOption(x) { (_, v) =>
       putValueC(this, v)
     }
     this
   }
 
-  @inline def putShortString(s: String): this.type = {
+  @inline override def putShortString(s: String): this.type = {
     w.putShortString(s);
     this
   }
@@ -137,10 +201,18 @@ class CoreByteWriter(val w: Writer) extends Writer {
     case wr: VLQByteBufferWriter => wr.toBytes
   }
 
+  /** Serialize the given type into the writer using [[TypeSerializer]].
+    * @param x the type to put into the writer
+    */
   @inline def putType[T <: SType](x: T): this.type = {
     TypeSerializer.serialize(x, this)
     this
   }
+
+  /** Serialize the given type into the writer using [[TypeSerializer]].
+    * @param x the type to put into the writer
+    * @param info meta information about the data being put into the writer
+    */
   @inline def putType[T <: SType](x: T, info: DataInfo[SType]): this.type = {
     TypeSerializer.serialize(x, this)
     this
@@ -263,6 +335,11 @@ object CoreByteWriter {
     * @param description argument description. */
   case class ArgInfo(name: String, description: String)
 
+  /** Represents meta information about serialized data.
+    * Passed as additional argument of serializer methods.
+    * Can be used to automatically generate format specifications based on
+    * the actual collected method invocations.
+    */
   case class DataInfo[T](info: ArgInfo, format: FormatDescriptor[T])
 
   object DataInfo {
