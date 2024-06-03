@@ -179,6 +179,34 @@ class SigmaDslTesting extends AnyPropSpec
       true
     }
 
+    /** Checks the result of feature execution against expected result.
+      * If settings.failOnTestVectors == true, then print out actual cost results
+      *
+      * @param res the result of feature execution
+      * @param expected the expected result
+      */
+    protected def checkResultAgainstExpected(res: Try[(B, CostDetails)], expected: Expected[B]): Unit = {
+      val newRes = expected.newResults(ergoTreeVersionInTests)
+      val expectedTrace = newRes._2.fold(Seq.empty[CostItem])(_.trace)
+      if (expectedTrace.isEmpty) {
+        // new cost expectation is missing, print out actual cost results
+        if (evalSettings.printTestVectors) {
+          res.foreach { case (_, newDetails) =>
+            printCostDetails(script, newDetails)
+          }
+        }
+      }
+      else {
+        // new cost expectation is specified, compare it with the actual result
+        res.foreach { case (_, newDetails) =>
+          if (newDetails.trace != expectedTrace) {
+            printCostDetails(script, newDetails)
+            newDetails.trace shouldBe expectedTrace
+          }
+        }
+      }
+    }
+
     /** v3 and v4 implementation*/
     private var _oldF: Try[CompiledFunc[A, B]] = _
     def oldF: CompiledFunc[A, B] = {
@@ -624,28 +652,10 @@ class SigmaDslTesting extends AnyPropSpec
       checkResult(funcRes.map(_._1), expected.value, failOnTestVectors,
         "ExistingFeature#verifyCase: ")
 
-      val newRes = expected.newResults(ergoTreeVersionInTests)
-      val expectedTrace = newRes._2.fold(Seq.empty[CostItem])(_.trace)
-      if (expectedTrace.isEmpty) {
-        // new cost expectation is missing, print out actual cost results
-        if (evalSettings.printTestVectors) {
-          funcRes.foreach { case (_, newDetails) =>
-            printCostDetails(script, newDetails)
-          }
-        }
-      }
-      else {
-        // new cost expectation is specified, compare it with the actual result
-        funcRes.foreach { case (_, newDetails) =>
-          if (newDetails.trace != expectedTrace) {
-            printCostDetails(script, newDetails)
-            newDetails.trace shouldBe expectedTrace
-          }
-        }
-      }
-
+      checkResultAgainstExpected(funcRes, expected)
       checkVerify(input, expected)
     }
+
   }
 
   /** Descriptor of a language feature which is changed in v5.0.
@@ -921,8 +931,11 @@ class SigmaDslTesting extends AnyPropSpec
                             printTestCases: Boolean,
                             failOnTestVectors: Boolean): Unit = {
       val funcRes = checkEquality(input, printTestCases)
-      funcRes.isFailure shouldBe true
-      Try(scalaFunc(input)) shouldBe expected.value
+      if (this.isSupportedIn(VersionContext.current)) {
+        checkResultAgainstExpected(funcRes, expected)
+      } else
+        funcRes.isFailure shouldBe true
+      Try(scalaFuncNew(input)) shouldBe expected.value
     }
   }
 
@@ -987,6 +1000,20 @@ class SigmaDslTesting extends AnyPropSpec
       new Expected(ExpectedResult(value, Some(cost))) {
         override val newResults = defaultNewResults.map { case (r, _) =>
           (r, Some(expectedDetails))
+        }
+      }
+
+    /** Used when the old and new value are the same for all versions
+      * and the expected costs are not specified.
+      *
+      * @param value           expected result of tested function
+      * @param expectedDetails expected cost details for all versions
+      */
+    def apply[A](value: Try[A], expectedDetails: CostDetails): Expected[A] =
+      new Expected(ExpectedResult(value, None)) {
+        override val newResults = defaultNewResults.map {
+          case (ExpectedResult(v, _), _) =>
+            (ExpectedResult(v, None), Some(expectedDetails))
         }
       }
 

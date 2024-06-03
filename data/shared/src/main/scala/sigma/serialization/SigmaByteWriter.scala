@@ -228,6 +228,12 @@ object SigmaByteWriter {
   /** Callback to accumulate per-item costs (chunked cost). */
   type PerItemCostCallback =  (OperationCostInfo[PerItemCost], Int) => Unit
 
+  /** Cost of instantiating a new serializer.
+    * This also include overhead of method calls.
+    * This is the minimal possible JitCost value
+    */
+  val StartWriterCost = OperationCostInfo(FixedCost(JitCost(10)), NamedDesc("SigmaByteWriter.startWriter"))
+
   /** Cost of writing single byte without any encoding.
     * This also include overhead of method calls.
     * This is the minimal possible JitCost value

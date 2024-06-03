@@ -1,8 +1,8 @@
 package sigma
 
-import sigma.ast.{Downcast, FuncValue, Global, MethodCall, SBigInt, SByte, SGlobalMethods, SInt, SLong, SShort, STypeVar, ValUse}
+import sigma.ast.{Apply, Downcast, FixedCost, FixedCostItem, FuncValue, GetVar, Global, JitCost, MethodCall, NamedDesc, OptionGet, SBigInt, SByte, SGlobalMethods, SInt, SLong, SShort, STypeVar, ValUse}
 import sigma.data.{CBigInt, ExactNumeric, RType}
-import sigma.eval.SigmaDsl
+import sigma.eval.{SigmaDsl, TracedCost}
 import sigma.util.Extensions.{BooleanOps, ByteOps, IntOps, LongOps}
 import sigmastate.exceptions.MethodNotFound
 
@@ -16,6 +16,8 @@ import scala.util.Success
   */
 class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
   override def languageVersion: Byte = VersionContext.V6SoftForkVersion
+
+  implicit override def evalSettings = super.evalSettings.copy(printTestVectors = true)
 
   def mkSerializeFeature[A: RType]: Feature[A, Coll[Byte]] = {
     val tA = RType[A]
@@ -35,28 +37,54 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
       sinceVersion = VersionContext.V6SoftForkVersion)
   }
 
+  val baseTrace = Array(
+    FixedCostItem(Apply),
+    FixedCostItem(FuncValue),
+    FixedCostItem(GetVar),
+    FixedCostItem(OptionGet),
+    FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5)))
+  )
+
   property("Global.serialize[Byte]") {
     lazy val serializeByte = mkSerializeFeature[Byte]
-    val cases = Seq(
-      (-128.toByte, Success(Coll(-128.toByte))),
-      (-1.toByte, Success(Coll(-1.toByte))),
-      (0.toByte, Success(Coll(0.toByte))),
-      (1.toByte, Success(Coll(1.toByte))),
-      (127.toByte, Success(Coll(127.toByte)))
+    val expectedCostTrace = TracedCost(
+      baseTrace ++ Array(
+        FixedCostItem(Global),
+        FixedCostItem(MethodCall),
+        FixedCostItem(ValUse),
+        FixedCostItem(NamedDesc("SigmaByteWriter.startWriter"), FixedCost(JitCost(10))),
+        FixedCostItem(NamedDesc("SigmaByteWriter.put"), FixedCost(JitCost(1)))
+      )
     )
-    testCases(cases, serializeByte)
+    val cases = Seq(
+      (-128.toByte, Expected(Success(Coll(-128.toByte)), expectedCostTrace)),
+      (-1.toByte, Expected(Success(Coll(-1.toByte)), expectedCostTrace)),
+      (0.toByte, Expected(Success(Coll(0.toByte)), expectedCostTrace)),
+      (1.toByte, Expected(Success(Coll(1.toByte)), expectedCostTrace)),
+      (127.toByte, Expected(Success(Coll(127.toByte)), expectedCostTrace))
+    )
+    verifyCases(cases, serializeByte, preGeneratedSamples = None)
   }
 
   property("Global.serialize[Short]") {
     lazy val serializeShort = mkSerializeFeature[Short]
-    val cases = Seq(
-      (Short.MinValue, Success(Coll[Byte](0xFF.toByte, 0xFF.toByte, 0x03.toByte))),
-      (-1.toShort, Success(Coll(1.toByte))),
-      (0.toShort, Success(Coll(0.toByte))),
-      (1.toShort, Success(Coll(2.toByte))),
-      (Short.MaxValue, Success(Coll(-2.toByte, -1.toByte, 3.toByte)))
+    val expectedCostTrace = TracedCost(
+      baseTrace ++ Array(
+        FixedCostItem(Global),
+        FixedCostItem(MethodCall),
+        FixedCostItem(ValUse),
+        FixedCostItem(NamedDesc("SigmaByteWriter.startWriter"), FixedCost(JitCost(10))),
+        FixedCostItem(NamedDesc("SigmaByteWriter.putNumeric"), FixedCost(JitCost(3)))
+      )
     )
-    testCases(cases, serializeShort)
+    val cases = Seq(
+      (Short.MinValue, Expected(Success(Coll[Byte](0xFF.toByte, 0xFF.toByte, 0x03.toByte)), expectedCostTrace)),
+      (-1.toShort, Expected(Success(Coll(1.toByte)), expectedCostTrace)),
+      (0.toShort, Expected(Success(Coll(0.toByte)), expectedCostTrace)),
+      (1.toShort, Expected(Success(Coll(2.toByte)), expectedCostTrace)),
+      (Short.MaxValue, Expected(Success(Coll(-2.toByte, -1.toByte, 3.toByte)), expectedCostTrace))
+    )
+    verifyCases(cases, serializeShort, preGeneratedSamples = None)
   }
 
   // TODO v6.0: implement serialization roundtrip tests after merge with deserializeTo
