@@ -7,7 +7,6 @@ import sigma.ast.syntax.TrueSigmaProp
 import sigma.ast.{BoolToSigmaProp, CompanionDesc, ConcreteCollection, Constant, ConstantPlaceholder, Downcast, ErgoTree, FalseLeaf, FixedCostItem, FuncValue, Global, JitCost, MethodCall, PerItemCost, SBigInt, SByte, SCollection, SGlobalMethods, SInt, SLong, SPair, SShort, SSigmaProp, STypeVar, SelectField, SubstConstants, ValUse, Value}
 import sigma.data.{CBigInt, ExactNumeric, RType}
 import sigma.eval.{CostDetails, SigmaDsl, TracedCost}
-import sigma.serialization.ErgoTreeSerializer
 import sigma.util.Extensions.{BooleanOps, ByteOps, IntOps, LongOps}
 import sigmastate.exceptions.MethodNotFound
 import sigmastate.utils.Helpers
@@ -22,11 +21,6 @@ import scala.util.Success
   */
 class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
   override def languageVersion: Byte = VersionContext.V6SoftForkVersion
-
-  def expectedSuccessForAllTreeVersions[A](value: A, cost: Int, costDetails: CostDetails) = {
-    val res = ExpectedResult(Success(value), Some(cost)) -> Some(costDetails)
-    Seq(0, 1, 2, 3).map(version => version -> res)
-  }
 
   def mkSerializeFeature[A: RType]: Feature[A, Coll[Byte]] = {
     val tA = RType[A]
