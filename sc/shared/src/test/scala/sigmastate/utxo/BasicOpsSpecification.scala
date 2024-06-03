@@ -169,7 +169,21 @@ class BasicOpsSpecification extends CompilerTestingCommons
     deserTest()
   }
 
-  property("signed <-> unsigned bigint conversion") {
+  property("signed <-> unsigned bigint conversion - positive bigint") {
+    val b = new BigInteger("9280562930080889354892980449861222646750586663683904599823322027983929189860")
+    val ub = new BigInteger(1, b.toByteArray)
+
+    // todo: how to upcast?
+    def deserTest() = {test("restoring", env, ext,
+      s"{ val b = bigInt(\"${ub.toString}\"); b > 1 }",
+      null,
+      true
+    )}
+
+    deserTest()
+  }
+
+  property("signed <-> unsigned bigint conversion - negative bigint") {
 
   }
 

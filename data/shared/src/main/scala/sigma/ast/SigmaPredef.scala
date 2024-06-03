@@ -196,7 +196,12 @@ object SigmaPredef {
       Lambda(Array("input" -> SString), SUnsignedBigInt, None),
       PredefFuncInfo(
         { case (_, Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
-          UnsignedBigIntConstant(new BigInteger(arg.value))
+          val bi = new BigInteger(arg.value)
+          if (bi.compareTo(BigInteger.ZERO) >= 0) {
+            UnsignedBigIntConstant(bi)
+          } else {
+            throw new InvalidArguments(s"Negative argument for unsignedBigInt()")
+          }
         }),
       OperationInfo(Constant,
         """Parsing string literal argument as a 256-bit unsigned big integer.""".stripMargin,
