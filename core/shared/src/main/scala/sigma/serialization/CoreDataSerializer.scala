@@ -74,7 +74,6 @@ class CoreDataSerializer {
         serialize(v, elemType, w)
       }
 
-    // TODO v6.0 (3h): support Option[T] (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/659)
     case _ =>
       CheckSerializableTypeCode(tpe.typeCode)
       throw new SerializerException(s"Don't know how to serialize ($v, $tpe)")
