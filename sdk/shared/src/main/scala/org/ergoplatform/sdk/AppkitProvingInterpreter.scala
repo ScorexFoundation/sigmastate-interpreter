@@ -54,6 +54,15 @@ class AppkitProvingInterpreter(
       .filter { case _: DLogProverInput => true case _ => false }
       .map(_.asInstanceOf[DLogProverInput].publicImage)
 
+  def appendSecret(secret: SigmaProtocolPrivateInput[_]): AppkitProvingInterpreter = {
+    secret match {
+      case dlog: DLogProverInput =>
+        new AppkitProvingInterpreter(secretKeys, dLogInputs :+ dlog, dhtInputs, params)
+      case dht: DiffieHellmanTupleProverInput =>
+        new AppkitProvingInterpreter(secretKeys, dLogInputs, dhtInputs :+ dht, params)
+    }
+  }
+
   /** Helper method to accumulate cost while checking limit.
     *
     * @param currentCost current cost value

@@ -3,19 +3,35 @@ package org.ergoplatform.sdk
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform._
 import org.ergoplatform.sdk.wallet.protocol.context.BlockchainStateContext
-import sigma.data.CSigmaDslBuilder
+import org.ergoplatform.sdk.wallet.secrets.SecretKey
+import sigma.data.{CSigmaDslBuilder, SigmaLeaf}
 import sigma.eval.SigmaDsl
 import sigmastate.interpreter.HintsBag
 import sigmastate.utils.Helpers.TryOps
 import sigma.{BigInt, SigmaProp}
+import sigmastate.crypto.SigmaProtocolPrivateInput
 
 /** Represents a prover for signing Ergo transactions and messages.
+  *
+  * Note, the class is mutable and allow appending secret keys to the prover.
+  * This is to allow easier migration to/from alternative SDKs like JS, Rust, etc.
   *
   * @param _prover        an instance of interpreter and a prover combined
   * @param networkPrefix  the network prefix for Ergo addresses
   */
-class SigmaProver(_prover: AppkitProvingInterpreter, networkPrefix: NetworkPrefix) {
+class SigmaProver(var _prover: AppkitProvingInterpreter, networkPrefix: NetworkPrefix) {
   implicit val ergoAddressEncoder: ErgoAddressEncoder = ErgoAddressEncoder(networkPrefix)
+
+  /** Adds a secret key to the prover. */
+  def addSecret(secret: SecretKey): Unit = {
+    _prover = _prover.appendSecret(secret.privateInput)
+  }
+
+  /** All secrets available to this interpreter including [[ExtendedSecretKey]], dlog and
+    * dht secrets.
+    */
+  def secrets: Seq[SigmaProtocolPrivateInput[SigmaLeaf]] =
+    _prover.secrets.asInstanceOf[Seq[SigmaProtocolPrivateInput[SigmaLeaf]]]
 
   /** Returns the Pay-to-Public-Key (P2PK) address associated with the prover's public key.
     * The returned address corresponds to the master secret derived from the mnemonic
