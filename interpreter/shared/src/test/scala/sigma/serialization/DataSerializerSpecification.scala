@@ -112,7 +112,9 @@ class DataSerializerSpecification extends SerializationSpecification {
         roundtrip[SOption[T]](Some(in), SOption(tpe))
         roundtrip[SOption[SCollection[T]]](Some(Colls.fromItems(in)(tT)), SOption(SCollectionType(tpe)))
         roundtrip[SCollection[SOption[T]]](Colls.fromItems(Option(in), None.asInstanceOf[Option[T#WrappedType]])(OptionType(tT)), SCollectionType(SOption(tpe)))
+        roundtrip[SOption[SOption[T]]](None, SOption(SOption(tpe)))
         roundtrip[SOption[SOption[T]]](Some(Some(in)), SOption(SOption(tpe)))
+        roundtrip[SOption[SOption[T]]](Some(None), SOption(SOption(tpe)))
       }
     }
   }
