@@ -5,7 +5,7 @@ import scorex.crypto.authds.ADDigest
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ModifierId
 import sigma.Colls
-import sigma.crypto.{CryptoConstants, CryptoFacade, EcPointType}
+import sigma.crypto.{CryptoConstants, EcPointType}
 import sigma.serialization.{GroupElementSerializer, SigmaByteReader, SigmaByteWriter, SigmaSerializer}
 
 
@@ -91,22 +91,22 @@ object AutolykosSolution {
   * @param _bytes - serialized bytes of the header when not `null`
   */
 case class ErgoHeader(override val version: ErgoHeader.Version,
-                  override val parentId: ModifierId,
-                  override val ADProofsRoot: Digest32,
-                  override val stateRoot: ADDigest, //33 bytes! extra byte with tree height here!
-                  override val transactionsRoot: Digest32,
-                  override val timestamp: ErgoHeader.Timestamp,
-                  override val nBits: Long, //actually it is unsigned int
-                  override val height: Int,
-                  override val extensionRoot: Digest32,
-                  powSolution: AutolykosSolution,
-                  override val votes: Array[Byte], //3 bytes
-                  override val unparsedBytes: Array[Byte],
-                  _bytes: Array[Byte]) extends
+                      override val parentId: ModifierId,
+                      override val ADProofsRoot: Digest32,
+                      override val stateRoot: ADDigest, //33 bytes! extra byte with tree height here!
+                      override val transactionsRoot: Digest32,
+                      override val timestamp: ErgoHeader.Timestamp,
+                      override val nBits: Long, //actually it is unsigned int
+                      override val height: Int,
+                      override val extensionRoot: Digest32,
+                      powSolution: AutolykosSolution,
+                      override val votes: Array[Byte], //3 bytes
+                      override val unparsedBytes: Array[Byte],
+                      _bytes: Array[Byte]) extends
   HeaderWithoutPow(version, parentId, ADProofsRoot, stateRoot, transactionsRoot, timestamp,
-    nBits, height, extensionRoot, votes, unparsedBytes) {
+      nBits, height, extensionRoot, votes, unparsedBytes) {
 
-    lazy val bytes = if(_bytes != null) {
+    lazy val bytes = if (_bytes != null) {
         _bytes
     } else {
         ErgoHeader.sigmaSerializer.toBytes(this)

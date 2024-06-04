@@ -7,7 +7,6 @@ import sigma.data.{DataValueComparer, OptionType, RType, SigmaBoolean, TupleColl
 import sigma.ast.SCollection.SByteArray
 import sigmastate.eval._
 import sigma.{AvlTree, Colls, Evaluation, Header, VersionContext}
-import sigma.{AvlTree, Colls, Evaluation, VersionContext}
 import sigma.ast.SType.AnyOps
 import sigma.ast._
 import org.scalacheck.Gen
@@ -24,29 +23,40 @@ import scala.reflect.ClassTag
 
 class DataSerializerSpecification extends SerializationSpecification {
 
-  def roundtrip[T <: SType](obj: T#WrappedType, tpe: T) = {
-    val w = SigmaSerializer.startWriter()
-    DataSerializer.serialize(obj, tpe, w)
-    val bytes = w.toBytes
-    val r = SigmaSerializer.startReader(bytes)
-    val res = DataSerializer.deserialize(tpe, r)
-    res shouldBe obj
+  def roundtrip[T <: SType](obj: T#WrappedType, tpe: T, withVersion: Option[Byte] = None) = {
 
-    val es = CErgoTreeEvaluator.DefaultEvalSettings
-    val accumulator = new CostAccumulator(
-      initialCost = JitCost(0),
-      costLimit = Some(JitCost.fromBlockCost(es.scriptCostLimitInEvaluator)))
-    val evaluator = new CErgoTreeEvaluator(
-      context = null,
-      constants = ErgoTree.EmptyConstants,
-      coster = accumulator, DefaultProfiler, es)
-    val ok = DataValueComparer.equalDataValues(res, obj)(evaluator)
-    ok shouldBe true
+    def test() = {
+      val w = SigmaSerializer.startWriter()
+      DataSerializer.serialize(obj, tpe, w)
+      val bytes = w.toBytes
+      val r = SigmaSerializer.startReader(bytes)
+      val res = DataSerializer.deserialize(tpe, r)
+      res shouldBe obj
 
-    val randomPrefix = arrayGen[Byte].sample.get
-    val r2 = SigmaSerializer.startReader(randomPrefix ++ bytes, randomPrefix.length)
-    val res2 = DataSerializer.deserialize(tpe, r2)
-    res2 shouldBe obj
+      val es = CErgoTreeEvaluator.DefaultEvalSettings
+      val accumulator = new CostAccumulator(
+        initialCost = JitCost(0),
+        costLimit = Some(JitCost.fromBlockCost(es.scriptCostLimitInEvaluator)))
+      val evaluator = new CErgoTreeEvaluator(
+        context = null,
+        constants = ErgoTree.EmptyConstants,
+        coster = accumulator, DefaultProfiler, es)
+      val ok = DataValueComparer.equalDataValues(res, obj)(evaluator)
+      ok shouldBe true
+
+      val randomPrefix = arrayGen[Byte].sample.get
+      val r2 = SigmaSerializer.startReader(randomPrefix ++ bytes, randomPrefix.length)
+      val res2 = DataSerializer.deserialize(tpe, r2)
+      res2 shouldBe obj
+    }
+
+    withVersion match {
+      case Some(ver) =>
+        VersionContext.withVersions(ver, 1) {
+          test()
+        }
+      case None => test()
+    }
   }
 
   def testCollection[T <: SType](tpe: T) = {
@@ -130,6 +140,7 @@ class DataSerializerSpecification extends SerializationSpecification {
     forAll { x: ErgoBox => roundtrip[SBox.type](x, SBox) }
     forAll { x: AvlTree => roundtrip[SAvlTree.type](x, SAvlTree) }
     forAll { x: Array[Byte] => roundtrip[SByteArray](x.toColl, SByteArray) }
+    forAll { x: Header => roundtrip[SHeader.type](x, SHeader, Some(VersionContext.V6SoftForkVersion)) }
     forAll { t: SPredefType => testCollection(t) }
     forAll { t: SPredefType => testTuples(t) }
     forAll { t: SPredefType => testOption(t) }
@@ -162,7 +173,7 @@ class DataSerializerSpecification extends SerializationSpecification {
     })
   }
 
-  property("header roundtrip") {
+  property("nuanced versioned test for header roundtrip") {
     VersionContext.withVersions(VersionContext.V6SoftForkVersion, 1) {
       forAll { x: Header => roundtrip[SHeader.type](x, SHeader) }
     }

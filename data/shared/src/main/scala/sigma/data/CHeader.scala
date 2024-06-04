@@ -4,7 +4,6 @@ import org.ergoplatform.{AutolykosSolution, ErgoHeader, HeaderWithoutPow, Header
 import scorex.crypto.authds.ADDigest
 import scorex.crypto.hash.Digest32
 import scorex.util.{bytesToId, idToBytes}
-import sigma.pow.Autolykos2PowValidation
 import sigma.{AvlTree, BigInt, Coll, Colls, GroupElement, Header}
 
 /** A default implementation of [[Header]] interface.
@@ -73,26 +72,19 @@ class CHeader(val ergoHeader: ErgoHeader) extends Header with WrapperOf[ErgoHead
     Colls.fromArray(HeaderWithoutPowSerializer.toBytes(headerWithoutPow))
   }
 
-  override def checkPow: Boolean = {
-    if (version == 1) {
-      throw new Exception("Autolykos v1 is not supported") //todo: more specific exception?
-    } else {
-      Autolykos2PowValidation.checkPoWForVersion2(this)
-    }
-  }
-
   override def hashCode(): Int = id.hashCode()
 
   override def equals(other: Any): Boolean = other match {
     case ch: CHeader => ch.id == this.id
     case _ => false
   }
+
+  def copy(): CHeader = new CHeader(ergoHeader.copy()) // used in tests only
 }
 
 object CHeader {
 
-  def apply( id: Coll[Byte], // todo: ignored, remove
-             version: Byte,
+  def apply( version: Byte,
              parentId: Coll[Byte],
              ADProofsRoot: Coll[Byte],
              stateRoot: AvlTree,
@@ -106,8 +98,7 @@ object CHeader {
              powNonce: Coll[Byte],
              powDistance: BigInt,
              votes: Coll[Byte],
-             unparsedBytes: Coll[Byte]
-           ): CHeader = {
+             unparsedBytes: Coll[Byte]): CHeader = {
 
     val solution = AutolykosSolution(
       minerPk.asInstanceOf[CGroupElement].wrappedValue,
@@ -127,6 +118,5 @@ object CHeader {
 
   /** Size of nonce array from Autolykos POW solution in Header.powNonce array. */
   val NonceSize: Int = SigmaConstants.AutolykosPowSolutionNonceArraySize.value
-
 
 }

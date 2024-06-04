@@ -1368,13 +1368,6 @@ object Header extends EntityObject("Header") {
         ArraySeq.empty,
         true, false, element[Coll[Byte]]))
     }
-
-    override def checkPow: Ref[Boolean] = {
-      asRep[Boolean](mkMethodCall(self,
-        HeaderClass.getMethod("checkPow"),
-        ArraySeq.empty,
-        true, false, element[Boolean]))
-    }
   }
 
   implicit object LiftableHeader
@@ -1498,13 +1491,6 @@ object Header extends EntityObject("Header") {
         HeaderClass.getMethod("votes"),
         ArraySeq.empty,
         true, true, element[Coll[Byte]]))
-    }
-
-    def checkPow: Ref[Boolean] = {
-      asRep[Boolean](mkMethodCall(source,
-        HeaderClass.getMethod("checkPow"),
-        ArraySeq.empty,
-        true, true, element[Boolean]))
     }
   }
 

@@ -1,7 +1,6 @@
 package sigma.compiler.ir
 
 import org.ergoplatform._
-import sigma.{SigmaException, VersionContext, ast}
 import sigma.ast.TypeCodes.LastConstantCode
 import sigma.ast.Value.Typed
 import sigma.ast.syntax.{SValue, ValueOps}

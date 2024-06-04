@@ -6,8 +6,6 @@ import scorex.util.{ModifierId, bytesToId, idToBytes}
 import sigma.serialization.{SigmaByteReader, SigmaByteWriter, SigmaSerializer}
 import scorex.util.Extensions._
 
-//todo: unify with Ergo node codebase
-
 /**
   * Header without proof-of-work puzzle solution, see Header class description for details.
   */
