@@ -3,6 +3,7 @@ package org.ergoplatform.sdk.js
 import org.ergoplatform._
 import org.ergoplatform.sdk.ExtendedInputBox
 import org.ergoplatform.sdk.wallet.protocol.context
+import org.scalablytyped.runtime.NumberDictionary
 import sigma.ast.{Constant, SType}
 import sigma.data.Iso
 import sigma.data.Iso.{isoStringToArray, isoStringToColl}
@@ -24,6 +25,32 @@ import scala.scalajs.js.Object
   * @see sigma.data.Iso
   */
 object Isos {
+
+  /** Generic isomorphism constructor between maps given isomorphism between values.
+    * @param iso isomorphism between values of first and second maps.
+    */
+  def isoNumberDictionary[V1, V2](iso: Iso[V1, V2]): Iso[NumberDictionary[V1], Map[Int, V2]] = new Iso[NumberDictionary[V1], Map[Int, V2]] {
+    override def to(x: NumberDictionary[V1]): Map[Int, V2] = {
+      var map = new ListMap[Int, V2]()
+      val keys = js.Object.keys(x).sorted
+      for ( k <- keys ) {
+        val index = k.toInt
+        val v2 = iso.to(x.apply(index).get)
+        map = map + (index -> v2)
+      }
+      map
+    }
+
+    override def from(x: Map[Int, V2]): NumberDictionary[V1] = {
+      val res = new Object().asInstanceOf[NumberDictionary[V1]]
+      x.foreach { case (k, v2) =>
+        val v1 = iso.from(v2)
+        res.update(k, v1)
+      }
+      res
+    }
+  }
+
   implicit val isoHeader: Iso[Header, sigma.Header] = new Iso[Header, sigma.Header] {
     override def to(a: Header): sigma.Header = {
       CHeader(

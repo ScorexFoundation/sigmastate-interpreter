@@ -6,6 +6,7 @@ import sigmastate.fleetSdkCommon.distEsmTypesRegistersMod.NonMandatoryRegisters
 import sigmastate.fleetSdkCommon.{distEsmTypesCommonMod => commonMod, distEsmTypesInputsMod => inputsMod, distEsmTypesTokenMod => tokenMod, distEsmTypesTransactionsMod => transactionsMod}
 
 import scala.scalajs.js
+import scala.scalajs.js.UndefOr
 import scala.scalajs.js.annotation.JSExportTopLevel
 
 /** Equivalent of [[sdk.SigmaProver]] available from JS. */
@@ -63,8 +64,9 @@ class SigmaProver(_prover: sdk.SigmaProver) extends js.Object {
     * @param reducedTx reduced transaction to be signed
     * @return signed transaction containting all the required proofs (signatures)
     */
-  def signReduced(reducedTx: ReducedTransaction): transactionsMod.SignedTransaction = {
-    val signed = _prover.signReduced(reducedTx._tx)
+  def signReduced(reducedTx: ReducedTransaction, hints: UndefOr[TransactionHintsBag]): transactionsMod.SignedTransaction = {
+    val hintsSdk = sigma.js.Isos.isoUndefOr(TransactionHintsBag.isoToSdk).to(hints)
+    val signed = _prover.signReduced(reducedTx._tx, hintsSdk)
     isoSignedTransaction.from(signed.ergoTx)
   }
 }
