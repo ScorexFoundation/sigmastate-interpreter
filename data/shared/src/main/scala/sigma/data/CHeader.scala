@@ -91,7 +91,7 @@ class CHeader(val ergoHeader: ErgoHeader) extends Header with WrapperOf[ErgoHead
 
 object CHeader {
 
-  def apply( id: Coll[Byte], // todo: ignored
+  def apply( id: Coll[Byte], // todo: ignored, remove
              version: Byte,
              parentId: Coll[Byte],
              ADProofsRoot: Coll[Byte],

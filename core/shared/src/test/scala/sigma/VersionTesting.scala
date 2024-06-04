@@ -39,9 +39,7 @@ trait VersionTesting {
           _ + 1) { j =>
           val treeVersion = ergoTreeVers(j)
           // for each tree version up to currently activated, set it up and execute block
-          _currErgoTreeVersion.withValue(treeVersion) {
-            VersionContext.withVersions(activatedVersion, treeVersion)(block)
-          }
+          _currErgoTreeVersion.withValue(treeVersion)(block)
         }
       }
     }

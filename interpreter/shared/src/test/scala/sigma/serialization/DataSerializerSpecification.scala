@@ -3,10 +3,11 @@ package sigma.serialization
 import java.math.BigInteger
 import org.ergoplatform.ErgoBox
 import org.scalacheck.Arbitrary._
-import sigma.data.{DataValueComparer, RType, SigmaBoolean, TupleColl}
+import sigma.data.{DataValueComparer, OptionType, RType, SigmaBoolean, TupleColl}
 import sigma.ast.SCollection.SByteArray
 import sigmastate.eval._
 import sigma.{AvlTree, Colls, Evaluation, Header, VersionContext}
+import sigma.{AvlTree, Colls, Evaluation, VersionContext}
 import sigma.ast.SType.AnyOps
 import sigma.ast._
 import org.scalacheck.Gen
@@ -92,6 +93,32 @@ class DataSerializerSpecification extends SerializationSpecification {
     }
   }
 
+  def testOption[T <: SType](tpe: T) = {
+    implicit val wWrapped: Gen[T#WrappedType] = wrappedTypeGen(tpe)
+    val tT = Evaluation.stypeToRType(tpe)
+
+    an[Exception] should be thrownBy (
+      VersionContext.withVersions((VersionContext.V6SoftForkVersion - 1).toByte, 1) {
+        forAll { in: T#WrappedType =>
+          roundtrip[SType](Some(in).asWrappedType, SOption(tpe))
+          roundtrip[SOption[SCollection[T]]](Some(Colls.fromItems(in)(tT)), SOption(SCollectionType(tpe)))
+        }
+      })
+
+    VersionContext.withVersions(VersionContext.V6SoftForkVersion, 1) {
+      forAll { in: T#WrappedType =>
+        roundtrip[SType](Some(in).asWrappedType, SOption(tpe))
+        roundtrip[SOption[T]](None, SOption(tpe))
+        roundtrip[SOption[T]](Some(in), SOption(tpe))
+        roundtrip[SOption[SCollection[T]]](Some(Colls.fromItems(in)(tT)), SOption(SCollectionType(tpe)))
+        roundtrip[SCollection[SOption[T]]](Colls.fromItems(Option(in), None.asInstanceOf[Option[T#WrappedType]])(OptionType(tT)), SCollectionType(SOption(tpe)))
+        roundtrip[SOption[SOption[T]]](None, SOption(SOption(tpe)))
+        roundtrip[SOption[SOption[T]]](Some(Some(in)), SOption(SOption(tpe)))
+        roundtrip[SOption[SOption[T]]](Some(None), SOption(SOption(tpe)))
+      }
+    }
+  }
+
   property("Data serialization round trip") {
     forAll { x: Byte => roundtrip[SByte.type](x, SByte) }
     forAll { x: Boolean => roundtrip[SBoolean.type](x, SBoolean) }
@@ -105,6 +132,7 @@ class DataSerializerSpecification extends SerializationSpecification {
     forAll { x: Array[Byte] => roundtrip[SByteArray](x.toColl, SByteArray) }
     forAll { t: SPredefType => testCollection(t) }
     forAll { t: SPredefType => testTuples(t) }
+    forAll { t: SPredefType => testOption(t) }
   }
 
   property("Should check limits and fail") {
@@ -142,9 +170,7 @@ class DataSerializerSpecification extends SerializationSpecification {
     an[SerializerException] should be thrownBy (
       VersionContext.withVersions((VersionContext.V6SoftForkVersion - 1).toByte, 1) {
         val h = headerGen.sample.get
-        val res = roundtrip[SHeader.type](h, SHeader)
-        println("r: " + res)
-        res
+        roundtrip[SHeader.type](h, SHeader)
       })
   }
 
