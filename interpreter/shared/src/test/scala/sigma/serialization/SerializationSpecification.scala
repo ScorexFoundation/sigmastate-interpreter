@@ -41,7 +41,7 @@ trait SerializationSpecification extends AnyPropSpec
     r.positionLimit shouldBe positionLimitBefore
   }
 
-  //check that pos and consumed are being implented correctly
+  //check that pos and consumed are being implemented correctly
   protected def predefinedBytesTestNotFomZeroElement[V <: Value[_ <: SType]](bytes: Array[Byte], v: V): Assertion = {
     val randomInt = Gen.chooseNum(1, 20).sample.get
     val randomBytes = Gen.listOfN(randomInt, arbByte.arbitrary).sample.get.toArray

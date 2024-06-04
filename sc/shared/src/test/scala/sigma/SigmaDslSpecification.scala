@@ -4675,7 +4675,8 @@ class SigmaDslSpecification extends SigmaDslTesting
       Helpers.decodeGroupElement("034e2d3b5f9e409e3ae8a2e768340760362ca33764eda5855f7a43487f14883300"),
       Helpers.decodeBytes("974651c9efff7f00"),
       CBigInt(new BigInteger("478e827dfa1e4b57", 16)),
-      Helpers.decodeBytes("01ff13")
+      Helpers.decodeBytes("01ff13"),
+      Colls.emptyColl
     )
 
     val ctx = CContext(

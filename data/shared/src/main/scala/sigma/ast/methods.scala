@@ -2,10 +2,11 @@ package sigma.ast
 
 import org.ergoplatform._
 import org.ergoplatform.validation._
+import sigma.Evaluation.stypeToRType
 import sigma._
 import sigma.ast.SCollection.{SBooleanArray, SBoxArray, SByteArray, SByteArray2, SHeaderArray}
 import sigma.ast.SMethod.{MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
-import sigma.ast.SType.TypeCode
+import sigma.ast.SType.{TypeCode, paramT, tT}
 import sigma.ast.syntax.{SValue, ValueOps}
 import sigma.data.OverloadHack.Overloaded1
 import sigma.data.{DataValueComparer, KeyValueColl, Nullable, RType, SigmaConstants}
@@ -1456,11 +1457,33 @@ case object SHeaderMethods extends MonoTypeMethods {
   lazy val powDistanceMethod      = propertyCall("powDistance", SBigInt, 14, FixedCost(JitCost(10)))
   lazy val votesMethod            = propertyCall("votes", SByteArray, 15, FixedCost(JitCost(10)))
 
-  protected override def getMethods() = super.getMethods() ++ Seq(
-    idMethod, versionMethod, parentIdMethod, ADProofsRootMethod, stateRootMethod, transactionsRootMethod,
-    timestampMethod, nBitsMethod, heightMethod, extensionRootMethod, minerPkMethod, powOnetimePkMethod,
-    powNonceMethod, powDistanceMethod, votesMethod
-  )
+  // methods added in 6.0 below
+  lazy val checkPowMethod = SMethod(
+    this, "checkPow", SFunc(Array(SHeader), SBoolean), 16, GroupGenerator.costKind) // todo: cost
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(Xor, "Check PoW of this header") // todo: desc
+
+  lazy val bytesMethod = propertyCall("bytes", SByteArray, 17, FixedCost(JitCost(10)))
+
+  def checkPow_eval(mc: MethodCall, G: SigmaDslBuilder, header: Header)
+                 (implicit E: ErgoTreeEvaluator): Boolean = {
+    E.checkPow_eval(mc, header)
+  }
+
+  protected override def getMethods() = {
+    if (VersionContext.current.isV6SoftForkActivated) {
+      // 6.0 : checkPow & bytes methods added
+      super.getMethods() ++ Seq(
+        idMethod, versionMethod, parentIdMethod, ADProofsRootMethod, stateRootMethod, transactionsRootMethod,
+        timestampMethod, nBitsMethod, heightMethod, extensionRootMethod, minerPkMethod, powOnetimePkMethod,
+        powNonceMethod, powDistanceMethod, votesMethod, checkPowMethod, bytesMethod)
+    } else {
+      super.getMethods() ++ Seq(
+        idMethod, versionMethod, parentIdMethod, ADProofsRootMethod, stateRootMethod, transactionsRootMethod,
+        timestampMethod, nBitsMethod, heightMethod, extensionRootMethod, minerPkMethod, powOnetimePkMethod,
+        powNonceMethod, powDistanceMethod, votesMethod)
+    }
+  }
 }
 
 /** Type descriptor of `PreHeader` type of ErgoTree. */
@@ -1510,6 +1533,14 @@ case object SGlobalMethods extends MonoTypeMethods {
     .withInfo(Xor, "Byte-wise XOR of two collections of bytes",
       ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))
 
+  lazy val desJava = ownerType.reprClass.getMethod("deserializeTo", classOf[SType], classOf[Coll[Byte]], classOf[RType[_]])
+
+  lazy val deserializeToMethod = SMethod(
+    this, "deserializeTo", SFunc(Array(SGlobal, SByteArray), tT, Array(paramT)), 3, Xor.costKind) // todo: cost
+    .copy(irInfo = MethodIRInfo(None, Some(desJava), None))
+    .withInfo(Xor, "Byte-wise XOR of two collections of bytes",  // todo: desc
+      ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))
+
   /** Implements evaluation of Global.xor method call ErgoTree node.
     * Called via reflection based on naming convention.
     * @see SMethod.evalMethod, Xor.eval, Xor.xorWithCosting
@@ -1519,9 +1550,29 @@ case object SGlobalMethods extends MonoTypeMethods {
     Xor.xorWithCosting(ls, rs)
   }
 
-  protected override def getMethods() = super.getMethods() ++ Seq(
-    groupGeneratorMethod,
-    xorMethod
-  )
+
+  def deserializeTo_eval(mc: MethodCall, G: SigmaDslBuilder, bytes: Coll[Byte])
+              (implicit E: ErgoTreeEvaluator): Any = {
+    val tpe = mc.tpe
+    val cT = stypeToRType(tpe)
+    E.addSeqCost(Xor.costKind, bytes.length, Xor.opDesc) { () =>    // todo: cost
+      G.deserializeTo(tpe, bytes)(cT)
+    }
+  }
+
+  protected override def getMethods() = super.getMethods() ++ {
+    if (VersionContext.current.isV6SoftForkActivated) {
+      Seq(
+        groupGeneratorMethod,
+        xorMethod,
+        deserializeToMethod
+      )
+    } else {
+      Seq(
+        groupGeneratorMethod,
+        xorMethod
+      )
+    }
+  }
 }
 

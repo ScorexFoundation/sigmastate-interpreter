@@ -7,6 +7,7 @@ import sigma.data.{DataValueComparer, OptionType, RType, SigmaBoolean, TupleColl
 import sigma.ast.SCollection.SByteArray
 import sigmastate.eval._
 import sigma.{AvlTree, Colls, Evaluation, VersionContext}
+import sigma.{AvlTree, Colls, Evaluation, Header, VersionContext}
 import sigma.ast.SType.AnyOps
 import sigma.ast._
 import org.scalacheck.Gen
@@ -159,6 +160,20 @@ class DataSerializerSpecification extends SerializationSpecification {
       t.isInstanceOf[SerializerException] &&
           t.getMessage.contains(s"BigInt value doesn't not fit into ${SBigInt.MaxSizeInBytes} bytes")
     })
-
   }
+
+  property("header roundtrip") {
+    VersionContext.withVersions(VersionContext.V6SoftForkVersion, 1) {
+      forAll { x: Header => roundtrip[SHeader.type](x, SHeader) }
+    }
+
+    an[SerializerException] should be thrownBy (
+      VersionContext.withVersions((VersionContext.V6SoftForkVersion - 1).toByte, 1) {
+        val h = headerGen.sample.get
+        val res = roundtrip[SHeader.type](h, SHeader)
+        println("r: " + res)
+        res
+      })
+  }
+
 }
