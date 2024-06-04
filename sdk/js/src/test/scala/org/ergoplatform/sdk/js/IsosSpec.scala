@@ -11,6 +11,9 @@ import sigma.interpreter.{ContextExtension, ProverResult}
 import sigma.js.AvlTree
 import sigma.{Coll, GroupElement}
 import sigma.data.js.{Isos => DataIsos}
+import sigma.interpreter.js.ProverHints
+import sigmastate.interpreter.HintsBag
+
 import scala.scalajs.js
 
 class IsosSpec extends IsosSpecBase with sdk.generators.ObjectGenerators {
@@ -177,6 +180,18 @@ class IsosSpec extends IsosSpecBase with sdk.generators.ObjectGenerators {
   property("Iso.isoContractTemplate") {
     forAll(contractTemplateGen) { (tx: sdk.ContractTemplate) =>
       roundtrip(ContractTemplate.isoToSdk)(tx)
+    }
+  }
+
+  property("ProverHints.isoProverHints") {
+    forAll(hintsBagGen) { (x: HintsBag) =>
+      roundtrip(ProverHints.isoProverHints)(x)
+    }
+  }
+
+  property("TransactionHintsBag.isoToSdk") {
+    forAll(transactionHintsBagGen) { (x: sdk.TransactionHintsBag) =>
+      roundtrip(TransactionHintsBag.isoToSdk)(x)
     }
   }
 

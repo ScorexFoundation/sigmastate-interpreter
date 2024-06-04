@@ -3,8 +3,7 @@ package org.ergoplatform.sdk
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform._
 import org.ergoplatform.sdk.wallet.protocol.context.BlockchainStateContext
-import org.ergoplatform.sdk.wallet.secrets.SecretKey
-import sigma.data.{CSigmaDslBuilder, SigmaLeaf}
+import sigma.data.{CSigmaDslBuilder, SigmaBoolean, SigmaLeaf}
 import sigma.eval.SigmaDsl
 import sigmastate.interpreter.HintsBag
 import sigmastate.utils.Helpers.TryOps
@@ -102,4 +101,7 @@ class SigmaProver(var _prover: AppkitProvingInterpreter, networkPrefix: NetworkP
     _prover.signReduced(tx, tx.ergoTx.cost, hints)
   }
 
+  /** Generates commitments for a given sigma proposition. */
+  def generateCommitments(sb: SigmaBoolean): HintsBag =
+    _prover.generateCommitments(sb)
 }

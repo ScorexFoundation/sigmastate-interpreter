@@ -1,11 +1,12 @@
 package org.ergoplatform.sdk.generators
 
-import org.ergoplatform.sdk.{ContractTemplate, Parameter}
+import org.ergoplatform.sdk._
 import org.ergoplatform.validation.ValidationSpecification
 import org.scalacheck.Gen
 import sigma.ast.{ErgoTree, SType}
-import sigmastate.TestsBase
 import sigma.serialization.generators.{ConcreteCollectionGenerators, TypeGenerators, ObjectGenerators => InterpreterObjectGenerators}
+import sigmastate.TestsBase
+import sigmastate.interpreter.HintsBag
 
 import scala.util.Random
 
@@ -57,4 +58,39 @@ trait ObjectGenerators extends TypeGenerators
       ergoTree.toProposition(false)
     )
   }
+
+
+  lazy val hintsBagGen: Gen[HintsBag] = {
+    val mockBlockchainParameters = CBlockchainParameters(
+      storageFeeFactor = 1000,
+      minValuePerByte = 1,
+      maxBlockSize = 1000000,
+      tokenAccessCost = 100,
+      inputCost = 10,
+      dataInputCost = 10,
+      outputCost = 10,
+      maxBlockCost = 1000000,
+      softForkStartingHeight = Some(100),
+      softForkVotesCollected = Some(50),
+      blockVersion = 1
+    )
+    for {
+      mnemonic <- Gen.alphaLowerStr
+      p = ProverBuilder.forMainnet(mockBlockchainParameters)
+        .withMnemonic(SecretString.create(mnemonic), SecretString.empty())
+        .build()
+    } yield HintsBag(
+      p.secrets
+        .map(_.publicImage)
+        .flatMap(sb => p.generateCommitments(sb).hints)
+    )
+  }
+
+  lazy val transactionHintsBagGen: Gen[TransactionHintsBag] = for {
+    n <- Gen.choose(1, 10)
+    bags <- Gen.listOfN(n, hintsBagGen)
+  } yield
+    bags.zipWithIndex.foldLeft(TransactionHintsBag.empty) {
+      case (acc, (hints, idx)) => acc.addHintsForInput(idx, hints)
+    }
 }
