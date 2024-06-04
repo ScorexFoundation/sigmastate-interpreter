@@ -340,7 +340,7 @@ trait SNumericType extends SProduct with STypeCompanion {
 
 object SNumericType extends STypeCompanion {
   /** Array of all numeric types ordered by number of bytes in the representation. */
-  final val allNumericTypes = Array(SByte, SShort, SInt, SLong, SBigInt)
+  final val allNumericTypes = Array(SByte, SShort, SInt, SLong, SBigInt, SUnsignedBigInt)
 
   // TODO v6.0: this typeId is now shadowed by SGlobal.typeId
   //  see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/667

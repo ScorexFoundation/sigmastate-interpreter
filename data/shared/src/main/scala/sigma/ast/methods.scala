@@ -210,6 +210,8 @@ object SNumericTypeMethods extends MethodsContainer {
       .withCost(costOfNumericCast)
       .withInfo(PropertyCall, "Converts this numeric value to \\lst{BigInt}")
 
+  // todo: ToUnsignedBigInt
+
   /** Cost of: 1) creating Byte collection from a numeric value */
   val ToBytes_CostKind = FixedCost(JitCost(5))
 
@@ -316,7 +318,10 @@ case object SBigIntMethods extends SNumericTypeMethods {
   val ToNBits = SMethod(this, "nbits", SFunc(this.ownerType, SLong), 8, ToNBitsCostInfo.costKind)
                   .withInfo(ModQ, "Encode this big integer value as NBits")
 
-  /** The following `modQ` methods are not fully implemented in v4.x and this descriptors.
+  /**
+    * todo: remove
+    *
+    * The following `modQ` methods are not fully implemented in v4.x and this descriptors.
     * This descritors are remain here in the code and are waiting for full implementation
     * is upcoming soft-forks at which point the cost parameters should be calculated and
     * changed.
