@@ -12,7 +12,7 @@ import scala.scalajs.js.annotation.JSExportTopLevel
 /** Equivalent of [[org.ergoplatform.sdk.TransactionHintsBag]] available from JS.
   * Holds public and secret hints for each input of a transaction.
   */
-@JSExportTopLevel("Header")
+@JSExportTopLevel("TransactionHintsBag")
 class TransactionHintsBag(
   val secretHints: MapOfBags,
   val publicHints: MapOfBags
