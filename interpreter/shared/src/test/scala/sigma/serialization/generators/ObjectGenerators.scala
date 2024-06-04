@@ -311,6 +311,7 @@ trait ObjectGenerators extends TypeGenerators
     case SAvlTree => arbAvlTree
     case SAny => arbAnyVal
     case SUnit => arbUnit
+    case SHeader => arbHeader
     case opt: SOption[a] =>
       Arbitrary(frequency((5, None), (5, for (x <- wrappedTypeGen(opt.elemType)) yield Some(x))))
   }).asInstanceOf[Arbitrary[T#WrappedType]].arbitrary
@@ -707,8 +708,9 @@ trait ObjectGenerators extends TypeGenerators
     powDistance <- arbBigInt.arbitrary
     votes <- minerVotesGen
     unparsedBytes <- collOfRange(0, 32, arbByte.arbitrary)
-  } yield CHeader(version, parentId, adProofsRoot, stateRoot, transactionRoot, timestamp, nBits,
-    height, extensionRoot, minerPk.toGroupElement, powOnetimePk.toGroupElement, powNonce, powDistance, votes, unparsedBytes)
+  } yield CHeader(version, parentId, adProofsRoot, stateRoot.digest, transactionRoot, timestamp, nBits,
+    height, extensionRoot, minerPk.toGroupElement, powOnetimePk.toGroupElement, powNonce, powDistance, votes,
+    if(version > HeaderVersion.Interpreter60Version){ unparsedBytes } else {Colls.emptyColl[Byte]})
 
   lazy val headerGen: Gen[Header] = for {
     stateRoot <- avlTreeGen

@@ -41,11 +41,11 @@ import scala.util.{Failure, Success}
 /** This suite tests every method of every SigmaDsl type to be equivalent to
   * the evaluation of the corresponding ErgoScript operation.
   *
-  * The properties of this suite excercise two interpreters: the current (aka `old`
+  * The properties of this suite exercise two interpreters: the current (aka `old`
   * interpreter) and the new interpreter for a next soft-fork. After the soft-fork is
   * released, the new interpreter becomes current at which point the `old` and `new`
   * interpreters in this suite should be equivalent. This change is reflected in this
-  * suite by commiting changes in expected values.
+  * suite by committing changes in expected values.
   * The `old` and `new` interpreters are compared like the following:
   * 1) for existingFeature the interpreters should be equivalent
   * 2) for changedFeature the test cases contain different expected values
@@ -53,7 +53,7 @@ import scala.util.{Failure, Success}
   * against expected values.
   *
   * This suite can be used for Cost profiling, i.e. measurements of operations times and
-  * comparing them with cost parameteres of the operations.
+  * comparing them with cost parameters of the operations.
   *
   * The following settings should be specified for profiling:
   * isMeasureOperationTime = true
@@ -4516,7 +4516,7 @@ class SigmaDslSpecification extends SigmaDslTesting
   property("Header properties equivalence") {
     verifyCases(
       Seq((h1, Expected(Success(
-        Helpers.decodeBytes("957f008001808080ffe4ffffc8f3802401df40006aa05e017fa8d3f6004c804a")),
+        Helpers.decodeBytes("cea31f0e0a794b103f65f8296a22ac8ff214e1bc75442186b90df4844c978e81")),
         cost = 1766, methodCostDetails(SHeaderMethods.idMethod, 10), 1766))),
       existingPropTest("id", { (x: Header) => x.id }))
 
@@ -4657,14 +4657,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       0.toByte,
       Helpers.decodeBytes("7a7fe5347f09017818010062000001807f86808000ff7f66ffb07f7ad27f3362"),
       Helpers.decodeBytes("c1d70ad9b1ffc1fb9a715fff19807f2401017fcd8b73db017f1cff77727fff08"),
-      CAvlTree(
-        AvlTreeData(
-          ErgoAlgos.decodeUnsafe("54d23dd080006bdb56800100356080935a80ffb77e90b800057f00661601807f17").toColl,
-          AvlTreeFlags(true, true, false),
-          2147483647,
-          None
-        )
-      ),
+      Helpers.decodeBytes("54d23dd080006bdb56800100356080935a80ffb77e90b800057f00661601807f17"),
       Helpers.decodeBytes("5e7f1164ccd0990080c501fc0e0181cb387fc17f00ff00c7d5ff767f91ff5e68"),
       -7421721754642387858L,
       -4826493284887861030L,
@@ -4683,7 +4676,7 @@ class SigmaDslSpecification extends SigmaDslTesting
       headers = Coll[Header](header),
       preHeader = CPreHeader(
         0.toByte,
-        Helpers.decodeBytes("1c597f88969600d2fffffdc47f00d8ffc555a9e85001000001c505ff80ff8f7f"),
+        header.id,
         -755484979487531112L,
         9223372036854775807L,
         11,

@@ -72,6 +72,24 @@ class CHeader(val ergoHeader: ErgoHeader) extends Header with WrapperOf[ErgoHead
     Colls.fromArray(HeaderWithoutPowSerializer.toBytes(headerWithoutPow))
   }
 
+  override def toString: String =
+    s"""CHeader(
+       |  id: ${id},
+       |  version: ${version},
+       |  tx proofs hash: ${ADProofsRoot},
+       |  state root: ${stateRoot.digest},
+       |  transactions root: ${transactionsRoot},
+       |  time: $timestamp,
+       |  nbits: $nBits,
+       |  extension root: $extensionRoot,
+       |  miner pubkey: $minerPk,
+       |  pow one time pubkey(from AL 1): $powOnetimePk,
+       |  pow nonce: $powNonce,
+       |  pow distance (from AL 1): $powDistance,
+       |  votes: $votes,
+       |  unparsed bytes: $unparsedBytes
+       |)""".stripMargin
+
   override def hashCode(): Int = id.hashCode()
 
   override def equals(other: Any): Boolean = other match {
@@ -87,7 +105,7 @@ object CHeader {
   def apply( version: Byte,
              parentId: Coll[Byte],
              ADProofsRoot: Coll[Byte],
-             stateRoot: AvlTree,
+             stateRootDigest: Coll[Byte],
              transactionsRoot: Coll[Byte],
              timestamp: Long,
              nBits: Long,
@@ -107,7 +125,7 @@ object CHeader {
       powDistance.asInstanceOf[CBigInt].wrappedValue)
 
     val h = ErgoHeader(version, bytesToId(parentId.toArray), Digest32 @@ ADProofsRoot.toArray,
-      ADDigest @@ stateRoot.digest.toArray, Digest32 @@ transactionsRoot.toArray, timestamp, nBits, height,
+      ADDigest @@ stateRootDigest.toArray, Digest32 @@ transactionsRoot.toArray, timestamp, nBits, height,
       Digest32 @@ extensionRoot.toArray, solution, votes.toArray, unparsedBytes.toArray, null)
 
     new CHeader(h)

@@ -1,11 +1,10 @@
 package org.ergoplatform
 
-import org.bouncycastle.util.BigIntegers
 import scorex.crypto.authds.ADDigest
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ModifierId
 import sigma.Colls
-import sigma.crypto.{CryptoConstants, EcPointType}
+import sigma.crypto.{BigIntegers, CryptoConstants, EcPointType}
 import sigma.serialization.{GroupElementSerializer, SigmaByteReader, SigmaByteWriter, SigmaSerializer}
 
 
@@ -88,6 +87,7 @@ object AutolykosSolution {
   * @param extensionRoot - Merkle tree digest of the extension section of the block
   * @param powSolution - solution for the proof-of-work puzzle
   * @param votes - votes for changing system parameters
+  * @param unparsedBytes - bytes from future versions of the protocol our version can't parse
   * @param _bytes - serialized bytes of the header when not `null`
   */
 case class ErgoHeader(override val version: ErgoHeader.Version,
@@ -104,9 +104,9 @@ case class ErgoHeader(override val version: ErgoHeader.Version,
                       override val unparsedBytes: Array[Byte],
                       _bytes: Array[Byte]) extends
   HeaderWithoutPow(version, parentId, ADProofsRoot, stateRoot, transactionsRoot, timestamp,
-      nBits, height, extensionRoot, votes, unparsedBytes) {
+    nBits, height, extensionRoot, votes, unparsedBytes) {
 
-    lazy val bytes = if (_bytes != null) {
+    lazy val bytes = if(_bytes != null) {
         _bytes
     } else {
         ErgoHeader.sigmaSerializer.toBytes(this)
@@ -116,6 +116,12 @@ case class ErgoHeader(override val version: ErgoHeader.Version,
 
     lazy val id = Colls.fromArray(serializedId)
 
+    override def hashCode(): Int = id.hashCode()
+
+    override def equals(other: Any): Boolean = other match {
+        case h: ErgoHeader => h.id == this.id
+        case _ => false
+    }
 }
 
 

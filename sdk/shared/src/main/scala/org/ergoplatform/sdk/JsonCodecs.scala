@@ -147,7 +147,7 @@ trait JsonCodecs {
       powDistance <- cursor.downField("powDistance").as[sigma.BigInt]
       votes <- cursor.downField("votes").as[Coll[Byte]]
       unparsedBytes <- cursor.downField("unparsedBytes").as[Option[Coll[Byte]]]
-    } yield CHeader(version, parentId, adProofsRoot, stateRoot, transactionsRoot, timestamp, nBits,
+    } yield CHeader(version, parentId, adProofsRoot, stateRoot.digest, transactionsRoot, timestamp, nBits,
       height, extensionRoot, SigmaDsl.decodePoint(minerPk), SigmaDsl.decodePoint(powOnetimePk), powNonce, powDistance,
       votes, unparsedBytes.getOrElse(Colls.emptyColl))
   })

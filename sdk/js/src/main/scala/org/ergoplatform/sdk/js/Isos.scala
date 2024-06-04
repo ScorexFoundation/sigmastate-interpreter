@@ -31,7 +31,7 @@ object Isos {
         version = a.version,
         parentId = isoStringToColl.to(a.parentId),
         ADProofsRoot = isoStringToColl.to(a.ADProofsRoot),
-        stateRoot = AvlTree.isoAvlTree.to(a.stateRoot),
+        stateRootDigest = AvlTree.isoAvlTree.to(a.stateRoot).digest,
         transactionsRoot = isoStringToColl.to(a.transactionsRoot),
         timestamp = sigma.js.Isos.isoBigIntToLong.to(a.timestamp),
         nBits = sigma.js.Isos.isoBigIntToLong.to(a.nBits),

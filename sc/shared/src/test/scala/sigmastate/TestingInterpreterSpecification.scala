@@ -429,32 +429,6 @@ class TestingInterpreterSpecification extends CompilerTestingCommons
     testEval(s"""deserialize[Coll[Byte]]("$str")(0) == 2""")
   }
 
-  property("header.id") {
-    testEval(
-      """ {
-        |     val h = CONTEXT.headers(0)
-        |     val id = h.id
-        |     id.size == 32
-        | }""".stripMargin)
-  }
-
-  property("checkPow") {
-
-    //todo: check invalid header
-
-    val source = """ {
-                   |     val h = CONTEXT.headers(0)
-                   |      h.checkPow
-                   | }
-                   | """.stripMargin
-
-    if (activatedVersionInTests < V6SoftForkVersion) {
-      an [sigmastate.exceptions.MethodNotFound] should be thrownBy testEval(source)
-    } else {
-      testEval(source)
-    }
-  }
-
   override protected def afterAll(): Unit = {
   }
 

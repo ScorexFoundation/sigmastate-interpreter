@@ -3,7 +3,7 @@ package sigma.serialization
 import java.math.BigInteger
 import org.ergoplatform.ErgoBox
 import org.scalacheck.Arbitrary._
-import sigma.data.{DataValueComparer, OptionType, RType, SigmaBoolean, TupleColl}
+import sigma.data.{CBigInt, CHeader, DataValueComparer, OptionType, RType, SigmaBoolean, TupleColl}
 import sigma.ast.SCollection.SByteArray
 import sigmastate.eval._
 import sigma.{AvlTree, Colls, Evaluation, Header, VersionContext}
@@ -55,7 +55,8 @@ class DataSerializerSpecification extends SerializationSpecification {
         VersionContext.withVersions(ver, 1) {
           test()
         }
-      case None => test()
+      case None =>
+        test()
     }
   }
 
@@ -64,25 +65,32 @@ class DataSerializerSpecification extends SerializationSpecification {
     implicit val tT = Evaluation.stypeToRType(tpe)
     implicit val tagT = tT.classTag
     implicit val tAny = sigma.AnyType
+
+    val withVersion = if (tpe == SHeader) {
+      Some(VersionContext.V6SoftForkVersion)
+    } else {
+      None
+    }
     forAll { xs: Array[T#WrappedType] =>
-      roundtrip[SCollection[T]](xs.toColl, SCollection(tpe))
-      roundtrip[SType](xs.toColl.map(x => (x, x)).asWrappedType, SCollection(STuple(tpe, tpe)))
+      roundtrip[SCollection[T]](xs.toColl, SCollection(tpe), withVersion)
+      roundtrip[SType](xs.toColl.map(x => (x, x)).asWrappedType, SCollection(STuple(tpe, tpe)), withVersion)
 
       val triples = xs.toColl.map(x => TupleColl(x, x, x)).asWrappedType
-      roundtrip(triples, SCollection(STuple(tpe, tpe, tpe)))
+      roundtrip(triples, SCollection(STuple(tpe, tpe, tpe)), withVersion)
 
       val quartets = xs.toColl.map(x => TupleColl(x, x, x, x)).asWrappedType
-      roundtrip(quartets, SCollection(STuple(tpe, tpe, tpe, tpe)))
+      roundtrip(quartets, SCollection(STuple(tpe, tpe, tpe, tpe)), withVersion)
 
       val nested = xs.toColl.map(x => Colls.fromItems[T#WrappedType](x, x))
-      roundtrip[SCollection[SCollection[T]]](nested, SCollection(SCollection(tpe)))
+      roundtrip[SCollection[SCollection[T]]](nested, SCollection(SCollection(tpe)), withVersion)
 
       roundtrip[SType](
         xs.toColl.map { x =>
           val arr = Colls.fromItems[T#WrappedType](x, x)
           (arr, arr)
         }.asWrappedType,
-        SCollection(STuple(SCollection(tpe), SCollection(tpe)))
+        SCollection(STuple(SCollection(tpe), SCollection(tpe))),
+        withVersion
       )
     }
   }
@@ -92,14 +100,19 @@ class DataSerializerSpecification extends SerializationSpecification {
     val tT = Evaluation.stypeToRType(tpe)
     @nowarn implicit val tag: ClassTag[T#WrappedType] = tT.classTag
     implicit val tAny       : RType[Any]              = sigma.AnyType
+    val withVersion = if (tpe == SHeader) {
+      Some(VersionContext.V6SoftForkVersion)
+    } else {
+      None
+    }
     forAll { in: (T#WrappedType, T#WrappedType) =>
       val (x,y) = (in._1, in._2)
-      roundtrip[SType]((x, y).asWrappedType, STuple(tpe, tpe))
-      roundtrip[SType](TupleColl(x, y, x).asWrappedType, STuple(tpe, tpe, tpe))
-      roundtrip[SType](TupleColl(x, y, x, y).asWrappedType, STuple(tpe, tpe, tpe, tpe))
-      roundtrip[STuple](Colls.fromItems[Any](x, y, (x, y)), STuple(tpe, tpe, STuple(tpe, tpe)))
-      roundtrip[STuple](Colls.fromItems[Any](x, y, TupleColl(x, y, x)), STuple(tpe, tpe, STuple(tpe, tpe, tpe)))
-      roundtrip[STuple](Colls.fromItems[Any](x, y, TupleColl(x, y, (x, y))), STuple(tpe, tpe, STuple(tpe, tpe, STuple(tpe, tpe))))
+      roundtrip[SType]((x, y).asWrappedType, STuple(tpe, tpe), withVersion)
+      roundtrip[SType](TupleColl(x, y, x).asWrappedType, STuple(tpe, tpe, tpe), withVersion)
+      roundtrip[SType](TupleColl(x, y, x, y).asWrappedType, STuple(tpe, tpe, tpe, tpe), withVersion)
+      roundtrip[STuple](Colls.fromItems[Any](x, y, (x, y)), STuple(tpe, tpe, STuple(tpe, tpe)), withVersion)
+      roundtrip[STuple](Colls.fromItems[Any](x, y, TupleColl(x, y, x)), STuple(tpe, tpe, STuple(tpe, tpe, tpe)), withVersion)
+      roundtrip[STuple](Colls.fromItems[Any](x, y, TupleColl(x, y, (x, y))), STuple(tpe, tpe, STuple(tpe, tpe, STuple(tpe, tpe))), withVersion)
     }
   }
 
@@ -183,6 +196,30 @@ class DataSerializerSpecification extends SerializationSpecification {
         val h = headerGen.sample.get
         roundtrip[SHeader.type](h, SHeader)
       })
+  }
+
+  property("header vector") {
+    val header = CHeader(
+      0.toByte,
+      Helpers.decodeBytes("7a7fe5347f09017818010062000001807f86808000ff7f66ffb07f7ad27f3362"),
+      Helpers.decodeBytes("c1d70ad9b1ffc1fb9a715fff19807f2401017fcd8b73db017f1cff77727fff08"),
+      Helpers.decodeBytes("54d23dd080006bdb56800100356080935a80ffb77e90b800057f00661601807f17"),
+      Helpers.decodeBytes("5e7f1164ccd0990080c501fc0e0181cb387fc17f00ff00c7d5ff767f91ff5e68"),
+      -7421721754642387858L,
+      -4826493284887861030L,
+      10,
+      Helpers.decodeBytes("e580c88001ff6fc89c5501017f80e001ff0101fe48c153ff7f00666b80d780ab"),
+      Helpers.decodeGroupElement("03e7f2875298fddd933c2e0a38968fe85bdeeb70dd8b389559a1d36e2ff1b58fc5"),
+      Helpers.decodeGroupElement("034e2d3b5f9e409e3ae8a2e768340760362ca33764eda5855f7a43487f14883300"),
+      Helpers.decodeBytes("974651c9efff7f00"),
+      CBigInt(new BigInteger("478e827dfa1e4b57", 16)),
+      Helpers.decodeBytes("01ff13"),
+      Colls.emptyColl
+    )
+
+    VersionContext.withVersions(VersionContext.V6SoftForkVersion, 1) {
+      roundtrip[SHeader.type](header, SHeader)
+    }
   }
 
 }
