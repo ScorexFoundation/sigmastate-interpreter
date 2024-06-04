@@ -6,10 +6,6 @@ import sigma.data.SigmaBoolean
 import sigma.util.Extensions.EcpOps
 
 class Wallet(prover: SigmaProver) {
-  /** Adds a secret key to the prover. */
-  def addSecret(secret: SecretKey): Unit = {
-    prover.addSecret(secret)
-  }
 
   /** Generates commitments for a given `UnreducedTransaction` using the wallets's secret
     * keys and the provided [[BlockchainStateContext]].
@@ -43,15 +39,31 @@ class Wallet(prover: SigmaProver) {
       }
   }
 
-  def signTransaction(tx: UnreducedTransaction,
+  def signTransaction(
+    tx: UnreducedTransaction,
     stateCtx: BlockchainStateContext,
-    hints: Option[TransactionHintsBag]): SignedTransaction = {
+    hints: Option[TransactionHintsBag]
+  ): SignedTransaction = {
     val reducedTx = prover.reduce(stateCtx, tx, baseCost = 0 /* doesn't matter in this method */)
     signReducedTransaction(reducedTx, hints)
   }
 
-  def signReducedTransaction(reducedTx: ReducedTransaction, hints: Option[TransactionHintsBag]): SignedTransaction = {
-     prover.signReduced(reducedTx, hints)
+  /** Reduces a given `UnreducedTransaction` using the wallet's secret keys and the
+    * provided [[BlockchainStateContext]] with a base cost.
+    */
+  def reduce(
+    stateCtx: BlockchainStateContext,
+    tx: UnreducedTransaction,
+    baseCost: Int
+  ): ReducedTransaction = {
+    prover.reduce(stateCtx, tx, baseCost)
+  }
+
+  def signReducedTransaction(
+    reducedTx: ReducedTransaction,
+    hints: Option[TransactionHintsBag]
+  ): SignedTransaction = {
+    prover.signReduced(reducedTx, hints)
   }
 }
 

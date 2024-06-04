@@ -22,11 +22,6 @@ import sigmastate.crypto.SigmaProtocolPrivateInput
 class SigmaProver(var _prover: AppkitProvingInterpreter, networkPrefix: NetworkPrefix) {
   implicit val ergoAddressEncoder: ErgoAddressEncoder = ErgoAddressEncoder(networkPrefix)
 
-  /** Adds a secret key to the prover. */
-  def addSecret(secret: SecretKey): Unit = {
-    _prover = _prover.appendSecret(secret.privateInput)
-  }
-
   /** All secrets available to this interpreter including [[ExtendedSecretKey]], dlog and
     * dht secrets.
     */
@@ -60,15 +55,24 @@ class SigmaProver(var _prover: AppkitProvingInterpreter, networkPrefix: NetworkP
   /** Signs a given `UnreducedTransaction` using the prover's secret keys and the provided [[BlockchainStateContext]].
     * Uses baseCost == 0.
     */
-  def sign(stateCtx: BlockchainStateContext, tx: UnreducedTransaction): SignedTransaction =
-    sign(stateCtx, tx, baseCost = 0)
+  def sign(
+    stateCtx: BlockchainStateContext,
+    tx: UnreducedTransaction,
+    hints: Option[TransactionHintsBag] = None
+  ): SignedTransaction =
+    sign(stateCtx, tx, baseCost = 0, hints)
 
   /** Signs a given `UnreducedTransaction` using the prover's secret keys and the provided [[BlockchainStateContext]].
     * Uses the given baseCost.
     */
-  def sign(stateCtx: BlockchainStateContext, tx: UnreducedTransaction, baseCost: Int): SignedTransaction = {
+  def sign(
+    stateCtx: BlockchainStateContext,
+    tx: UnreducedTransaction,
+    baseCost: Int,
+    hints: Option[TransactionHintsBag]
+  ): SignedTransaction = {
     val signed = _prover
-        .sign(tx, stateContext = stateCtx, baseCost = baseCost)
+        .sign(tx, stateContext = stateCtx, baseCost = baseCost, hints = hints)
         .getOrThrow
     signed
   }
