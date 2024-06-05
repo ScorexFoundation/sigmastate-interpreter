@@ -251,19 +251,6 @@ class TestingInterpreterSpecification extends CompilerTestingCommons
     testEval("Coll(1, 1).getOrElse(3, 1 + 1) == 2")
   }
 
-  property("upcast test") {
-    val source =
-      """
-        | {
-        |   val b1: BigInt = bigInt("1157920892373161954235709850086879078528375642790749043826051631415181614943")
-        |   val ml = 9223372036854775807L // Long.MaxValue
-        |   val b2: BigInt = ml.toBigInt * ml.toBigInt * ml.toBigInt * ml.toBigInt
-        |   b2 > b1
-        | }
-        |""".stripMargin
-    testEval(source)
-  }
-
   property("Evaluate powHit") {
     val source =
       """

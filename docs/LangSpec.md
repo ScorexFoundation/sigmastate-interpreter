@@ -995,12 +995,6 @@ def bigInt(input: String): BigInt
   * It is a compile-time operation and only string literal (constant) can be its
   * argument.
   */
-def bigInt(input: String): BigInt
-
-/** Transforms Base16 encoded string literal into constant of type Coll[Byte].
-  * It is a compile-time operation and only string literal (constant) can be its
-  * argument.
-  */
 def fromBase16(input: String): Coll[Byte]
 
 /** Transforms Base58 encoded string literal into constant of type Coll[Byte].
