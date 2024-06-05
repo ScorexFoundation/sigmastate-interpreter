@@ -182,7 +182,7 @@ class ReducingInterpreter(params: BlockchainParameters) extends ErgoLikeInterpre
   def reduceTransactionInput(
       unreducedTx: UnreducedTransaction,
       inputIdx: Int,
-      stateContext: BlockchainStateContext,
+      stateContext: BlockchainStateContext
   ): ReducedInputData = {
     validateTransaction(unreducedTx)
     val unsignedTx = unreducedTx.unsignedTx
