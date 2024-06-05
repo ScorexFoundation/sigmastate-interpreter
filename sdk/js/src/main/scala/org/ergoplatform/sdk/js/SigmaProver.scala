@@ -63,6 +63,36 @@ class SigmaProver(_prover: sdk.SigmaProver) extends js.Object {
     new ReducedTransaction(reducedTx)
   }
 
+  /** Reduces the given input of transaction to the reduced form, which is ready to be
+    * used for signing.
+    *
+    * @param stateCtx     blockchain state context
+    * @param unsignedTx   unsigned transaction to be reduced (created by Fleet builders)
+    * @param boxesToSpend boxes to be spent by the transaction
+    * @param dataInputs   data inputs to be used by the transaction
+    * @param tokensToBurn tokens to be burned by the transaction
+    * @param inputIdx     index of the input to reduce
+    * @return reduced input data (reduction result, extension)
+    */
+  def reduceTransactionInput(
+    stateCtx: BlockchainStateContext,
+    unsignedTx: transactionsMod.UnsignedTransaction,
+    boxesToSpend: js.Array[inputsMod.EIP12UnsignedInput],
+    dataInputs: js.Array[boxesMod.Box[commonMod.Amount, NonMandatoryRegisters]],
+    tokensToBurn: js.Array[tokenMod.TokenAmount[commonMod.Amount]],
+    inputIdx: Int
+  ): ReducedInputData = {
+    val unreducedTx = sdk.UnreducedTransaction(
+      unsignedTx = isoUnsignedTransaction.to(unsignedTx),
+      boxesToSpend = sigma.js.Isos.isoArrayToIndexed(isoEIP12UnsignedInput).to(boxesToSpend),
+      dataInputs = sigma.js.Isos.isoArrayToIndexed(sigma.js.Box.isoBox).to(dataInputs),
+      tokensToBurn = sigma.js.Isos.isoArrayToIndexed(sigma.data.js.Isos.isoToken.andThen(sdk.SdkIsos.isoErgoTokenToPair.inverse)).to(tokensToBurn)
+    )
+    val ctx         = isoBlockchainStateContext.to(stateCtx)
+    val reducedInput = _prover.reduceTransactionInput(ctx, unreducedTx, inputIdx)
+    ReducedInputData.isoToSdk.from(reducedInput)
+  }
+
   /** Signs the reduced transaction.
     * @param reducedTx reduced transaction to be signed
     * @return signed transaction containting all the required proofs (signatures)
@@ -77,7 +107,7 @@ class SigmaProver(_prover: sdk.SigmaProver) extends js.Object {
     * All the necessary secrets should be configured in this prover to satisfy the given
     * sigma proposition in the reducedInput.
     */
-  def signReduced(
+  def signReducedInput(
     reducedInput: ReducedInputData,
     messageHex: String,
     hintsBag: UndefOr[ProverHints]

@@ -97,6 +97,15 @@ class SigmaProver(var _prover: AppkitProvingInterpreter, networkPrefix: NetworkP
     reduced
   }
 
+  /** Reduces a given input of the given `UnreducedTransaction` using the prover's secret
+    * keys and the provided [[BlockchainStateContext]] with a base cost.
+    */
+  def reduceTransactionInput(stateCtx: BlockchainStateContext, tx: UnreducedTransaction, inputIdx: Int): ReducedInputData = {
+    val inputData = _prover.reduceTransactionInput(
+      unreducedTx = tx, inputIdx, stateContext = stateCtx)
+    inputData
+  }
+
   /** Signs a given ReducedTransaction using the prover's secret keys. */
   def signReduced(tx: ReducedTransaction, hints: Option[TransactionHintsBag] = None): SignedTransaction = {
     _prover.signReduced(tx, tx.ergoTx.cost, hints)
