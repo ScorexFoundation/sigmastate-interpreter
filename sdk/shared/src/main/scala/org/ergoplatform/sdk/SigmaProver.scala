@@ -5,6 +5,7 @@ import org.ergoplatform._
 import org.ergoplatform.sdk.wallet.protocol.context.BlockchainStateContext
 import sigma.data.{CSigmaDslBuilder, SigmaBoolean, SigmaLeaf}
 import sigma.eval.SigmaDsl
+import sigma.interpreter.ProverResult
 import sigmastate.interpreter.HintsBag
 import sigmastate.utils.Helpers.TryOps
 import sigma.{BigInt, SigmaProp}
@@ -99,6 +100,17 @@ class SigmaProver(var _prover: AppkitProvingInterpreter, networkPrefix: NetworkP
   /** Signs a given ReducedTransaction using the prover's secret keys. */
   def signReduced(tx: ReducedTransaction, hints: Option[TransactionHintsBag] = None): SignedTransaction = {
     _prover.signReduced(tx, tx.ergoTx.cost, hints)
+  }
+
+  /** Generates proof (aka signature) for the given message using secrets of this prover.
+    * All the necessary secrets should be configured in this prover to satisfy the given
+    * sigma proposition in the reducedInput.
+    */
+  def signReduced(
+    reducedInput: ReducedInputData,
+    message: Array[Byte],
+    hintsBag: Option[HintsBag]): ProverResult = {
+    _prover.proveReduced(reducedInput, message, hintsBag.getOrElse(HintsBag.empty))
   }
 
   /** Generates commitments for a given sigma proposition. */

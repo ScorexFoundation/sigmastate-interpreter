@@ -1,6 +1,7 @@
 package sigma.js
 
-import sigma.data.{ProveDHTuple, ProveDlog, SigmaBoolean}
+import sigma.data.{CSigmaProp, Iso, ProveDHTuple, ProveDlog, SigmaBoolean}
+import sigma.util.Extensions.SigmaPropOps
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
@@ -31,5 +32,14 @@ object SigmaProp extends js.Object {
   /** Construct a new [[SigmaProp]] value representing public key of Diffie Hellman signature protocol. */
   def dht(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp = {
     new SigmaProp(ProveDHTuple(g.point, h.point, u.point, v.point))
+  }
+
+  val isoToSdk = new Iso[SigmaProp, sigma.SigmaProp] {
+    override def to(a: SigmaProp): sigma.SigmaProp = {
+      CSigmaProp(a.sigmaBoolean)
+    }
+    override def from(b: sigma.SigmaProp): SigmaProp = {
+      new SigmaProp(b.toSigmaBoolean)
+    }
   }
 }

@@ -18,7 +18,8 @@ class TransactionHintsBag(
   val publicHints: MapOfBags
 ) extends js.Object
 
-object TransactionHintsBag {
+@JSExportTopLevel("TransactionHintsBag$")
+object TransactionHintsBag extends js.Object {
   type MapOfBags = NumberDictionary[ProverHints]
 
   val isoMapOfBags: Iso[MapOfBags, sdk.TransactionHintsBag.MapOfBags] = Isos.isoNumberDictionary(ProverHints.isoProverHints)
