@@ -10,7 +10,6 @@ import sigma.ast.syntax.{SValue, ValueOps}
 import sigma.data.OverloadHack.Overloaded1
 import sigma.data.{DataValueComparer, KeyValueColl, Nullable, RType, SigmaConstants}
 import sigma.eval.{CostDetails, ErgoTreeEvaluator, TracedCost}
-import sigma.pow.Autolykos2PowValidation
 import sigma.reflection.RClass
 import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma.utils.SparseArrayContainer
@@ -1457,10 +1456,11 @@ case object SHeaderMethods extends MonoTypeMethods {
   lazy val powDistanceMethod      = propertyCall("powDistance", SBigInt, 14, FixedCost(JitCost(10)))
   lazy val votesMethod            = propertyCall("votes", SByteArray, 15, FixedCost(JitCost(10)))
 
+  // cost of checkPoW is 700 as about 2*32 hashes required, and 1 hash (id) over short data costs 10
   lazy val checkPowMethod = SMethod(
-    this, "checkPow", SFunc(Array(SHeader), SBoolean), 16, GroupGenerator.costKind) // todo: cost
+    this, "checkPow", SFunc(Array(SHeader), SBoolean), 16, FixedCost(JitCost(700)))
     .withIRInfo(MethodCallIrBuilder)
-    .withInfo(Xor, "Byte-wise XOR of two collections of bytes") // todo: desc
+    .withInfo("Validate headers' proof-of-work")
 
   def checkPow_eval(mc: MethodCall, G: SigmaDslBuilder, header: Header)
                  (implicit E: ErgoTreeEvaluator): Boolean = {

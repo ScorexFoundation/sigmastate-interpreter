@@ -10,11 +10,11 @@ import sigma.util.Extensions._
 import debox.{cfor, Buffer => DBuffer}
 import scorex.crypto.authds.ADKey
 import sigma.ast.SAvlTreeMethods._
+import sigma.ast.SHeaderMethods.checkPowMethod
 import sigma.ast.SType
 import sigma.data.{CSigmaProp, KeyValueColl, SigmaBoolean}
 import sigma.eval.{AvlTreeVerifier, ErgoTreeEvaluator, EvalSettings, Profiler}
 import sigma.eval.ErgoTreeEvaluator.DataEnv
-import sigma.pow.Autolykos2PowValidation
 import sigmastate.interpreter.CErgoTreeEvaluator.fixedCostOp
 
 import scala.collection.compat.immutable.ArraySeq
@@ -219,9 +219,7 @@ class CErgoTreeEvaluator(
   }
 
   override def checkPow_eval(mc: MethodCall, header: Header): Boolean = {
-    VersionContext.checkVersions(context.activatedScriptVersion, context.currentErgoTreeVersion)
-    // todo: consider cost
-    val checkPowCostInfo = OperationCostInfo(FixedCost(JitCost(10)), NamedDesc("Header.checkPow"))
+    val checkPowCostInfo = OperationCostInfo(checkPowMethod.costKind.asInstanceOf[FixedCost], NamedDesc("Header.checkPow"))
     fixedCostOp(checkPowCostInfo){
       header.checkPow
     }(this)
