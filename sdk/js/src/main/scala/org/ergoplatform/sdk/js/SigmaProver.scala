@@ -69,4 +69,15 @@ class SigmaProver(_prover: sdk.SigmaProver) extends js.Object {
     val signed = _prover.signReduced(reducedTx._tx, hintsSdk)
     isoSignedTransaction.from(signed.ergoTx)
   }
+
+  /** Generates commitments for a given `ReducedTransaction` using the wallets's secret keys.
+    *
+    * @param reducedTx reduced transaction to generate commitments
+    * @return a secrete and public hints for each input of the transaction
+    */
+  def generateCommitments(reducedTx: ReducedTransaction): TransactionHintsBag = {
+    val bag = _prover.generateCommitments(reducedTx._tx)
+    TransactionHintsBag.isoToSdk.from(bag)
+  }
+
 }

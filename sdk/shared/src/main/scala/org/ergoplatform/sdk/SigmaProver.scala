@@ -104,4 +104,20 @@ class SigmaProver(var _prover: AppkitProvingInterpreter, networkPrefix: NetworkP
   /** Generates commitments for a given sigma proposition. */
   def generateCommitments(sb: SigmaBoolean): HintsBag =
     _prover.generateCommitments(sb)
+
+  /** Generates commitments for a given `ReducedTransaction` using the prover's secret keys.
+    *
+    * @param reducedTx reduced transaction to generate commitments
+    * @return a secrete and public hints for each input of the transaction
+    */
+  def generateCommitments(reducedTx: ReducedTransaction): TransactionHintsBag = {
+    val publicKeys: Seq[SigmaBoolean] = secrets.map(_.publicImage)
+    reducedTx.ergoTx.reducedInputs
+      .zipWithIndex
+      .foldLeft(TransactionHintsBag.empty) { case (bag, (input, idx)) =>
+        val hints = _prover.generateCommitmentsFor(input.reductionResult.value, publicKeys)
+        bag.addHintsForInput(idx, hints)
+      }
+  }
+
 }

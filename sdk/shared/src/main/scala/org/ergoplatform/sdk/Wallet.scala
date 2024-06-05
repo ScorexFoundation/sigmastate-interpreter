@@ -30,13 +30,7 @@ class Wallet(prover: SigmaProver) {
     * @return a secrete and public hints for each input of the transaction
     */
   def generateCommitments(reducedTx: ReducedTransaction): TransactionHintsBag = {
-    val publicKeys: Seq[SigmaBoolean] = prover.secrets.map(_.publicImage)
-    reducedTx.ergoTx.reducedInputs
-      .zipWithIndex
-      .foldLeft(TransactionHintsBag.empty) { case (bag, (input, idx)) =>
-        val hints = prover._prover.generateCommitmentsFor(input.reductionResult.value, publicKeys)
-        bag.addHintsForInput(idx, hints)
-      }
+    prover.generateCommitments(reducedTx)
   }
 
   def signTransaction(

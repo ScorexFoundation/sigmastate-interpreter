@@ -8,6 +8,7 @@ declare module "sigmastate-js/main" {
     } from "@fleet-sdk/common";
 
     type SigmaCompilerNamedConstantsMap = { [key: string]: Value };
+    type MapOfBags = { [key: number]: ProverHints };
     type HexString = string;
     type ByteArray = { u: Int8Array };
 
@@ -352,6 +353,11 @@ declare module "sigmastate-js/main" {
         empty(): ProverHints
     }
 
+    class TransactionHintsBag {
+        secretHints: MapOfBags
+        publicHints: MapOfBags
+    }
+
     /** Represents one secret (aka SigmaProtocolPrivateInput) used by [[SigmaPropProver]]. */
     export declare class ProverSecret {
         /** Public key generated from the secret.
@@ -512,7 +518,14 @@ declare module "sigmastate-js/main" {
          * @param reducedTx reduced transaction to be signed
          * @return signed transaction containting all the required proofs (signatures)
          */
-        signReduced(reducedTx: ReducedTransaction): SignedTransaction;
+        signReduced(reducedTx: ReducedTransaction, hints: undefined | TransactionHintsBag): SignedTransaction;
+
+        /** Generates commitments for a given `ReducedTransaction` using the wallets's secret keys.
+         *
+         * @param reducedTx reduced transaction to generate commitments
+         * @return a secrete and public hints for each input of the transaction
+         */
+        generateCommitments(reducedTx: ReducedTransaction): TransactionHintsBag
     }
 
     /** Equivalent of [[sdk.ProverBuilder]] available from JS.
