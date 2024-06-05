@@ -1,13 +1,15 @@
 package sigma.pow
 
 
-import org.bouncycastle.util.BigIntegers
 import scorex.crypto.hash.Blake2b256
 import scorex.utils.{Bytes, Ints, Longs}
 import sigma.Header
-import sigma.crypto.{BcDlogGroup, CryptoConstants}
+import sigma.crypto.{BcDlogGroup, BigIntegers, CryptoConstants}
 import sigma.util.NBitsUtils
 
+/**
+  * Functions used to validate Autolykos2 Proof-of-Work
+  */
 object Autolykos2PowValidation {
 
   type Height = Int

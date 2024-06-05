@@ -13,7 +13,6 @@ import org.scalatest.BeforeAndAfterAll
 import scorex.util.encode.Base58
 import sigma.Colls
 import sigma.VersionContext.V6SoftForkVersion
-import sigma.crypto.CryptoConstants
 import sigma.data.{CAND, CAvlTree, ProveDlog, SigmaBoolean, TrivialProp}
 import sigma.interpreter.ContextExtension
 import sigma.util.Extensions.IntOps
@@ -439,9 +438,6 @@ class TestingInterpreterSpecification extends CompilerTestingCommons
   }
 
   property("checkPow") {
-
-    //todo: check invalid header
-
     val source = """ {
                    |     val h = CONTEXT.headers(0)
                    |      h.checkPow

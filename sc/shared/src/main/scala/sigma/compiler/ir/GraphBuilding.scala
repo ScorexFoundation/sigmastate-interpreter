@@ -13,7 +13,7 @@ import sigma.data.{CSigmaDslBuilder, ExactIntegral, ExactNumeric, ExactOrdering,
 import sigma.exceptions.GraphBuildingException
 import sigma.serialization.OpCodes
 import sigma.util.Extensions.ByteOps
-import sigma.{SigmaException, ast}
+import sigma.{SigmaException, VersionContext, ast}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 
 import scala.collection.mutable.ArrayBuffer

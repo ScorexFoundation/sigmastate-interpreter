@@ -460,10 +460,20 @@ trait Header {
   /** Miner votes for changing system parameters. */
   def votes: Coll[Byte] //3 bytes
 
+  /** Bytes which are coming from future versions of the protocol, so
+    * their meaning is not known to current version of Sigma, but they
+    * are stored to get the same id as future version users.
+    */
   def unparsedBytes: Coll[Byte]
 
+  /**
+    * @return bytes without proof of work, needed for working to get the proof on
+    */
   def serializeWithoutPoW: Coll[Byte]
 
+  /**
+    * @return result of header's proof-of-work validation
+    */
   def checkPow: Boolean
 
 }

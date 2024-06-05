@@ -6,8 +6,6 @@ import scorex.util.{ModifierId, bytesToId, idToBytes}
 import sigma.serialization.{SigmaByteReader, SigmaByteWriter, SigmaSerializer}
 import scorex.util.Extensions._
 
-//todo: unify with Ergo node codebase
-
 /**
   * Header without proof-of-work puzzle solution, see Header class description for details.
   */
@@ -21,7 +19,11 @@ class HeaderWithoutPow(val version:  Byte, // 1 byte
                        val height: Int,
                        val extensionRoot: Digest32,
                        val votes: Array[Byte], //3 bytes
-                       val unparsedBytes: Array[Byte])
+                       val unparsedBytes: Array[Byte]) {
+  def toHeader(powSolution: AutolykosSolution, bytes: Array[Byte]): ErgoHeader =
+    ErgoHeader(version, parentId, ADProofsRoot, stateRoot, transactionsRoot, timestamp,
+      nBits, height, extensionRoot, powSolution, votes, unparsedBytes, bytes)
+}
 
 object HeaderWithoutPow {
 
