@@ -1,10 +1,9 @@
-package sigmastate.eval
+package sigma.data
 
 import org.ergoplatform.{HeaderWithoutPow, HeaderWithoutPowSerializer}
 import scorex.crypto.authds.ADDigest
 import scorex.crypto.hash.Digest32
 import scorex.util.bytesToId
-import sigma.data.SigmaConstants
 import sigma.pow.Autolykos2PowValidation
 import sigma.{AvlTree, BigInt, Coll, Colls, GroupElement, Header}
 
