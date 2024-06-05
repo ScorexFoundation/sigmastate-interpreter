@@ -12,7 +12,7 @@ import scorex.crypto.hash.Digest32
 import scorex.util.ModifierId
 import sigma.Extensions.ArrayOps
 import sigma.ast.{ErgoTree, EvaluatedValue, SType}
-import sigma.data.{AvlTreeData, AvlTreeFlags, CBigInt, Digest32Coll, WrapperOf}
+import sigma.data.{AvlTreeData, AvlTreeFlags, CBigInt, CHeader, Digest32Coll, WrapperOf}
 import sigma.eval.Extensions.EvalIterableOps
 import sigma.eval.SigmaDsl
 import sigma.interpreter.{ContextExtension, ProverResult}
@@ -132,7 +132,6 @@ trait JsonCodecs {
 
   implicit val headerDecoder: Decoder[Header] = Decoder.instance({ cursor =>
     for {
-      id <- cursor.downField("id").as[Coll[Byte]]
       version <- cursor.downField("version").as[Byte]
       parentId <- cursor.downField("parentId").as[Coll[Byte]]
       adProofsRoot <- cursor.downField("adProofsRoot").as[Coll[Byte]]
@@ -148,7 +147,7 @@ trait JsonCodecs {
       powDistance <- cursor.downField("powDistance").as[sigma.BigInt]
       votes <- cursor.downField("votes").as[Coll[Byte]]
       unparsedBytes <- cursor.downField("unparsedBytes").as[Option[Coll[Byte]]]
-    } yield new CHeader(id, version, parentId, adProofsRoot, stateRoot, transactionsRoot, timestamp, nBits,
+    } yield CHeader(version, parentId, adProofsRoot, stateRoot.digest, transactionsRoot, timestamp, nBits,
       height, extensionRoot, SigmaDsl.decodePoint(minerPk), SigmaDsl.decodePoint(powOnetimePk), powNonce, powDistance,
       votes, unparsedBytes.getOrElse(Colls.emptyColl))
   })
