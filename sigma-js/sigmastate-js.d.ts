@@ -1,11 +1,11 @@
 declare module "sigmastate-js/main" {
     import {
-        Amount,
-        Box as FBox,
-        EIP12UnsignedInput,
-        NonMandatoryRegisters, SignedTransaction, TokenAmount,
-        UnsignedTransaction
-    } from "@fleet-sdk/common";
+    Amount,
+    Box as FBox, ContextExtension,
+    EIP12UnsignedInput,
+    NonMandatoryRegisters, ProverResult, SignedTransaction, TokenAmount,
+    UnsignedTransaction
+} from "@fleet-sdk/common";
 
     type SigmaCompilerNamedConstantsMap = { [key: string]: Value };
     type MapOfBags = { [key: number]: ProverHints };
@@ -480,6 +480,16 @@ declare module "sigmastate-js/main" {
         int8ArrayToHex(arr: Int8Array): string
     }
 
+    export declare class ReductionResult {
+       value: SigmaProp
+       cost: number
+    }
+
+    export declare class ReducedInputData {
+        reductionResult: ReductionResult;
+        extension: ContextExtension;
+    }
+
     /** Represents a prover for signing Ergo transactions and messages.
      *
      * Equivalent of [[org.ergoplatform.sdk.SigmaProver]] available from JS.
@@ -514,11 +524,40 @@ declare module "sigmastate-js/main" {
             tokensToBurn: TokenAmount<Amount>[],
             baseCost: number): ReducedTransaction;
 
+        /** Reduces the given input of transaction to the reduced form, which is ready to be
+         * used for signing.
+         *
+         * @param stateCtx     blockchain state context
+         * @param unsignedTx   unsigned transaction to be reduced (created by Fleet builders)
+         * @param boxesToSpend boxes to be spent by the transaction
+         * @param dataInputs   data inputs to be used by the transaction
+         * @param tokensToBurn tokens to be burned by the transaction
+         * @param inputIdx     index of the input to reduce
+         * @return reduced input data (reduction result, extension)
+         */
+        reduceTransactionInput(
+            stateCtx: BlockchainStateContext,
+            unsignedTx: UnsignedTransaction,
+            boxesToSpend: EIP12UnsignedInput[],
+            dataInputs: FBox<Amount, NonMandatoryRegisters>[],
+            tokensToBurn: TokenAmount<Amount>[],
+            inputIdx: number): ReducedInputData;
+
         /** Signs the reduced transaction.
          * @param reducedTx reduced transaction to be signed
          * @return signed transaction containting all the required proofs (signatures)
          */
         signReduced(reducedTx: ReducedTransaction, hints: undefined | TransactionHintsBag): SignedTransaction;
+
+        /** Generates proof (aka signature) for the given message using secrets of this prover.
+         * All the necessary secrets should be configured in this prover to satisfy the given
+         * sigma proposition in the reducedInput.
+         */
+        signReducedInput(
+            reducedInput: ReducedInputData,
+            messageHex: String,
+            hintsBag: undefined | ProverHints
+        ): ProverResult
 
         /** Generates commitments for a given `ReducedTransaction` using the wallets's secret keys.
          *
