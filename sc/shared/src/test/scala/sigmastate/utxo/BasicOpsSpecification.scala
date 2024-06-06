@@ -2,7 +2,6 @@ package sigmastate.utxo
 
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, R6, R8}
 import org.ergoplatform._
-import scorex.util.encode.Base16
 import sigma.Extensions.ArrayOps
 import sigma.SigmaTestingData
 import sigma.VersionContext.V6SoftForkVersion
@@ -159,6 +158,23 @@ class BasicOpsSpecification extends CompilerTestingCommons
         reg1 -> UnitConstant.instance
       ))
     )
+  }
+
+  property("serialize - byte array") {
+    def deserTest() = test("serialize", env, ext,
+      s"""{
+            val ba = fromBase16("c0ffee");
+            Global.serialize(ba).size > ba.size
+          }""",
+      null,
+      true
+    )
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an [sigma.exceptions.TyperException] should be thrownBy deserTest()
+    } else {
+      deserTest()
+    }
   }
 
   property("serialize - collection of boxes") {
