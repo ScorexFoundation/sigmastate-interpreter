@@ -1,7 +1,6 @@
 package sigma.ast
 
 import org.ergoplatform._
-import org.ergoplatform.validation.ValidationRules.CheckMinimalErgoTreeVersion
 import org.ergoplatform.validation._
 import sigma._
 import sigma.ast.SCollection.{SBooleanArray, SBoxArray, SByteArray, SByteArray2, SHeaderArray}
@@ -1543,37 +1542,9 @@ case object SGlobalMethods extends MonoTypeMethods {
     Xor.xorWithCosting(ls, rs)
   }
 
-  lazy val serializeMethod = SMethod(this, "serialize",
-    SFunc(Array(SGlobal, tT), SByteArray, Array(paramT)), 3, DynamicCost)
-      .withIRInfo(MethodCallIrBuilder)
-      .withInfo(MethodCall, "",
-        ArgInfo("value", "value to be serialized"))
-
-
-  /** Implements evaluation of Global.serialize method call ErgoTree node.
-    * Called via reflection based on naming convention.
-    * @see SMethod.evalMethod
-    */
-  def serialize_eval(mc: MethodCall, G: SigmaDslBuilder, value: SType#WrappedType)
-      (implicit E: ErgoTreeEvaluator): Coll[Byte] = {
-    // TODO v6.0: accumulate cost
-    val t = Evaluation.stypeToRType(mc.args(0).tpe)
-    G.serialize(value)(t)
-  }
-
-  protected override def getMethods() = super.getMethods() ++ {
-    if (VersionContext.current.isV6SoftForkActivated) {
-      Seq(
-        groupGeneratorMethod,
-        xorMethod,
-        serializeMethod
-      )
-    } else {
-      Seq(
-        groupGeneratorMethod,
-        xorMethod
-      )
-    }
-  }
+  protected override def getMethods() = super.getMethods() ++ Seq(
+    groupGeneratorMethod,
+    xorMethod
+  )
 }
 

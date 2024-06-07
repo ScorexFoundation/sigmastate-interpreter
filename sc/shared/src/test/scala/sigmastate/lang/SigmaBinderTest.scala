@@ -213,15 +213,4 @@ class SigmaBinderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Mat
     e.source shouldBe Some(SourceContext(2, 5, "val x = 10"))
   }
 
-  property("predefined `serialize` should be transformed to MethodCall") {
-    runWithVersion(VersionContext.V6SoftForkVersion) {
-      checkBound(env, "serialize(1)",
-        MethodCall.typed[Value[SCollection[SByte.type]]](
-          Global,
-          SGlobalMethods.getMethodByName("serialize").withConcreteTypes(Map(STypeVar("T") -> SInt)),
-          Array(IntConstant(1)),
-          Map()
-        ))
-    }
-  }
 }
