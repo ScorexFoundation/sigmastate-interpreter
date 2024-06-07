@@ -430,8 +430,7 @@ object SigmaPredef {
       AvlTreeFunc,
       SubstConstantsFunc,
       ExecuteFromVarFunc,
-      ExecuteFromSelfRegFunc,
-      SerializeFunc
+      ExecuteFromSelfRegFunc
     ).map(f => f.name -> f).toMap
 
     def comparisonOp(symbolName: String, opDesc: ValueCompanion, desc: String, args: Seq[ArgInfo]) = {
