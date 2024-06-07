@@ -621,7 +621,8 @@ object STypeApply {
 /** Type description of optional values. Instances of `Option`
   *  are either constructed by `Some` or by `None` constructors. */
 case class SOption[ElemType <: SType](elemType: ElemType) extends SProduct with SGenericType {
-  override type WrappedType = Option[ElemType#WrappedType]
+  type ElemWrappedType = ElemType#WrappedType
+  override type WrappedType = Option[ElemWrappedType]
   override val typeCode: TypeCode = SOption.OptionTypeCode
   override def toString = s"Option[$elemType]"
   override def toTermString: String = s"Option[${elemType.toTermString}]"
