@@ -657,6 +657,16 @@ declare module "sigmastate-js/main" {
 
     /** JavaScript class wrapping the Scala [[sigma.ast.Value]]. */
     export declare class Expr {
+        /** Serialize this expression using sigma serializer {@link sigma.serialization.ValueSerializer}. */
+        toBytes(): Int8Array
+    }
+
+    export declare class Expr$ {
+        /**
+         * Deserialize an expression from bytes using sigma serializer  {@link sigma.serialization.ValueSerializer}.
+         * This is reverse operation of {@link Expr.toBytes}.
+         */
+        fromBytes(bytes: Int8Array): Expr
     }
 
     /**
