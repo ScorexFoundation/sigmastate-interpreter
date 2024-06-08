@@ -174,6 +174,19 @@ declare module "sigmastate-js/main" {
         valueLengthOpt: number | undefined;
     }
 
+    export declare class AvlTree$ {
+        /** Size of the digest in bytes = hash size + 1 byte for the tree height */
+        DigestSize: number
+
+        /**
+         * Creates an {@link AvlTree} instance.
+         *
+         * @param digestHex A hexadecimal string representing the digest of the {@link AvlTree}.
+         * @returns An AvlTree instance with the specified digest and all operations (insert, update, remove) enabled.
+         */
+        fromDigest(digestHex: HexString): AvlTree
+    }
+
     export declare class Box {
         box: FBox<Amount, NonMandatoryRegisters>;
     }

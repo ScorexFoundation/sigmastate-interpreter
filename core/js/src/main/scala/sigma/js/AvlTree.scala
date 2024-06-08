@@ -24,7 +24,15 @@ class AvlTree(
 @JSExportTopLevel("AvlTree$")
 object AvlTree extends js.Object {
 
-  /** Creates [[AvlTree]] with the given digest and all operations enabled. */
+  /** Size of the digest in bytes = hash size + 1 byte for the tree height */
+  val DigestSize: Int = AvlTreeData.DigestSize
+
+  /**
+    * Creates an [[AvlTree]] instance.
+    *
+    * @param digestHex A hexadecimal string representing the digest of the [[AvlTree]].
+    * @returns An AvlTree instance with the specified digest and all operations (insert, update, remove) enabled.
+    */
   def fromDigest(digestHex: HexString): AvlTree = {
     val digestBytes = Base16.decode(digestHex).getOrThrow.toColl
     val treeData = AvlTreeData.avlTreeFromDigest(digestBytes)
