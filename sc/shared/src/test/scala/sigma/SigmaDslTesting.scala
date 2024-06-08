@@ -12,7 +12,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import scalan.Platform.threadSleepOrNoOp
-import sigma.Extensions.ArrayOps
+import sigma.Extensions.{ArrayOps, TryOps}
 import sigma.data.{CBox, CollType, OptionType, PairType, ProveDlog, RType, SigmaLeaf}
 import sigma.util.BenchmarkUtil
 import sigma.util.CollectionUtil._

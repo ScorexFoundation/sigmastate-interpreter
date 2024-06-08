@@ -12,6 +12,7 @@ import sigma.serialization.SerializerException
 import sigma.validation.ValidationRules.{CheckPrimitiveTypeCode, CheckSerializableTypeCode, CheckTypeCode, CheckTypeWithMethods, trySoftForkable}
 import sigma.validation.{ChangedRule, ReplacedRule, SigmaValidationSettings, ValidationException, ValidationRule}
 import ErgoTree.{EmptyConstants, HeaderType, ZeroHeader, setSizeBit}
+import sigma.Extensions.TryOps
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}

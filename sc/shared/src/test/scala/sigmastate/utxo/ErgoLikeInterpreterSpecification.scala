@@ -5,6 +5,7 @@ import org.ergoplatform.ErgoBox.R4
 import org.ergoplatform._
 import org.scalatest.TryValues._
 import scorex.crypto.hash.Blake2b256
+import sigma.Extensions.TryOps
 import sigma.ast.SCollection.SByteArray
 import sigma.ast._
 import sigmastate._

@@ -2,26 +2,24 @@ package sigma
 
 import org.ergoplatform.settings.ErgoAlgos
 import org.ergoplatform.{ErgoAddressEncoder, ErgoBox, ErgoLikeContext}
+import sigma.Extensions.TryOps
 import sigma.VersionContext._
+import sigma.ast.ErgoTree.HeaderType
 import sigma.ast.SCollection.SByteArray
 import sigma.ast._
-import sigma.ast.syntax.{SValue, SigmaPropValue, TrueSigmaProp}
-import sigma.data.RType.asType
-import sigma.data.{CBox, Nullable, RType, TrivialProp}
-import sigma.validation.ValidationException
-import sigma.validation.ValidationRules.CheckTypeCode
-import ErgoTree.HeaderType
-import sigmastate.eval.CProfiler
-import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}
-import sigmastate.interpreter.Interpreter.ReductionResult
-import sigmastate.interpreter.CErgoTreeEvaluator
 import sigma.ast.syntax._
 import sigma.compiler.CompilerSettings
+import sigma.data.RType.asType
+import sigma.data.{Nullable, RType, TrivialProp}
 import sigma.eval.EvalSettings
 import sigma.exceptions.{CostLimitException, InterpreterException}
 import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigma.validation.ValidationException
+import sigma.validation.ValidationRules.CheckTypeCode
 import sigmastate.Plus
-import sigmastate.utils.Helpers.TryOps
+import sigmastate.helpers.{ErgoLikeContextTesting, SigmaPPrint}
+import sigmastate.interpreter.CErgoTreeEvaluator
+import sigmastate.interpreter.Interpreter.ReductionResult
 
 
 /** Regression tests with ErgoTree related test vectors.

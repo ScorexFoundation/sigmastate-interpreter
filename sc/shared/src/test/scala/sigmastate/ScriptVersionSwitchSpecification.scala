@@ -3,6 +3,7 @@ package sigmastate
 import org.ergoplatform.ErgoBox.AdditionalRegisters
 import org.ergoplatform._
 import scorex.util.ModifierId
+import sigma.Extensions.TryOps
 import sigma.VersionContext.MaxSupportedScriptVersion
 import sigma.ast.ErgoTree.{HeaderType, ZeroHeader, setConstantSegregation, setVersionBits}
 import sigma.ast._

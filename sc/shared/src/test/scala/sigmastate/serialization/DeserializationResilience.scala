@@ -15,7 +15,7 @@ import sigma.{Colls, Environment}
 import sigma.ast._
 import sigma.ast.syntax._
 import sigmastate._
-import sigma.Extensions.ArrayOps
+import sigma.Extensions.{ArrayOps, TryOps}
 import sigma.eval.Extensions.SigmaBooleanOps
 import sigma.eval.SigmaDsl
 import sigma.interpreter.{ContextExtension, CostedProverResult}

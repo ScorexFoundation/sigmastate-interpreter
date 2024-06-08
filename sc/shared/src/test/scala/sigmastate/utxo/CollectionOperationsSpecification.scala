@@ -9,6 +9,7 @@ import org.ergoplatform._
 import sigma.ast.SCollection._
 import sigma.data.AvlTreeData
 import SCollectionMethods.{FlatMapMethod, IndexOfMethod, IndicesMethod, PatchMethod, UpdateManyMethod, UpdatedMethod}
+import sigma.Extensions.TryOps
 import sigma.ast
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigma.serialization.OpCodes._

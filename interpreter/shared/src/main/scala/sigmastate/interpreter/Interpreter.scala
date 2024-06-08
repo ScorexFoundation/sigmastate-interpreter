@@ -3,6 +3,7 @@ package sigmastate.interpreter
 import debox.cfor
 import org.ergoplatform.ErgoLikeContext
 import org.ergoplatform.validation.ValidationRules._
+import sigma.Extensions.TryOps
 import sigma.VersionContext
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.syntax._

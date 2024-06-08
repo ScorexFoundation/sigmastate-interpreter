@@ -3,11 +3,11 @@ package org.ergoplatform.sdk
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform._
 import org.ergoplatform.sdk.wallet.protocol.context.BlockchainStateContext
+import sigma.Extensions.TryOps
 import sigma.data.{CSigmaDslBuilder, SigmaBoolean, SigmaLeaf}
 import sigma.eval.SigmaDsl
 import sigma.interpreter.ProverResult
 import sigmastate.interpreter.HintsBag
-import sigmastate.utils.Helpers.TryOps
 import sigma.{BigInt, SigmaProp}
 import sigmastate.crypto.SigmaProtocolPrivateInput
 
