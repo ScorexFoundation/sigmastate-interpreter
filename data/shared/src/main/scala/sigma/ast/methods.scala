@@ -364,6 +364,11 @@ case object SGroupElementMethods extends MonoTypeMethods {
       "Exponentiate this \\lst{GroupElement} to the given number. Returns this to the power of k",
       ArgInfo("k", "The power"))
 
+  lazy val ExponentiateUnsignedMethod: SMethod = SMethod(
+    this, "expUnsigned", SFunc(Array(this.ownerType, SUnsignedBigInt), this.ownerType), 6, Exponentiate.costKind) // todo: recheck costing
+    .withInfo("Exponentiate this \\lst{GroupElement} to the given number. Returns this to the power of k",
+      ArgInfo("k", "The power"))
+
   lazy val MultiplyMethod: SMethod = SMethod(
     this, "multiply", SFunc(Array(this.ownerType, SGroupElement), this.ownerType), 4, MultiplyGroup.costKind)
     .withIRInfo({ case (builder, obj, _, Seq(arg), _) =>
@@ -379,16 +384,27 @@ case object SGroupElementMethods extends MonoTypeMethods {
     .withIRInfo(MethodCallIrBuilder)
     .withInfo(PropertyCall, "Inverse element of the group.")
 
-  protected override def getMethods(): Seq[SMethod] = super.getMethods() ++ Seq(
+  protected override def getMethods(): Seq[SMethod] = {
     /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
     SMethod(this, "isIdentity", SFunc(this, SBoolean),   1)
         .withInfo(PropertyCall, "Checks if this value is identity element of the eliptic curve group."),
     */
-    GetEncodedMethod,
-    ExponentiateMethod,
-    MultiplyMethod,
-    NegateMethod
-  )
+    val v5Methods = Seq(
+      GetEncodedMethod,
+      ExponentiateMethod,
+      MultiplyMethod,
+      NegateMethod)
+
+    super.getMethods() ++ (if (VersionContext.current.isV6SoftForkActivated) {
+      v5Methods
+    } else {
+      v5Methods ++ Seq(ExponentiateUnsignedMethod)
+    })
+  }
+
+  def expUnsigned_eval(mc: MethodCall, power: UnsignedBigInt)(implicit E: ErgoTreeEvaluator): GroupElement = {
+    ???
+  }
 }
 
 /** Methods of type `SigmaProp` which represent sigma-protocol propositions. */

@@ -168,6 +168,11 @@ class SigmaTyper(val builder: SigmaBuilder,
     case app @ Apply(sel @ Select(obj, n, _), args) =>
       val newSel = assignType(env, sel)
       val newArgs = args.map(assignType(env, _))
+      if(n=="expUnsigned") {
+        println(app)
+        println("newSel: " + newSel)
+        println("newArgs: " + newArgs)
+      }
       newSel.tpe match {
         case genFunTpe @ SFunc(argTypes, _, _) =>
           // If it's a function then the application has type of that function's return type.

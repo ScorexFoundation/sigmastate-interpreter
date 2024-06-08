@@ -286,6 +286,9 @@ object ReflectionData {
         mkMethod(clazz, "exp", Array[Class[_]](classOf[BigInt])) { (obj, args) =>
           obj.asInstanceOf[GroupElement].exp(args(0).asInstanceOf[BigInt])
         },
+        mkMethod(clazz, "expUnsigned", Array[Class[_]](classOf[UnsignedBigInt])) { (obj, args) =>
+          obj.asInstanceOf[GroupElement].expUnsigned(args(0).asInstanceOf[UnsignedBigInt])
+        },
         mkMethod(clazz, "multiply", Array[Class[_]](classOf[GroupElement])) { (obj, args) =>
           obj.asInstanceOf[GroupElement].multiply(args(0).asInstanceOf[GroupElement])
         },

@@ -1024,6 +1024,9 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
             case SGroupElementMethods.ExponentiateMethod.name =>
               val k = asRep[BigInt](argsV(0))
               ge.exp(k)
+            case SGroupElementMethods.ExponentiateUnsignedMethod.name =>
+              val k = asRep[UnsignedBigInt](argsV(0))
+              ge.expUnsigned(k)
             case _ => throwError
           }
           case (box: Ref[Box]@unchecked, SBoxMethods) => method.name match {

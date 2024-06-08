@@ -444,6 +444,13 @@ object GroupElement extends EntityObject("GroupElement") {
         true, false, element[GroupElement]))
     }
 
+    override def expUnsigned(k: Ref[UnsignedBigInt]): Ref[GroupElement] = {
+      asRep[GroupElement](mkMethodCall(self,
+        GroupElementClass.getMethod("expUnsigned", classOf[Sym]),
+        Array[AnyRef](k),
+        true, false, element[GroupElement]))
+    }
+
     override def multiply(that: Ref[GroupElement]): Ref[GroupElement] = {
       asRep[GroupElement](mkMethodCall(self,
         GroupElementClass.getMethod("multiply", classOf[Sym]),
@@ -487,6 +494,13 @@ object GroupElement extends EntityObject("GroupElement") {
     def exp(k: Ref[BigInt]): Ref[GroupElement] = {
       asRep[GroupElement](mkMethodCall(source,
         GroupElementClass.getMethod("exp", classOf[Sym]),
+        Array[AnyRef](k),
+        true, true, element[GroupElement]))
+    }
+
+    def expUnsigned(k: Ref[UnsignedBigInt]): Ref[GroupElement] = {
+      asRep[GroupElement](mkMethodCall(source,
+        GroupElementClass.getMethod("expUnsigned", classOf[Sym]),
         Array[AnyRef](k),
         true, true, element[GroupElement]))
     }

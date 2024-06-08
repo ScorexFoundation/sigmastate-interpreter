@@ -298,6 +298,8 @@ trait GroupElement {
     */
   def exp(k: BigInt): GroupElement
 
+  def expUnsigned(k: UnsignedBigInt): GroupElement
+
   /** Group operation. */
   def multiply(that: GroupElement): GroupElement
 

@@ -25,6 +25,7 @@ import scalan._
     };
     trait GroupElement extends Def[GroupElement] {
       def exp(k: Ref[BigInt]): Ref[GroupElement];
+      def expUnsigned(k: Ref[UnsignedBigInt]): Ref[GroupElement];
       def multiply(that: Ref[GroupElement]): Ref[GroupElement];
       def negate: Ref[GroupElement];
       def getEncoded: Ref[Coll[Byte]]
