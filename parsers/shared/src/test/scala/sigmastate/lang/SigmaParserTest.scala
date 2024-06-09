@@ -14,6 +14,7 @@ import SigmaPredef.PredefinedFuncRegistry
 import sigma.ast.syntax._
 import sigmastate.lang.parsers.ParserException
 import sigma.serialization.OpCodes
+import sigmastate.helpers.SigmaPPrint
 
 class SigmaParserTest extends AnyPropSpec with ScalaCheckPropertyChecks with Matchers with LangTests {
   import StdSigmaBuilder._
@@ -32,6 +33,17 @@ class SigmaParserTest extends AnyPropSpec with ScalaCheckPropertyChecks with Mat
         println(s"\nTRACE: ${traced.msg}")
         f.get // force show error diagnostics
     }
+  }
+
+  /** Checks parsing result, printing the actual value as a test vector if expected value
+    * is not equal to actual.
+    */
+  def checkParsed(x: String, expected: SValue) = {
+    val parsed = parse(x)
+    if (expected != parsed) {
+      SigmaPPrint.pprintln(parsed, width = 100)
+    }
+    parsed shouldBe expected
   }
 
   def parseWithException(x: String): SValue = {
@@ -613,6 +625,11 @@ class SigmaParserTest extends AnyPropSpec with ScalaCheckPropertyChecks with Mat
   property("string concat") {
     parse(""" "hello" + "hello" """) shouldBe
       MethodCallLike(StringConstant("hello"), "+", IndexedSeq(StringConstant("hello")))
+  }
+
+  property("bigInt string decoding") {
+    parse("""bigInt("32667486267383620946248345338628674027033885928301927616853987602485119134400")""") shouldBe
+      Apply(BigIntFromStringFunc.symNoType, IndexedSeq(StringConstant("32667486267383620946248345338628674027033885928301927616853987602485119134400")))
   }
 
   property("fromBaseX string decoding") {

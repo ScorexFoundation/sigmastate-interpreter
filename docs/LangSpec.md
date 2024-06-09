@@ -985,6 +985,12 @@ def proveDHTuple(g: GroupElement, h: GroupElement,
   */
 def proveDlog(value: GroupElement): SigmaProp
 
+/** Transforms Base16 encoded string literal into constant of type BigInt.
+  * It is a compile-time operation and only string literal (constant) can be its
+  * argument.
+  */
+def bigInt(input: String): BigInt
+
 /** Transforms Base16 encoded string literal into constant of type Coll[Byte].
   * It is a compile-time operation and only string literal (constant) can be its
   * argument.

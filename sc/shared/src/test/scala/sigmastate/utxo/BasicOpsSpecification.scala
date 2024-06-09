@@ -5,7 +5,7 @@ import org.ergoplatform._
 import sigma.Extensions.ArrayOps
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.SType.AnyOps
-import sigma.data.{AvlTreeData, CAnyValue}
+import sigma.data.{AvlTreeData, CAnyValue, CSigmaDslBuilder}
 import sigma.util.StringUtil._
 import sigma.ast._
 import sigma.ast.syntax._
@@ -339,7 +339,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
     })
 
     val dataVar = (lastExtVar + 1).toByte
-    val Colls = IR.sigmaDslBuilderValue.Colls
+    val Colls = CSigmaDslBuilder.Colls
     implicit val eAny = sigma.AnyType
     val data = Colls.fromItems((Array[Byte](1,2,3).toColl, 10L))
     val env1 = env + ("dataVar" -> CAnyValue(dataVar))

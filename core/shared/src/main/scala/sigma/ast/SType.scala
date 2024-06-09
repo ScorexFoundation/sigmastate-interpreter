@@ -94,7 +94,6 @@ object SType {
   val paramOV = STypeParam(tOV)
   val paramIVSeq: Seq[STypeParam] = Array(paramIV)
 
-  val IndexedSeqOfT1: IndexedSeq[SType] = Array(SType.tT)
   val IndexedSeqOfT2: IndexedSeq[SType] = Array(SType.tT, SType.tT)
 
   /** Immutable empty array, can be used to avoid repeated allocations. */
@@ -146,7 +145,7 @@ object SType {
     * 2) `isValueOfType == true` for each tree leaf
     * 3) `isValueOfType == true` for each sub-expression
     *
-    * @param value value to check type
+    * @param x value to check type
     * @param tpe   type descriptor to check value against
     * @return true if the given `value` is of type tpe`
     */
@@ -603,7 +602,8 @@ object STypeApply {
 /** Type description of optional values. Instances of `Option`
   *  are either constructed by `Some` or by `None` constructors. */
 case class SOption[ElemType <: SType](elemType: ElemType) extends SProduct with SGenericType {
-  override type WrappedType = Option[ElemType#WrappedType]
+  type ElemWrappedType = ElemType#WrappedType
+  override type WrappedType = Option[ElemWrappedType]
   override val typeCode: TypeCode = SOption.OptionTypeCode
   override def toString = s"Option[$elemType]"
   override def toTermString: String = s"Option[${elemType.toTermString}]"
