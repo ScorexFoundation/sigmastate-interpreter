@@ -140,28 +140,21 @@ class BasicOpsSpecification extends CompilerTestingCommons
     flexVerifier.verify(verifyEnv, tree, ctxExt, pr.proof, fakeMessage).get._1 shouldBe true
   }
 
-  property("group order serialization") {
-    val value = SecP256K1Group.q.divide(new BigInteger("2"))
 
-    def deserTest() = {test("big int - q", env, ext,
-      s"{ val b = bigInt(\"${value.toString}\"); b > 1 }",
-      null,
-      true
-    )}
+  property("group order deserialization") {
+    val b = SecP256K1Group.q
 
-    if (activatedVersionInTests < V6SoftForkVersion) {
-      deserTest()
-    } else {
-      deserTest()
-    }
-  }
+    val customExt: Seq[(Byte, EvaluatedValue[_ <: SType])] = Map(
+      0.toByte -> UnsignedBigIntConstant(b)
+    ).toSeq
 
-  property("restoring unsigned 256 bits") {
-    val b = new BigInteger("92805629300808893548929804498612226467505866636839045998233220279839291898608")
-    val ub = new BigInteger(1, b.toByteArray)
-
-    def deserTest() = {test("restoring", env, ext,
-      s"{ val b = unsignedBigInt(\"${ub.toString}\"); b > 1 }",
+    def deserTest() = {test("restoring", env, customExt,
+      s"""{
+         |  val b1 = unsignedBigInt(\"${b.toString}\")
+         |  val b2 = getVar[UnsignedBigInt](0).get
+         |  b1 == b2
+         |}
+         | """.stripMargin,
       null,
       true
     )}
