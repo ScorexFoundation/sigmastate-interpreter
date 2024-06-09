@@ -443,6 +443,10 @@ object ReflectionData {
         },
         mkMethod(clazz, "decodePoint", Array[Class[_]](cColl)) { (obj, args) =>
           obj.asInstanceOf[SigmaDslBuilder].decodePoint(args(0).asInstanceOf[Coll[Byte]])
+        },
+        mkMethod(clazz, "powHit", Array[Class[_]](cColl)) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].powHit(args(0).asInstanceOf[Int], args(1).asInstanceOf[Coll[Byte]],
+            args(2).asInstanceOf[Coll[Byte]], args(3).asInstanceOf[Coll[Byte]], args(4).asInstanceOf[Int])
         }
       )
     )
