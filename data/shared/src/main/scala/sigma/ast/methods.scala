@@ -366,6 +366,7 @@ case object SGroupElementMethods extends MonoTypeMethods {
 
   lazy val ExponentiateUnsignedMethod: SMethod = SMethod(
     this, "expUnsigned", SFunc(Array(this.ownerType, SUnsignedBigInt), this.ownerType), 6, Exponentiate.costKind) // todo: recheck costing
+    .withIRInfo(MethodCallIrBuilder)
     .withInfo("Exponentiate this \\lst{GroupElement} to the given number. Returns this to the power of k",
       ArgInfo("k", "The power"))
 
@@ -396,9 +397,9 @@ case object SGroupElementMethods extends MonoTypeMethods {
       NegateMethod)
 
     super.getMethods() ++ (if (VersionContext.current.isV6SoftForkActivated) {
-      v5Methods
-    } else {
       v5Methods ++ Seq(ExponentiateUnsignedMethod)
+    } else {
+      v5Methods
     })
   }
 

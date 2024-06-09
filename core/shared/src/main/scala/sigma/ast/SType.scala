@@ -105,7 +105,7 @@ object SType {
   /** All pre-defined types should be listed here. Note, NoType is not listed.
     * Should be in sync with sigmastate.lang.Types.predefTypes. */
   val allPredefTypes: Seq[SType] = Array[SType](
-    SBoolean, SByte, SShort, SInt, SLong, SBigInt, SContext,
+    SBoolean, SByte, SShort, SInt, SLong, SBigInt, SUnsignedBigInt, SContext,
     SGlobal, SHeader, SPreHeader, SAvlTree, SGroupElement, SSigmaProp, SString, SBox,
     SUnit, SAny)
 
@@ -220,7 +220,7 @@ trait STypeCompanion {
 
 /** Special type to represent untyped values.
   * Interpreter raises an error when encounter a Value with this type.
-  * All Value nodes with this type should be elimitanted during typing.
+  * All Value nodes with this type should be eliminated during typing.
   * If no specific type can be assigned statically during typing,
   * then either error should be raised or type SAny should be assigned
   * which is interpreted as dynamic typing. */

@@ -56,10 +56,6 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
     case _ @ Apply(ApplyTypes(Ident("Coll", _), Seq(tpe)), args) =>
       Some(mkConcreteCollection(args, tpe))
 
-    // hack to make possible to write g.exp(ubi) for both unsigned and signed big integers
-    case Apply(Select(obj, n, resType), args) if n == "exp" && args(0).isInstanceOf[Value[SUnsignedBigInt.type]] =>
-      Some(Apply(Select(obj, "expUnsigned", resType), args))
-
     // Rule: Coll(...) -->
     case Apply(Ident("Coll", _), args) =>
       val tpe = if (args.isEmpty) NoType else args(0).tpe

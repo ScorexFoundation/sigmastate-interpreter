@@ -251,7 +251,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
     )}
 
     if (activatedVersionInTests < V6SoftForkVersion) {
-      deserTest()
+      an[Exception] should be thrownBy deserTest()
     } else {
       deserTest()
     }
