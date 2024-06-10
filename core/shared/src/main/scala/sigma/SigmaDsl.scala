@@ -727,6 +727,9 @@ trait SigmaDslBuilder {
   /** Construct a new authenticated dictionary with given parameters and tree root digest. */
   def avlTree(operationFlags: Byte, digest: Coll[Byte], keyLength: Int, valueLengthOpt: Option[Int]): AvlTree
 
+  /** Serializes the given `value` into bytes using the default serialization format. */
+  def serialize[T](value: T)(implicit cT: RType[T]): Coll[Byte]
+
   /** Returns a byte-wise XOR of the two collections of bytes. */
   def xor(l: Coll[Byte], r: Coll[Byte]): Coll[Byte]
 }

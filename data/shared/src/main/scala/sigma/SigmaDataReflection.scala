@@ -322,6 +322,11 @@ object SigmaDataReflection {
             args(1).asInstanceOf[SigmaDslBuilder],
             args(2).asInstanceOf[Coll[Byte]],
             args(3).asInstanceOf[Coll[Byte]])(args(4).asInstanceOf[ErgoTreeEvaluator])
+        },
+        mkMethod(clazz, "serialize_eval", Array[Class[_]](classOf[MethodCall], classOf[SigmaDslBuilder], classOf[Object], classOf[ErgoTreeEvaluator])) { (obj, args) =>
+          obj.asInstanceOf[SGlobalMethods.type].serialize_eval(args(0).asInstanceOf[MethodCall],
+            args(1).asInstanceOf[SigmaDslBuilder],
+            args(2).asInstanceOf[SType#WrappedType])(args(3).asInstanceOf[ErgoTreeEvaluator])
         }
       )
     )

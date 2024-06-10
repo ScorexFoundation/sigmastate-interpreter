@@ -155,6 +155,20 @@ object ValidationRules {
     override protected lazy val settings: SigmaValidationSettings = currentSettings
   }
 
+  object CheckMinimalErgoTreeVersion extends ValidationRule(1016,
+    "ErgoTree should have at least required version") with SoftForkWhenReplaced {
+    override protected lazy val settings: SigmaValidationSettings = currentSettings
+
+    final def apply(currentVersion: Byte, minVersion: Byte): Unit = {
+      checkRule()
+      if (currentVersion < minVersion) {
+        throwValidationException(
+          new SigmaException(s"ErgoTree should have at least $minVersion version, but was $currentVersion"),
+          Array(currentVersion, minVersion))
+      }
+    }
+  }
+
   val ruleSpecs: Seq[ValidationRule] = Seq(
     CheckDeserializedScriptType,
     CheckDeserializedScriptIsSigmaProp,
@@ -171,7 +185,8 @@ object ValidationRules {
     CheckHeaderSizeBit,
     CheckCostFuncOperation,
     CheckPositionLimit,
-    CheckLoopLevelInCostFunction
+    CheckLoopLevelInCostFunction,
+    CheckMinimalErgoTreeVersion
   )
 
   /** Validation settings that correspond to the current version of the ErgoScript implementation.
