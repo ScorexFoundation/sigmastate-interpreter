@@ -544,7 +544,7 @@ object SigmaPredef {
 
     val funcs: Map[String, PredefinedFunc] = globalFuncs ++ infixFuncs ++ unaryFuncs
 
-    /** WARNING: This operations are not used in frontend, and should be be used.
+    /** WARNING: This operations are not used in frontend, and should not be used.
       * They are used in SpecGen only the source of metadata for the corresponding ErgoTree nodes.
       */
     val specialFuncs: Map[String, PredefinedFunc] = Seq(

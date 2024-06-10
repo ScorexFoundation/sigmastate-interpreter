@@ -1,10 +1,11 @@
 package sigma
 
 import org.scalatest.BeforeAndAfterAll
-import sigma.ast.JitCost
+import sigma.ast.{Apply, FixedCostItem, FuncValue, GetVar, JitCost, OptionGet, ValUse}
 import sigma.eval.{EvalSettings, Profiler}
 import sigmastate.CompilerCrossVersionProps
 import sigmastate.interpreter.CErgoTreeEvaluator
+
 import scala.util.Success
 
 /** Base class for language test suites (one suite for each language version: 5.0, 6.0, etc.)
@@ -123,4 +124,17 @@ abstract class LanguageSpecificationBase extends SigmaDslTesting
     prepareSamples[(PreHeader, PreHeader)]
     prepareSamples[(Header, Header)]
   }
+
+  ///=====================================================
+  ///         CostDetails shared among test cases
+  ///-----------------------------------------------------
+  val traceBase = Array(
+    FixedCostItem(Apply),
+    FixedCostItem(FuncValue),
+    FixedCostItem(GetVar),
+    FixedCostItem(OptionGet),
+    FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+    FixedCostItem(ValUse)
+  )
+
 }

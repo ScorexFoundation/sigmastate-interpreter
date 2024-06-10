@@ -5,13 +5,15 @@ import org.ergoplatform.validation._
 import sigma._
 import sigma.ast.SCollection.{SBooleanArray, SBoxArray, SByteArray, SByteArray2, SHeaderArray}
 import sigma.ast.SMethod.{MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
-import sigma.ast.SType.TypeCode
+import sigma.ast.SType.{TypeCode, paramT, tT}
 import sigma.ast.syntax.{SValue, ValueOps}
+import sigma.data.ExactIntegral.{ByteIsExactIntegral, IntIsExactIntegral, LongIsExactIntegral, ShortIsExactIntegral}
 import sigma.data.OverloadHack.Overloaded1
 import sigma.data.{DataValueComparer, KeyValueColl, Nullable, RType, SigmaConstants}
 import sigma.eval.{CostDetails, ErgoTreeEvaluator, TracedCost}
 import sigma.reflection.RClass
 import sigma.serialization.CoreByteWriter.ArgInfo
+import sigma.util.Versioned
 import sigma.utils.SparseArrayContainer
 
 import scala.annotation.unused
@@ -156,11 +158,23 @@ trait MonoTypeMethods extends MethodsContainer {
 
 trait SNumericTypeMethods extends MonoTypeMethods {
   import SNumericTypeMethods.tNum
-  protected override def getMethods(): Seq[SMethod] = {
-    super.getMethods() ++ SNumericTypeMethods.methods.map {
-      m => m.copy(stype = applySubst(m.stype, Map(tNum -> this.ownerType)).asFunc)
-    }
-  }
+  private val _getMethods = Versioned({ version =>
+    val subst = Map(tNum -> this.ownerType)
+    val numericMethods = if (version < VersionContext.V6SoftForkVersion)
+      SNumericTypeMethods.methods.map { m =>
+        m.copy(stype = applySubst(m.stype, subst).asFunc )
+      }
+    else
+      SNumericTypeMethods.methods.map { m =>
+        m.copy(
+          objType = this, // associate the method with the concrete numeric type
+          stype = applySubst(m.stype, subst).asFunc
+        )}
+    super.getMethods() ++ numericMethods
+  })
+
+  protected override def getMethods(): Seq[SMethod] =
+    _getMethods.get(VersionContext.current.activatedVersion)
 }
 
 object SNumericTypeMethods extends MethodsContainer {
@@ -216,6 +230,15 @@ object SNumericTypeMethods extends MethodsContainer {
   val ToBytesMethod: SMethod = SMethod(
     this, "toBytes", SFunc(tNum, SByteArray), 6, ToBytes_CostKind)
       .withIRInfo(MethodCallIrBuilder)
+      .withUserDefinedInvoke({ (m: SMethod, obj: Any, _: Array[Any]) =>
+        m.objType match {
+          case SByteMethods => ByteIsExactIntegral.toBigEndianBytes(obj.asInstanceOf[Byte])
+          case SShortMethods => ShortIsExactIntegral.toBigEndianBytes(obj.asInstanceOf[Short])
+          case SIntMethods => IntIsExactIntegral.toBigEndianBytes(obj.asInstanceOf[Int])
+          case SLongMethods => LongIsExactIntegral.toBigEndianBytes(obj.asInstanceOf[Long])
+          case SBigIntMethods => obj.asInstanceOf[BigInt].toBytes
+        }
+      })
       .withInfo(PropertyCall,
         """ Returns a big-endian representation of this numeric value in a collection of bytes.
          | For example, the \lst{Int} value \lst{0x12131415} would yield the
@@ -312,8 +335,8 @@ case object SBigIntMethods extends SNumericTypeMethods {
   final val ToNBitsCostInfo = OperationCostInfo(
     FixedCost(JitCost(5)), NamedDesc("NBitsMethodCall"))
 
-  //id = 8 to make it after toBits
-  val ToNBits = SMethod(this, "nbits", SFunc(this.ownerType, SLong), 8, ToNBitsCostInfo.costKind)
+  //id = 20 to make it after toBits and reserve space for future methods at SNumericTypeMethods
+  val ToNBits = SMethod(this, "nbits", SFunc(this.ownerType, SLong), 20, ToNBitsCostInfo.costKind)
                   .withInfo(ModQ, "Encode this big integer value as NBits")
 
   /** The following `modQ` methods are not fully implemented in v4.x and this descriptors.

@@ -5,7 +5,7 @@ import org.ergoplatform._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import sigma.Colls
+import sigma.{Colls, VersionContext}
 import sigma.ast.SCollection._
 import sigma.ast._
 import sigma.ast.syntax.{SValue, SigmaPropValue, SigmaPropValueOps}
@@ -21,6 +21,7 @@ import sigma.serialization.generators.ObjectGenerators
 import sigma.ast.Select
 import sigma.compiler.phases.{SigmaBinder, SigmaTyper}
 import sigma.exceptions.TyperException
+import sigmastate.exceptions.MethodNotFound
 import sigmastate.helpers.SigmaPPrint
 
 class SigmaTyperTest extends AnyPropSpec
@@ -29,7 +30,6 @@ class SigmaTyperTest extends AnyPropSpec
   private val predefFuncRegistry = new PredefinedFuncRegistry(StdSigmaBuilder)
   import predefFuncRegistry._
 
-  /** Checks that parsing, binding and typing of `x` results in the given expected value. */
   def typecheck(env: ScriptEnv, x: String, expected: SValue = null): SType = {
     try {
       val builder = TransformingSigmaBuilder
@@ -518,6 +518,48 @@ class SigmaTyperTest extends AnyPropSpec
     typefail(env, "1.toSuperBigInteger", 1, 1)
   }
 
+  property("toBytes method for numeric types") {
+    typecheck(env, "1.toByte.toBytes",
+      expected = MethodCall.typed[Value[SCollection[SByte.type]]](
+        Select(IntConstant(1), "toByte", Some(SByte)),
+        SNumericTypeMethods.getMethodByName("toBytes").withConcreteTypes(Map(STypeVar("TNum") -> SByte)),
+        Vector(),
+        Map()
+      )) shouldBe SByteArray
+
+    typecheck(env, "1.toShort.toBytes",
+      expected = MethodCall.typed[Value[SCollection[SByte.type]]](
+        Select(IntConstant(1), "toShort", Some(SShort)),
+        SNumericTypeMethods.getMethodByName("toBytes").withConcreteTypes(Map(STypeVar("TNum") -> SShort)),
+        Vector(),
+        Map()
+      )) shouldBe SByteArray
+
+    typecheck(env, "1.toBytes",
+      expected = MethodCall.typed[Value[SCollection[SByte.type]]](
+        IntConstant(1),
+        SNumericTypeMethods.getMethodByName("toBytes").withConcreteTypes(Map(STypeVar("TNum") -> SInt)),
+        Vector(),
+        Map()
+      )) shouldBe SByteArray
+
+    typecheck(env, "1.toLong.toBytes",
+      expected = MethodCall.typed[Value[SCollection[SByte.type]]](
+        Select(IntConstant(1), "toLong", Some(SLong)),
+        SNumericTypeMethods.getMethodByName("toBytes").withConcreteTypes(Map(STypeVar("TNum") -> SLong)),
+        Vector(),
+        Map()
+      )) shouldBe SByteArray
+
+    typecheck(env, "1.toBigInt.toBytes",
+      expected = MethodCall.typed[Value[SCollection[SByte.type]]](
+        Select(IntConstant(1), "toBigInt", Some(SBigInt)),
+        SNumericTypeMethods.getMethodByName("toBytes").withConcreteTypes(Map(STypeVar("TNum") -> SBigInt)),
+        Vector(),
+        Map()
+      )) shouldBe SByteArray
+  }
+
   property("string concat") {
     typecheck(env, """ "a" + "b" """) shouldBe SString
   }
@@ -670,4 +712,5 @@ class SigmaTyperTest extends AnyPropSpec
     )
     typecheck(customEnv, "substConstants(scriptBytes, positions, newVals)") shouldBe SByteArray
   }
+
 }

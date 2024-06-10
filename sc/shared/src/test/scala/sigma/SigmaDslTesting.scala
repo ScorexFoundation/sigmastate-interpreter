@@ -126,6 +126,9 @@ class SigmaDslTesting extends AnyPropSpec
     /** Checks if this feature is supported in the given version context. */
     def isSupportedIn(vc: VersionContext): Boolean
 
+    /** Version in which the feature is first implemented or changed. */
+    def sinceVersion: VersionContext
+
     /** Script containing this feature. */
     def script: String
 
@@ -177,34 +180,6 @@ class SigmaDslTesting extends AnyPropSpec
           printSuggestion("No expectedExpr for ", cf)
       }
       true
-    }
-
-    /** Checks the result of feature execution against expected result.
-      * If settings.failOnTestVectors == true, then print out actual cost results
-      *
-      * @param res the result of feature execution
-      * @param expected the expected result
-      */
-    protected def checkResultAgainstExpected(res: Try[(B, CostDetails)], expected: Expected[B]): Unit = {
-      val newRes = expected.newResults(ergoTreeVersionInTests)
-      val expectedTrace = newRes._2.fold(Seq.empty[CostItem])(_.trace)
-      if (expectedTrace.isEmpty) {
-        // new cost expectation is missing, print out actual cost results
-        if (evalSettings.printTestVectors) {
-          res.foreach { case (_, newDetails) =>
-            printCostDetails(script, newDetails)
-          }
-        }
-      }
-      else {
-        // new cost expectation is specified, compare it with the actual result
-        res.foreach { case (_, newDetails) =>
-          if (newDetails.trace != expectedTrace) {
-            printCostDetails(script, newDetails)
-            newDetails.trace shouldBe expectedTrace
-          }
-        }
-      }
     }
 
     /** v3 and v4 implementation*/
@@ -283,19 +258,11 @@ class SigmaDslTesting extends AnyPropSpec
 
           fail(
             s"""Should succeed with the same value or fail with the same exception, but was:
-              |First result: ${errorWithStack(b1)}
-              |Second result: ${errorWithStack(b2)}
+              |First result: $b1
+              |Second result: $b2
               |Root cause: $cause
               |""".stripMargin)
       }
-    }
-
-    private def errorWithStack[A](e: Try[A]): String = e match {
-      case Failure(t) =>
-        val sw = new java.io.StringWriter
-        t.printStackTrace(new java.io.PrintWriter(sw))
-        sw.toString
-      case _ => e.toString
     }
 
     /** Creates a new ErgoLikeContext using given [[CContext]] as template.
@@ -433,7 +400,7 @@ class SigmaDslTesting extends AnyPropSpec
         ctx
       }
 
-      val (expectedResult, expectedCost) = if (activatedVersionInTests < VersionContext.JitActivationVersion)
+      val (expectedResult, expectedCost) = if (activatedVersionInTests < sinceVersion.activatedVersion)
         (expected.oldResult, expected.verificationCostOpt)
       else {
         val res = expected.newResults(ergoTreeVersionInTests)
@@ -539,6 +506,8 @@ class SigmaDslTesting extends AnyPropSpec
              override val evalSettings: EvalSettings) extends Feature[A, B] {
 
     implicit val cs = compilerSettingsInTests
+
+    override def sinceVersion: VersionContext = VersionContext(0, 0) // has always been supported
 
     override def isSupportedIn(vc: VersionContext): Boolean = true
 
@@ -652,16 +621,35 @@ class SigmaDslTesting extends AnyPropSpec
       checkResult(funcRes.map(_._1), expected.value, failOnTestVectors,
         "ExistingFeature#verifyCase: ")
 
-      checkResultAgainstExpected(funcRes, expected)
+      val newRes = expected.newResults(ergoTreeVersionInTests)
+      val expectedTrace = newRes._2.fold(Seq.empty[CostItem])(_.trace)
+      if (expectedTrace.isEmpty) {
+        // new cost expectation is missing, print out actual cost results
+        if (evalSettings.printTestVectors) {
+          funcRes.foreach { case (_, newDetails) =>
+            printCostDetails(script, newDetails)
+          }
+        }
+      }
+      else {
+        // new cost expectation is specified, compare it with the actual result
+        funcRes.foreach { case (_, newDetails) =>
+          if (newDetails.trace != expectedTrace) {
+            printCostDetails(script, newDetails)
+            newDetails.trace shouldBe expectedTrace
+          }
+        }
+      }
+
       checkVerify(input, expected)
     }
-
   }
 
-  /** Descriptor of a language feature which is changed in v5.0.
+  /** Descriptor of a language feature which is changed in the specified version.
     *
     * @tparam A type of an input test data
     * @tparam B type of an output of the feature function
+    * @param changedInVersion  version in which the feature behaviour is changed
     * @param script            script of the feature function (see Feature trait)
     * @param scalaFunc         feature function written in Scala and used to simulate the behavior
     *                          of the script
@@ -681,6 +669,7 @@ class SigmaDslTesting extends AnyPropSpec
     * @param allowDifferentErrors if true, allow v4.x and v5.0 to fail with different error
     */
   case class ChangedFeature[A, B](
+    changedInVersion: VersionContext,
     script: String,
     scalaFunc: A => B,
     override val scalaFuncNew: A => B,
@@ -693,6 +682,8 @@ class SigmaDslTesting extends AnyPropSpec
     extends Feature[A, B] { feature =>
 
     implicit val cs = compilerSettingsInTests
+
+    override def sinceVersion: VersionContext = changedInVersion
 
     override def isSupportedIn(vc: VersionContext): Boolean = true
 
@@ -773,7 +764,7 @@ class SigmaDslTesting extends AnyPropSpec
         checkEq(scalaFuncNew)(newF)(input)
       }
 
-      if (!VersionContext.current.isJitActivated) {
+      if (VersionContext.current.activatedVersion < changedInVersion.activatedVersion) {
         // check the old implementation with Scala semantic
         val expectedOldRes = expected.value
 
@@ -868,7 +859,7 @@ class SigmaDslTesting extends AnyPropSpec
     * @param logScript         if true, log scripts to console
     */
   case class NewFeature[A, B](
-    sinceVersion: Byte,
+    sinceVersion: VersionContext,
     script: String,
     override val scalaFuncNew: A => B,
     expectedExpr: Option[SValue],
@@ -878,7 +869,7 @@ class SigmaDslTesting extends AnyPropSpec
     extends Feature[A, B] {
 
     override def isSupportedIn(vc: VersionContext): Boolean =
-      vc.activatedVersion >= sinceVersion
+      sinceVersion <= vc
 
     override def scalaFunc: A => B = { x =>
       sys.error(s"Semantic Scala function is not defined for old implementation: $this")
@@ -931,11 +922,8 @@ class SigmaDslTesting extends AnyPropSpec
                             printTestCases: Boolean,
                             failOnTestVectors: Boolean): Unit = {
       val funcRes = checkEquality(input, printTestCases)
-      if (this.isSupportedIn(VersionContext.current)) {
-        checkResultAgainstExpected(funcRes, expected)
-      } else
-        funcRes.isFailure shouldBe true
-      Try(scalaFuncNew(input)) shouldBe expected.value
+      funcRes.isFailure shouldBe true
+      Try(scalaFunc(input)) shouldBe expected.value
     }
   }
 
@@ -1000,20 +988,6 @@ class SigmaDslTesting extends AnyPropSpec
       new Expected(ExpectedResult(value, Some(cost))) {
         override val newResults = defaultNewResults.map { case (r, _) =>
           (r, Some(expectedDetails))
-        }
-      }
-
-    /** Used when the old and new value are the same for all versions
-      * and the expected costs are not specified.
-      *
-      * @param value           expected result of tested function
-      * @param expectedDetails expected cost details for all versions
-      */
-    def apply[A](value: Try[A], expectedDetails: CostDetails): Expected[A] =
-      new Expected(ExpectedResult(value, None)) {
-        override val newResults = defaultNewResults.map {
-          case (ExpectedResult(v, _), _) =>
-            (ExpectedResult(v, None), Some(expectedDetails))
         }
       }
 
@@ -1089,14 +1063,16 @@ class SigmaDslTesting extends AnyPropSpec
     *         various ways
     */
   def changedFeature[A: RType, B: RType]
-      (scalaFunc: A => B,
+      (changedInVersion: VersionContext,
+       scalaFunc: A => B,
        scalaFuncNew: A => B,
        script: String,
        expectedExpr: SValue = null,
        allowNewToSucceed: Boolean = false,
-       allowDifferentErrors: Boolean = false)
+       allowDifferentErrors: Boolean = false
+      )
       (implicit IR: IRContext, evalSettings: EvalSettings): Feature[A, B] = {
-    ChangedFeature(script, scalaFunc, scalaFuncNew, Option(expectedExpr),
+    ChangedFeature(changedInVersion, script, scalaFunc, scalaFuncNew, Option(expectedExpr),
       allowNewToSucceed = allowNewToSucceed,
       allowDifferentErrors = allowDifferentErrors)
   }
@@ -1112,7 +1088,8 @@ class SigmaDslTesting extends AnyPropSpec
     *         various ways
     */
   def newFeature[A: RType, B: RType]
-      (scalaFunc: A => B, script: String, expectedExpr: SValue = null, sinceVersion: Byte = VersionContext.JitActivationVersion)
+      (scalaFunc: A => B, script: String, expectedExpr: SValue = null,
+       sinceVersion: VersionContext = VersionContext(VersionContext.JitActivationVersion, 0))
       (implicit IR: IRContext, es: EvalSettings): Feature[A, B] = {
     NewFeature(sinceVersion, script, scalaFunc, Option(expectedExpr))
   }
