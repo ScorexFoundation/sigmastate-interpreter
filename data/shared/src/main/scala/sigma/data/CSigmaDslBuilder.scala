@@ -200,14 +200,6 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
     val p = GroupElementSerializer.parse(r)
     this.GroupElement(p)
   }
-
-  /** Serializes the given `value` into bytes using the default serialization format. */
-  override def serialize[T](value: T)(implicit cT: RType[T]): Coll[Byte] = {
-    val tpe = Evaluation.rtypeToSType(cT)
-    val w = SigmaSerializer.startWriter()
-    DataSerializer.serialize(value.asInstanceOf[SType#WrappedType], tpe, w)
-    Colls.fromArray(w.toBytes)
-  }
 }
 
 /** Default singleton instance of Global object, which implements global ErgoTree functions. */
