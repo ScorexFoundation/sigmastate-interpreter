@@ -5,31 +5,28 @@ import org.ergoplatform._
 import org.ergoplatform.settings.ErgoAlgos
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
-import org.scalatest.BeforeAndAfterAll
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ModifierId
 import sigma.Extensions.{ArrayOps, CollOps}
+import sigma.ast.ErgoTree.{HeaderType, ZeroHeader}
 import sigma.ast.SCollection._
-import sigma.ast._
 import sigma.ast.syntax._
+import sigma.ast.{Apply, MethodCall, PropertyCall, _}
+import sigma.data.OrderingOps._
 import sigma.data.RType._
 import sigma.data._
+import sigma.eval.Extensions.{ByteExt, IntExt, LongExt, ShortExt}
+import sigma.eval.{CostDetails, EvalSettings, SigmaDsl, TracedCost}
+import sigma.exceptions.InvalidType
+import sigma.serialization.ValueCodes.OpCode
 import sigma.util.Extensions.{BooleanOps, IntOps, LongOps}
 import sigma.{VersionContext, ast, data, _}
-import ErgoTree.{HeaderType, ZeroHeader}
-import sigma.eval.{CostDetails, EvalSettings, Profiler, SigmaDsl, TracedCost}
-import sigmastate._
 import sigmastate.eval.Extensions.AvlTreeOps
-import sigma.eval.Extensions.{ByteExt, IntExt, LongExt, ShortExt}
-import OrderingOps._
 import sigmastate.eval._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.interpreter._
-import sigma.ast.{Apply, MethodCall, PropertyCall}
-import sigma.exceptions.InvalidType
-import sigma.serialization.ValueCodes.OpCode
 import sigmastate.utils.Extensions._
 import sigmastate.utils.Helpers
 import sigmastate.utils.Helpers._
@@ -38,121 +35,17 @@ import java.math.BigInteger
 import scala.collection.compat.immutable.ArraySeq
 import scala.util.{Failure, Success}
 
-/** This suite tests every method of every SigmaDsl type to be equivalent to
-  * the evaluation of the corresponding ErgoScript operation.
+
+/** This suite tests all operations for v5.0 version of the language.
+  * The base classes establish the infrastructure for the tests.
   *
-  * The properties of this suite exercise two interpreters: the current (aka `old`
-  * interpreter) and the new interpreter for a next soft-fork. After the soft-fork is
-  * released, the new interpreter becomes current at which point the `old` and `new`
-  * interpreters in this suite should be equivalent. This change is reflected in this
-  * suite by committing changes in expected values.
-  * The `old` and `new` interpreters are compared like the following:
-  * 1) for existingFeature the interpreters should be equivalent
-  * 2) for changedFeature the test cases contain different expected values
-  * 3) for newFeature the old interpreter should throw and the new interpreter is checked
-  * against expected values.
-  *
-  * This suite can be used for Cost profiling, i.e. measurements of operations times and
-  * comparing them with cost parameters of the operations.
-  *
-  * The following settings should be specified for profiling:
-  * isMeasureOperationTime = true
-  * isMeasureScriptTime = true
-  * isLogEnabled = false
-  * printTestVectors = false
-  * costTracingEnabled = false
-  * isTestRun = true
-  * perTestWarmUpIters = 1
-  * nBenchmarkIters = 1
+  * @see SigmaDslSpecificationBase
   */
-class SigmaDslSpecification extends SigmaDslTesting
-  with CompilerCrossVersionProps
-  with BeforeAndAfterAll { suite =>
+class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
 
-  /** Use VersionContext so that each property in this suite runs under correct
-    * parameters.
-    */
-  protected override def testFun_Run(testName: String, testFun: => Any): Unit = {
-    VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
-      super.testFun_Run(testName, testFun)
-    }
-  }
-
-  implicit override val generatorDrivenConfig = PropertyCheckConfiguration(minSuccessful = 30)
-
-  val evalSettingsInTests = CErgoTreeEvaluator.DefaultEvalSettings.copy(
-    isMeasureOperationTime = true,
-    isMeasureScriptTime = true,
-    isLogEnabled = false, // don't commit the `true` value (travis log is too high)
-    printTestVectors = false, // don't commit the `true` value (travis log is too high)
-
-    /** Should always be enabled in tests (and false by default)
-      * Should be disabled for cost profiling, which case the new costs are not checked.
-      */
-    costTracingEnabled = true,
-
-    profilerOpt = Some(CErgoTreeEvaluator.DefaultProfiler),
-    isTestRun = true
-  )
-
-  def warmupSettings(p: Profiler) = evalSettingsInTests.copy(
-    isLogEnabled = false,
-    printTestVectors = false,
-    profilerOpt = Some(p)
-  )
-
-  implicit override def evalSettings: EvalSettings = {
-    warmupProfiler match {
-      case Some(p) => warmupSettings(p)
-      case _ => evalSettingsInTests
-    }
-  }
-
-  override val perTestWarmUpIters = 0
-
-  override val nBenchmarkIters = 0
-
-  override val okRunTestsWithoutMCLowering: Boolean = true
-
-  implicit def IR = createIR()
-
-  def testCases[A, B](cases: Seq[(A, Expected[B])], f: Feature[A, B]) = {
-    val table = Table(("x", "y"), cases:_*)
-    forAll(table) { (x, expectedRes) =>
-      val res = f.checkEquality(x)
-      val resValue = res.map(_._1)
-      val (expected, expDetailsOpt) = expectedRes.newResults(ergoTreeVersionInTests)
-      checkResult(resValue, expected.value, failOnTestVectors = true,
-        "SigmaDslSpecifiction#testCases: compare expected new result with res = f.checkEquality(x)")
-      res match {
-        case Success((value, details)) =>
-          details.cost shouldBe JitCost(expected.verificationCost.get)
-          expDetailsOpt.foreach(expDetails =>
-            if (details.trace != expDetails.trace) {
-              printCostDetails(f.script, details)
-              details.trace shouldBe expDetails.trace
-            }
-          )
-      }
-    }
-  }
+  override def languageVersion: Byte = VersionContext.JitActivationVersion
 
   import TestData._
-
-  override protected def beforeAll(): Unit = {
-    prepareSamples[BigInt]
-    prepareSamples[GroupElement]
-    prepareSamples[AvlTree]
-    prepareSamples[Box]
-    prepareSamples[PreHeader]
-    prepareSamples[Header]
-    prepareSamples[(BigInt, BigInt)]
-    prepareSamples[(GroupElement, GroupElement)]
-    prepareSamples[(AvlTree, AvlTree)]
-    prepareSamples[(Box, Box)]
-    prepareSamples[(PreHeader, PreHeader)]
-    prepareSamples[(Header, Header)]
-  }
 
   ///=====================================================
   ///         CostDetails shared among test cases
@@ -231,17 +124,6 @@ class SigmaDslSpecification extends SigmaDslTesting
   ///=====================================================
   ///              Boolean type operations
   ///-----------------------------------------------------
-
-  property("Boolean methods equivalence") {
-    val toByte = newFeature((x: Boolean) => x.toByte, "{ (x: Boolean) => x.toByte }")
-
-    val cases = Seq(
-      (true, Success(1.toByte)),
-      (false, Success(0.toByte))
-    )
-
-    testCases(cases, toByte)
-  }
 
   property("BinXor(logical XOR) equivalence") {
     val binXor = existingFeature((x: (Boolean, Boolean)) => x._1 ^ x._2,
@@ -1057,31 +939,6 @@ class SigmaDslSpecification extends SigmaDslTesting
       swapArgs(LE_cases, cost = 1768, newCostDetails = binaryRelationCostDetails(GE, SByte)),
       ">=", GE.apply)(_ >= _)
   }
-
-  property("Byte methods equivalence (new features)") {
-    lazy val toBytes = newFeature((x: Byte) => x.toBytes, "{ (x: Byte) => x.toBytes }")
-    lazy val toAbs = newFeature((x: Byte) => x.toAbs, "{ (x: Byte) => x.toAbs }")
-    lazy val compareTo = newFeature(
-      (x: (Byte, Byte)) => x._1.compareTo(x._2),
-      "{ (x: (Byte, Byte)) => x._1.compareTo(x._2) }")
-
-    lazy val bitOr = newFeature(
-    { (x: (Byte, Byte)) => (x._1 | x._2).toByteExact },
-    "{ (x: (Byte, Byte)) => (x._1 | x._2).toByteExact }")
-
-    lazy val bitAnd = newFeature(
-    { (x: (Byte, Byte)) => (x._1 & x._2).toByteExact },
-    "{ (x: (Byte, Byte)) => (x._1 & x._2).toByteExact }")
-
-    forAll { x: Byte =>
-      Seq(toBytes, toAbs).foreach(f => f.checkEquality(x))
-    }
-
-    forAll { x: (Byte, Byte) =>
-      Seq(compareTo, bitOr, bitAnd).foreach(_.checkEquality(x))
-    }
-  }
-
   property("Short methods equivalence") {
     SShort.upcast(0.toShort) shouldBe 0.toShort  // boundary test case
     SShort.downcast(0.toShort) shouldBe 0.toShort  // boundary test case
@@ -1362,29 +1219,6 @@ class SigmaDslSpecification extends SigmaDslTesting
       ">=", GE.apply)(_ >= _)
   }
 
-  property("Short methods equivalence (new features)") {
-    lazy val toBytes = newFeature((x: Short) => x.toBytes, "{ (x: Short) => x.toBytes }")
-    lazy val toAbs = newFeature((x: Short) => x.toAbs, "{ (x: Short) => x.toAbs }")
-
-    lazy val compareTo = newFeature((x: (Short, Short)) => x._1.compareTo(x._2),
-      "{ (x: (Short, Short)) => x._1.compareTo(x._2) }")
-
-    lazy val bitOr = newFeature(
-    { (x: (Short, Short)) => (x._1 | x._2).toShortExact },
-    "{ (x: (Short, Short)) => x._1 | x._2 }")
-
-    lazy val bitAnd = newFeature(
-    { (x: (Short, Short)) => (x._1 & x._2).toShortExact },
-    "{ (x: (Short, Short)) => x._1 & x._2 }")
-
-    forAll { x: Short =>
-      Seq(toBytes, toAbs).foreach(_.checkEquality(x))
-    }
-    forAll { x: (Short, Short) =>
-      Seq(compareTo, bitOr, bitAnd).foreach(_.checkEquality(x))
-    }
-  }
-
   property("Int methods equivalence") {
     SInt.upcast(0) shouldBe 0  // boundary test case
     SInt.downcast(0) shouldBe 0  // boundary test case
@@ -1663,28 +1497,6 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyOp(
       swapArgs(LE_cases, cost = 1768, newCostDetails = binaryRelationCostDetails(GE, SInt)),
       ">=", GE.apply)(_ >= _)
-  }
-
-  property("Int methods equivalence (new features)") {
-    lazy val toBytes = newFeature((x: Int) => x.toBytes, "{ (x: Int) => x.toBytes }")
-    lazy val toAbs = newFeature((x: Int) => x.toAbs, "{ (x: Int) => x.toAbs }")
-    lazy val compareTo = newFeature((x: (Int, Int)) => x._1.compareTo(x._2),
-      "{ (x: (Int, Int)) => x._1.compareTo(x._2) }")
-
-    lazy val bitOr = newFeature(
-    { (x: (Int, Int)) => x._1 | x._2 },
-    "{ (x: (Int, Int)) => x._1 | x._2 }")
-
-    lazy val bitAnd = newFeature(
-    { (x: (Int, Int)) => x._1 & x._2 },
-    "{ (x: (Int, Int)) => x._1 & x._2 }")
-
-    forAll { x: Int =>
-      Seq(toBytes, toAbs).foreach(_.checkEquality(x))
-    }
-    forAll { x: (Int, Int) =>
-      Seq(compareTo, bitOr, bitAnd).foreach(_.checkEquality(x))
-    }
   }
 
   property("Long downcast and upcast identity") {
@@ -1984,28 +1796,6 @@ class SigmaDslSpecification extends SigmaDslTesting
       ">=", GE.apply)(_ >= _)
   }
 
-  property("Long methods equivalence (new features)") {
-    lazy val toBytes = newFeature((x: Long) => x.toBytes, "{ (x: Long) => x.toBytes }")
-    lazy val toAbs = newFeature((x: Long) => x.toAbs, "{ (x: Long) => x.toAbs }")
-    lazy val compareTo = newFeature((x: (Long, Long)) => x._1.compareTo(x._2),
-      "{ (x: (Long, Long)) => x._1.compareTo(x._2) }")
-
-    lazy val bitOr = newFeature(
-    { (x: (Long, Long)) => x._1 | x._2 },
-    "{ (x: (Long, Long)) => x._1 | x._2 }")
-
-    lazy val bitAnd = newFeature(
-    { (x: (Long, Long)) => x._1 & x._2 },
-    "{ (x: (Long, Long)) => x._1 & x._2 }")
-
-    forAll { x: Long =>
-      Seq(toBytes, toAbs).foreach(_.checkEquality(x))
-    }
-    forAll { x: (Long, Long) =>
-      Seq(compareTo, bitOr, bitAnd).foreach(_.checkEquality(x))
-    }
-  }
-
   property("BigInt methods equivalence") {
     verifyCases(
       {
@@ -2262,59 +2052,6 @@ class SigmaDslSpecification extends SigmaDslTesting
     verifyOp(
       swapArgs(LE_cases, cost = 1768, newCostDetails = binaryRelationCostDetails(GE, SBigInt)),
       ">=", GE.apply)(o.gteq(_, _))
-  }
-
-  property("BigInt methods equivalence (new features)") {
-    // TODO v6.0: the behavior of `upcast` for BigInt is different from all other Numeric types (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/877)
-    // The `Upcast(bigInt, SBigInt)` node is never produced by ErgoScript compiler, but is still valid ErgoTree.
-    // It makes sense to fix this inconsistency as part of upcoming forks
-    assertExceptionThrown(
-      SBigInt.upcast(CBigInt(new BigInteger("0", 16)).asInstanceOf[AnyVal]),
-      _.getMessage.contains("Cannot upcast value")
-    )
-
-    // TODO v6.0: the behavior of `downcast` for BigInt is different from all other Numeric types (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/877)
-    // The `Downcast(bigInt, SBigInt)` node is never produced by ErgoScript compiler, but is still valid ErgoTree.
-    // It makes sense to fix this inconsistency as part of HF
-    assertExceptionThrown(
-      SBigInt.downcast(CBigInt(new BigInteger("0", 16)).asInstanceOf[AnyVal]),
-      _.getMessage.contains("Cannot downcast value")
-    )
-
-    val toByte = newFeature((x: BigInt) => x.toByte,
-      "{ (x: BigInt) => x.toByte }",
-      FuncValue(Vector((1, SBigInt)), Downcast(ValUse(1, SBigInt), SByte)))
-
-    val toShort = newFeature((x: BigInt) => x.toShort,
-      "{ (x: BigInt) => x.toShort }",
-      FuncValue(Vector((1, SBigInt)), Downcast(ValUse(1, SBigInt), SShort)))
-
-    val toInt = newFeature((x: BigInt) => x.toInt,
-      "{ (x: BigInt) => x.toInt }",
-      FuncValue(Vector((1, SBigInt)), Downcast(ValUse(1, SBigInt), SInt)))
-
-    val toLong = newFeature((x: BigInt) => x.toLong,
-      "{ (x: BigInt) => x.toLong }",
-      FuncValue(Vector((1, SBigInt)), Downcast(ValUse(1, SBigInt), SLong)))
-
-    lazy val toBytes = newFeature((x: BigInt) => x.toBytes, "{ (x: BigInt) => x.toBytes }")
-    lazy val toAbs = newFeature((x: BigInt) => x.toAbs, "{ (x: BigInt) => x.toAbs }")
-
-    lazy val compareTo = newFeature((x: (BigInt, BigInt)) => x._1.compareTo(x._2),
-      "{ (x: (BigInt, BigInt)) => x._1.compareTo(x._2) }")
-
-    lazy val bitOr = newFeature({ (x: (BigInt, BigInt)) => x._1 | x._2 },
-    "{ (x: (BigInt, BigInt)) => x._1 | x._2 }")
-
-    lazy val bitAnd = newFeature({ (x: (BigInt, BigInt)) => x._1 & x._2 },
-    "{ (x: (BigInt, BigInt)) => x._1 & x._2 }")
-
-    forAll { x: BigInt =>
-      Seq(toByte, toShort, toInt, toLong, toBytes, toAbs).foreach(_.checkEquality(x))
-    }
-    forAll { x: (BigInt, BigInt) =>
-      Seq(compareTo, bitOr, bitAnd).foreach(_.checkEquality(x))
-    }
   }
 
   /** Executed a series of test cases of NEQ operation verify using two _different_
@@ -4049,16 +3786,6 @@ class SigmaDslSpecification extends SigmaDslTesting
             Map()
           )
         )))
-  }
-
-  property("Box properties equivalence (new features)") {
-    // TODO v6.0: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
-    val getReg = newFeature((x: Box) => x.getReg[Int](1).get,
-      "{ (x: Box) => x.getReg[Int](1).get }")
-
-    forAll { box: Box =>
-      Seq(getReg).foreach(_.checkEquality(box))
-    }
   }
 
   property("Conditional access to registers") {
@@ -7631,36 +7358,6 @@ class SigmaDslSpecification extends SigmaDslTesting
       preGeneratedSamples = Some(samples))
   }
 
-  // TODO v6.0 (3h): https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-  property("Coll find method equivalence") {
-    val find = newFeature((x: Coll[Int]) => x.find({ (v: Int) => v > 0 }),
-      "{ (x: Coll[Int]) => x.find({ (v: Int) => v > 0} ) }")
-    forAll { x: Coll[Int] =>
-      find.checkEquality(x)
-    }
-  }
-
-  // TODO v6.0 (3h): https://github.com/ScorexFoundation/sigmastate-interpreter/issues/418
-  property("Coll bitwise methods equivalence") {
-    val shiftRight = newFeature(
-      { (x: Coll[Boolean]) =>
-        if (x.size > 2) x.slice(0, x.size - 2) else Colls.emptyColl[Boolean]
-      },
-      "{ (x: Coll[Boolean]) => x >> 2 }")
-    forAll { x: Array[Boolean] =>
-      shiftRight.checkEquality(Colls.fromArray(x))
-    }
-  }
-
-  // TODO v6.0 (3h): https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-  property("Coll diff methods equivalence") {
-    val diff = newFeature((x: (Coll[Int], Coll[Int])) => x._1.diff(x._2),
-      "{ (x: (Coll[Int], Coll[Int])) => x._1.diff(x._2) }")
-    forAll { (x: Coll[Int], y: Coll[Int]) =>
-      diff.checkEquality((x, y))
-    }
-  }
-
   property("Coll fold method equivalence") {
     val n = ExactNumeric.IntIsExactNumeric
     val costDetails1 = TracedCost(
@@ -9072,17 +8769,6 @@ class SigmaDslSpecification extends SigmaDslTesting
         ) ))
   }
 
-  // TODO v6.0: implement Option.fold (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479)
-  property("Option new methods") {
-    val n = ExactNumeric.LongIsExactNumeric
-    val fold = newFeature({ (x: Option[Long]) => x.fold(5.toLong)( (v: Long) => n.plus(v, 1) ) },
-      "{ (x: Option[Long]) => x.fold(5, { (v: Long) => v + 1 }) }")
-
-    forAll { x: Option[Long] =>
-      Seq(fold).map(_.checkEquality(x))
-    }
-  }
-
   property("Option fold workaround method") {
     val costDetails1 = TracedCost(
       traceBase ++ Array(
@@ -9516,24 +9202,6 @@ class SigmaDslSpecification extends SigmaDslTesting
         "{ (x: SigmaProp) => x.propBytes }",
         FuncValue(Vector((1, SSigmaProp)), SigmaPropBytes(ValUse(1, SSigmaProp)))),
       preGeneratedSamples = Some(Seq()))
-  }
-
-  // TODO v6.0 (3h): implement allZK func https://github.com/ScorexFoundation/sigmastate-interpreter/issues/543
-  property("allZK equivalence") {
-    lazy val allZK = newFeature((x: Coll[SigmaProp]) => SigmaDsl.allZK(x),
-      "{ (x: Coll[SigmaProp]) => allZK(x) }")
-    forAll { x: Coll[SigmaProp] =>
-      allZK.checkEquality(x)
-    }
-  }
-
-  // TODO v6.0 (3h): implement anyZK func https://github.com/ScorexFoundation/sigmastate-interpreter/issues/543
-  property("anyZK equivalence") {
-    lazy val anyZK = newFeature((x: Coll[SigmaProp]) => SigmaDsl.anyZK(x),
-      "{ (x: Coll[SigmaProp]) => anyZK(x) }")
-    forAll { x: Coll[SigmaProp] =>
-      anyZK.checkEquality(x)
-    }
   }
 
   property("allOf equivalence") {
