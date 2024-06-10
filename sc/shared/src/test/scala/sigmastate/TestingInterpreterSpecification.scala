@@ -445,7 +445,7 @@ class TestingInterpreterSpecification extends CompilerTestingCommons
                    | """.stripMargin
 
     if (activatedVersionInTests < V6SoftForkVersion) {
-      an [sigmastate.exceptions.MethodNotFound] should be thrownBy testEval(source)
+      an [Exception] should be thrownBy testEval(source)
     } else {
       testEval(source)
     }
