@@ -20,7 +20,7 @@ import sigmastate.interpreter.CErgoTreeEvaluator.DefaultEvalSettings
 import sigmastate.interpreter.Interpreter._
 import sigma.ast.Apply
 import sigma.eval.EvalSettings
-import sigma.exceptions.{CostLimitException, InvalidType}
+import sigma.exceptions.InvalidType
 import sigmastate.utils.Helpers
 import sigmastate.utils.Helpers._
 
