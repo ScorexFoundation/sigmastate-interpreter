@@ -252,6 +252,10 @@ class TestingInterpreterSpecification extends CompilerTestingCommons
     }
   }
 
+  property("upcasting to bigint") {
+    testEval("{ sigmaProp(1L.toBigInt < bigInt(\"2\")) }")
+  }
+
   property("Evaluate arithmetic ops") {
     def testWithCasting(castSuffix: String): Unit = {
       testEval(s"1.$castSuffix + 2.$castSuffix == 3.$castSuffix")

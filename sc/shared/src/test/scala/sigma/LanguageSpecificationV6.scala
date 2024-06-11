@@ -1,8 +1,8 @@
 package sigma
 
-import sigma.ast.{Apply, Downcast, FixedCost, FixedCostItem, FuncValue, GetVar, Global, JitCost, MethodCall, NamedDesc, OptionGet, SBigInt, SByte, SGlobalMethods, SInt, SLong, SShort, STypeVar, ValUse}
-import sigma.data.{CBigInt, ExactNumeric, RType}
-import sigma.eval.{SigmaDsl, TracedCost}
+import sigma.ast.{Apply, Downcast, FixedCost, FixedCostItem, FuncValue, GetVar, JitCost, OptionGet, SBigInt, SByte, SInt, SLong, SShort, ValUse}
+import sigma.data.{CBigInt, ExactNumeric}
+import sigma.eval.SigmaDsl
 import sigma.util.Extensions.{BooleanOps, ByteOps, IntOps, LongOps}
 import sigmastate.exceptions.MethodNotFound
 
@@ -172,21 +172,24 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
   }
 
   property("BigInt methods equivalence (new features)") {
-    // TODO v6.0: the behavior of `upcast` for BigInt is different from all other Numeric types (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/877)
-    // The `Upcast(bigInt, SBigInt)` node is never produced by ErgoScript compiler, but is still valid ErgoTree.
-    // It makes sense to fix this inconsistency as part of upcoming forks
-    assertExceptionThrown(
-      SBigInt.upcast(CBigInt(new BigInteger("0", 16)).asInstanceOf[AnyVal]),
-      _.getMessage.contains("Cannot upcast value")
-    )
+    if (activatedVersionInTests < VersionContext.V6SoftForkVersion) {
+      // The `Upcast(bigInt, SBigInt)` node is never produced by ErgoScript compiler, but is still valid ErgoTree.
+      // Fixed in 6.0
+      assertExceptionThrown(
+        SBigInt.upcast(CBigInt(new BigInteger("0", 16)).asInstanceOf[AnyVal]),
+        _.getMessage.contains("Cannot upcast value")
+      )
 
-    // TODO v6.0: the behavior of `downcast` for BigInt is different from all other Numeric types (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/877)
-    // The `Downcast(bigInt, SBigInt)` node is never produced by ErgoScript compiler, but is still valid ErgoTree.
-    // It makes sense to fix this inconsistency as part of HF
-    assertExceptionThrown(
-      SBigInt.downcast(CBigInt(new BigInteger("0", 16)).asInstanceOf[AnyVal]),
-      _.getMessage.contains("Cannot downcast value")
-    )
+      // The `Downcast(bigInt, SBigInt)` node is never produced by ErgoScript compiler, but is still valid ErgoTree.
+      // Fixed in 6.0
+      assertExceptionThrown(
+        SBigInt.downcast(CBigInt(new BigInteger("0", 16)).asInstanceOf[AnyVal]),
+        _.getMessage.contains("Cannot downcast value")
+      )
+    } else {
+      SBigInt.upcast(CBigInt(new BigInteger("0", 16)).asInstanceOf[AnyVal]) shouldBe CBigInt(new BigInteger("0"))
+      SBigInt.downcast(CBigInt(new BigInteger("0", 16)).asInstanceOf[AnyVal]) shouldBe CBigInt(new BigInteger("0"))
+    }
 
     if (activatedVersionInTests < VersionContext.V6SoftForkVersion) {
       // NOTE, for such versions the new features are not supported

@@ -469,24 +469,24 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
   override def numericTypeIndex: Int = 4
 
   override def upcast(v: AnyVal): BigInt = {
-    val bi = v match {
-      case x: Byte => BigInteger.valueOf(x.toLong)
-      case x: Short => BigInteger.valueOf(x.toLong)
-      case x: Int => BigInteger.valueOf(x.toLong)
-      case x: Long => BigInteger.valueOf(x)
+    v match {
+      case x: Byte => CBigInt(BigInteger.valueOf(x.toLong))
+      case x: Short => CBigInt(BigInteger.valueOf(x.toLong))
+      case x: Int => CBigInt(BigInteger.valueOf(x.toLong))
+      case x: Long => CBigInt(BigInteger.valueOf(x))
+      case x: BigInt if VersionContext.current.isV6SoftForkActivated => x
       case _ => sys.error(s"Cannot upcast value $v to the type $this")
     }
-    CBigInt(bi)
   }
   override def downcast(v: AnyVal): BigInt = {
-    val bi = v match {
-      case x: Byte => BigInteger.valueOf(x.toLong)
-      case x: Short => BigInteger.valueOf(x.toLong)
-      case x: Int => BigInteger.valueOf(x.toLong)
-      case x: Long => BigInteger.valueOf(x)
+    v match {
+      case x: Byte => CBigInt(BigInteger.valueOf(x.toLong))
+      case x: Short => CBigInt(BigInteger.valueOf(x.toLong))
+      case x: Int => CBigInt(BigInteger.valueOf(x.toLong))
+      case x: Long => CBigInt(BigInteger.valueOf(x))
+      case x: BigInt if VersionContext.current.isV6SoftForkActivated => x
       case _ => sys.error(s"Cannot downcast value $v to the type $this")
     }
-    CBigInt(bi)
   }
 }
 
