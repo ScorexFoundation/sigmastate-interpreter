@@ -32,7 +32,7 @@ package object reflection {
     }
   }
 
-  /** Creates a new SRField instance with the given parameters and handler function.
+  /** Creates a new SRField instance with the given parameters.
     * This is analogous to the Java Reflection API's [[java.lang.reflect.Field]] class.
     *
     * @param clazz      the [[java.lang.Class]] that declares the field
