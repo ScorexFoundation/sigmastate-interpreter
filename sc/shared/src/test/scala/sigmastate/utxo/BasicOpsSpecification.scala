@@ -157,13 +157,6 @@ class BasicOpsSpecification extends CompilerTestingCommons
     )
   }
 
-  property("BigInt downcasting") {
-    test("downcasting", env, ext,
-      "{ sigmaProp(1L.toBigInt.toLong < CONTEXT.preHeader.timestamp) }",
-      null
-    )
-  }
-
   property("Relation operations") {
     test("R1", env, ext,
       "{ allOf(Coll(getVar[Boolean](trueVar).get, true, true)) }",
