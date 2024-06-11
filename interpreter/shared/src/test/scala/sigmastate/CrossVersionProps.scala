@@ -31,9 +31,7 @@ trait CrossVersionProps extends AnyPropSpecLike with TestsBase {
         System.gc()
       }
       forEachScriptAndErgoTreeVersion(activatedVersions, ergoTreeVersions) {
-        VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
           testFun_Run(testName, testFun)
-        }
       }
     }
   }

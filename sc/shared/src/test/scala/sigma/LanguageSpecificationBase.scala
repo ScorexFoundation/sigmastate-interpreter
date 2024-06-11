@@ -1,10 +1,11 @@
 package sigma
 
 import org.scalatest.BeforeAndAfterAll
-import sigma.ast.JitCost
-import sigma.eval.{EvalSettings, Profiler}
+import sigma.ast.{Apply, FixedCostItem, FuncValue, GetVar, JitCost, OptionGet, ValUse}
+import sigma.eval.{CostDetails, EvalSettings, Profiler}
 import sigmastate.CompilerCrossVersionProps
 import sigmastate.interpreter.CErgoTreeEvaluator
+
 import scala.util.Success
 
 /** Base class for language test suites (one suite for each language version: 5.0, 6.0, etc.)
@@ -123,4 +124,23 @@ abstract class LanguageSpecificationBase extends SigmaDslTesting
     prepareSamples[(PreHeader, PreHeader)]
     prepareSamples[(Header, Header)]
   }
+
+  ///=====================================================
+  ///         CostDetails shared among test cases
+  ///-----------------------------------------------------
+  val traceBase = Array(
+    FixedCostItem(Apply),
+    FixedCostItem(FuncValue),
+    FixedCostItem(GetVar),
+    FixedCostItem(OptionGet),
+    FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
+    FixedCostItem(ValUse)
+  )
+
+  /** Helper method to create the given expected results for all tree versions. */
+  def expectedSuccessForAllTreeVersions[A](value: A, cost: Int, costDetails: CostDetails) = {
+    val res = ExpectedResult(Success(value), Some(cost)) -> Some(costDetails)
+    Seq(0, 1, 2, 3).map(version => version -> res)
+  }
+
 }
