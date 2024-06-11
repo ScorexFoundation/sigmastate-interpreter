@@ -148,7 +148,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
       0.toByte -> UnsignedBigIntConstant(b)
     ).toSeq
 
-    def deserTest() = {test("restoring", env, customExt,
+    def deserTest() = {test("restoring q", env, customExt,
       s"""{
          |  val b1 = unsignedBigInt(\"${b.toString}\")
          |  val b2 = getVar[UnsignedBigInt](0).get
@@ -218,35 +218,151 @@ class BasicOpsSpecification extends CompilerTestingCommons
       2.toByte -> UnsignedBigIntConstant(z.bigInteger)
     ).toSeq
 
-    def deserTest() = {test("schnorr", env, customExt,
-      s"""{
-         |
-         |      val g: GroupElement = groupGenerator
-         |      val holder = getVar[GroupElement](0).get
-         |
-         |      val message = fromBase16("${Base16.encode(message)}")
-         |      val e: Coll[Byte] = blake2b256(message) // weak Fiat-Shamir
-         |      val eInt = byteArrayToBigInt(e) // challenge as big integer
-         |
-         |      // a of signature in (a, z)
-         |      val a = getVar[GroupElement](1).get
-         |      val aBytes = a.getEncoded
-         |
-         |      // z of signature in (a, z)
-         |      val z = getVar[UnsignedBigInt](2).get
-         |
-         |      // Signature is valid if g^z = a * x^e
-         |      val properSignature = g.exp(z) == a.multiply(holder.exp(eInt))
-         |      sigmaProp(properSignature)
-         |}""".stripMargin,
-      null,
-      true
-    )}
+    def schnorrTest() = {
+      test("schnorr", env, customExt,
+        s"""{
+           |
+           |      val g: GroupElement = groupGenerator
+           |      val holder = getVar[GroupElement](0).get
+           |
+           |      val message = fromBase16("${Base16.encode(message)}")
+           |      val e: Coll[Byte] = blake2b256(message) // weak Fiat-Shamir
+           |      val eInt = byteArrayToBigInt(e) // challenge as big integer
+           |
+           |      // a of signature in (a, z)
+           |      val a = getVar[GroupElement](1).get
+           |      val aBytes = a.getEncoded
+           |
+           |      // z of signature in (a, z)
+           |      val z = getVar[UnsignedBigInt](2).get
+           |
+           |      // Signature is valid if g^z = a * x^e
+           |      val properSignature = g.exp(z) == a.multiply(holder.exp(eInt))
+           |      sigmaProp(properSignature)
+           |}""".stripMargin,
+        null,
+        true
+      )
+    }
 
     if (activatedVersionInTests < V6SoftForkVersion) {
-      an[Exception] should be thrownBy deserTest()
+      an[Exception] should be thrownBy schnorrTest()
     } else {
-      deserTest()
+      schnorrTest()
+    }
+  }
+
+  property("Bulletproof verification for a circuit proof") {
+
+    val g = CGroupElement(SecP256K1Group.generator)
+
+    def circuitTest() = {
+      test("schnorr", env, ext,
+        s"""{
+           |   // circuit data - should be provided via data input likely
+           |   val lWeights: Coll[UnsignedBigInt]
+           |   val rWeights: Coll[UnsignedBigInt]
+           |   val oWeights: Coll[UnsignedBigInt]
+           |   val commitmentWeights: Coll[UnsignedBigInt]
+           |
+           |   val cs: Coll[UnsignedBigInt]
+           |   val commitments: Coll[GroupElement]
+           |
+           |   // proof data
+           |   val ai: GroupElement
+           |   val ao: GroupElement
+           |   val s: GroupElement
+           |   val tCommits: Coll[GroupElement]
+           |   val tauX: UnsignedBigInt
+           |   val mu: UnsignedBigInt
+           |   val t: UnsignedBigInt
+           |
+           |   // inner product proof
+           |   val L: Coll[GroupElement]
+           |   val R: Coll[GroupElement]
+           |   val a: UnsignedBigInt
+           |   val b: UnsignedBigInt
+           |
+           |   // proof verification:
+           |   val Q = lWeights.size
+           |
+           |   val q // group order
+           |
+           |   val yBytes = sha256(q.toBytes ++ aI.getEncoded ++ aO.getEncoded ++ s.getEncoded)
+           |
+           |   val y = byteArrayToBigInt(yBytes) // should be to unsigned bigint
+           |
+           |   val z = byteArrayToBigInt(sha256(y ++ q.toBytes))
+           |
+           |
+           |
+           |   sigmaProp(properSignature)
+           |}""".stripMargin,
+        null,
+        true
+      )
+    }
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[Exception] should be thrownBy circuitTest()
+    } else {
+      circuitTest()
+    }
+  }
+
+  property("Bulletproof verification for a range proof") {
+
+    val g = CGroupElement(SecP256K1Group.generator)
+
+    def circuitTest() = {
+      test("range proof", env, ext,
+        s"""{
+           |   // circuit data - should be provided via data input likely
+           |   val input: GroupElement
+           |
+           |   // proof data
+           |   val ai: GroupElement
+           |   val s: GroupElement
+           |   val tCommits: Coll[GroupElement]
+           |   val tauX: UnsignedBigInt
+           |   val mu: UnsignedBigInt
+           |   val t: UnsignedBigInt
+           |
+           |   // inner product proof
+           |   val L: Coll[GroupElement]
+           |   val R: Coll[GroupElement]
+           |   val a: UnsignedBigInt
+           |   val b: UnsignedBigInt
+           |
+           |   // proof verification:
+           |   val Q = lWeights.size
+           |
+           |   val q // group order
+           |
+           |   val yBytes = sha256(q.toBytes ++ input.getEncoded ++ aI.getEncoded ++ s.getEncoded)
+           |
+           |   val y = byteArrayToBigInt(yBytes) mod q // should be to unsigned bigint
+           |
+           |   val z = byteArrayToBigInt(sha256(q.toBytes ++ yBytes)) mod q
+           |
+           |   val zSquared = z * z mod q
+           |   val zCubed = z * z * z mod q // todo: what to do here?
+           |
+           |   def times() : // todo: implement
+           |
+           |   // ops needed: modInverse, mod ops
+           |
+           |   sigmaProp(properSignature)
+           |}""".stripMargin,
+        null,
+        true
+      )
+    }
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[Exception] should be thrownBy circuitTest()
+    } else {
+      circuitTest()
     }
   }
 
