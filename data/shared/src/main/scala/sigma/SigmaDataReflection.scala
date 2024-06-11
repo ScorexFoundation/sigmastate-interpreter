@@ -701,49 +701,49 @@ object SigmaDataReflection {
     )
   )
 
-  { val clazz = classOf[sigma.ast.Global.type]
+  { val clazz = sigma.ast.Global.getClass
     registerClassEntry(clazz,
       fields = Map( mkField(clazz, "MODULE$", clazz) )
     )
   }
 
-  { val clazz = classOf[sigma.ast.GroupGenerator.type]
+  { val clazz = sigma.ast.GroupGenerator.getClass
     registerClassEntry(clazz,
       fields = Map( mkField(clazz, "MODULE$", clazz) )
     )
   }
 
-  { val clazz = classOf[Height.type]
+  { val clazz = Height.getClass
     registerClassEntry(clazz,
       fields = Map( mkField(clazz, "MODULE$", clazz) )
     )
   }
 
-  { val clazz = classOf[sigma.ast.Inputs.type]
+  { val clazz = sigma.ast.Inputs.getClass
     registerClassEntry(clazz,
       fields = Map( mkField(clazz, "MODULE$", clazz) )
     )
   }
 
-  { val clazz = classOf[sigma.ast.LastBlockUtxoRootHash.type]
+  { val clazz = sigma.ast.LastBlockUtxoRootHash.getClass
     registerClassEntry(clazz,
       fields = Map( mkField(clazz, "MODULE$", clazz) )
     )
   }
 
-  { val clazz = classOf[MinerPubkey.type]
+  { val clazz = MinerPubkey.getClass
     registerClassEntry(clazz,
       fields = Map( mkField(clazz, "MODULE$", clazz) )
     )
   }
 
-  { val clazz = classOf[sigma.ast.Outputs.type]
+  { val clazz = sigma.ast.Outputs.getClass
     registerClassEntry(clazz,
       fields = Map( mkField(clazz, "MODULE$", clazz) )
     )
   }
 
-  { val clazz = classOf[sigma.ast.Self.type]
+  { val clazz = sigma.ast.Self.getClass
     registerClassEntry(clazz,
       fields = Map( mkField(clazz, "MODULE$", clazz) )
     )
