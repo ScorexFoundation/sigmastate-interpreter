@@ -511,7 +511,6 @@ class SigmaTyper(val builder: SigmaBuilder,
     case v: SigmaBoolean => v
     case v: Upcast[_, _] => v
     case v @ Select(_, _, Some(_)) => v
-    case v @ MethodCall(_, _, _, _) => v
     case v =>
       error(s"Don't know how to assignType($v)", v.sourceContext)
   }).ensuring(v => v.tpe != NoType,

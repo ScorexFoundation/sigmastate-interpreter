@@ -21,7 +21,6 @@ import sigma.serialization.generators.ObjectGenerators
 import sigma.ast.Select
 import sigma.compiler.phases.{SigmaBinder, SigmaTyper}
 import sigma.exceptions.TyperException
-import sigmastate.exceptions.MethodNotFound
 import sigmastate.helpers.SigmaPPrint
 
 class SigmaTyperTest extends AnyPropSpec
@@ -30,6 +29,7 @@ class SigmaTyperTest extends AnyPropSpec
   private val predefFuncRegistry = new PredefinedFuncRegistry(StdSigmaBuilder)
   import predefFuncRegistry._
 
+  /** Checks that parsing, binding and typing of `x` results in the given expected value. */
   def typecheck(env: ScriptEnv, x: String, expected: SValue = null): SType = {
     try {
       val builder = TransformingSigmaBuilder
@@ -670,5 +670,4 @@ class SigmaTyperTest extends AnyPropSpec
     )
     typecheck(customEnv, "substConstants(scriptBytes, positions, newVals)") shouldBe SByteArray
   }
-
 }

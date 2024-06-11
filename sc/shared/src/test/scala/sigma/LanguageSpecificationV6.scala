@@ -1,7 +1,6 @@
 package sigma
 
-import org.ergoplatform.sdk.utils.ErgoTreeUtils
-import sigma.ast.ErgoTree.ZeroHeader
+import sigma.ast.ErgoTree.{HeaderType, ZeroHeader}
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.syntax.TrueSigmaProp
 import sigma.ast.{BoolToSigmaProp, CompanionDesc, ConcreteCollection, Constant, ConstantPlaceholder, Downcast, ErgoTree, FalseLeaf, FixedCostItem, FuncValue, Global, JitCost, MethodCall, PerItemCost, SBigInt, SByte, SCollection, SGlobalMethods, SInt, SLong, SPair, SShort, SSigmaProp, STypeVar, SelectField, SubstConstants, ValUse, Value}
@@ -341,15 +340,15 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
   property("Fix substConstants in v6.0 for ErgoTree version > 0") {
     // tree with one segregated constant and v0
     val t1 = ErgoTree(
-      header = ZeroHeader.withConstantSegregation,
+      header = ErgoTree.setConstantSegregation(ZeroHeader),
       constants = Vector(TrueSigmaProp),
       ConstantPlaceholder(0, SSigmaProp))
 
     // tree with one segregated constant and max supported version
     val t2 = ErgoTree(
-      header = ZeroHeader
-        .withVersion(VersionContext.MaxSupportedScriptVersion)
-        .withConstantSegregation,
+      header = ErgoTree.setConstantSegregation(
+        ErgoTree.headerWithVersion(ZeroHeader, VersionContext.MaxSupportedScriptVersion)
+      ),
       Vector(TrueSigmaProp),
       ConstantPlaceholder(0, SSigmaProp))
 

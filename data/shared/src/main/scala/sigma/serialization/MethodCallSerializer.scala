@@ -1,14 +1,12 @@
 package sigma.serialization
 
 import sigma.ast.syntax._
-import sigma.ast.{MethodCall, SContextMethods, SMethod, SType, STypeSubst, STypeVar, Value, ValueCompanion}
+import sigma.ast.{MethodCall, SContextMethods, SMethod, SType, STypeSubst, Value, ValueCompanion}
 import sigma.util.safeNewArray
 import SigmaByteWriter._
 import debox.cfor
 import sigma.ast.SContextMethods.BlockchainContextMethodNames
 import sigma.serialization.CoreByteWriter.{ArgInfo, DataInfo}
-
-import scala.collection.compat.immutable.ArraySeq
 
 case class MethodCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value[SType]], STypeSubst) => Value[SType])
   extends ValueSerializer[MethodCall] {

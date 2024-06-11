@@ -2104,13 +2104,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         Array[AnyRef](l, r),
         true, true, element[Coll[Byte]]))
     }
-
-    def serialize[T](value: Ref[T]): Ref[Coll[Byte]] = {
-      asRep[Coll[Byte]](mkMethodCall(source,
-        SigmaDslBuilderClass.getMethod("serialize", classOf[Sym]),
-        Array[AnyRef](value),
-        true, true, element[Coll[Byte]]))
-    }
   }
 
   // entityUnref: single unref method for each type family

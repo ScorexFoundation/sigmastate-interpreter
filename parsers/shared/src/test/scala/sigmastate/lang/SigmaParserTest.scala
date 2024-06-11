@@ -35,6 +35,9 @@ class SigmaParserTest extends AnyPropSpec with ScalaCheckPropertyChecks with Mat
     }
   }
 
+  /** Checks parsing result, printing the actual value as a test vector if expected value
+    * is not equal to actual.
+    */
   def checkParsed(x: String, expected: SValue) = {
     val parsed = parse(x)
     if (expected != parsed) {
