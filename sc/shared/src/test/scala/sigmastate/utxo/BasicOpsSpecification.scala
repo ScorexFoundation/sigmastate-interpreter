@@ -163,7 +163,11 @@ class BasicOpsSpecification extends CompilerTestingCommons
       """{
         | val c1 = Coll(1, 2, 3)
         | val c2 = Coll(3, 2, 1)
-        | c1.reverse == c2
+        |
+        | val b1 = Coll(INPUTS(0), OUTPUTS(0))
+        | val b2 = Coll(OUTPUTS(0), INPUTS(0))
+        |
+        | c1.reverse == c2 && b1.reverse == b2
         | }""".stripMargin,
       null
     )
@@ -180,7 +184,107 @@ class BasicOpsSpecification extends CompilerTestingCommons
       """{
         | val c1 = Coll(1, 2, 3, 3, 2)
         | val c2 = Coll(3, 2, 1)
-        | c1.distinct.reverse == c2
+        |
+        | val h1 = Coll(INPUTS(0), INPUTS(0))
+        | val h2 = Coll(INPUTS(0))
+        |
+        | c1.distinct.reverse == c2 && h1.distinct == h2
+        | }""".stripMargin,
+      null
+    )
+
+    if(VersionContext.current.isV6SoftForkActivated) {
+      reverseTest()
+    } else {
+      an[Exception] shouldBe thrownBy(reverseTest())
+    }
+  }
+
+  property("Coll.startsWith"){
+    def reverseTest() = test("distinct", env, ext,
+      """{
+        | val c1 = Coll(1, 2, 3)
+        | val c2 = Coll(1, 2)
+        | val c3 = Coll(1, 3)
+        | val c4 = Coll[Int]()
+        | val c5 = Coll(1, 2, 3, 4)
+        |
+        | val b1 = c1.startsWith(c3)
+        | val b2 = c1.startsWith(c5)
+        |
+        | c1.startsWith(c2) && c1.startsWith(c4) && c1.startsWith(c1) && !b1 && !b2
+        | }""".stripMargin,
+      null
+    )
+
+    if(VersionContext.current.isV6SoftForkActivated) {
+      reverseTest()
+    } else {
+      an[Exception] shouldBe thrownBy(reverseTest())
+    }
+  }
+
+  property("Coll.startsWith - tuples"){
+    def reverseTest() = test("distinct", env, ext,
+      """{
+        | val c1 = Coll((1, 2), (3, 4), (5, 6))
+        | val c2 = Coll((1, 2), (3, 4))
+        | val c3 = Coll((1, 3))
+        | val c4 = Coll[(Int, Int)]()
+        | val c5 = Coll((1, 2), (3, 4), (5, 6), (7, 8))
+        |
+        | val b1 = c1.startsWith(c3)
+        | val b2 = c1.startsWith(c5)
+        |
+        | c1.startsWith(c2) && c1.startsWith(c4) && c1.startsWith(c1) && !b1 && !b2
+        | }""".stripMargin,
+      null
+    )
+
+    if(VersionContext.current.isV6SoftForkActivated) {
+      reverseTest()
+    } else {
+      an[Exception] shouldBe thrownBy(reverseTest())
+    }
+  }
+
+  property("Coll.endsWith"){
+    def reverseTest() = test("distinct", env, ext,
+      """{
+        | val c1 = Coll(1, 2, 3)
+        | val c2 = Coll(2, 3)
+        | val c3 = Coll(2, 2)
+        | val c4 = Coll[Int]()
+        | val c5 = Coll(1, 2, 3, 4)
+        |
+        | val b1 = c1.endsWith(c3)
+        | val b2 = c1.endsWith(c5)
+        |
+        | c1.endsWith(c2) && c1.endsWith(c4) && c1.endsWith(c1) && !b1 && !b2
+        | }""".stripMargin,
+      null
+    )
+
+    if(VersionContext.current.isV6SoftForkActivated) {
+      reverseTest()
+    } else {
+      an[Exception] shouldBe thrownBy(reverseTest())
+    }
+  }
+
+  property("Coll.endsWith - tuples"){
+    def reverseTest() = test("endsWith tuples", env, ext,
+      """{
+        | val c1 = Coll((1, 2), (2, 3))
+        | val c2 = Coll((2, 3))
+        | val c3 = Coll((2, 2))
+        | val c4 = Coll[(Int, Int)]()
+        | val c5 = Coll((0, 2), (2, 3))
+        |
+        | val b1 = c1.endsWith(c3)
+        | val b2 = c1.endsWith(c5)
+        |
+        | c1.endsWith(c2) && c1.endsWith(c4) && c1.endsWith(c1) && !b1 && !b2
         | }""".stripMargin,
       null
     )

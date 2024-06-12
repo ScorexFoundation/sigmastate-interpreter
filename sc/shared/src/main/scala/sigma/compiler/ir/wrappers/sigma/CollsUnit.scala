@@ -31,6 +31,8 @@ import sigma.compiler.ir.{Base, IRContext}
       def append(other: Ref[Coll[A]]): Ref[Coll[A]];
       def reverse: Ref[Coll[A]]
       def distinct: Ref[Coll[A]]
+      def startsWith(ys: Ref[Coll[A]]): Ref[Boolean];
+      def endsWith(ys: Ref[Coll[A]]): Ref[Boolean];
     };
     trait CollBuilder extends Def[CollBuilder] {
       def fromItems[T](items: Ref[T]*)(implicit cT: Elem[T]): Ref[Coll[T]];

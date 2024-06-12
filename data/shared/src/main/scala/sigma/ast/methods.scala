@@ -978,16 +978,40 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
   }
 
   val StartsWithMethod = SMethod(this, "startsWith",
-    SFunc(Array(ThisType), ThisType, paramIVSeq),
+    SFunc(Array(ThisType, ThisType), SBoolean, paramIVSeq),
     32, Zip_CostKind) // todo: costing
     .withIRInfo(MethodCallIrBuilder)
     .withInfo(MethodCall, "")
 
+  /** Implements evaluation of Coll.zip method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod
+    */
+  def startsWith_eval[A](mc: MethodCall, xs: Coll[A], ys: Coll[A])
+                    (implicit E: ErgoTreeEvaluator): Boolean = {
+    val m = mc.method
+    E.addSeqCost(m.costKind.asInstanceOf[PerItemCost], xs.length, m.opDesc) { () =>
+      xs.startsWith(ys)
+    }
+  }
+
   val EndsWithMethod = SMethod(this, "endsWith",
-    SFunc(Array(ThisType), ThisType, paramIVSeq),
+    SFunc(Array(ThisType, ThisType), SBoolean, paramIVSeq),
     33, Zip_CostKind) // todo: costing
     .withIRInfo(MethodCallIrBuilder)
     .withInfo(MethodCall, "")
+
+  /** Implements evaluation of Coll.zip method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod
+    */
+  def endsWith_eval[A](mc: MethodCall, xs: Coll[A], ys: Coll[A])
+                        (implicit E: ErgoTreeEvaluator): Boolean = {
+    val m = mc.method
+    E.addSeqCost(m.costKind.asInstanceOf[PerItemCost], xs.length, m.opDesc) { () =>
+      xs.endsWith(ys)
+    }
+  }
 
   private val v5Methods = Seq(
     SizeMethod,

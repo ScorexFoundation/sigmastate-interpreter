@@ -178,6 +178,20 @@ class CollCls extends EntityObject("Coll") {
         Array[AnyRef](),
         true, false, element[Coll[A]]))
     }
+
+    def startsWith(ys: Ref[Coll[A]]): Ref[Boolean] = {
+      asRep[Boolean](mkMethodCall(self,
+        CollClass.getMethod("startsWith", classOf[Sym]),
+        Array[AnyRef](ys),
+        true, false, element[Boolean]))
+    }
+
+    def endsWith(ys: Ref[Coll[A]]): Ref[Boolean] = {
+      asRep[Boolean](mkMethodCall(self,
+        CollClass.getMethod("endsWith", classOf[Sym]),
+        Array[AnyRef](ys),
+        true, false, element[Boolean]))
+    }
   }
 
   case class LiftableColl[SA, A](lA: Liftable[SA, A])
@@ -338,6 +352,20 @@ class CollCls extends EntityObject("Coll") {
         CollClass.getMethod("distinct"),
         Array[AnyRef](),
         true, true, element[Coll[A]]))
+    }
+
+    def startsWith(ys: Ref[Coll[A]]): Ref[Boolean] = {
+      asRep[Boolean](mkMethodCall(source,
+        CollClass.getMethod("startsWith", classOf[Sym]),
+        Array[AnyRef](ys),
+        true, true, element[Boolean]))
+    }
+
+    def endsWith(ys: Ref[Coll[A]]): Ref[Boolean] = {
+      asRep[Boolean](mkMethodCall(source,
+        CollClass.getMethod("endsWith", classOf[Sym]),
+        Array[AnyRef](ys),
+        true, true, element[Boolean]))
     }
   }
 

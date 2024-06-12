@@ -76,6 +76,14 @@ trait Coll[@specialized A] {
     * produces a collection ((x0, y0), ..., (xK, yK)) where K = min(N, M) */
   def zip[@specialized B](ys: Coll[B]): Coll[(A, B)]
 
+  /** For this collection (x0, ..., xN) and other collection (y0, ..., yM)
+    * produces a collection ((x0, y0), ..., (xK, yK)) where K = min(N, M) */
+  def startsWith(ys: Coll[A]): Boolean
+
+  /** For this collection (x0, ..., xN) and other collection (y0, ..., yM)
+    * produces a collection ((x0, y0), ..., (xK, yK)) where K = min(N, M) */
+  def endsWith(ys: Coll[A]): Boolean
+
   /** Tests whether a predicate holds for at least one element of this collection.
     *  @param   p     the predicate used to test elements.
     *  @return        `true` if the given predicate `p` is satisfied by at least one element of this collection, otherwise `false`
