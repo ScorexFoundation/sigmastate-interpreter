@@ -29,6 +29,8 @@ import sigma.compiler.ir.{Base, IRContext}
       def updateMany(indexes: Ref[Coll[Int]], values: Ref[Coll[A]]): Ref[Coll[A]];
       def slice(from: Ref[Int], until: Ref[Int]): Ref[Coll[A]];
       def append(other: Ref[Coll[A]]): Ref[Coll[A]];
+      def reverse: Ref[Coll[A]]
+      def distinct: Ref[Coll[A]]
     };
     trait CollBuilder extends Def[CollBuilder] {
       def fromItems[T](items: Ref[T]*)(implicit cT: Elem[T]): Ref[Coll[T]];

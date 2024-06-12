@@ -3,6 +3,7 @@ package sigmastate.utxo
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, R6, R8}
 import org.ergoplatform._
 import sigma.Extensions.ArrayOps
+import sigma.VersionContext
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.SType.AnyOps
 import sigma.data.{AvlTreeData, CAnyValue, CSigmaDslBuilder}
@@ -155,6 +156,40 @@ class BasicOpsSpecification extends CompilerTestingCommons
         reg1 -> UnitConstant.instance
       ))
     )
+  }
+
+  property("Coll.reverse"){
+    def reverseTest() = test("reverse", env, ext,
+      """{
+        | val c1 = Coll(1, 2, 3)
+        | val c2 = Coll(3, 2, 1)
+        | c1.reverse == c2
+        | }""".stripMargin,
+      null
+    )
+
+    if(VersionContext.current.isV6SoftForkActivated) {
+      reverseTest()
+    } else {
+      an[Exception] shouldBe thrownBy(reverseTest())
+    }
+  }
+
+  property("Coll.distinct"){
+    def reverseTest() = test("distinct", env, ext,
+      """{
+        | val c1 = Coll(1, 2, 3, 3, 2)
+        | val c2 = Coll(3, 2, 1)
+        | c1.distinct.reverse == c2
+        | }""".stripMargin,
+      null
+    )
+
+    if(VersionContext.current.isV6SoftForkActivated) {
+      reverseTest()
+    } else {
+      an[Exception] shouldBe thrownBy(reverseTest())
+    }
   }
 
   property("Relation operations") {

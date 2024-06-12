@@ -164,6 +164,20 @@ class CollCls extends EntityObject("Coll") {
         Array[AnyRef](other),
         true, false, element[Coll[A]]))
     }
+
+    override def reverse: Ref[Coll[A]] = {
+      asRep[Coll[A]](mkMethodCall(self,
+        CollClass.getMethod("reverse"),
+        Array[AnyRef](),
+        true, false, element[Coll[A]]))
+    }
+
+    override def distinct: Ref[Coll[A]] = {
+      asRep[Coll[A]](mkMethodCall(self,
+        CollClass.getMethod("distinct"),
+        Array[AnyRef](),
+        true, false, element[Coll[A]]))
+    }
   }
 
   case class LiftableColl[SA, A](lA: Liftable[SA, A])
@@ -309,6 +323,20 @@ class CollCls extends EntityObject("Coll") {
       asRep[Coll[A]](mkMethodCall(source,
         CollClass.getMethod("append", classOf[Sym]),
         Array[AnyRef](other),
+        true, true, element[Coll[A]]))
+    }
+
+    def reverse: Ref[Coll[A]] = {
+      asRep[Coll[A]](mkMethodCall(source,
+        CollClass.getMethod("reverse"),
+        Array[AnyRef](),
+        true, true, element[Coll[A]]))
+    }
+
+    def distinct: Ref[Coll[A]] = {
+      asRep[Coll[A]](mkMethodCall(source,
+        CollClass.getMethod("distinct"),
+        Array[AnyRef](),
         true, true, element[Coll[A]]))
     }
   }

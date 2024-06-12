@@ -985,6 +985,10 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
               val i = asRep[Int](argsV(0))
               val d = asRep[t](argsV(1))
               xs.getOrElse(i, d)
+            case SCollectionMethods.ReverseMethod.name =>
+              xs.reverse
+            case SCollectionMethods.DistinctMethod.name =>
+              xs.distinct
             case _ => throwError
           }
           case (opt: ROption[t]@unchecked, SOptionMethods) => method.name match {
