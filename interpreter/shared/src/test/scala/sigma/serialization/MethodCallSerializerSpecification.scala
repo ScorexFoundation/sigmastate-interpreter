@@ -45,4 +45,27 @@ class MethodCallSerializerSpecification extends SerializationSpecification {
       }
       )
   }
+
+  property("MethodCall deserialization round trip for Header.checkPow") {
+    def code = {
+      val bi = HeaderConstant(headerGen.sample.get)
+      val expr = MethodCall(bi,
+        SHeaderMethods.checkPowMethod,
+        Vector(),
+        Map()
+      )
+      roundTripTest(expr)
+    }
+
+    VersionContext.withVersions(VersionContext.V6SoftForkVersion, 1) {
+      code
+    }
+
+    an[Exception] should be thrownBy (
+      VersionContext.withVersions((VersionContext.V6SoftForkVersion - 1).toByte, 1) {
+        code
+      }
+      )
+  }
+
 }

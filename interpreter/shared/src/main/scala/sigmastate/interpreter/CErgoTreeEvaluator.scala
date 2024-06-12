@@ -10,10 +10,12 @@ import sigma.util.Extensions._
 import debox.{cfor, Buffer => DBuffer}
 import scorex.crypto.authds.ADKey
 import sigma.ast.SAvlTreeMethods._
+import sigma.ast.SHeaderMethods.checkPowMethod
 import sigma.ast.SType
 import sigma.data.{CSigmaProp, KeyValueColl, SigmaBoolean}
 import sigma.eval.{AvlTreeVerifier, ErgoTreeEvaluator, EvalSettings, Profiler}
 import sigma.eval.ErgoTreeEvaluator.DataEnv
+import sigmastate.interpreter.CErgoTreeEvaluator.fixedCostOp
 
 import scala.collection.compat.immutable.ArraySeq
 import scala.util.{DynamicVariable, Failure, Success}
@@ -214,6 +216,13 @@ class CErgoTreeEvaluator(
         case _ => None
       }
     }
+  }
+
+  override def checkPow_eval(mc: MethodCall, header: Header): Boolean = {
+    val checkPowCostInfo = OperationCostInfo(checkPowMethod.costKind.asInstanceOf[FixedCost], NamedDesc("Header.checkPow"))
+    fixedCostOp(checkPowCostInfo){
+      header.checkPow
+    }(this)
   }
 
   /** Evaluates the given expression in the given data environment. */
@@ -449,7 +458,7 @@ object CErgoTreeEvaluator {
     * HOTSPOT: don't beautify the code
     * Note, `null` is used instead of Option to avoid allocations.
     */
-  def fixedCostOp[R <: AnyRef](costInfo: OperationCostInfo[FixedCost])
+  def fixedCostOp[R](costInfo: OperationCostInfo[FixedCost])
                               (block: => R)(implicit E: ErgoTreeEvaluator): R = {
     if (E != null) {
       var res: R = null.asInstanceOf[R]

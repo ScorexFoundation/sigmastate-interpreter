@@ -13,7 +13,6 @@ import org.scalatest.BeforeAndAfterAll
 import scorex.util.encode.Base58
 import sigma.Colls
 import sigma.VersionContext.V6SoftForkVersion
-import sigma.crypto.CryptoConstants
 import sigma.data.{CAND, CAvlTree, ProveDlog, SigmaBoolean, TrivialProp}
 import sigma.interpreter.ContextExtension
 import sigma.util.Extensions.IntOps
@@ -427,6 +426,29 @@ class TestingInterpreterSpecification extends CompilerTestingCommons
   property("deserialize") {
     val str = Base58.encode(ValueSerializer.serialize(ByteArrayConstant(Array[Byte](2))))
     testEval(s"""deserialize[Coll[Byte]]("$str")(0) == 2""")
+  }
+
+  property("header.id") {
+    testEval(
+      """ {
+        |     val h = CONTEXT.headers(0)
+        |     val id = h.id
+        |     id.size == 32
+        | }""".stripMargin)
+  }
+
+  property("checkPow") {
+    val source = """ {
+                   |     val h = CONTEXT.headers(0)
+                   |      h.checkPow
+                   | }
+                   | """.stripMargin
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an [Exception] should be thrownBy testEval(source)
+    } else {
+      testEval(source)
+    }
   }
 
   override protected def afterAll(): Unit = {
