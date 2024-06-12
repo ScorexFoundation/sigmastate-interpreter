@@ -31,7 +31,7 @@ class DataJsonEncoderSpecification extends SerializationSpecification {
 
     withVersion match {
       case Some(ver) =>
-        VersionContext.withVersions(ver, 1) {
+        VersionContext.withVersions(ver, 0) {
           test()
         }
       case None =>
@@ -233,7 +233,7 @@ class DataJsonEncoderSpecification extends SerializationSpecification {
     }
 
     if (tpe == SHeader)  {
-      VersionContext.withVersions(VersionContext.V6SoftForkVersion, 1) {
+      VersionContext.withVersions(VersionContext.V6SoftForkVersion, 0) {
         test()
       }
     } else {

@@ -467,7 +467,7 @@ trait Header {
   def unparsedBytes: Coll[Byte]
 
   /**
-    * @return bytes without proof of work, needed for working to get the proof on
+    * @return header bytes without proof of work, a PoW is generated over them
     */
   def serializeWithoutPoW: Coll[Byte]
 
