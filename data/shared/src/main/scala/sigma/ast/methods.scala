@@ -1024,10 +1024,9 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
     */
   def get_eval[A](mc: MethodCall, xs: Coll[A], index: Int)
                       (implicit E: ErgoTreeEvaluator): Option[A] = {
-    val m = mc.method
-    E.addSeqCost(m.costKind.asInstanceOf[PerItemCost], xs.length, m.opDesc) { () => // todo: costing
-      xs.get(index)
-    }
+    E.addCost(ByIndex.costKind, mc.method.opDesc) //todo: costing
+    ??? // todo: this get is not actually executed, why?
+    xs.get(index)
   }
 
   private val v5Methods = Seq(
