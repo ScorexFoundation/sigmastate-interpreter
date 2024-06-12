@@ -45,6 +45,22 @@ trait Coll[@specialized A] {
     */
   def apply(i: Int): A
 
+  /** The element at given index.
+    *  Indices start at `0`; `xs.apply(0)` is the first element of collection `xs`.
+    *  Note the indexing syntax `xs(i)` is a shorthand for `xs.apply(i)`.
+    *
+    *  @param  i       the index
+    *  @return         the element at the given index
+    *  @throws         ArrayIndexOutOfBoundsException if `i < 0` or `length <= i`
+    */
+  def get(i: Int): Option[A] = {
+    if (isDefinedAt(i)) {
+      Some(apply(i))
+    } else {
+      None
+    }
+  }
+
   /** Tests whether this $coll contains given index.
     *
     *  The implementations of methods `apply` and `isDefinedAt` turn a `Coll[A]` into

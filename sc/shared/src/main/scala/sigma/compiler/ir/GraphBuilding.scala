@@ -995,6 +995,9 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
             case SCollectionMethods.EndsWithMethod.name =>
               val ys = asRep[Coll[t]](argsV(0))
               xs.endsWith(ys)
+            case SCollectionMethods.GetMethod.name =>
+              val idx = asRep[Int](argsV(0))
+              xs.get(idx)
             case _ => throwError
           }
           case (opt: ROption[t]@unchecked, SOptionMethods) => method.name match {

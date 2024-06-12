@@ -1013,6 +1013,23 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
     }
   }
 
+  val GetMethod = SMethod(this, "get",
+    SFunc(Array(ThisType, SInt), SOption(tIV), Array[STypeParam](tIV)), 34, ByIndex.costKind) //todo: costing
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall, "")
+
+  /** Implements evaluation of Coll.zip method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod
+    */
+  def get_eval[A](mc: MethodCall, xs: Coll[A], index: Int)
+                      (implicit E: ErgoTreeEvaluator): Option[A] = {
+    val m = mc.method
+    E.addSeqCost(m.costKind.asInstanceOf[PerItemCost], xs.length, m.opDesc) { () => // todo: costing
+      xs.get(index)
+    }
+  }
+
   private val v5Methods = Seq(
     SizeMethod,
     GetOrElseMethod,
@@ -1037,7 +1054,8 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
     ReverseMethod,
     DistinctMethod,
     StartsWithMethod,
-    EndsWithMethod
+    EndsWithMethod,
+    GetMethod
   )
 
   /** This method should be overriden in derived classes to add new methods in addition to inherited.

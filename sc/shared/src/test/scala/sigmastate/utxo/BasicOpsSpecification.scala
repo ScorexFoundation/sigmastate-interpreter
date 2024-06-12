@@ -296,6 +296,24 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
+  property("Coll.get"){
+    def getTest() = test("get", env, ext,
+      """{
+        |   val c1 = Coll(1)
+        |   val c2 = Coll[Int]()
+        |
+        |   c2.get(0).getOrElse(c1.get(0).get) == c1.get(0).get
+        | }""".stripMargin,
+      null
+    )
+
+    if(VersionContext.current.isV6SoftForkActivated) {
+      getTest()
+    } else {
+      an[Exception] shouldBe thrownBy(getTest())
+    }
+  }
+
   property("Relation operations") {
     test("R1", env, ext,
       "{ allOf(Coll(getVar[Boolean](trueVar).get, true, true)) }",
