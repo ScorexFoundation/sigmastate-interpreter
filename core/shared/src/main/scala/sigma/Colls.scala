@@ -45,6 +45,22 @@ trait Coll[@specialized A] {
     */
   def apply(i: Int): A
 
+  /** The element at given index.
+    *  Indices start at `0`; `xs.apply(0)` is the first element of collection `xs`.
+    *  Note the indexing syntax `xs(i)` is a shorthand for `xs.apply(i)`.
+    *
+    *  @param  i       the index
+    *  @return         the element at the given index
+    *  @throws         ArrayIndexOutOfBoundsException if `i < 0` or `length <= i`
+    */
+  def get(i: Int): Option[A] = {
+    if (isDefinedAt(i)) {
+      Some(apply(i))
+    } else {
+      None
+    }
+  }
+
   /** Tests whether this $coll contains given index.
     *
     *  The implementations of methods `apply` and `isDefinedAt` turn a `Coll[A]` into
@@ -75,6 +91,14 @@ trait Coll[@specialized A] {
   /** For this collection (x0, ..., xN) and other collection (y0, ..., yM)
     * produces a collection ((x0, y0), ..., (xK, yK)) where K = min(N, M) */
   def zip[@specialized B](ys: Coll[B]): Coll[(A, B)]
+
+  /** For this collection (x0, ..., xN) and other collection (y0, ..., yM)
+    * produces a collection ((x0, y0), ..., (xK, yK)) where K = min(N, M) */
+  def startsWith(ys: Coll[A]): Boolean
+
+  /** For this collection (x0, ..., xN) and other collection (y0, ..., yM)
+    * produces a collection ((x0, y0), ..., (xK, yK)) where K = min(N, M) */
+  def endsWith(ys: Coll[A]): Boolean
 
   /** Tests whether a predicate holds for at least one element of this collection.
     *  @param   p     the predicate used to test elements.

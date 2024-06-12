@@ -890,7 +890,7 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
     SFunc(Array(ThisType, tIV, SInt), SInt, paramIVSeq),
       26, PerItemCost(baseCost = JitCost(20), perChunkCost = JitCost(10), chunkSize = 2))
       .withIRInfo(MethodCallIrBuilder, javaMethodOf[Coll[_], Any, Int]("indexOf"))
-      .withInfo(MethodCall, "")
+      .withInfo(MethodCall, "Returns index of a collection element, or -1 if not found")
 
   /** Implements evaluation of Coll.indexOf method call ErgoTree node.
     * Called via reflection based on naming convention.
@@ -939,29 +939,135 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
     }
   }
 
+
+  // 6.0 methods below
+  val ReverseMethod = SMethod(this, "reverse",
+    SFunc(Array(ThisType), ThisType, paramIVSeq),
+    30, Zip_CostKind) // todo: costing
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall, "")
+
+  /** Implements evaluation of Coll.reverse method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod
+    */
+  def reverse_eval[A](mc: MethodCall, xs: Coll[A])
+                    (implicit E: ErgoTreeEvaluator): Coll[A] = {
+    val m = mc.method
+    E.addSeqCost(m.costKind.asInstanceOf[PerItemCost], xs.length, m.opDesc) { () =>
+      xs.reverse
+    }
+  }
+
+  val DistinctMethod = SMethod(this, "distinct",
+    SFunc(Array(ThisType), ThisType, paramIVSeq),
+    31, Zip_CostKind) // todo: costing
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall, "")
+
+  /** Implements evaluation of Coll.reverse method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod
+    */
+  def distinct_eval[A](mc: MethodCall, xs: Coll[A])
+                     (implicit E: ErgoTreeEvaluator): Coll[A] = {
+    val m = mc.method
+    E.addSeqCost(m.costKind.asInstanceOf[PerItemCost], xs.length, m.opDesc) { () =>
+      xs.distinct
+    }
+  }
+
+  val StartsWithMethod = SMethod(this, "startsWith",
+    SFunc(Array(ThisType, ThisType), SBoolean, paramIVSeq),
+    32, Zip_CostKind) // todo: costing
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall, "")
+
+  /** Implements evaluation of Coll.zip method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod
+    */
+  def startsWith_eval[A](mc: MethodCall, xs: Coll[A], ys: Coll[A])
+                    (implicit E: ErgoTreeEvaluator): Boolean = {
+    val m = mc.method
+    E.addSeqCost(m.costKind.asInstanceOf[PerItemCost], xs.length, m.opDesc) { () =>
+      xs.startsWith(ys)
+    }
+  }
+
+  val EndsWithMethod = SMethod(this, "endsWith",
+    SFunc(Array(ThisType, ThisType), SBoolean, paramIVSeq),
+    33, Zip_CostKind) // todo: costing
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall, "")
+
+  /** Implements evaluation of Coll.zip method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod
+    */
+  def endsWith_eval[A](mc: MethodCall, xs: Coll[A], ys: Coll[A])
+                        (implicit E: ErgoTreeEvaluator): Boolean = {
+    val m = mc.method
+    E.addSeqCost(m.costKind.asInstanceOf[PerItemCost], xs.length, m.opDesc) { () =>
+      xs.endsWith(ys)
+    }
+  }
+
+  val GetMethod = SMethod(this, "get",
+    SFunc(Array(ThisType, SInt), SOption(tIV), Array[STypeParam](tIV)), 34, ByIndex.costKind) //todo: costing
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall, "")
+
+  /** Implements evaluation of Coll.zip method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod
+    */
+  def get_eval[A](mc: MethodCall, xs: Coll[A], index: Int)
+                      (implicit E: ErgoTreeEvaluator): Option[A] = {
+    E.addCost(ByIndex.costKind, mc.method.opDesc) //todo: costing
+    ??? // todo: this get is not actually executed, why?
+    xs.get(index)
+  }
+
+  private val v5Methods = Seq(
+    SizeMethod,
+    GetOrElseMethod,
+    MapMethod,
+    ExistsMethod,
+    FoldMethod,
+    ForallMethod,
+    SliceMethod,
+    FilterMethod,
+    AppendMethod,
+    ApplyMethod,
+    IndicesMethod,
+    FlatMapMethod,
+    PatchMethod,
+    UpdatedMethod,
+    UpdateManyMethod,
+    IndexOfMethod,
+    ZipMethod
+  )
+
+  private val v6Methods = Seq(
+    ReverseMethod,
+    DistinctMethod,
+    StartsWithMethod,
+    EndsWithMethod,
+    GetMethod
+  )
+
   /** This method should be overriden in derived classes to add new methods in addition to inherited.
     * Typical override: `super.getMethods() ++ Seq(m1, m2, m3)`
     */
-  override protected def getMethods(): Seq[SMethod] = super.getMethods() ++
-      Seq(
-        SizeMethod,
-        GetOrElseMethod,
-        MapMethod,
-        ExistsMethod,
-        FoldMethod,
-        ForallMethod,
-        SliceMethod,
-        FilterMethod,
-        AppendMethod,
-        ApplyMethod,
-        IndicesMethod,
-        FlatMapMethod,
-        PatchMethod,
-        UpdatedMethod,
-        UpdateManyMethod,
-        IndexOfMethod,
-        ZipMethod
-      )
+  override protected def getMethods(): Seq[SMethod] = {
+    if(VersionContext.current.isV6SoftForkActivated) {
+      super.getMethods() ++ v5Methods ++ v6Methods
+    } else {
+      super.getMethods() ++ v5Methods
+    }
+  }
+
 }
 
 object STupleMethods extends MethodsContainer {

@@ -39,6 +39,10 @@ class CollOverArray[@specialized A](val toArray: Array[A], val builder: CollBuil
 
   @inline def zip[@specialized B](ys: Coll[B]): PairColl[A, B] = builder.pairColl(this, ys)
 
+  @inline def startsWith(ys: Coll[A]): Boolean = toArray.startsWith(ys.toArray)
+
+  @inline def endsWith(ys: Coll[A]): Boolean = toArray.endsWith(ys.toArray)
+
   def append(other: Coll[A]): Coll[A] = {
     if (toArray.length <= 0) return other
     val result = if (VersionContext.current.isJitActivated) {
@@ -349,6 +353,10 @@ class PairOfCols[@specialized L, @specialized R](val ls: Coll[L], val rs: Coll[R
   }
 
   def zip[@specialized B](ys: Coll[B]): PairColl[(L,R), B] = builder.pairColl(this, ys)
+
+  def startsWith(ys: Coll[(L, R)]): Boolean = toArray.startsWith(ys.toArray)
+
+  def endsWith(ys: Coll[(L, R)]): Boolean = toArray.endsWith(ys.toArray)
 
   override def indices: Coll[Int] = if (ls.length <= rs.length) ls.indices else rs.indices
 
