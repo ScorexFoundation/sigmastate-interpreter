@@ -54,7 +54,9 @@ case class AvlTreeData(digest: Coll[Byte],
                        valueLengthOpt: Option[Int] = None)
 
 object AvlTreeData {
+  /** Size of the digest in bytes = hash size + 1 byte for the tree height */
   val DigestSize: Int = crypto.hashLength + 1 //please read class comments above for details
+
   val TreeDataSize = DigestSize + 3 + 4 + 4
 
   val dummy = new AvlTreeData(

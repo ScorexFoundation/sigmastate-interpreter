@@ -41,28 +41,16 @@ class ReducingInterpreter(params: BlockchainParameters) extends ErgoLikeInterpre
     ReducedInputData(res, ctxUpdInitCost.extension)
   }
 
-  /** Reduce inputs of the given unsigned transaction to provable sigma propositions using
-    * the given context. See [[ReducedErgoLikeTransaction]] for details.
-    *
-    * @param unreducedTx  unreduced transaction data to be reduced (holds unsigned transaction)
-    * @param stateContext state context of the blockchain in which the transaction should be signed
-    * @param baseCost     the cost accumulated so far and before this operation
-    * @return a new reduced transaction with all inputs reduced and the cost of this transaction
-    *         The returned cost include all the costs accumulated during the reduction:
-    *         1) `baseCost`
-    *         2) general costs of the transaction based on its data
-    *         3) reduction cost for each input.
-    */
-  def reduceTransaction(
-      unreducedTx: UnreducedTransaction,
-      stateContext: BlockchainStateContext,
-      baseCost: Int
-  ): ReducedTransaction = {
+  private def validateTransaction(
+    unreducedTx: UnreducedTransaction
+  ): Unit = {
     val unsignedTx = unreducedTx.unsignedTx
     val boxesToSpend = unreducedTx.boxesToSpend
     val dataBoxes = unreducedTx.dataInputs
-    if (unsignedTx.inputs.length != boxesToSpend.length) throw new Exception("Not enough boxes to spend")
-    if (unsignedTx.dataInputs.length != dataBoxes.length) throw new Exception("Not enough data boxes")
+    if (unsignedTx.inputs.length != boxesToSpend.length)
+      throw new Exception("Not enough boxes to spend")
+    if (unsignedTx.dataInputs.length != dataBoxes.length)
+      throw new Exception("Not enough data boxes")
 
     val tokensToBurn = unreducedTx.tokensToBurn
     val inputTokens = boxesToSpend.flatMap(_.box.additionalTokens.toArray)
@@ -96,6 +84,30 @@ class ReducingInterpreter(params: BlockchainParameters) extends ErgoLikeInterpre
         }
       }
     }
+  }
+
+  /** Reduce inputs of the given unsigned transaction to provable sigma propositions using
+    * the given context. See [[ReducedErgoLikeTransaction]] for details.
+    *
+    * @param unreducedTx  unreduced transaction data to be reduced (holds unsigned transaction)
+    * @param stateContext state context of the blockchain in which the transaction should be signed
+    * @param baseCost     the cost accumulated so far and before this operation
+    * @return a new reduced transaction with all inputs reduced and the cost of this transaction
+    *         The returned cost include all the costs accumulated during the reduction:
+    *         1) `baseCost`
+    *         2) general costs of the transaction based on its data
+    *         3) reduction cost for each input.
+    */
+  def reduceTransaction(
+      unreducedTx: UnreducedTransaction,
+      stateContext: BlockchainStateContext,
+      baseCost: Int
+  ): ReducedTransaction = {
+    validateTransaction(unreducedTx)
+    val unsignedTx = unreducedTx.unsignedTx
+    val boxesToSpend = unreducedTx.boxesToSpend
+    val dataBoxes = unreducedTx.dataInputs
+
     // Cost of transaction initialization: we should read and parse all inputs and data inputs,
     // and also iterate through all outputs to check rules
     val initialCost = ArithUtils.addExact(
@@ -154,4 +166,52 @@ class ReducingInterpreter(params: BlockchainParameters) extends ErgoLikeInterpre
       cost = (currentCost - baseCost).toIntExact)
     ReducedTransaction(reducedTx)
   }
+
+  /** Reduce the given input of the given unsigned transaction to compute sigma propositions using
+    * the given context. See [[ReducedErgoLikeTransaction]] for details.
+    *
+    * @param unreducedTx  unreduced transaction data to be reduced (holds unsigned transaction)
+    * @param inputIdx     index of the input to reduce
+    * @param stateContext state context of the blockchain in which the transaction should be signed
+    * @return a new reduced transaction with all inputs reduced and the cost of this transaction
+    *         The returned cost include all the costs accumulated during the reduction:
+    *         1) `baseCost`
+    *         2) general costs of the transaction based on its data
+    *         3) reduction cost for each input.
+    */
+  def reduceTransactionInput(
+      unreducedTx: UnreducedTransaction,
+      inputIdx: Int,
+      stateContext: BlockchainStateContext
+  ): ReducedInputData = {
+    validateTransaction(unreducedTx)
+    val unsignedTx = unreducedTx.unsignedTx
+    val boxesToSpend = unreducedTx.boxesToSpend
+    val dataBoxes = unreducedTx.dataInputs
+
+    val transactionContext = TransactionContext(boxesToSpend.map(_.box), dataBoxes, unsignedTx)
+
+    val inputBox = boxesToSpend(inputIdx)
+    val unsignedInput = unsignedTx.inputs(inputIdx)
+    require(util.Arrays.equals(unsignedInput.boxId, inputBox.box.id))
+
+    val context = new ErgoLikeContext(
+      AvlTreeData.avlTreeFromDigest(stateContext.previousStateDigest),
+      stateContext.sigmaLastHeaders,
+      stateContext.sigmaPreHeader,
+      transactionContext.dataBoxes,
+      transactionContext.boxesToSpend,
+      transactionContext.spendingTransaction,
+      inputIdx.toShort,
+      inputBox.extension,
+      ValidationRules.currentSettings,
+      costLimit = params.maxBlockCost,
+      initCost = 0, // not computed in this method
+      activatedScriptVersion = (params.blockVersion - 1).toByte
+    )
+
+    val reducedInput = reduce(Interpreter.emptyEnv, inputBox.box.ergoTree, context)
+    reducedInput
+  }
+
 }

@@ -17,6 +17,7 @@ import scorex.util._
 import sigma.Colls
 import sigma.data.{AvlTreeData, AvlTreeFlags}
 import ErgoTree.ZeroHeader
+import sigma.Extensions.TryOps
 import sigma.compiler.ir.IRContext
 import sigma.eval.Extensions.SigmaBooleanOps
 import sigma.interpreter.ContextExtension

@@ -1,8 +1,10 @@
 package sigma.js
 
-import sigma.Extensions.ArrayOps
+import scorex.util.encode.Base16
+import sigma.Extensions.{ArrayOps, TryOps}
 import sigma.data.Iso.{isoStringToArray, isoStringToColl}
 import sigma.data.{AvlTreeData, AvlTreeFlags, CAvlTree, Iso}
+import sigmastate.fleetSdkCommon.distEsmTypesCommonMod.HexString
 
 import scala.scalajs.js
 import scala.scalajs.js.UndefOr
@@ -19,7 +21,23 @@ class AvlTree(
     val valueLengthOpt: UndefOr[Int]
 ) extends js.Object
 
-object AvlTree {
+@JSExportTopLevel("AvlTree$")
+object AvlTree extends js.Object {
+
+  /** Size of the digest in bytes = hash size + 1 byte for the tree height */
+  val DigestSize: Int = AvlTreeData.DigestSize
+
+  /**
+    * Creates an [[AvlTree]] instance.
+    *
+    * @param digestHex A hexadecimal string representing the digest of the [[AvlTree]].
+    * @returns An AvlTree instance with the specified digest and all operations (insert, update, remove) enabled.
+    */
+  def fromDigest(digestHex: HexString): AvlTree = {
+    val digestBytes = Base16.decode(digestHex).getOrThrow.toColl
+    val treeData = AvlTreeData.avlTreeFromDigest(digestBytes)
+    isoAvlTree.from(CAvlTree(treeData))
+  }
 
   implicit val isoAvlTree: Iso[AvlTree, sigma.AvlTree] = new Iso[AvlTree, sigma.AvlTree] {
     override def to(x: AvlTree): sigma.AvlTree = {

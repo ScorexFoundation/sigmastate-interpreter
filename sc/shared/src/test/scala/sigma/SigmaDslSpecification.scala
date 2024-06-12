@@ -10,7 +10,7 @@ import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ModifierId
-import sigma.Extensions.{ArrayOps, CollOps}
+import sigma.Extensions.{ArrayOps, CollOps, TryOps}
 import sigma.ast.SCollection._
 import sigma.ast._
 import sigma.ast.syntax._

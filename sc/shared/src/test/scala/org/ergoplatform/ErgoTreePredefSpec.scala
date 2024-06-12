@@ -8,6 +8,7 @@ import org.scalacheck.Gen
 import scorex.crypto.hash.Blake2b256
 import scorex.util.Random
 import sigma.Colls
+import sigma.Extensions.TryOps
 import sigma.ast._
 import sigma.ast.syntax.CollectionConstant
 import sigma.data.{AvlTreeData, Digest32Coll, ProveDlog, TrivialProp}
@@ -20,7 +21,6 @@ import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigma.ast.syntax.ValueOps
 import sigma.interpreter.{ContextExtension, ProverResult}
 import sigma.serialization.ValueSerializer
-import sigmastate.utils.Helpers._
 
 import scala.util.Try
 

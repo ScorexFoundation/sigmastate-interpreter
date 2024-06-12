@@ -1,5 +1,6 @@
 package sigma.interpreter.js
 
+import sigma.data.Iso
 import sigma.js.JsWrapper
 import sigmastate.interpreter.HintsBag
 
@@ -20,4 +21,9 @@ object ProverHints extends js.Object {
 
   /** Empty bag of hints. Immutable value can be reused where necessary. */
   def empty(): ProverHints = _empty
+
+  val isoProverHints: Iso[ProverHints, HintsBag] = new Iso[ProverHints, HintsBag] {
+    override def to(p: ProverHints): HintsBag = p.wrappedValue
+    override def from(p: HintsBag): ProverHints = new ProverHints(p)
+  }
 }

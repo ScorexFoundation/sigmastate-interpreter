@@ -18,9 +18,7 @@ import sigma.interpreter.{ContextExtension, ProverResult}
 import sigma.serialization.SigmaSerializer
 import sigmastate.helpers.TestingHelpers.copyTransaction
 import sigmastate.utils.Helpers
-import sigma.SigmaDslTesting
-import sigma.Extensions._
-import sigmastate.utils.Helpers.EitherOps  // required for Scala 2.11
+import sigma.Extensions._   // required for Scala 2.11
 
 class ErgoLikeTransactionSpec extends SigmaDslTesting with JsonCodecs {
 

@@ -78,16 +78,19 @@ class AppkitProvingInterpreter(
    * @return a new signed transaction with all inputs signed and the cost of this transaction
    *         The returned cost doesn't include `baseCost`.
    */
-  def sign(unreducedTx: UnreducedTransaction,
-           stateContext: BlockchainStateContext,
-           baseCost: Int): Try[SignedTransaction] = Try {
+  def sign(
+    unreducedTx: UnreducedTransaction,
+    stateContext: BlockchainStateContext,
+    baseCost: Int,
+    hints: Option[TransactionHintsBag] = None
+  ): Try[SignedTransaction] = Try {
     val maxCost = params.maxBlockCost
     var currentCost: Long = baseCost
 
     val reducedTx = reduceTransaction(unreducedTx, stateContext, baseCost)
     currentCost = addCostLimited(currentCost, reducedTx.ergoTx.cost, maxCost, msgSuffix = reducedTx.toString())
 
-    val signedTx = signReduced(reducedTx, currentCost.toInt)
+    val signedTx = signReduced(reducedTx, currentCost.toInt, hints)
     currentCost += signedTx.cost // this never overflows if signReduced is successful
 
     val reductionAndVerificationCost = (currentCost - baseCost).toIntExact
@@ -212,12 +215,18 @@ class AppkitProvingInterpreter(
     * Note, this method doesn't require context to generate proofs (aka signatures).
     *
     * @param reducedTx unsigend transaction augmented with reduced
+    * @param baseCost  the cost accumulated before this operation
+    * @param sigHints     additional hints for a signer (useful for multisig)
     * @return a new signed transaction with all inputs signed and the cost of this transaction
     *         The returned cost includes:
     *         - the costs of obtaining reduced transaction
     *         - the cost of verification of each signed input
     */
-  def signReduced(reducedTx: ReducedTransaction, baseCost: Int): SignedTransaction = {
+  def signReduced(
+    reducedTx: ReducedTransaction,
+    baseCost: Int,
+    sigHints: Option[TransactionHintsBag]
+  ): SignedTransaction = {
     val provedInputs = mutable.ArrayBuilder.make[Input]
     val unsignedTx = reducedTx.ergoTx.unsignedTx
 
@@ -226,7 +235,8 @@ class AppkitProvingInterpreter(
 
     for ((reducedInput, boxIdx) <- reducedTx.ergoTx.reducedInputs.zipWithIndex ) {
       val unsignedInput = unsignedTx.inputs(boxIdx)
-      val proverResult = proveReduced(reducedInput, unsignedTx.messageToSign)
+      val inputHints = sigHints.fold(HintsBag.empty)(_.hintsForInput(boxIdx))
+      val proverResult = proveReduced(reducedInput, unsignedTx.messageToSign, inputHints)
       val signedInput = Input(unsignedInput.boxId, proverResult)
 
       val verificationCost = estimateCryptoVerifyCost(reducedInput.reductionResult.value).toBlockCost

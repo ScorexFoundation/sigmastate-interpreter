@@ -1,13 +1,14 @@
 declare module "sigmastate-js/main" {
     import {
-        Amount,
-        Box as FBox,
-        EIP12UnsignedInput,
-        NonMandatoryRegisters, SignedTransaction, TokenAmount,
-        UnsignedTransaction
-    } from "@fleet-sdk/common";
+    Amount,
+    Box as FBox, ContextExtension,
+    EIP12UnsignedInput,
+    NonMandatoryRegisters, ProverResult, SignedTransaction, TokenAmount,
+    UnsignedTransaction
+} from "@fleet-sdk/common";
 
     type SigmaCompilerNamedConstantsMap = { [key: string]: Value };
+    type MapOfBags = { [key: number]: ProverHints };
     type HexString = string;
     type ByteArray = { u: Int8Array };
 
@@ -171,6 +172,19 @@ declare module "sigmastate-js/main" {
         removeAllowed: Boolean;
         keyLength: number;
         valueLengthOpt: number | undefined;
+    }
+
+    export declare class AvlTree$ {
+        /** Size of the digest in bytes = hash size + 1 byte for the tree height */
+        DigestSize: number
+
+        /**
+         * Creates an {@link AvlTree} instance.
+         *
+         * @param digestHex A hexadecimal string representing the digest of the {@link AvlTree}.
+         * @returns An AvlTree instance with the specified digest and all operations (insert, update, remove) enabled.
+         */
+        fromDigest(digestHex: HexString): AvlTree
     }
 
     export declare class Box {
@@ -352,6 +366,11 @@ declare module "sigmastate-js/main" {
         empty(): ProverHints
     }
 
+    class TransactionHintsBag {
+        secretHints: MapOfBags
+        publicHints: MapOfBags
+    }
+
     /** Represents one secret (aka SigmaProtocolPrivateInput) used by [[SigmaPropProver]]. */
     export declare class ProverSecret {
         /** Public key generated from the secret.
@@ -474,6 +493,16 @@ declare module "sigmastate-js/main" {
         int8ArrayToHex(arr: Int8Array): string
     }
 
+    export declare class ReductionResult {
+       value: SigmaProp
+       cost: number
+    }
+
+    export declare class ReducedInputData {
+        reductionResult: ReductionResult;
+        extension: ContextExtension;
+    }
+
     /** Represents a prover for signing Ergo transactions and messages.
      *
      * Equivalent of [[org.ergoplatform.sdk.SigmaProver]] available from JS.
@@ -508,11 +537,47 @@ declare module "sigmastate-js/main" {
             tokensToBurn: TokenAmount<Amount>[],
             baseCost: number): ReducedTransaction;
 
+        /** Reduces the given input of transaction to the reduced form, which is ready to be
+         * used for signing.
+         *
+         * @param stateCtx     blockchain state context
+         * @param unsignedTx   unsigned transaction to be reduced (created by Fleet builders)
+         * @param boxesToSpend boxes to be spent by the transaction
+         * @param dataInputs   data inputs to be used by the transaction
+         * @param tokensToBurn tokens to be burned by the transaction
+         * @param inputIdx     index of the input to reduce
+         * @return reduced input data (reduction result, extension)
+         */
+        reduceTransactionInput(
+            stateCtx: BlockchainStateContext,
+            unsignedTx: UnsignedTransaction,
+            boxesToSpend: EIP12UnsignedInput[],
+            dataInputs: FBox<Amount, NonMandatoryRegisters>[],
+            tokensToBurn: TokenAmount<Amount>[],
+            inputIdx: number): ReducedInputData;
+
         /** Signs the reduced transaction.
          * @param reducedTx reduced transaction to be signed
          * @return signed transaction containting all the required proofs (signatures)
          */
-        signReduced(reducedTx: ReducedTransaction): SignedTransaction;
+        signReduced(reducedTx: ReducedTransaction, hints: undefined | TransactionHintsBag): SignedTransaction;
+
+        /** Generates proof (aka signature) for the given message using secrets of this prover.
+         * All the necessary secrets should be configured in this prover to satisfy the given
+         * sigma proposition in the reducedInput.
+         */
+        signReducedInput(
+            reducedInput: ReducedInputData,
+            messageHex: String,
+            hintsBag: undefined | ProverHints
+        ): ProverResult
+
+        /** Generates commitments for a given `ReducedTransaction` using the wallets's secret keys.
+         *
+         * @param reducedTx reduced transaction to generate commitments
+         * @return a secrete and public hints for each input of the transaction
+         */
+        generateCommitments(reducedTx: ReducedTransaction): TransactionHintsBag
     }
 
     /** Equivalent of [[sdk.ProverBuilder]] available from JS.
@@ -592,6 +657,16 @@ declare module "sigmastate-js/main" {
 
     /** JavaScript class wrapping the Scala [[sigma.ast.Value]]. */
     export declare class Expr {
+        /** Serialize this expression using sigma serializer {@link sigma.serialization.ValueSerializer}. */
+        toBytes(): Int8Array
+    }
+
+    export declare class Expr$ {
+        /**
+         * Deserialize an expression from bytes using sigma serializer  {@link sigma.serialization.ValueSerializer}.
+         * This is reverse operation of {@link Expr.toBytes}.
+         */
+        fromBytes(bytes: Int8Array): Expr
     }
 
     /**

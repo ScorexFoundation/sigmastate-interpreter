@@ -308,6 +308,7 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
     case UnitElement => UnitIsLiftable
     case _: BigIntElem[_] => LiftableBigInt
     case _: GroupElementElem[_] => LiftableGroupElement
+    case _: SigmaPropElem[_] => LiftableSigmaProp
     case ce: CollElem[t,_] =>
       implicit val lt = liftableFromElem[t](ce.eItem)
       liftableColl(lt)

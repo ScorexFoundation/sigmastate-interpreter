@@ -2,7 +2,7 @@ package sigmastate.utxo
 
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, R6, R8}
 import org.ergoplatform._
-import sigma.Extensions.ArrayOps
+import sigma.Extensions.{ArrayOps, TryOps}
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.SType.AnyOps
 import sigma.data.{AvlTreeData, CAnyValue, CSigmaDslBuilder}

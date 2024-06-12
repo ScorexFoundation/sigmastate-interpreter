@@ -14,7 +14,7 @@ import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingIn
 import sigmastate.helpers.TestingHelpers._
 import org.ergoplatform._
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, TestContractSpec}
-import sigma.Extensions.ArrayOps
+import sigma.Extensions.{ArrayOps, TryOps}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigma.Context
 import sigma.ast.syntax._

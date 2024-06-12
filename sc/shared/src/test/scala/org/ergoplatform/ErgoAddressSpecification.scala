@@ -5,6 +5,7 @@ import org.scalatest.propspec.AnyPropSpecLike
 import org.scalatest.{Assertion, TryValues}
 import scorex.crypto.hash.Blake2b256
 import scorex.util.encode.Base58
+import sigma.Extensions.TryOps
 import sigma.ast.{ByteArrayConstant, Constant, ErgoTree, IntConstant, SigmaAnd, UnparsedErgoTree}
 import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.helpers.TestingHelpers._
