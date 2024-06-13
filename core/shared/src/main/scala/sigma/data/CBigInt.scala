@@ -100,4 +100,10 @@ case class CUnsignedBigInt(override val wrappedValue: BigInteger) extends Unsign
     val mBi = m.asInstanceOf[CUnsignedBigInt].wrappedValue
     CUnsignedBigInt(wrappedValue.add(thatBi).mod(mBi))
   }
+
+  override def multiplyMod(that: UnsignedBigInt, m: UnsignedBigInt): UnsignedBigInt = {
+    val thatBi = that.asInstanceOf[CUnsignedBigInt].wrappedValue
+    val mBi = m.asInstanceOf[CUnsignedBigInt].wrappedValue
+    CUnsignedBigInt(wrappedValue.multiply(thatBi).mod(mBi))
+  }
 }

@@ -1021,6 +1021,10 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
               val that = asRep[UnsignedBigInt](argsV(0))
               val m = asRep[UnsignedBigInt](argsV(1))
               ubi.plusMod(that, m)
+            case SUnsignedBigIntMethods.MultiplyModMethod.name =>
+              val that = asRep[UnsignedBigInt](argsV(0))
+              val m = asRep[UnsignedBigInt](argsV(1))
+              ubi.multiplyMod(that, m)
           }
           case (ge: Ref[GroupElement]@unchecked, SGroupElementMethods) => method.name match {
             case SGroupElementMethods.GetEncodedMethod.name =>

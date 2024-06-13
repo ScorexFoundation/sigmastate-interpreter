@@ -283,6 +283,7 @@ trait UnsignedBigInt {
 
   def modInverse(m: UnsignedBigInt): UnsignedBigInt
   def plusMod(that: UnsignedBigInt, m: UnsignedBigInt): UnsignedBigInt
+  def multiplyMod(that: UnsignedBigInt, m: UnsignedBigInt): UnsignedBigInt
 }
 
 

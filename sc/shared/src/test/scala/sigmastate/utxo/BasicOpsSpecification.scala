@@ -168,7 +168,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
 
     // todo: how to upcast?
     def deserTest() = {test("restoring", env, ext,
-      s"{ val b = bigInt(\"${ub.toString}\"); b > 1 }",
+      s"{ val b = bigInt(\"${ub.toString}\").toUnsigned; b > 1 }",
       null,
       true
     )}
@@ -293,6 +293,27 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
+  property("mod ops - multiply") {
+    def miTest() = {
+      test("modInverse", env, ext,
+        s"""{
+           |   val bi1 = unsignedBigInt("248486720836984554860790790898080606")
+           |   val bi2 = unsignedBigInt("2484867208369845548607907908980997780606")
+           |   val m = unsignedBigInt("575879797")
+           |   bi1.multiplyMod(bi2, m) > 0
+           |}""".stripMargin,
+        null,
+        true
+      )
+    }
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[Exception] should be thrownBy miTest()
+    } else {
+      miTest()
+    }
+  }
+
   property("Bulletproof verification for a range proof") {
     /*
      * Original range proof verifier code by Benedikt Bunz:
@@ -357,30 +378,30 @@ class BasicOpsSpecification extends CompilerTestingCommons
 
     val g = CGroupElement(SecP256K1Group.generator)
 
-    def circuitTest() = {
+    def rangeTest() = {
       test("range proof", env, ext,
         s"""{
-           |   // circuit data - should be provided via data input likely
-           |   val input: GroupElement
+           |   // range proof input data
+           |   val input: GroupElement = getVar[GroupElement](0).get
            |
            |   // proof data
-           |   val ai: GroupElement
-           |   val s: GroupElement
-           |   val tCommits: Coll[GroupElement]
-           |   val tauX: UnsignedBigInt
-           |   val mu: UnsignedBigInt
-           |   val t: UnsignedBigInt
+           |   val ai: GroupElement = getVar[GroupElement](1).get
+           |   val s: GroupElement = getVar[GroupElement](2).get
+           |   val tCommits: Coll[GroupElement] = getVar[Coll[GroupElement]](3).get
+           |   val tauX: UnsignedBigInt = getVar[UnsignedBigInt](4).get
+           |   val mu: UnsignedBigInt = getVar[UnsignedBigInt](5).get
+           |   val t: UnsignedBigInt = getVar[UnsignedBigInt](6).get
            |
            |   // inner product proof
-           |   val L: Coll[GroupElement]
-           |   val R: Coll[GroupElement]
-           |   val a: UnsignedBigInt
-           |   val b: UnsignedBigInt
+           |   val L: Coll[GroupElement] = getVar[Coll[GroupElement]](7).get
+           |   val R: Coll[GroupElement] = getVar[Coll[GroupElement]](8)).get
+           |   val a: UnsignedBigInt = getVar[UnsignedBigInt](9).get
+           |   val b: UnsignedBigInt = getVar[UnsignedBigInt](10).get
            |
            |   // proof verification:
            |   val Q = lWeights.size
            |
-           |   val q // group order
+           |   val q // group order = getVar[UnsignedBigInt](11).get
            |
            |   val yBytes = sha256(q.toBytes ++ input.getEncoded ++ aI.getEncoded ++ s.getEncoded)
            |
@@ -403,13 +424,14 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
 
     if (activatedVersionInTests < V6SoftForkVersion) {
-      an[Exception] should be thrownBy circuitTest()
+      an[Exception] should be thrownBy rangeTest()
     } else {
-      circuitTest()
+      rangeTest()
     }
   }
 
-  property("Bulletproof verification for a circuit proof") {
+  // todo: complete
+  ignore("Bulletproof verification for a circuit proof") {
 
     val g = CGroupElement(SecP256K1Group.generator)
 

@@ -394,11 +394,22 @@ case object SUnsignedBigIntMethods extends SNumericTypeMethods {
     bi.plusMod(bi2, m)
   }
 
+  val MultiplyModMethod = SMethod(this, "multiplyMod", SFunc(Array(this.ownerType, this.ownerType, this.ownerType), this.ownerType), 11, ModInverseCostInfo.costKind)
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall, "")
+
+  def multiplyMod_eval(mc: MethodCall, bi: UnsignedBigInt, bi2: UnsignedBigInt, m: UnsignedBigInt)
+                  (implicit E: ErgoTreeEvaluator): UnsignedBigInt = {
+    E.addCost(ModInverseCostInfo.costKind, mc.method.opDesc) // todo: costing
+    bi.multiplyMod(bi2, m)
+  }
+
   // no 6.0 versioning here as it is done in method containers
   protected override def getMethods(): Seq[SMethod]  = {
     super.getMethods() ++ Seq(
       ModInverseMethod,
-      PlusModMethod
+      PlusModMethod,
+      MultiplyModMethod
     )
   }
 
