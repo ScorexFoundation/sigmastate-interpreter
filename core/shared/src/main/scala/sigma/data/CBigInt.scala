@@ -90,4 +90,8 @@ case class CUnsignedBigInt(override val wrappedValue: BigInteger) extends Unsign
   override def and(that: UnsignedBigInt): UnsignedBigInt = CUnsignedBigInt(wrappedValue.and(that.asInstanceOf[CUnsignedBigInt].wrappedValue))
 
   override def or(that: UnsignedBigInt): UnsignedBigInt = CUnsignedBigInt(wrappedValue.or(that.asInstanceOf[CUnsignedBigInt].wrappedValue))
+
+  override def modInverse(m: UnsignedBigInt): UnsignedBigInt = {
+    CUnsignedBigInt(wrappedValue.modInverse(m.asInstanceOf[CUnsignedBigInt].wrappedValue))
+  }
 }

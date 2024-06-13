@@ -252,6 +252,26 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
+  property("modInverse") {
+    def miTest() = {
+      test("modInverse", env, ext,
+        s"""{
+           |   val bi = unsignedBigInt("248486720836984554860790790898080606")
+           |   val m = unsignedBigInt("575879797")
+           |   bi.modInverse(m) > 0
+           |}""".stripMargin,
+        null,
+        true
+      )
+    }
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[Exception] should be thrownBy miTest()
+    } else {
+      miTest()
+    }
+  }
+
   property("Bulletproof verification for a circuit proof") {
 
     val g = CGroupElement(SecP256K1Group.generator)

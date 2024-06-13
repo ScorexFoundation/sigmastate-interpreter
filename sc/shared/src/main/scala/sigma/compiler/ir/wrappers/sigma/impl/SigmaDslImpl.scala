@@ -332,6 +332,13 @@ object UnsignedBigInt extends EntityObject("UnsignedBigInt") {
         Array[AnyRef](that),
         true, false, element[UnsignedBigInt]))
     }
+
+    override def modInverse(m: Ref[UnsignedBigInt]): Ref[UnsignedBigInt] = {
+      asRep[UnsignedBigInt](mkMethodCall(self,
+        UnsignedBigIntClass.getMethod("modInverse", classOf[Sym]),
+        Array[AnyRef](m),
+        true, false, element[UnsignedBigInt]))
+    }
   }
 
 
@@ -402,6 +409,20 @@ object UnsignedBigInt extends EntityObject("UnsignedBigInt") {
         Array[AnyRef](that),
         true, true, element[UnsignedBigInt]))
     }
+
+    def modInverse(m: Ref[UnsignedBigInt]): Ref[UnsignedBigInt] = {
+      asRep[UnsignedBigInt](mkMethodCall(source,
+        UnsignedBigIntClass.getMethod("modInverse", classOf[Sym]),
+        Array[AnyRef](m),
+        true, true, element[UnsignedBigInt]))
+    }
+  }
+
+  // entityUnref: single unref method for each type family
+  implicit final def unrefUnsignedBigInt(p: Ref[UnsignedBigInt]): UnsignedBigInt = {
+    if (p.node.isInstanceOf[UnsignedBigInt]) p.node.asInstanceOf[UnsignedBigInt]
+    else
+      UnsignedBigIntAdapter(p)
   }
 
   class UnsignedBigIntElem[To <: UnsignedBigInt]

@@ -490,7 +490,7 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
 case object SUnsignedBigInt extends SPrimType with SEmbeddable with SNumericType with SMonoType {
   override type WrappedType = UnsignedBigInt
   override val typeCode: TypeCode = 9: Byte
-  override val reprClass: RClass[_] = RClass(classOf[BigInt])
+  override val reprClass: RClass[_] = RClass(classOf[UnsignedBigInt])
   override def typeId = typeCode
 
   /** Type of Relation binary op like GE, LE, etc. */
@@ -501,6 +501,7 @@ case object SUnsignedBigInt extends SPrimType with SEmbeddable with SNumericType
 
   override def numericTypeIndex: Int = 5
 
+  // todo: consider upcast and downcast rules
   override def upcast(v: AnyVal): UnsignedBigInt = {
     val bi = v match {
       case x: Byte => BigInteger.valueOf(x.toLong)

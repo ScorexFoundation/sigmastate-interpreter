@@ -273,15 +273,15 @@ trait UnsignedBigInt {
   def and(that: UnsignedBigInt): UnsignedBigInt
   def &(that: UnsignedBigInt): UnsignedBigInt = and(that)
 
-  /** Returns a BigInteger whose value is `(this | that)`.  (This
-    * method returns a negative BigInteger if and only if either `this` or `that`` is
-    * negative.)
+  /** Returns a BigInteger whose value is `(this | that)`.
     *
     * @param that value to be OR'ed with this BigInteger.
     * @return `this | that`
     */
   def or(that: UnsignedBigInt): UnsignedBigInt
   def |(that: UnsignedBigInt): UnsignedBigInt = or(that)
+
+  def modInverse(m: UnsignedBigInt): UnsignedBigInt
 }
 
 

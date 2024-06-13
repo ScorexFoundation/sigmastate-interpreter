@@ -90,7 +90,7 @@ sealed trait MethodsContainer {
 
 }
 object MethodsContainer {
-  private val containers = new SparseArrayContainer[MethodsContainer](Array(
+  private val methodsV5 = Array(
     SByteMethods,
     SShortMethods,
     SIntMethods,
@@ -111,11 +111,29 @@ object MethodsContainer {
     STupleMethods,
     SUnitMethods,
     SAnyMethods
-  ).map(m => (m.typeId, m)))
+  )
 
-  def contains(typeId: TypeCode): Boolean = containers.contains(typeId)
+  private val methodsV6 = methodsV5 ++ Seq(SUnsignedBigIntMethods)
 
-  def apply(typeId: TypeCode): MethodsContainer = containers(typeId)
+  private val containersV5 = new SparseArrayContainer[MethodsContainer](methodsV5.map(m => (m.typeId, m)))
+
+  private val containersV6 = new SparseArrayContainer[MethodsContainer](methodsV6.map(m => (m.typeId, m)))
+
+  def contains(typeId: TypeCode): Boolean = {
+    if (VersionContext.current.isV6SoftForkActivated) {
+      containersV6.contains(typeId)
+    } else {
+      containersV5.contains(typeId)
+    }
+  }
+
+  def apply(typeId: TypeCode): MethodsContainer = {
+    if (VersionContext.current.isV6SoftForkActivated) {
+      containersV6(typeId)
+    } else {
+      containersV5(typeId)
+    }
+  }
 
   /** Finds the method of the give type.
     *
@@ -127,7 +145,11 @@ object MethodsContainer {
     case tup: STuple =>
       STupleMethods.getTupleMethod(tup, methodName)
     case _ =>
-      containers.get(tpe.typeCode).flatMap(_.method(methodName))
+      if (VersionContext.current.isV6SoftForkActivated) {
+        containersV6.get(tpe.typeCode).flatMap(_.method(methodName))
+      } else {
+        containersV5.get(tpe.typeCode).flatMap(_.method(methodName))
+      }
   }
 }
 
@@ -324,6 +346,48 @@ case object SBigIntMethods extends SNumericTypeMethods {
     } else {
       super.getMethods()
     }
+  }
+
+  /**
+    *
+    */
+  def nbits_eval(mc: MethodCall, bi: sigma.BigInt)(implicit E: ErgoTreeEvaluator): Long = {
+    ???
+  }
+
+}
+
+/** Methods of UnsignedBigInt type. Implemented using [[java.math.BigInteger]]. */
+case object SUnsignedBigIntMethods extends SNumericTypeMethods {
+  /** Type for which this container defines methods. */
+  override def ownerType: SMonoType = SUnsignedBigInt
+
+  final val ToNBitsCostInfo = OperationCostInfo(
+    FixedCost(JitCost(5)), NamedDesc("NBitsMethodCall"))
+
+  //id = 8 to make it after toBits
+  val ToNBits = SMethod(this, "nbits", SFunc(this.ownerType, SLong), 8, ToNBitsCostInfo.costKind)
+    .withInfo(ModQ, "Encode this big integer value as NBits")
+
+  // todo: costing
+  final val ModInverseCostInfo = ToNBitsCostInfo
+
+  // todo: check ids before and after merging with other PRs introducing new methods for Numeric
+  val ModInverseMethod = SMethod(this, "modInverse", SFunc(Array(this.ownerType, this.ownerType), this.ownerType), 9, ModInverseCostInfo.costKind)
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall, "")
+
+  def modInverse_eval(mc: MethodCall, bi: UnsignedBigInt, m: UnsignedBigInt)
+              (implicit E: ErgoTreeEvaluator): UnsignedBigInt = {
+    E.addCost(ModInverseCostInfo.costKind, mc.method.opDesc)
+    bi.modInverse(m)
+  }
+
+  // no 6.0 versioning here as it is done in method containers
+  protected override def getMethods(): Seq[SMethod]  = {
+    super.getMethods() ++ Seq(
+      ModInverseMethod
+    )
   }
 
   /**

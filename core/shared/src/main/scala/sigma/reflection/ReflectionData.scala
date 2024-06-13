@@ -128,6 +128,7 @@ object ReflectionData {
       )
     )
   }
+  //todo: add UnsignedBigInt
   {
     val clazz = classOf[CollBuilder]
     registerClassEntry(clazz,

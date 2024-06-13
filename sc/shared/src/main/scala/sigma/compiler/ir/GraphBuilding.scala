@@ -1013,6 +1013,11 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
               opt.filter(asRep[t => Boolean](argsV(0)))
             case _ => throwError
           }
+          case (ubi: Ref[UnsignedBigInt]@unchecked, SUnsignedBigIntMethods) => method.name match {
+            case SUnsignedBigIntMethods.ModInverseMethod.name =>
+              val m = asRep[UnsignedBigInt](argsV(0))
+              ubi.modInverse(m)
+          }
           case (ge: Ref[GroupElement]@unchecked, SGroupElementMethods) => method.name match {
             case SGroupElementMethods.GetEncodedMethod.name =>
               ge.getEncoded
