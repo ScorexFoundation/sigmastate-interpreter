@@ -282,6 +282,7 @@ trait UnsignedBigInt {
   def |(that: UnsignedBigInt): UnsignedBigInt = or(that)
 
   def modInverse(m: UnsignedBigInt): UnsignedBigInt
+  def plusMod(that: UnsignedBigInt, m: UnsignedBigInt): UnsignedBigInt
 }
 
 

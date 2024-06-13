@@ -23,6 +23,7 @@ import scalan._
       def min(that: Ref[UnsignedBigInt]): Ref[UnsignedBigInt];
       def max(that: Ref[UnsignedBigInt]): Ref[UnsignedBigInt];
       def modInverse(m: Ref[UnsignedBigInt]): Ref[UnsignedBigInt]
+      def plusMod(that: Ref[UnsignedBigInt], m: Ref[UnsignedBigInt]): Ref[UnsignedBigInt]
     };
     trait GroupElement extends Def[GroupElement] {
       def exp(k: Ref[BigInt]): Ref[GroupElement];

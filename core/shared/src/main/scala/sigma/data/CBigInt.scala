@@ -94,4 +94,10 @@ case class CUnsignedBigInt(override val wrappedValue: BigInteger) extends Unsign
   override def modInverse(m: UnsignedBigInt): UnsignedBigInt = {
     CUnsignedBigInt(wrappedValue.modInverse(m.asInstanceOf[CUnsignedBigInt].wrappedValue))
   }
+
+  override def plusMod(that: UnsignedBigInt, m: UnsignedBigInt): UnsignedBigInt = {
+    val thatBi = that.asInstanceOf[CUnsignedBigInt].wrappedValue
+    val mBi = m.asInstanceOf[CUnsignedBigInt].wrappedValue
+    CUnsignedBigInt(wrappedValue.add(thatBi).mod(mBi))
+  }
 }

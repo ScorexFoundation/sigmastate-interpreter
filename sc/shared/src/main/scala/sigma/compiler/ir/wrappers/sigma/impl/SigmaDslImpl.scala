@@ -339,6 +339,13 @@ object UnsignedBigInt extends EntityObject("UnsignedBigInt") {
         Array[AnyRef](m),
         true, false, element[UnsignedBigInt]))
     }
+
+    override def plusMod(that: Ref[UnsignedBigInt], m: Ref[UnsignedBigInt]): Ref[UnsignedBigInt] = {
+      asRep[UnsignedBigInt](mkMethodCall(self,
+        UnsignedBigIntClass.getMethod("plusMod", classOf[Sym], classOf[Sym]),
+        Array[AnyRef](that, m),
+        true, false, element[UnsignedBigInt]))
+    }
   }
 
 
@@ -414,6 +421,13 @@ object UnsignedBigInt extends EntityObject("UnsignedBigInt") {
       asRep[UnsignedBigInt](mkMethodCall(source,
         UnsignedBigIntClass.getMethod("modInverse", classOf[Sym]),
         Array[AnyRef](m),
+        true, true, element[UnsignedBigInt]))
+    }
+
+    def plusMod(that: Ref[UnsignedBigInt], m: Ref[UnsignedBigInt]): Ref[UnsignedBigInt] = {
+      asRep[UnsignedBigInt](mkMethodCall(source,
+        UnsignedBigIntClass.getMethod("plusMod", classOf[Sym], classOf[Sym]),
+        Array[AnyRef](that, m),
         true, true, element[UnsignedBigInt]))
     }
   }

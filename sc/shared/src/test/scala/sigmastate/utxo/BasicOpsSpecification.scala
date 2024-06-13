@@ -272,51 +272,14 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
-  property("Bulletproof verification for a circuit proof") {
-
-    val g = CGroupElement(SecP256K1Group.generator)
-
-    def circuitTest() = {
-      test("schnorr", env, ext,
+  property("mod ops - plus") {
+    def miTest() = {
+      test("modInverse", env, ext,
         s"""{
-           |   // circuit data - should be provided via data input likely
-           |   val lWeights: Coll[UnsignedBigInt]
-           |   val rWeights: Coll[UnsignedBigInt]
-           |   val oWeights: Coll[UnsignedBigInt]
-           |   val commitmentWeights: Coll[UnsignedBigInt]
-           |
-           |   val cs: Coll[UnsignedBigInt]
-           |   val commitments: Coll[GroupElement]
-           |
-           |   // proof data
-           |   val ai: GroupElement
-           |   val ao: GroupElement
-           |   val s: GroupElement
-           |   val tCommits: Coll[GroupElement]
-           |   val tauX: UnsignedBigInt
-           |   val mu: UnsignedBigInt
-           |   val t: UnsignedBigInt
-           |
-           |   // inner product proof
-           |   val L: Coll[GroupElement]
-           |   val R: Coll[GroupElement]
-           |   val a: UnsignedBigInt
-           |   val b: UnsignedBigInt
-           |
-           |   // proof verification:
-           |   val Q = lWeights.size
-           |
-           |   val q // group order
-           |
-           |   val yBytes = sha256(q.toBytes ++ aI.getEncoded ++ aO.getEncoded ++ s.getEncoded)
-           |
-           |   val y = byteArrayToBigInt(yBytes) // should be to unsigned bigint
-           |
-           |   val z = byteArrayToBigInt(sha256(y ++ q.toBytes))
-           |
-           |
-           |
-           |   sigmaProp(properSignature)
+           |   val bi1 = unsignedBigInt("248486720836984554860790790898080606")
+           |   val bi2 = unsignedBigInt("2484867208369845548607907908980997780606")
+           |   val m = unsignedBigInt("575879797")
+           |   bi1.plusMod(bi2, m) > 0
            |}""".stripMargin,
         null,
         true
@@ -324,9 +287,9 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
 
     if (activatedVersionInTests < V6SoftForkVersion) {
-      an[Exception] should be thrownBy circuitTest()
+      an[Exception] should be thrownBy miTest()
     } else {
-      circuitTest()
+      miTest()
     }
   }
 
@@ -431,6 +394,64 @@ class BasicOpsSpecification extends CompilerTestingCommons
            |   def times() : // todo: implement
            |
            |   // ops needed: modInverse, mod ops
+           |
+           |   sigmaProp(properSignature)
+           |}""".stripMargin,
+        null,
+        true
+      )
+    }
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[Exception] should be thrownBy circuitTest()
+    } else {
+      circuitTest()
+    }
+  }
+
+  property("Bulletproof verification for a circuit proof") {
+
+    val g = CGroupElement(SecP256K1Group.generator)
+
+    def circuitTest() = {
+      test("schnorr", env, ext,
+        s"""{
+           |   // circuit data - should be provided via data input likely
+           |   val lWeights =  Coll[UnsignedBigInt]
+           |   val rWeights: Coll[UnsignedBigInt]
+           |   val oWeights: Coll[UnsignedBigInt]
+           |   val commitmentWeights: Coll[UnsignedBigInt]
+           |
+           |   val cs: Coll[UnsignedBigInt]
+           |   val commitments: Coll[GroupElement]
+           |
+           |   // proof data
+           |   val ai: GroupElement
+           |   val ao: GroupElement
+           |   val s: GroupElement
+           |   val tCommits: Coll[GroupElement]
+           |   val tauX: UnsignedBigInt
+           |   val mu: UnsignedBigInt
+           |   val t: UnsignedBigInt
+           |
+           |   // inner product proof
+           |   val L: Coll[GroupElement]
+           |   val R: Coll[GroupElement]
+           |   val a: UnsignedBigInt
+           |   val b: UnsignedBigInt
+           |
+           |   // proof verification:
+           |   val Q = lWeights.size
+           |
+           |   val q // group order
+           |
+           |   val yBytes = sha256(q.toBytes ++ aI.getEncoded ++ aO.getEncoded ++ s.getEncoded)
+           |
+           |   val y = byteArrayToBigInt(yBytes) // should be to unsigned bigint
+           |
+           |   val z = byteArrayToBigInt(sha256(y ++ q.toBytes))
+           |
+           |
            |
            |   sigmaProp(properSignature)
            |}""".stripMargin,
