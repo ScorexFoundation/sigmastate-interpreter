@@ -49,6 +49,18 @@ case class CBigInt(override val wrappedValue: BigInteger) extends BigInt with Wr
   override def and(that: BigInt): BigInt = CBigInt(wrappedValue.and(that.asInstanceOf[CBigInt].wrappedValue))
 
   override def or(that: BigInt): BigInt = CBigInt(wrappedValue.or(that.asInstanceOf[CBigInt].wrappedValue))
+
+  def toUnsigned: UnsignedBigInt = {
+    if(this.wrappedValue.compareTo(BigInteger.ZERO) < 0){
+      throw new ArithmeticException("BigInteger argument for .toUnsigned is negative in");
+    } else {
+      CUnsignedBigInt(this.wrappedValue)
+    }
+  }
+
+  def toUnsignedMod(m: UnsignedBigInt): UnsignedBigInt = {
+    CUnsignedBigInt(this.wrappedValue.mod(m.asInstanceOf[CUnsignedBigInt].wrappedValue))
+  }
 }
 
 /** A default implementation of [[BigInt]] interface.

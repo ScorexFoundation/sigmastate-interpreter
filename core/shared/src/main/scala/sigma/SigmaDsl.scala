@@ -152,6 +152,10 @@ trait BigInt {
     */
   def or(that: BigInt): BigInt
   def |(that: BigInt): BigInt = or(that)
+
+  def toUnsigned: UnsignedBigInt
+
+  def toUnsignedMod(m: UnsignedBigInt): UnsignedBigInt
 }
 
 

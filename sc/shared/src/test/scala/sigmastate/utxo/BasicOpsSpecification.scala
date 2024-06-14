@@ -159,25 +159,65 @@ class BasicOpsSpecification extends CompilerTestingCommons
       true
     )}
 
-    deserTest()
+    deserTest() // todo: should fail < 6.0
   }
 
-  property("signed <-> unsigned bigint conversion - positive bigint") {
+  property("signed -> unsigned bigint conversion - positive bigint") {
     val b = new BigInteger("9280562930080889354892980449861222646750586663683904599823322027983929189860")
     val ub = new BigInteger(1, b.toByteArray)
 
-    // todo: how to upcast?
-    def deserTest() = {test("restoring", env, ext,
-      s"{ val b = bigInt(\"${ub.toString}\").toUnsigned; b > 1 }",
+    def conversionTest() = {test("restoring", env, ext,
+      s"""{
+         |  val b = bigInt(\"${ub.toString}\")
+         |  val ub = b.toUnsigned
+         |  ub > 1
+         | } """.stripMargin,
       null,
       true
     )}
 
-    deserTest()
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[Exception] should be thrownBy conversionTest()
+    } else {
+      conversionTest()
+    }
   }
 
-  property("signed <-> unsigned bigint conversion - negative bigint") {
+  property("signed -> unsigned bigint conversion - negative bigint") {
+    def conversionTest() = {test("restoring", env, ext,
+      s"""{
+         |  val b = bigInt("-1")
+         |  val ub = b.toUnsigned
+         |  ub > 0
+         | } """.stripMargin,
+      null,
+      true
+    )}
 
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[Exception] should be thrownBy conversionTest()
+    } else {
+      an[Exception] should be thrownBy conversionTest()
+    }
+  }
+
+  property("signed -> unsigned bigint conversion - negative bigint - mod") {
+    def conversionTest() = {test("restoring", env, ext,
+      s"""{
+         |  val b = bigInt("-1")
+         |  val m = unsignedBigInt("5")
+         |  val ub = b.toUnsignedMod(m)
+         |  ub >= 0
+         | } """.stripMargin,
+      null,
+      true
+    )}
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[Exception] should be thrownBy conversionTest()
+    } else {
+      conversionTest()
+    }
   }
 
   property("schnorr sig check") {

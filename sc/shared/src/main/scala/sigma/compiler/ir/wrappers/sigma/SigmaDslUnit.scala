@@ -13,6 +13,8 @@ import scalan._
       def mod(m: Ref[BigInt]): Ref[BigInt];
       def min(that: Ref[BigInt]): Ref[BigInt];
       def max(that: Ref[BigInt]): Ref[BigInt];
+      def toUnsigned(): Ref[UnsignedBigInt];
+      def toUnsignedMod(m: Ref[UnsignedBigInt]): Ref[UnsignedBigInt]
     };
     trait UnsignedBigInt extends Def[UnsignedBigInt] {
       def add(that: Ref[UnsignedBigInt]): Ref[UnsignedBigInt];

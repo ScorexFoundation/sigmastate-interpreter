@@ -6,6 +6,7 @@ import sigma._
 import sigma.ast.SCollection.{SBooleanArray, SBoxArray, SByteArray, SByteArray2, SHeaderArray}
 import sigma.ast.SMethod.{MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
 import sigma.ast.SType.TypeCode
+import sigma.ast.SUnsignedBigIntMethods.ModInverseCostInfo
 import sigma.ast.syntax.{SValue, ValueOps}
 import sigma.data.OverloadHack.Overloaded1
 import sigma.data.{DataValueComparer, KeyValueColl, Nullable, RType, SigmaConstants}
@@ -336,13 +337,39 @@ case object SBigIntMethods extends SNumericTypeMethods {
   final val ToNBitsCostInfo = OperationCostInfo(
     FixedCost(JitCost(5)), NamedDesc("NBitsMethodCall"))
 
+  // todo: check ids after merging w. other numeric methods
+
   //id = 8 to make it after toBits
   val ToNBits = SMethod(this, "nbits", SFunc(this.ownerType, SLong), 8, ToNBitsCostInfo.costKind)
                   .withInfo(ModQ, "Encode this big integer value as NBits")
 
+  //id = 8 to make it after toBits
+  val ToUnsigned = SMethod(this, "toUnsigned", SFunc(this.ownerType, SUnsignedBigInt), 9, ToNBitsCostInfo.costKind)
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall, "")
+
+  def toUnsigned_eval(mc: MethodCall, bi: BigInt)
+                     (implicit E: ErgoTreeEvaluator): UnsignedBigInt = {
+    E.addCost(ModInverseCostInfo.costKind, mc.method.opDesc)
+    bi.toUnsigned
+  }
+
+
+  val ToUnsignedMod = SMethod(this, "toUnsignedMod", SFunc(Array(this.ownerType, SUnsignedBigInt), SUnsignedBigInt), 10, ToNBitsCostInfo.costKind)
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall, "")
+
+  def toUnsignedMod_eval(mc: MethodCall, bi: BigInt, m: UnsignedBigInt)
+                        (implicit E: ErgoTreeEvaluator): UnsignedBigInt = {
+    E.addCost(ModInverseCostInfo.costKind, mc.method.opDesc)
+    bi.toUnsignedMod(m)
+  }
+
+
+
   protected override def getMethods(): Seq[SMethod]  = {
     if (VersionContext.current.isV6SoftForkActivated) {
-      super.getMethods() ++ Seq(ToNBits)
+      super.getMethods() ++ Seq(ToNBits, ToUnsigned, ToUnsignedMod)
     } else {
       super.getMethods()
     }

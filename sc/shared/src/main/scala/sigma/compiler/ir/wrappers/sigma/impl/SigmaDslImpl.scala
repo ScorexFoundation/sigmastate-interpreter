@@ -97,6 +97,22 @@ object BigInt extends EntityObject("BigInt") {
         Array[AnyRef](that),
         true, false, element[BigInt]))
     }
+
+    import UnsignedBigInt.unsignedBigIntElement
+
+    override def toUnsigned(): Ref[UnsignedBigInt] = {
+      asRep[UnsignedBigInt](mkMethodCall(self,
+        BigIntClass.getMethod("toUnsigned"),
+        Array[AnyRef](),
+        true, false, element[UnsignedBigInt](unsignedBigIntElement)))
+    }
+
+    override def toUnsignedMod(m: Ref[UnsignedBigInt]): Ref[UnsignedBigInt] = {
+      asRep[UnsignedBigInt](mkMethodCall(self,
+        BigIntClass.getMethod("toUnsignedMod", classOf[Sym]),
+        Array[AnyRef](m),
+        true, false, element[UnsignedBigInt](unsignedBigIntElement)))
+    }
   }
 
   implicit object LiftableBigInt
@@ -165,6 +181,22 @@ object BigInt extends EntityObject("BigInt") {
         Array[AnyRef](that),
         true, true, element[BigInt]))
     }
+
+    import UnsignedBigInt.unsignedBigIntElement
+
+    def toUnsigned(): Ref[UnsignedBigInt] = {
+      asRep[UnsignedBigInt](mkMethodCall(source,
+        BigIntClass.getMethod("toUnsigned"),
+        Array[AnyRef](),
+        true, true, element[UnsignedBigInt](unsignedBigIntElement)))
+    }
+
+    def toUnsignedMod(that: Ref[UnsignedBigInt]): Ref[UnsignedBigInt] = {
+      asRep[UnsignedBigInt](mkMethodCall(source,
+        BigIntClass.getMethod("UnsignedBigInt", classOf[Sym]),
+        Array[AnyRef](that),
+        true, true, element[UnsignedBigInt](unsignedBigIntElement)))
+    }
   }
 
   // entityUnref: single unref method for each type family
@@ -182,7 +214,7 @@ object BigInt extends EntityObject("BigInt") {
     override protected def collectMethods: Map[RMethod, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(RClass(classOf[BigInt]), RClass(classOf[SBigInt]), Set(
-        "add", "subtract", "multiply", "divide", "mod", "min", "max"
+        "add", "subtract", "multiply", "divide", "mod", "min", "max", "toUnsigned", "toUnsignedMod"
         ))
     }
   }

@@ -1013,6 +1013,13 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
               opt.filter(asRep[t => Boolean](argsV(0)))
             case _ => throwError
           }
+          case (bi: Ref[BigInt]@unchecked, SBigIntMethods) => method.name match {
+            case SBigIntMethods.ToUnsigned.name =>
+              bi.toUnsigned()
+            case SBigIntMethods.ToUnsignedMod.name =>
+              val m = asRep[UnsignedBigInt](argsV(0))
+              bi.toUnsignedMod(m)
+          }
           case (ubi: Ref[UnsignedBigInt]@unchecked, SUnsignedBigIntMethods) => method.name match {
             case SUnsignedBigIntMethods.ModInverseMethod.name =>
               val m = asRep[UnsignedBigInt](argsV(0))
