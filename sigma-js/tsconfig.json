@@ -1,19 +1,19 @@
 {
 	"compilerOptions": {
-		"target": "esnext",
-		"module": "Node16",
-		"lib": ["esnext", "dom"],
-		"moduleResolution": "node16", // Updated module resolution setting
-		"esModuleInterop": true,
-		"strict": true,
-		"skipLibCheck": true,
-		"forceConsistentCasingInFileNames": true,
-		"baseUrl": ".",
-		"paths": {
-			"sigmastate-js/main": ["node_modules/sigmastate-js/dist/main.js"],
-			"sigmastate-js": ["node_modules/sigmastate-js/sigmastate-js.d.ts"]
-		}
+	  "target": "esnext",
+	  "module": "NodeNext",
+	  "lib": ["esnext", "dom"],
+	  "esModuleInterop": true,
+	  "strict": true,
+	  "skipLibCheck": true,
+	  "forceConsistentCasingInFileNames": true,
+	  "baseUrl": ".",
+	  "paths": {
+		"sigmastate-js/main": ["node_modules/sigmastate-js/dist/main.js"],
+		"sigmastate-js": ["node_modules/sigmastate-js/sigmastate-js.d.ts"]
+	  }
 	},
-	"include": ["src/**/*.ts", "*.test.ts"],
+	"include": ["tests/**/*.spec.ts"],
 	"exclude": ["node_modules"]
-}
+  }
+  

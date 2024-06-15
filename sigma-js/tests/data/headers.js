@@ -1,4 +1,4 @@
-const headers = [
+export const headers = [
 	{
 		id: '24587f75221fae3b672c735c70167928c5aef775cbd0e67e01c195735f824afe',
 		parentId: '10f7f78bd141a6a2cb8db90ec357648e21160f3bf896f26223db2cfaa87b1a3f',
@@ -190,5 +190,3 @@ const headers = [
 		},
 	},
 ];
-
-module.exports = headers;

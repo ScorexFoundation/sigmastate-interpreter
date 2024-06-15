@@ -1,4 +1,4 @@
-const poolUtxo = [
+export const poolUtxo = [
 	{
 		boxId: 'fe4daef7e5eaa2bb93013d94c1ae78c272d9ac11e9b1d4e1f515405ef2668de8',
 		transactionId: '2194af861e036f3a7012a6efda33686b32a7fffe188ae408a291cdb0fd7dcb4e',
@@ -35,7 +35,3 @@ const poolUtxo = [
 		mainChain: true,
 	},
 ];
-
-module.exports = {
-	poolUtxo
-}

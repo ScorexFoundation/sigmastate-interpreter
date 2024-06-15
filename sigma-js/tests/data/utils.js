@@ -1,6 +1,6 @@
-const { AvlTree$, GroupElement$ } = require('sigmastate-js/main');
+import { AvlTree$, GroupElement$ } from 'sigmastate-js/main';
 
-function blockchainParameterFromErgoNodeIfo(info){
+export function blockchainParameterFromErgoNodeIfo(info){
     return{
         storageFeeFactor: info.params.storageFeeFactor,
         minValuePerByte: info.params.minValuePerByte,
@@ -16,7 +16,7 @@ function blockchainParameterFromErgoNodeIfo(info){
     }
 };
 
-function sigmastateHeader(header){
+export function sigmastateHeader(header){
     return {
 		id: header.id,
 		version: header.version,
@@ -34,9 +34,4 @@ function sigmastateHeader(header){
 		powDistance: BigInt(header.powSolutions.d),
 		votes: header.votes,
 	};
-}
-
-module.exports = {
-	blockchainParameterFromErgoNodeIfo,
-	sigmastateHeader
 }

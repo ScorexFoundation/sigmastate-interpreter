@@ -1,6 +1,5 @@
 {
-  "type": "module",
-  "name": "sigmastate-js",
+  "name": "sigmastate-js2",
   "version": "0.4.5",
   "description": "Sigma.js library",
   "files": [

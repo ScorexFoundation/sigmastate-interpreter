@@ -1,5 +1,5 @@
 //https://api.ergoplatform.com/api/v1/info
-const info = {
+export const info = {
 	lastBlockId: '5b9b19ac028c6956b4cdf8ec75227934b8134ff3635ed3aceac8a8bf20788dce',
 	height: 1282261,
 	maxBoxGix: 6197269,
@@ -17,5 +17,3 @@ const info = {
 		outputCost: 100,
 	},
 };
-
-module.exports = info;
