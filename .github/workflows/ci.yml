@@ -66,7 +66,7 @@ jobs:
         os: [ubuntu-latest]
         scala: [2.13.11]
         java: [adopt@1.8]
-        node-version: [20]
+        node-version: [21]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout current branch (full)
@@ -85,47 +85,7 @@ jobs:
       - name: Install NPM dependencies
         run: npm ci --prefix sigma-js
 
-      - name: Setup Java and Scala
-        uses: olafurpg/setup-scala@v10
-        with:
-          java-version: ${{ matrix.java }}
-
-      - name: Cache sbt
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.sbt
-            ~/.ivy2/cache
-            ~/.coursier/cache/v1
-            ~/.cache/coursier/v1
-            ~/AppData/Local/Coursier/Cache/v1
-            ~/Library/Caches/Coursier/v1
-          key: ${{ runner.os }}-sbt-cache-v2-${{ hashFiles('**/*.sbt') }}-${{ hashFiles('project/build.properties') }}
-
-      - name: Runs tests and collect coverage
-        run: sbt -jvm-opts ci/ci.jvmopts ++${{ matrix.scala }} coreJS/test interpreterJS/test parsersJS/test sdkJS/test scJS/test
-
-      - name: Publish a JVM snapshot ${{ github.ref }}
-        if: env.HAS_SECRETS == 'true'
-        run: sbt ++${{ matrix.scala }} sdkJS/publish
-        env:
-          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
-
-      - name: JS Build
-        run: sbt -jvm-opts ci/ci.jvmopts ++${{ matrix.scala }} scJS/fastOptJS
-
       - name: Runs JS tests
         run: npm run test
         working-directory: ./sigma-js
 
-      - name: Setup JS snapshot
-        run: npm run ci:snapshot
-        working-directory: ./sigma-js
-
-      - name: Publish JS snapshot ${{ github.ref }}
-        if: env.HAS_SECRETS == 'true'
-        run: npm publish --tag snapshot
-        working-directory: ./sigma-js
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

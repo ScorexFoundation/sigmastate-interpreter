@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "name": "sigmastate-js",
   "version": "0.4.5",
   "description": "Sigma.js library",
@@ -28,7 +29,7 @@
   },
   "homepage": "https://github.com/ScorexFoundation/sigmastate-interpreter/blob/master/sigma-js/README.md",
   "scripts": {
-    "test": "jest",
+    "test": "vitest",
     "clean": "shx rm -rf ./dist/*",
     "copy-output": "shx mkdir -p ./dist/ && cp -r ../sc/js/target/scala-2.13/sc-fastopt/* ./dist/",
     "prepublishOnly": "npm run clean && npm run copy-output",
@@ -36,15 +37,18 @@
   },
   "dependencies": {
     "@fleet-sdk/common": "0.1.3",
+    "@fleet-sdk/core": "^0.4.1",
     "@noble/hashes": "1.1.4",
+    "bip39": "^3.1.0",
     "sigmajs-crypto-facade": "0.0.7",
-    "@fleet-sdk/core": "^0.4.0",
-    "bip39": "^3.1.0"
+    "sigmastate-js": "^0.4.6",
+    "source-map": "^0.7.4"
   },
   "devDependencies": {
-
-    "jest": "^29.0.3",
     "shx": "^0.3.4",
-    "typescript": "^4.9.4"
+    "typescript": "^4.9.4",
+    "vite": "^5.3.1",
+    "vite-tsconfig-paths": "^4.3.2",
+    "vitest": "^1.6.0"
   }
 }

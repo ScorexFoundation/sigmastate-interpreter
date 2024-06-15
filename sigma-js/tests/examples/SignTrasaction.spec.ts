@@ -1,4 +1,4 @@
-const { ProverBuilder$ } = require("sigmastate-js/main");
+import { ProverBuilder$ } from "sigmastate-js/main";
 const {
 	OutputBuilder,
 	SAFE_MIN_BOX_VALUE,
