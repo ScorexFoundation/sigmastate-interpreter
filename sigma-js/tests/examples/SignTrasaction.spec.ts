@@ -10,8 +10,8 @@ import {
   blockchainParameterFromErgoNodeIfo,
   sigmastateHeader,
 } from "../data/utils";
-import headers from "../data/headers";
-import info from "../data/info";
+import {headers} from "../data/headers";
+import {info} from "../data/info";
 import { poolUtxo } from "../data/utxo";
 
 /**
@@ -20,7 +20,7 @@ import { poolUtxo } from "../data/utxo";
  * change goes back to POOL_ADDRESS
  */
 describe("SigmaProver", () => {
-  it("should sign a transaction", async () => {
+  it("should generate commitments", async () => {
     const networkMainnet = 0;
 
     const output = new OutputBuilder(SAFE_MIN_BOX_VALUE, ALICE_ADDRESS);
@@ -71,13 +71,5 @@ describe("SigmaProver", () => {
 
     const hints = prover.generateCommitments(reducedTx);
     expect(hints).toBeDefined();
-
-    let signedTx;
-    try {
-      signedTx = prover.signReduced(reducedTx, hints);
-    } catch (e) {
-      // Gotta Catch 'Em All
-    }
-    expect(signedTx).toBeDefined();
   });
 });

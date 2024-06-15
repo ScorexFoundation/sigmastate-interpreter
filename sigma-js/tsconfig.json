@@ -2,15 +2,14 @@
 	"compilerOptions": {
 	  "target": "esnext",
 	  "module": "NodeNext",
-	  "lib": ["esnext", "dom"],
+	  "lib": ["esnext"],
 	  "esModuleInterop": true,
 	  "strict": true,
 	  "skipLibCheck": true,
 	  "forceConsistentCasingInFileNames": true,
 	  "baseUrl": ".",
 	  "paths": {
-		"sigmastate-js/main": ["node_modules/sigmastate-js/dist/main.js"],
-		"sigmastate-js": ["node_modules/sigmastate-js/sigmastate-js.d.ts"]
+		"sigmastate-js/main": ["../sc/js/target/scala-2.13/sc-fastopt/main.js"]
 	  }
 	},
 	"include": ["tests/**/*.spec.ts"],
