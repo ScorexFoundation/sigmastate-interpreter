@@ -379,11 +379,25 @@ object UnsignedBigInt extends EntityObject("UnsignedBigInt") {
         true, false, element[UnsignedBigInt]))
     }
 
+    override def subtractMod(that: Ref[UnsignedBigInt], m: Ref[UnsignedBigInt]): Ref[UnsignedBigInt] = {
+      asRep[UnsignedBigInt](mkMethodCall(self,
+        UnsignedBigIntClass.getMethod("subtractMod", classOf[Sym], classOf[Sym]),
+        Array[AnyRef](that, m),
+        true, false, element[UnsignedBigInt]))
+    }
+
     override def multiplyMod(that: Ref[UnsignedBigInt], m: Ref[UnsignedBigInt]): Ref[UnsignedBigInt] = {
       asRep[UnsignedBigInt](mkMethodCall(self,
         UnsignedBigIntClass.getMethod("multiplyMod", classOf[Sym], classOf[Sym]),
         Array[AnyRef](that, m),
         true, false, element[UnsignedBigInt]))
+    }
+
+    override def toSigned: Ref[BigInt] = {
+      asRep[BigInt](mkMethodCall(self,
+        UnsignedBigIntClass.getMethod("toSigned"),
+        Array[AnyRef](),
+        true, false, element[BigInt]))
     }
   }
 
@@ -470,11 +484,25 @@ object UnsignedBigInt extends EntityObject("UnsignedBigInt") {
         true, true, element[UnsignedBigInt]))
     }
 
+    def subtractMod(that: Ref[UnsignedBigInt], m: Ref[UnsignedBigInt]): Ref[UnsignedBigInt] = {
+      asRep[UnsignedBigInt](mkMethodCall(source,
+        UnsignedBigIntClass.getMethod("subtractMod", classOf[Sym], classOf[Sym]),
+        Array[AnyRef](that, m),
+        true, true, element[UnsignedBigInt]))
+    }
+
     def multiplyMod(that: Ref[UnsignedBigInt], m: Ref[UnsignedBigInt]): Ref[UnsignedBigInt] = {
       asRep[UnsignedBigInt](mkMethodCall(source,
         UnsignedBigIntClass.getMethod("multiplyMod", classOf[Sym], classOf[Sym]),
         Array[AnyRef](that, m),
         true, true, element[UnsignedBigInt]))
+    }
+
+    def toSigned: Ref[BigInt] = {
+      asRep[BigInt](mkMethodCall(source,
+        UnsignedBigIntClass.getMethod("toSigned"),
+        Array[AnyRef](),
+        true, true, element[BigInt]))
     }
   }
 

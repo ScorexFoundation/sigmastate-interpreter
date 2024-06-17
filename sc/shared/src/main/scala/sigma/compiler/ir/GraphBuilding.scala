@@ -1021,6 +1021,9 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
               bi.toUnsignedMod(m)
           }
           case (ubi: Ref[UnsignedBigInt]@unchecked, SUnsignedBigIntMethods) => method.name match {
+            case SUnsignedBigIntMethods.ModMethod.name =>
+              val m = asRep[UnsignedBigInt](argsV(0))
+              ubi.mod(m)
             case SUnsignedBigIntMethods.ModInverseMethod.name =>
               val m = asRep[UnsignedBigInt](argsV(0))
               ubi.modInverse(m)
@@ -1028,10 +1031,16 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
               val that = asRep[UnsignedBigInt](argsV(0))
               val m = asRep[UnsignedBigInt](argsV(1))
               ubi.plusMod(that, m)
+            case SUnsignedBigIntMethods.SubtractModMethod.name =>
+              val that = asRep[UnsignedBigInt](argsV(0))
+              val m = asRep[UnsignedBigInt](argsV(1))
+              ubi.subtractMod(that, m)
             case SUnsignedBigIntMethods.MultiplyModMethod.name =>
               val that = asRep[UnsignedBigInt](argsV(0))
               val m = asRep[UnsignedBigInt](argsV(1))
               ubi.multiplyMod(that, m)
+            case SUnsignedBigIntMethods.ToSignedMethod.name =>
+              ubi.toSigned
           }
           case (ge: Ref[GroupElement]@unchecked, SGroupElementMethods) => method.name match {
             case SGroupElementMethods.GetEncodedMethod.name =>

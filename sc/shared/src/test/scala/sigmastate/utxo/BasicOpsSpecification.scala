@@ -166,7 +166,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
     val b = new BigInteger("9280562930080889354892980449861222646750586663683904599823322027983929189860")
     val ub = new BigInteger(1, b.toByteArray)
 
-    def conversionTest() = {test("restoring", env, ext,
+    def conversionTest() = {test("conversion", env, ext,
       s"""{
          |  val b = bigInt(\"${ub.toString}\")
          |  val ub = b.toUnsigned
@@ -184,7 +184,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
   }
 
   property("signed -> unsigned bigint conversion - negative bigint") {
-    def conversionTest() = {test("restoring", env, ext,
+    def conversionTest() = {test("conversion", env, ext,
       s"""{
          |  val b = bigInt("-1")
          |  val ub = b.toUnsigned
@@ -202,12 +202,30 @@ class BasicOpsSpecification extends CompilerTestingCommons
   }
 
   property("signed -> unsigned bigint conversion - negative bigint - mod") {
-    def conversionTest() = {test("restoring", env, ext,
+    def conversionTest() = {test("conversion", env, ext,
       s"""{
          |  val b = bigInt("-1")
          |  val m = unsignedBigInt("5")
          |  val ub = b.toUnsignedMod(m)
          |  ub >= 0
+         | } """.stripMargin,
+      null,
+      true
+    )}
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[Exception] should be thrownBy conversionTest()
+    } else {
+      conversionTest()
+    }
+  }
+
+  property("unsigned -> signed bigint conversion") {
+    def conversionTest() = {test("conversion", env, ext,
+      s"""{
+         |  val ub = unsignedBigInt("10")
+         |  val b = ub.toSigned
+         |  b - 11 == bigInt("-1")
          | } """.stripMargin,
       null,
       true
@@ -292,6 +310,26 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
+  property("mod") {
+    def miTest() = {
+      test("mod", env, ext,
+        s"""{
+           |   val bi = unsignedBigInt("248486720836984554860790790898080606")
+           |   val m = unsignedBigInt("575879797")
+           |   bi.mod(m) < bi
+           |}""".stripMargin,
+        null,
+        true
+      )
+    }
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[Exception] should be thrownBy miTest()
+    } else {
+      miTest()
+    }
+  }
+
   property("modInverse") {
     def miTest() = {
       test("modInverse", env, ext,
@@ -320,6 +358,27 @@ class BasicOpsSpecification extends CompilerTestingCommons
            |   val bi2 = unsignedBigInt("2484867208369845548607907908980997780606")
            |   val m = unsignedBigInt("575879797")
            |   bi1.plusMod(bi2, m) > 0
+           |}""".stripMargin,
+        null,
+        true
+      )
+    }
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[Exception] should be thrownBy miTest()
+    } else {
+      miTest()
+    }
+  }
+
+  property("mod ops - subtract") {
+    def miTest() = {
+      test("subtractMod", env, ext,
+        s"""{
+           |   val bi1 = unsignedBigInt("2")
+           |   val bi2 = unsignedBigInt("4")
+           |   val m = unsignedBigInt("575879797")
+           |   bi1.subtractMod(bi2, m) > 0
            |}""".stripMargin,
         null,
         true
@@ -365,17 +424,11 @@ class BasicOpsSpecification extends CompilerTestingCommons
         T s = proof.getS();
 
         BigInteger q = params.getGroup().groupOrder();
-        BigInteger y;
+        BigInteger y = ProofUtils.computeChallenge(q, input, a, s);
 
-        if (salt.isPresent()) {
-            y = ProofUtils.computeChallenge(q, salt.get(), input, a, s);
-        } else {
-            y = ProofUtils.computeChallenge(q, input, a, s);
-
-        }
         FieldVector ys = FieldVector.from(VectorX.iterate(n, BigInteger.ONE, y::multiply), q);
 
-          BigInteger z = ProofUtils.challengeFromints(q, y);
+        BigInteger z = ProofUtils.challengeFromints(q, y);
 
         BigInteger zSquared = z.pow(2).mod(q);
         BigInteger zCubed = z.pow(3).mod(q);
@@ -445,18 +498,19 @@ class BasicOpsSpecification extends CompilerTestingCommons
            |
            |   val yBytes = sha256(q.toBytes ++ input.getEncoded ++ aI.getEncoded ++ s.getEncoded)
            |
-           |   val y = byteArrayToBigInt(yBytes) mod q // should be to unsigned bigint
+           |   val y = byteArrayToBigInt(yBytes).toUnsignedMod(q)
            |
-           |   val z = byteArrayToBigInt(sha256(q.toBytes ++ yBytes)) mod q
+           |   val ys =
            |
-           |   val zSquared = z * z mod q
-           |   val zCubed = zSquared * z mod q
+           |   val z = byteArrayToBigInt(sha256(q.toBytes ++ yBytes)).toUnsignedMod(q)
+           |   val zSquared = z.multiplyMod(z, q)
+           |   val zCubed = zSquared.multiplyMod(z, q)
            |
-           |   def times() : // todo: implement
+           |   // def times() : // todo: implement
            |
            |   // ops needed: modInverse, mod ops
            |
-           |   sigmaProp(properSignature)
+           |   sigmaProp(zCubed > 0)
            |}""".stripMargin,
         null,
         true

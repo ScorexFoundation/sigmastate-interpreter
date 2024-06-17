@@ -243,16 +243,6 @@ trait UnsignedBigInt {
   def %(m: UnsignedBigInt): UnsignedBigInt = mod(m)
 
   /**
-    * Returns a BigInt whose value is {@code (this % that)}.
-    *
-    * @param  that value by which this BigInt is to be divided, and the
-    *             remainder computed.
-    * @return { @code this % that}
-    * @throws ArithmeticException if { @code that} is zero.
-    */
-  def remainder(that: UnsignedBigInt): UnsignedBigInt
-
-  /**
     * Returns the minimum of this BigInteger and {@code val}.
     *
     * @param  that value with which the minimum is to be computed.
@@ -287,7 +277,10 @@ trait UnsignedBigInt {
 
   def modInverse(m: UnsignedBigInt): UnsignedBigInt
   def plusMod(that: UnsignedBigInt, m: UnsignedBigInt): UnsignedBigInt
+  def subtractMod(that: UnsignedBigInt, m: UnsignedBigInt): UnsignedBigInt
   def multiplyMod(that: UnsignedBigInt, m: UnsignedBigInt): UnsignedBigInt
+
+  def toSigned(): BigInt
 }
 
 

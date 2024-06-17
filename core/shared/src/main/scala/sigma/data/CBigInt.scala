@@ -93,8 +93,6 @@ case class CUnsignedBigInt(override val wrappedValue: BigInteger) extends Unsign
 
   override def mod(m: UnsignedBigInt): UnsignedBigInt = CUnsignedBigInt(wrappedValue.mod(m.asInstanceOf[CUnsignedBigInt].wrappedValue))
 
-  override def remainder(that: UnsignedBigInt): UnsignedBigInt = CUnsignedBigInt(wrappedValue.remainder(that.asInstanceOf[CUnsignedBigInt].wrappedValue))
-
   override def min(that: UnsignedBigInt): UnsignedBigInt = CUnsignedBigInt(wrappedValue.min(that.asInstanceOf[CUnsignedBigInt].wrappedValue))
 
   override def max(that: UnsignedBigInt): UnsignedBigInt = CUnsignedBigInt(wrappedValue.max(that.asInstanceOf[CUnsignedBigInt].wrappedValue))
@@ -113,9 +111,19 @@ case class CUnsignedBigInt(override val wrappedValue: BigInteger) extends Unsign
     CUnsignedBigInt(wrappedValue.add(thatBi).mod(mBi))
   }
 
+  override def subtractMod(that: UnsignedBigInt, m: UnsignedBigInt): UnsignedBigInt = {
+    val thatBi = that.asInstanceOf[CUnsignedBigInt].wrappedValue
+    val mBi = m.asInstanceOf[CUnsignedBigInt].wrappedValue
+    CUnsignedBigInt(wrappedValue.subtract(thatBi).mod(mBi))
+  }
+
   override def multiplyMod(that: UnsignedBigInt, m: UnsignedBigInt): UnsignedBigInt = {
     val thatBi = that.asInstanceOf[CUnsignedBigInt].wrappedValue
     val mBi = m.asInstanceOf[CUnsignedBigInt].wrappedValue
     CUnsignedBigInt(wrappedValue.multiply(thatBi).mod(mBi))
+  }
+
+  override def toSigned(): BigInt = {
+    CBigInt(wrappedValue.to256BitValueExact)
   }
 }
