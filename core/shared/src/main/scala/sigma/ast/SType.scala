@@ -4,10 +4,10 @@ import sigma.Evaluation.stypeToRType
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.SType.TypeCode
 import sigma.data.OverloadHack.Overloaded1
-import sigma.data.{CBigInt, Nullable, SigmaConstants}
+import sigma.data.{CBigInt, CUnsignedBigInt, Nullable, SigmaConstants}
 import sigma.reflection.{RClass, RMethod, ReflectionData}
 import sigma.util.Extensions.{IntOps, LongOps, ShortOps}
-import sigma.{AvlTree, BigInt, Box, Coll, Context, Evaluation, GroupElement, Header, PreHeader, SigmaDslBuilder, SigmaProp}
+import sigma.{AvlTree, BigInt, Box, Coll, Context, Evaluation, GroupElement, Header, PreHeader, SigmaDslBuilder, SigmaProp, UnsignedBigInt}
 
 import java.math.BigInteger
 
@@ -105,7 +105,7 @@ object SType {
   /** All pre-defined types should be listed here. Note, NoType is not listed.
     * Should be in sync with sigmastate.lang.Types.predefTypes. */
   val allPredefTypes: Seq[SType] = Array[SType](
-    SBoolean, SByte, SShort, SInt, SLong, SBigInt, SContext,
+    SBoolean, SByte, SShort, SInt, SLong, SBigInt, SUnsignedBigInt, SContext,
     SGlobal, SHeader, SPreHeader, SAvlTree, SGroupElement, SSigmaProp, SString, SBox,
     SUnit, SAny)
 
@@ -156,6 +156,7 @@ object SType {
     case SInt => x.isInstanceOf[Int]
     case SLong => x.isInstanceOf[Long]
     case SBigInt => x.isInstanceOf[BigInt]
+    case SUnsignedBigInt => x.isInstanceOf[UnsignedBigInt]
     case SGroupElement => x.isInstanceOf[GroupElement]
     case SSigmaProp => x.isInstanceOf[SigmaProp]
     case SBox => x.isInstanceOf[Box]
@@ -219,7 +220,7 @@ trait STypeCompanion {
 
 /** Special type to represent untyped values.
   * Interpreter raises an error when encounter a Value with this type.
-  * All Value nodes with this type should be elimitanted during typing.
+  * All Value nodes with this type should be eliminated during typing.
   * If no specific type can be assigned statically during typing,
   * then either error should be raised or type SAny should be assigned
   * which is interpreted as dynamic typing. */
@@ -339,7 +340,7 @@ trait SNumericType extends SProduct with STypeCompanion {
 
 object SNumericType extends STypeCompanion {
   /** Array of all numeric types ordered by number of bytes in the representation. */
-  final val allNumericTypes = Array(SByte, SShort, SInt, SLong, SBigInt)
+  final val allNumericTypes = Array(SByte, SShort, SInt, SLong, SBigInt, SUnsignedBigInt)
 
   // TODO v6.0: this typeId is now shadowed by SGlobal.typeId
   //  see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/667
@@ -448,13 +449,12 @@ case object SLong extends SPrimType with SEmbeddable with SNumericType with SMon
   }
 }
 
-/** Type of 256 bit integet values. Implemented using [[java.math.BigInteger]]. */
+/** Type of 256-bit  signed integer values. Implemented using [[java.math.BigInteger]]. */
 case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SMonoType {
   override type WrappedType = BigInt
   override val typeCode: TypeCode = 6: Byte
   override val reprClass: RClass[_] = RClass(classOf[BigInt])
   override def typeId = typeCode
-  implicit def typeBigInt: SBigInt.type = this
 
   /** Type of Relation binary op like GE, LE, etc. */
   val RelationOpType = SFunc(Array(SBigInt, SBigInt), SBoolean)
@@ -483,6 +483,44 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
       case _ => sys.error(s"Cannot downcast value $v to the type $this")
     }
     CBigInt(bi)
+  }
+}
+
+/** Type of 256-bit unsigned integer values. Implemented using [[java.math.BigInteger]]. */
+case object SUnsignedBigInt extends SPrimType with SEmbeddable with SNumericType with SMonoType {
+  override type WrappedType = UnsignedBigInt
+  override val typeCode: TypeCode = 9: Byte
+  override val reprClass: RClass[_] = RClass(classOf[UnsignedBigInt])
+  override def typeId = typeCode
+
+  /** Type of Relation binary op like GE, LE, etc. */
+  val RelationOpType = SFunc(Array(SUnsignedBigInt, SUnsignedBigInt), SBoolean)
+
+  /** The maximum size of BigInteger value in byte array representation. */
+  val MaxSizeInBytes: Long = SigmaConstants.MaxBigIntSizeInBytes.value // todo: 256 bits or more?
+
+  override def numericTypeIndex: Int = 5
+
+  // todo: consider upcast and downcast rules
+  override def upcast(v: AnyVal): UnsignedBigInt = {
+    val bi = v match {
+      case x: Byte => BigInteger.valueOf(x.toLong)
+      case x: Short => BigInteger.valueOf(x.toLong)
+      case x: Int => BigInteger.valueOf(x.toLong)
+      case x: Long => BigInteger.valueOf(x)
+      case _ => sys.error(s"Cannot upcast value $v to the type $this")
+    }
+    CUnsignedBigInt(bi)
+  }
+  override def downcast(v: AnyVal): UnsignedBigInt = {
+    val bi = v match {
+      case x: Byte => BigInteger.valueOf(x.toLong)
+      case x: Short => BigInteger.valueOf(x.toLong)
+      case x: Int => BigInteger.valueOf(x.toLong)
+      case x: Long => BigInteger.valueOf(x)
+      case _ => sys.error(s"Cannot downcast value $v to the type $this")
+    }
+    CUnsignedBigInt(bi)
   }
 }
 

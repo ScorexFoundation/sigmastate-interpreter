@@ -1,7 +1,7 @@
 package sigma.data
 
 import sigma.util.Extensions.BigIntegerOps
-import sigma.{BigInt, Coll, Colls}
+import sigma.{BigInt, Coll, Colls, UnsignedBigInt}
 
 import java.math.BigInteger
 
@@ -49,4 +49,81 @@ case class CBigInt(override val wrappedValue: BigInteger) extends BigInt with Wr
   override def and(that: BigInt): BigInt = CBigInt(wrappedValue.and(that.asInstanceOf[CBigInt].wrappedValue))
 
   override def or(that: BigInt): BigInt = CBigInt(wrappedValue.or(that.asInstanceOf[CBigInt].wrappedValue))
+
+  def toUnsigned: UnsignedBigInt = {
+    if(this.wrappedValue.compareTo(BigInteger.ZERO) < 0){
+      throw new ArithmeticException("BigInteger argument for .toUnsigned is negative in");
+    } else {
+      CUnsignedBigInt(this.wrappedValue)
+    }
+  }
+
+  def toUnsignedMod(m: UnsignedBigInt): UnsignedBigInt = {
+    CUnsignedBigInt(this.wrappedValue.mod(m.asInstanceOf[CUnsignedBigInt].wrappedValue))
+  }
+}
+
+/** A default implementation of [[BigInt]] interface.
+  *
+  * @see [[BigInt]] for detailed descriptions
+  */
+case class CUnsignedBigInt(override val wrappedValue: BigInteger) extends UnsignedBigInt with WrapperOf[BigInteger] {
+
+  override def toByte: Byte = wrappedValue.toByteExact
+
+  override def toShort: Short = wrappedValue.toShortExact
+
+  override def toInt: Int = wrappedValue.toIntExact
+
+  override def toLong: Long = wrappedValue.toLongExact
+
+  override def toBytes: Coll[Byte] = Colls.fromArray(wrappedValue.toByteArray)
+
+  override def compareTo(that: UnsignedBigInt): Int =
+    wrappedValue.compareTo(that.asInstanceOf[CUnsignedBigInt].wrappedValue)
+
+  //todo: consider result's bits limit
+  override def add(that: UnsignedBigInt): UnsignedBigInt = CUnsignedBigInt(wrappedValue.add(that.asInstanceOf[CUnsignedBigInt].wrappedValue).to256BitValueExact)
+
+  override def subtract(that: UnsignedBigInt): UnsignedBigInt = CUnsignedBigInt(wrappedValue.subtract(that.asInstanceOf[CUnsignedBigInt].wrappedValue).to256BitValueExact)
+
+  override def multiply(that: UnsignedBigInt): UnsignedBigInt = CUnsignedBigInt(wrappedValue.multiply(that.asInstanceOf[CUnsignedBigInt].wrappedValue).to256BitValueExact)
+
+  override def divide(that: UnsignedBigInt): UnsignedBigInt = CUnsignedBigInt(wrappedValue.divide(that.asInstanceOf[CUnsignedBigInt].wrappedValue))
+
+  override def mod(m: UnsignedBigInt): UnsignedBigInt = CUnsignedBigInt(wrappedValue.mod(m.asInstanceOf[CUnsignedBigInt].wrappedValue))
+
+  override def min(that: UnsignedBigInt): UnsignedBigInt = CUnsignedBigInt(wrappedValue.min(that.asInstanceOf[CUnsignedBigInt].wrappedValue))
+
+  override def max(that: UnsignedBigInt): UnsignedBigInt = CUnsignedBigInt(wrappedValue.max(that.asInstanceOf[CUnsignedBigInt].wrappedValue))
+
+  override def and(that: UnsignedBigInt): UnsignedBigInt = CUnsignedBigInt(wrappedValue.and(that.asInstanceOf[CUnsignedBigInt].wrappedValue))
+
+  override def or(that: UnsignedBigInt): UnsignedBigInt = CUnsignedBigInt(wrappedValue.or(that.asInstanceOf[CUnsignedBigInt].wrappedValue))
+
+  override def modInverse(m: UnsignedBigInt): UnsignedBigInt = {
+    CUnsignedBigInt(wrappedValue.modInverse(m.asInstanceOf[CUnsignedBigInt].wrappedValue))
+  }
+
+  override def plusMod(that: UnsignedBigInt, m: UnsignedBigInt): UnsignedBigInt = {
+    val thatBi = that.asInstanceOf[CUnsignedBigInt].wrappedValue
+    val mBi = m.asInstanceOf[CUnsignedBigInt].wrappedValue
+    CUnsignedBigInt(wrappedValue.add(thatBi).mod(mBi))
+  }
+
+  override def subtractMod(that: UnsignedBigInt, m: UnsignedBigInt): UnsignedBigInt = {
+    val thatBi = that.asInstanceOf[CUnsignedBigInt].wrappedValue
+    val mBi = m.asInstanceOf[CUnsignedBigInt].wrappedValue
+    CUnsignedBigInt(wrappedValue.subtract(thatBi).mod(mBi))
+  }
+
+  override def multiplyMod(that: UnsignedBigInt, m: UnsignedBigInt): UnsignedBigInt = {
+    val thatBi = that.asInstanceOf[CUnsignedBigInt].wrappedValue
+    val mBi = m.asInstanceOf[CUnsignedBigInt].wrappedValue
+    CUnsignedBigInt(wrappedValue.multiply(thatBi).mod(mBi))
+  }
+
+  override def toSigned(): BigInt = {
+    CBigInt(wrappedValue.to256BitValueExact)
+  }
 }
