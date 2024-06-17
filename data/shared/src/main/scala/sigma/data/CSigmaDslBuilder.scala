@@ -5,7 +5,7 @@ import org.ergoplatform.ErgoBox
 import org.ergoplatform.validation.ValidationRules
 import scorex.crypto.hash.{Blake2b256, Sha256}
 import scorex.utils.Longs
-import sigma.ast.{AtLeast, SubstConstants}
+import sigma.ast.{AtLeast, SByte, SLong, SType, SubstConstants}
 import sigma.crypto.{CryptoConstants, EcPointType, Ecp}
 import sigma.eval.Extensions.EvalCollOps
 import sigma.serialization.{GroupElementSerializer, SigmaSerializer}
@@ -199,6 +199,19 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
     val r = SigmaSerializer.startReader(encoded.toArray)
     val p = GroupElementSerializer.parse(r)
     this.GroupElement(p)
+  }
+
+  override def fromBigEndianBytes[T](tpe: SType, bytes: Coll[Byte])(implicit cT: RType[T]): T = {
+    tpe match {
+      case SByte => if (bytes.length != 1) {
+        throw new IllegalArgumentException("To deserialize SByte with fromBigEndianBytes, exactly one byte should be provided")
+      } else {
+        bytes.apply(0).asInstanceOf[T]
+      }
+      case SLong => Longs.fromByteArray(bytes.toArray).asInstanceOf[T]
+      case _ => throw new IllegalArgumentException("Unsupported type provided in fromBigEndianBytes")
+      // todo: more types
+    }
   }
 }
 

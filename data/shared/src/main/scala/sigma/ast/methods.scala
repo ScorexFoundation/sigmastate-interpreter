@@ -2,10 +2,11 @@ package sigma.ast
 
 import org.ergoplatform._
 import org.ergoplatform.validation._
+import sigma.Evaluation.stypeToRType
 import sigma._
 import sigma.ast.SCollection.{SBooleanArray, SBoxArray, SByteArray, SByteArray2, SHeaderArray}
 import sigma.ast.SMethod.{MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
-import sigma.ast.SType.TypeCode
+import sigma.ast.SType.{TypeCode, paramT, tT}
 import sigma.ast.syntax.{SValue, ValueOps}
 import sigma.data.OverloadHack.Overloaded1
 import sigma.data.{DataValueComparer, KeyValueColl, Nullable, RType, SigmaConstants}
@@ -1519,9 +1520,35 @@ case object SGlobalMethods extends MonoTypeMethods {
     Xor.xorWithCosting(ls, rs)
   }
 
-  protected override def getMethods() = super.getMethods() ++ Seq(
+  lazy val fromBigEndianBytesMethod = SMethod(
+    this, "fromBigEndianBytes", SFunc(Array(SGlobal, SByteArray), tT, Array(paramT)), 3, Xor.costKind) // todo: id, cossting
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall, "Multiply this number with \\lst{other} by module Q.", ArgInfo("other", "Number to multiply with this.")) // todo: desc
+
+  def fromBigEndianBytes_eval(mc: MethodCall, G: SigmaDslBuilder, bytes: Coll[Byte])
+                             (implicit E: ErgoTreeEvaluator): Any = {
+    val tpe = mc.tpe
+    val cT = stypeToRType(tpe)
+    E.addSeqCost(Xor.costKind, bytes.length, Xor.opDesc) { () => // todo: cost
+      G.fromBigEndianBytes(tpe, bytes)(cT)
+    }
+  }
+
+  private val v5Methods = super.getMethods() ++ Seq(
     groupGeneratorMethod,
     xorMethod
   )
+
+  private val v6Methods = v5Methods ++ Seq(
+    fromBigEndianBytesMethod
+  )
+
+  protected override def getMethods() = {
+    if (VersionContext.current.isV6SoftForkActivated) {
+      v6Methods
+    } else {
+      v5Methods
+    }
+  }
 }
 
