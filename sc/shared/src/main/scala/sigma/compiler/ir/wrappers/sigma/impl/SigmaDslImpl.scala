@@ -1945,6 +1945,13 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         Array[AnyRef](l, r),
         true, false, element[Coll[Byte]]))
     }
+
+    override def fromBigEndianBytes[T](bytes: Ref[Coll[Byte]])(implicit cT: Elem[T]): Ref[T] = {
+      asRep[T](mkMethodCall(self,
+        SigmaDslBuilderClass.getMethod("fromBigEndianBytes", classOf[Sym], classOf[Elem[T]]),
+        Array[AnyRef](bytes, cT),
+        true, false, cT))
+    }
   }
 
   implicit object LiftableSigmaDslBuilder
@@ -2103,6 +2110,13 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         SigmaDslBuilderClass.getMethod("xor", classOf[Sym], classOf[Sym]),
         Array[AnyRef](l, r),
         true, true, element[Coll[Byte]]))
+    }
+
+    def fromBigEndianBytes[T](bytes: Ref[Coll[Byte]])(implicit cT: Elem[T]): Ref[T] = {
+      asRep[T](mkMethodCall(source,
+        SigmaDslBuilderClass.getMethod("fromBigEndianBytes", classOf[Sym], classOf[Elem[T]]),
+        Array[AnyRef](bytes, cT),
+        true, true, cT))
     }
   }
 
