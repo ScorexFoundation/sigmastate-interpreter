@@ -928,7 +928,7 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
         sigmaDslBuilder.decodePoint(bytes)
 
       // fallback rule for MethodCall, should be the last case in the list
-      case sigma.ast.MethodCall(obj, method, args, _) =>
+      case sigma.ast.MethodCall(obj, method, args, typeSubst) =>
         val objV = eval(obj)
         val argsV = args.map(eval)
         (objV, method.objType) match {
@@ -1146,6 +1146,10 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
               val c1 = asRep[Coll[Byte]](argsV(0))
               val c2 = asRep[Coll[Byte]](argsV(1))
               g.xor(c1, c2)
+            case SGlobalMethods.fromBigEndianBytesMethod.name =>
+              val bytes = asRep[Coll[Byte]](argsV(0))
+              val cT = stypeToElem(method.stype.tRange.withSubstTypes(typeSubst))
+              g.fromBigEndianBytes(bytes)(cT)
             case _ => throwError
           }
           case _ => throwError

@@ -1521,7 +1521,7 @@ case object SGlobalMethods extends MonoTypeMethods {
   }
 
   lazy val fromBigEndianBytesMethod = SMethod(
-    this, "fromBigEndianBytes", SFunc(Array(SGlobal, SByteArray), tT, Array(paramT)), 3, Xor.costKind) // todo: id, cossting
+    this, "fromBigEndianBytes", SFunc(Array(SGlobal, SByteArray), tT, Array(paramT)), 30, Xor.costKind, Seq(tT)) // todo: id, cossting
     .withIRInfo(MethodCallIrBuilder)
     .withInfo(MethodCall, "Multiply this number with \\lst{other} by module Q.", ArgInfo("other", "Number to multiply with this.")) // todo: desc
 
