@@ -1418,15 +1418,34 @@ case object SContextMethods extends MonoTypeMethods {
   lazy val selfBoxIndexMethod = propertyCall("selfBoxIndex", SInt, 8, FixedCost(JitCost(20)))
   lazy val lastBlockUtxoRootHashMethod = property("LastBlockUtxoRootHash", SAvlTree, 9, LastBlockUtxoRootHash)
   lazy val minerPubKeyMethod = property("minerPubKey", SByteArray, 10, MinerPubkey)
+
   lazy val getVarMethod = SMethod(
     this, "getVar", SFunc(ContextFuncDom, SOption(tT), Array(paramT)), 11, GetVar.costKind)
     .withInfo(GetVar, "Get context variable with given \\lst{varId} and type.",
       ArgInfo("varId", "\\lst{Byte} identifier of context variable"))
 
-  protected override def getMethods() = super.getMethods() ++ Seq(
+  lazy val getVarFromInputMethod = SMethod(
+    this, "getVarFromInput", SFunc(Array(SContext, SShort, SByte), SOption(tT), Array(paramT)), 12, GetVar.costKind, Seq(tT))
+    .withInfo(GetVar, "Get context variable with given \\lst{varId} and type.",
+      ArgInfo("varId", "\\lst{Byte} identifier of context variable"))
+
+  private lazy val v5Methods = super.getMethods() ++ Seq(
     dataInputsMethod, headersMethod, preHeaderMethod, inputsMethod, outputsMethod, heightMethod, selfMethod,
     selfBoxIndexMethod, lastBlockUtxoRootHashMethod, minerPubKeyMethod, getVarMethod
   )
+
+  private lazy val v6Methods = super.getMethods() ++ Seq(
+    dataInputsMethod, headersMethod, preHeaderMethod, inputsMethod, outputsMethod, heightMethod, selfMethod,
+    selfBoxIndexMethod, lastBlockUtxoRootHashMethod, minerPubKeyMethod, getVarMethod, getVarFromInputMethod
+  )
+
+  protected override def getMethods(): Seq[SMethod] = {
+    if(VersionContext.current.isV6SoftForkActivated) {
+      v6Methods
+    } else {
+      v5Methods
+    }
+  }
 
   /** Names of methods which provide blockchain context.
    * This value can be reused where necessary to avoid allocations. */

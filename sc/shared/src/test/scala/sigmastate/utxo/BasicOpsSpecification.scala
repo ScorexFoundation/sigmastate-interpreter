@@ -3,6 +3,7 @@ package sigmastate.utxo
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, R6, R8}
 import org.ergoplatform._
 import sigma.Extensions.ArrayOps
+import sigma.VersionContext
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.SType.AnyOps
 import sigma.data.{AvlTreeData, CAnyValue, CSigmaDslBuilder}
@@ -155,6 +156,24 @@ class BasicOpsSpecification extends CompilerTestingCommons
         reg1 -> UnitConstant.instance
       ))
     )
+  }
+
+  property("getVarFromInput") {
+    def getVarTest() = {
+      val customExt = Map(
+        1.toByte -> IntConstant(5)
+      ).toSeq
+      test("R1", env, customExt,
+        "{ CONTEXT.getVarFromInput[Int](0, 1) == 5 }",
+        null
+      )
+    }
+
+    if(VersionContext.current.isV6SoftForkActivated) {
+      getVarTest()
+    } else {
+      an[Exception] should be thrownBy getVarTest()
+    }
   }
 
   property("Relation operations") {

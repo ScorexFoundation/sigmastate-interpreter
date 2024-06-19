@@ -221,6 +221,11 @@ class SigmaTyper(val builder: SigmaBuilder,
             case (Ident(GetVarFunc.name | ExecuteFromVarFunc.name, _), Seq(id: Constant[SNumericType]@unchecked))
               if id.tpe.isNumType =>
                 Seq(ByteConstant(SByte.downcast(id.value.asInstanceOf[AnyVal])).withSrcCtx(id.sourceContext))
+            case (Ident(SContextMethods.getVarFromInputMethod.name, _),
+                    Seq(inputId: Constant[SNumericType]@unchecked, varId: Constant[SNumericType]@unchecked))
+              if inputId.tpe.isNumType && varId.tpe.isNumType =>
+              Seq(ShortConstant(SShort.downcast(inputId.value.asInstanceOf[AnyVal])).withSrcCtx(inputId.sourceContext),
+                  ByteConstant(SByte.downcast(varId.value.asInstanceOf[AnyVal])).withSrcCtx(varId.sourceContext))
             case _ => typedArgs
           }
           val actualTypes = adaptedTypedArgs.map(_.tpe)
