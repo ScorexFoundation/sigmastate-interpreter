@@ -134,8 +134,18 @@ class SigmaTyper(val builder: SigmaBuilder,
       res
 
     case Apply(ApplyTypes(sel @ Select(obj, n, _), Seq(rangeTpe)), args) =>
+      val nArgs = if (n == SContextMethods.getVarFromInputMethod.name &&
+          args.length == 2 &&
+          args(0).isInstanceOf[Constant[_]] &&
+          args(1).isInstanceOf[Constant[_]] &&
+          args(0).tpe.isNumType &&
+          args(1).tpe.isNumType) {
+        IndexedSeq(ShortConstant(SShort.downcast(args(0).asInstanceOf[Constant[SNumericType]].value.asInstanceOf[AnyVal])).withSrcCtx(args(0).sourceContext),
+          ByteConstant(SByte.downcast(args(1).asInstanceOf[Constant[SNumericType]].value.asInstanceOf[AnyVal])).withSrcCtx(args(1).sourceContext))
+      } else args
+
       val newObj = assignType(env, obj)
-      val newArgs = args.map(assignType(env, _))
+      val newArgs = nArgs.map(assignType(env, _))
       obj.tpe match {
         case p: SProduct =>
           MethodsContainer.getMethod(p, n) match {
@@ -222,10 +232,10 @@ class SigmaTyper(val builder: SigmaBuilder,
               if id.tpe.isNumType =>
                 Seq(ByteConstant(SByte.downcast(id.value.asInstanceOf[AnyVal])).withSrcCtx(id.sourceContext))
             case (Ident(SContextMethods.getVarFromInputMethod.name, _),
-                    Seq(inputId: Constant[SNumericType]@unchecked, varId: Constant[SNumericType]@unchecked))
-              if inputId.tpe.isNumType && varId.tpe.isNumType =>
+                  Seq(inputId: Constant[SNumericType]@unchecked, varId: Constant[SNumericType]@unchecked))
+                  if inputId.tpe.isNumType && varId.tpe.isNumType =>
               Seq(ShortConstant(SShort.downcast(inputId.value.asInstanceOf[AnyVal])).withSrcCtx(inputId.sourceContext),
-                  ByteConstant(SByte.downcast(varId.value.asInstanceOf[AnyVal])).withSrcCtx(varId.sourceContext))
+                ByteConstant(SByte.downcast(varId.value.asInstanceOf[AnyVal])).withSrcCtx(varId.sourceContext))
             case _ => typedArgs
           }
           val actualTypes = adaptedTypedArgs.map(_.tpe)

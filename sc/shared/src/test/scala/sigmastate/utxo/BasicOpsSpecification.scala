@@ -2,6 +2,7 @@ package sigmastate.utxo
 
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, R6, R8}
 import org.ergoplatform._
+import org.scalatest.Assertion
 import sigma.Extensions.ArrayOps
 import sigma.VersionContext
 import sigma.ast.SCollection.SByteArray
@@ -20,9 +21,11 @@ import sigmastate.interpreter.Interpreter._
 import sigma.ast.Apply
 import sigma.eval.EvalSettings
 import sigma.exceptions.InvalidType
+import sigma.interpreter.{ContextExtension, ProverResult}
 import sigmastate.utils.Helpers._
 
 import java.math.BigInteger
+import scala.collection.compat.immutable.ArraySeq
 
 class BasicOpsSpecification extends CompilerTestingCommons
   with CompilerCrossVersionProps {
@@ -102,7 +105,8 @@ class BasicOpsSpecification extends CompilerTestingCommons
     val newBox1 = testBox(10, tree, creationHeight = 0, boxIndex = 0, additionalRegisters = Map(
       reg1 -> IntConstant(1),
       reg2 -> IntConstant(10)))
-    val tx = createTransaction(newBox1)
+    val ce = ContextExtension(prover.contextExtenders)
+    val tx = new ErgoLikeTransaction(IndexedSeq(Input(boxToSpend.id, ProverResult(Array.empty, ce))), ArraySeq.empty, IndexedSeq(newBox1))
 
     val ctx = ErgoLikeContextTesting(currentHeight = 0,
       lastBlockUtxoRoot = AvlTreeData.dummy, ErgoLikeContextTesting.dummyPubkey, boxesToSpend = IndexedSeq(boxToSpend),
@@ -159,17 +163,17 @@ class BasicOpsSpecification extends CompilerTestingCommons
   }
 
   property("getVarFromInput") {
-    def getVarTest() = {
+    def getVarTest(): Assertion = {
       val customExt = Map(
         1.toByte -> IntConstant(5)
       ).toSeq
       test("R1", env, customExt,
-        "{ CONTEXT.getVarFromInput[Int](0, 1) == 5 }",
+        "{ sigmaProp(CONTEXT.getVarFromInput[Int](0, 1).get == 5) }",
         null
       )
     }
 
-    if(VersionContext.current.isV6SoftForkActivated) {
+    if (VersionContext.current.isV6SoftForkActivated) {
       getVarTest()
     } else {
       an[Exception] should be thrownBy getVarTest()
@@ -740,4 +744,5 @@ class BasicOpsSpecification extends CompilerTestingCommons
       true
     )
   }
+
 }

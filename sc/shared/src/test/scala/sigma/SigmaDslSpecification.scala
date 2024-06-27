@@ -4762,6 +4762,7 @@ class SigmaDslSpecification extends SigmaDslTesting
           .append(Coll[AnyValue](
             CAnyValue(Helpers.decodeBytes("00")),
             CAnyValue(true))),
+      spendingTransaction = null,
       activatedScriptVersion = activatedVersionInTests,
       currentErgoTreeVersion = ergoTreeVersionInTests
     )

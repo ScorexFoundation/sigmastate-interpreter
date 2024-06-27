@@ -8,6 +8,8 @@ import sigma.compiler.ir.wrappers.sigma.impl.SigmaDslDefs
 import scala.collection.compat.immutable.ArraySeq
 
 package impl {
+  import sigma.Evaluation
+  import sigma.ast.SType.tT
   import sigma.compiler.ir.meta.ModuleInfo
   import sigma.compiler.ir.wrappers.sigma.SigmaDsl
   import sigma.compiler.ir.{Base, GraphIRReflection, IRContext}
@@ -1614,6 +1616,14 @@ object Context extends EntityObject("Context") {
         true, false, element[WOption[T]]))
     }
 
+    override def getVarFromInput[T](inputId: Ref[Short], varId: Ref[Byte])(implicit cT: Elem[T]): Ref[WOption[T]] = {
+      val st = Evaluation.rtypeToSType(cT.sourceType)
+      asRep[WOption[T]](mkMethodCall(self,
+        ContextClass.getMethod("getVarFromInput", classOf[Sym], classOf[Sym], classOf[Elem[_]]),
+        Array[AnyRef](inputId, varId, cT),
+        true, false, element[WOption[T]], Map(tT -> st)))
+    }
+
   }
 
   implicit object LiftableContext
@@ -1710,6 +1720,14 @@ object Context extends EntityObject("Context") {
         Array[AnyRef](id, cT),
         true, true, element[WOption[T]]))
     }
+
+    def getVarFromInput[T](inputId: Ref[Short], varId: Ref[Byte])(implicit cT: Elem[T]): Ref[WOption[T]] = {
+      val st = Evaluation.rtypeToSType(cT.sourceType)
+      asRep[WOption[T]](mkMethodCall(source,
+        ContextClass.getMethod("getVarFromInput", classOf[Sym], classOf[Sym], classOf[Elem[_]]),
+        Array[AnyRef](inputId, varId, cT),
+        true, true, element[WOption[T]], Map(tT -> st)))
+    }
   }
 
   // entityUnref: single unref method for each type family
@@ -1727,7 +1745,7 @@ object Context extends EntityObject("Context") {
     override protected def collectMethods: Map[RMethod, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(RClass(classOf[Context]), RClass(classOf[SContext]), Set(
-        "OUTPUTS", "INPUTS", "dataInputs", "HEIGHT", "SELF", "selfBoxIndex", "LastBlockUtxoRootHash", "headers", "preHeader", "minerPubKey", "getVar", "vars"
+        "OUTPUTS", "INPUTS", "dataInputs", "HEIGHT", "SELF", "selfBoxIndex", "LastBlockUtxoRootHash", "headers", "preHeader", "minerPubKey", "getVar", "getVarFromInput", "vars"
         ))
     }
   }

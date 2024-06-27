@@ -2,6 +2,7 @@ package sigma.ast
 
 import org.ergoplatform._
 import org.ergoplatform.validation._
+import sigma.Evaluation.stypeToRType
 import sigma._
 import sigma.ast.SCollection.{SBooleanArray, SBoxArray, SByteArray, SByteArray2, SHeaderArray}
 import sigma.ast.SMethod.{MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
@@ -1424,10 +1425,19 @@ case object SContextMethods extends MonoTypeMethods {
     .withInfo(GetVar, "Get context variable with given \\lst{varId} and type.",
       ArgInfo("varId", "\\lst{Byte} identifier of context variable"))
 
+  // todo: costing, desc
   lazy val getVarFromInputMethod = SMethod(
     this, "getVarFromInput", SFunc(Array(SContext, SShort, SByte), SOption(tT), Array(paramT)), 12, GetVar.costKind, Seq(tT))
-    .withInfo(GetVar, "Get context variable with given \\lst{varId} and type.",
-      ArgInfo("varId", "\\lst{Byte} identifier of context variable"))
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall, "Multiply this number with \\lst{other} by module Q.", ArgInfo("other", "Number to multiply with this."))
+
+  def getVarFromInput_eval[T](mc: MethodCall, ctx: sigma.Context, inputId: Short, varId: Byte)
+                          (implicit E: ErgoTreeEvaluator): Option[T] = {
+    // E.addCost(getVarFromInputMethod.costKind)
+    val rt = stypeToRType(mc.typeSubst.get(tT).get)
+    val res = ctx.getVarFromInput(inputId, varId)(rt).asInstanceOf[Option[T]]
+    res
+  }
 
   private lazy val v5Methods = super.getMethods() ++ Seq(
     dataInputsMethod, headersMethod, preHeaderMethod, inputsMethod, outputsMethod, heightMethod, selfMethod,
