@@ -162,7 +162,10 @@ class BasicOpsSpecification extends CompilerTestingCommons
   property("Box.getReg") {
     def getRegTest(): Assertion = {
       test("R1", env, ext,
-        "{ SELF.getReg(0).get > 0 }",
+        """{ SELF.getReg[Long](0).get == SELF.value &&
+          |   SELF.getReg[Coll[(Coll[Byte], Long)]](2).get == SELF.tokens &&
+          |   SELF.getReg[Int](9).isEmpty
+          |}""".stripMargin,
         null
       )
     }
