@@ -1077,9 +1077,7 @@ case object SBoxMethods extends MonoTypeMethods {
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(PropertyCall, "Secondary tokens")
 
-
-  // should be lazy to solve recursive initialization
-  protected override def getMethods() = super.getMethods() ++ Array(
+  lazy val v5Methods = Array(
     ValueMethod, // see ExtractAmount
     PropositionBytesMethod, // see ExtractScriptBytes
     BytesMethod, // see ExtractBytes
@@ -1089,6 +1087,18 @@ case object SBoxMethods extends MonoTypeMethods {
     getRegMethod,
     tokensMethod
   ) ++ registers(8)
+
+  lazy val v6Methods = v5Methods ++ Seq(
+  )
+
+  // should be lazy to solve recursive initialization
+  protected override def getMethods() = {
+    if(VersionContext.current.isV6SoftForkActivated) {
+      super.getMethods() ++ v6Methods
+    } else {
+      super.getMethods() ++ v5Methods
+    }
+  }
 }
 
 /** Type descriptor of `AvlTree` type of ErgoTree. */
