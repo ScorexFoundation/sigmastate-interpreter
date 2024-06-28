@@ -399,13 +399,14 @@ trait TreeBuilding extends Base { IR: IRContext =>
         mkMultiplyGroup(obj.asGroupElement, arg.asGroupElement)
 
       // Fallback MethodCall rule: should be the last in this list of cases
-      case Def(MethodCall(objSym, m, argSyms, _)) =>
+      case Def(mc @ MethodCall(objSym, m, argSyms, _)) =>
         val obj = recurse[SType](objSym)
         val args = argSyms.collect { case argSym: Sym => recurse[SType](argSym) }
         MethodsContainer.getMethod(obj.tpe, m.getName) match {
           case Some(method) =>
-            val specMethod = method.specializeFor(obj.tpe, args.map(_.tpe))
-            builder.mkMethodCall(obj, specMethod, args.toIndexedSeq, Map())
+            val typeSubst = mc.typeSubst
+            val specMethod = method.specializeFor(obj.tpe, args.map(_.tpe)).withConcreteTypes(typeSubst)
+            builder.mkMethodCall(obj, specMethod, args.toIndexedSeq, typeSubst)
           case None =>
             error(s"Cannot find method ${m.getName} in object $obj")
         }

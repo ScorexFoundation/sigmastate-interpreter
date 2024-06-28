@@ -1,6 +1,7 @@
 package sigma.compiler.ir
 
 import org.ergoplatform._
+import sigma.ast.SType.tT
 import sigma.ast.TypeCodes.LastConstantCode
 import sigma.ast.Value.Typed
 import sigma.ast.syntax.{SValue, ValueOps}
@@ -928,7 +929,7 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
         sigmaDslBuilder.decodePoint(bytes)
 
       // fallback rule for MethodCall, should be the last case in the list
-      case sigma.ast.MethodCall(obj, method, args, _) =>
+      case sigma.ast.MethodCall(obj, method, args, typeSubst) =>
         val objV = eval(obj)
         val argsV = args.map(eval)
         (objV, method.objType) match {
@@ -1040,6 +1041,11 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
               ctx.LastBlockUtxoRootHash
             case SContextMethods.minerPubKeyMethod.name =>
               ctx.minerPubKey
+            case SContextMethods.getVarFromInputMethod.name =>
+              val c1 = asRep[Short](argsV(0))
+              val c2 = asRep[Byte](argsV(1))
+              val c3 = stypeToElem(typeSubst.apply(tT))
+              ctx.getVarFromInput(c1, c2)(c3)
             case _ => throwError
           }
           case (tree: Ref[AvlTree]@unchecked, SAvlTreeMethods) => method.name match {

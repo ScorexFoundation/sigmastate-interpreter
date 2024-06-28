@@ -2,6 +2,7 @@ package sigma.ast
 
 import org.ergoplatform._
 import org.ergoplatform.validation._
+import sigma.Evaluation.stypeToRType
 import sigma._
 import sigma.ast.SCollection.{SBooleanArray, SBoxArray, SByteArray, SByteArray2, SHeaderArray}
 import sigma.ast.SMethod.{MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
@@ -1418,15 +1419,43 @@ case object SContextMethods extends MonoTypeMethods {
   lazy val selfBoxIndexMethod = propertyCall("selfBoxIndex", SInt, 8, FixedCost(JitCost(20)))
   lazy val lastBlockUtxoRootHashMethod = property("LastBlockUtxoRootHash", SAvlTree, 9, LastBlockUtxoRootHash)
   lazy val minerPubKeyMethod = property("minerPubKey", SByteArray, 10, MinerPubkey)
+
   lazy val getVarMethod = SMethod(
     this, "getVar", SFunc(ContextFuncDom, SOption(tT), Array(paramT)), 11, GetVar.costKind)
     .withInfo(GetVar, "Get context variable with given \\lst{varId} and type.",
       ArgInfo("varId", "\\lst{Byte} identifier of context variable"))
 
-  protected override def getMethods() = super.getMethods() ++ Seq(
+  // todo: costing, desc
+  lazy val getVarFromInputMethod = SMethod(
+    this, "getVarFromInput", SFunc(Array(SContext, SShort, SByte), SOption(tT), Array(paramT)), 12, GetVar.costKind, Seq(tT))
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall, "Multiply this number with \\lst{other} by module Q.", ArgInfo("other", "Number to multiply with this."))
+
+  def getVarFromInput_eval[T](mc: MethodCall, ctx: sigma.Context, inputId: Short, varId: Byte)
+                          (implicit E: ErgoTreeEvaluator): Option[T] = {
+    // E.addCost(getVarFromInputMethod.costKind)
+    val rt = stypeToRType(mc.typeSubst.get(tT).get)
+    val res = ctx.getVarFromInput(inputId, varId)(rt).asInstanceOf[Option[T]]
+    res
+  }
+
+  private lazy val v5Methods = super.getMethods() ++ Seq(
     dataInputsMethod, headersMethod, preHeaderMethod, inputsMethod, outputsMethod, heightMethod, selfMethod,
     selfBoxIndexMethod, lastBlockUtxoRootHashMethod, minerPubKeyMethod, getVarMethod
   )
+
+  private lazy val v6Methods = super.getMethods() ++ Seq(
+    dataInputsMethod, headersMethod, preHeaderMethod, inputsMethod, outputsMethod, heightMethod, selfMethod,
+    selfBoxIndexMethod, lastBlockUtxoRootHashMethod, minerPubKeyMethod, getVarMethod, getVarFromInputMethod
+  )
+
+  protected override def getMethods(): Seq[SMethod] = {
+    if(VersionContext.current.isV6SoftForkActivated) {
+      v6Methods
+    } else {
+      v5Methods
+    }
+  }
 
   /** Names of methods which provide blockchain context.
    * This value can be reused where necessary to avoid allocations. */
