@@ -1063,7 +1063,7 @@ case object SBoxMethods extends MonoTypeMethods {
          | identifier followed by box index in the transaction outputs.
         """.stripMargin ) // see ExtractCreationInfo
 
-  lazy val getRegMethod = SMethod(this, "getReg",
+  lazy val getRegMethodV5 = SMethod(this, "getReg",
     SFunc(Array(SBox, SInt), SOption(tT), Array(paramT)), 7, ExtractRegisterAs.costKind)
       .withInfo(ExtractRegisterAs,
         """ Extracts register by id and type.
@@ -1077,18 +1077,37 @@ case object SBoxMethods extends MonoTypeMethods {
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(PropertyCall, "Secondary tokens")
 
+  lazy val getRegMethodV6 = SMethod(this, "getReg",
+    SFunc(Array(SBox, SInt), SOption(tT), Array(paramT)), 7, ExtractRegisterAs.costKind, Seq(tT))
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall, "todo: desc")
 
-  // should be lazy to solve recursive initialization
-  protected override def getMethods() = super.getMethods() ++ Array(
+  lazy val commonBoxMethods = Array(
     ValueMethod, // see ExtractAmount
     PropositionBytesMethod, // see ExtractScriptBytes
     BytesMethod, // see ExtractBytes
     BytesWithoutRefMethod, // see ExtractBytesWithNoRef
     IdMethod, // see ExtractId
     creationInfoMethod,
-    getRegMethod,
     tokensMethod
   ) ++ registers(8)
+
+  lazy val v5Methods = commonBoxMethods ++ Array(
+    getRegMethodV5
+  )
+
+  lazy val v6Methods = commonBoxMethods ++ Array(
+    getRegMethodV6
+  )
+
+  // should be lazy to solve recursive initialization
+  protected override def getMethods() = {
+    if(VersionContext.current.isV6SoftForkActivated) {
+      super.getMethods() ++ v6Methods
+    } else {
+      super.getMethods() ++ v5Methods
+    }
+  }
 }
 
 /** Type descriptor of `AvlTree` type of ErgoTree. */

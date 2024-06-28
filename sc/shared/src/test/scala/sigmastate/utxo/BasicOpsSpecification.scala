@@ -2,7 +2,9 @@ package sigmastate.utxo
 
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, R6, R8}
 import org.ergoplatform._
+import org.scalatest.Assertion
 import sigma.Extensions.ArrayOps
+import sigma.VersionContext
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.SType.AnyOps
 import sigma.data.{AvlTreeData, CAnyValue, CSigmaDslBuilder}
@@ -155,6 +157,25 @@ class BasicOpsSpecification extends CompilerTestingCommons
         reg1 -> UnitConstant.instance
       ))
     )
+  }
+
+  property("Box.getReg") {
+    def getRegTest(): Assertion = {
+      test("R1", env, ext,
+        """{ SELF.getReg[Long](0).get == SELF.value &&
+          |   SELF.getReg[Coll[(Coll[Byte], Long)]](2).get == SELF.tokens &&
+          |   SELF.getReg[Int](9).isEmpty
+          |}""".stripMargin,
+        null
+      )
+    }
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      getRegTest()
+    } else {
+      an[Exception] should be thrownBy getRegTest()
+    }
+
   }
 
   property("Relation operations") {

@@ -367,7 +367,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
         MInfo(4, BytesWithoutRefMethod),
         MInfo(5, IdMethod),
         MInfo(6, creationInfoMethod),
-        MInfo(7, getRegMethod),
+        MInfo(7, getRegMethodV5),
         MInfo(8, tokensMethod)
       ) ++ registers(idOfs = 8)
         .zipWithIndex
