@@ -1420,8 +1420,13 @@ case object SContextMethods extends MonoTypeMethods {
   lazy val lastBlockUtxoRootHashMethod = property("LastBlockUtxoRootHash", SAvlTree, 9, LastBlockUtxoRootHash)
   lazy val minerPubKeyMethod = property("minerPubKey", SByteArray, 10, MinerPubkey)
 
-  lazy val getVarMethod = SMethod(
+  lazy val getVarV5Method = SMethod(
     this, "getVar", SFunc(ContextFuncDom, SOption(tT), Array(paramT)), 11, GetVar.costKind)
+    .withInfo(GetVar, "Get context variable with given \\lst{varId} and type.",
+      ArgInfo("varId", "\\lst{Byte} identifier of context variable"))
+
+  lazy val getVarV6Method = SMethod(
+    this, "getVar", SFunc(ContextFuncDom, SOption(tT), Array(paramT)), 11, GetVar.costKind, Seq(tT))
     .withInfo(GetVar, "Get context variable with given \\lst{varId} and type.",
       ArgInfo("varId", "\\lst{Byte} identifier of context variable"))
 
@@ -1439,18 +1444,21 @@ case object SContextMethods extends MonoTypeMethods {
     res
   }
 
-  private lazy val v5Methods = super.getMethods() ++ Seq(
+  private lazy val commonMethods = Array(
     dataInputsMethod, headersMethod, preHeaderMethod, inputsMethod, outputsMethod, heightMethod, selfMethod,
-    selfBoxIndexMethod, lastBlockUtxoRootHashMethod, minerPubKeyMethod, getVarMethod
+    selfBoxIndexMethod, lastBlockUtxoRootHashMethod, minerPubKeyMethod
+  )
+
+  private lazy val v5Methods = super.getMethods() ++ Seq(
+    getVarV5Method
   )
 
   private lazy val v6Methods = super.getMethods() ++ Seq(
-    dataInputsMethod, headersMethod, preHeaderMethod, inputsMethod, outputsMethod, heightMethod, selfMethod,
-    selfBoxIndexMethod, lastBlockUtxoRootHashMethod, minerPubKeyMethod, getVarMethod, getVarFromInputMethod
+    getVarV6Method, getVarFromInputMethod
   )
 
   protected override def getMethods(): Seq[SMethod] = {
-    if(VersionContext.current.isV6SoftForkActivated) {
+    if (VersionContext.current.isV6SoftForkActivated) {
       v6Methods
     } else {
       v5Methods

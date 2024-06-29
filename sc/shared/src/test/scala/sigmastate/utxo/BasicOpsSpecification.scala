@@ -454,6 +454,22 @@ class BasicOpsSpecification extends CompilerTestingCommons
     )
   }
 
+  property("Context.getVar") {
+    def varTest() = {
+      test("GetVar1", env, ext,
+        "{ CONTEXT.getVar[Int](intVar2).get == 2 }",
+        null
+      )
+    }
+
+    if(VersionContext.current.isV6SoftForkActivated) {
+      varTest()
+    } else {
+      an[Exception] should be thrownBy(varTest())
+    }
+
+  }
+
   property("GetVar") {
     test("GetVar1", env, ext,
       "{ getVar[Int](intVar2).get == 2 }",

@@ -413,7 +413,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
         MInfo(1, dataInputsMethod), MInfo(2, headersMethod), MInfo(3, preHeaderMethod),
         MInfo(4, inputsMethod), MInfo(5, outputsMethod), MInfo(6, heightMethod),
         MInfo(7, selfMethod), MInfo(8, selfBoxIndexMethod), MInfo(9, lastBlockUtxoRootHashMethod),
-        MInfo(10, minerPubKeyMethod), MInfo(11, getVarMethod)
+        MInfo(10, minerPubKeyMethod), MInfo(11, getVarV5Method)
       ), true)
     },
     { import SGlobalMethods._
