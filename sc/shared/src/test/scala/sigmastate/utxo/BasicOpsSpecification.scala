@@ -467,7 +467,6 @@ class BasicOpsSpecification extends CompilerTestingCommons
     } else {
       an[Exception] should be thrownBy(varTest())
     }
-
   }
 
   property("GetVar") {

@@ -1427,8 +1427,8 @@ case object SContextMethods extends MonoTypeMethods {
 
   lazy val getVarV6Method = SMethod(
     this, "getVar", SFunc(ContextFuncDom, SOption(tT), Array(paramT)), 11, GetVar.costKind, Seq(tT))
-    .withInfo(GetVar, "Get context variable with given \\lst{varId} and type.",
-      ArgInfo("varId", "\\lst{Byte} identifier of context variable"))
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall, "") // todo: desc
 
   // todo: costing, desc
   lazy val getVarFromInputMethod = SMethod(
@@ -1449,19 +1449,19 @@ case object SContextMethods extends MonoTypeMethods {
     selfBoxIndexMethod, lastBlockUtxoRootHashMethod, minerPubKeyMethod
   )
 
-  private lazy val v5Methods = super.getMethods() ++ Seq(
+  private lazy val v5Methods = commonMethods ++ Seq(
     getVarV5Method
   )
 
-  private lazy val v6Methods = super.getMethods() ++ Seq(
+  private lazy val v6Methods = commonMethods ++ Seq(
     getVarV6Method, getVarFromInputMethod
   )
 
   protected override def getMethods(): Seq[SMethod] = {
     if (VersionContext.current.isV6SoftForkActivated) {
-      v6Methods
+      super.getMethods() ++ v6Methods
     } else {
-      v5Methods
+      super.getMethods() ++ v5Methods
     }
   }
 
