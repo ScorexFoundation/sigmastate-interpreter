@@ -7,7 +7,6 @@ import sigma.data.OverloadHack.Overloaded1
 import sigma.data.{CBigInt, Nullable, SigmaConstants}
 import sigma.reflection.{RClass, RMethod, ReflectionData}
 import sigma.util.Extensions.{IntOps, LongOps, ShortOps}
-import sigma.util.Versioned
 import sigma.{AvlTree, BigInt, Box, Coll, Context, Evaluation, GroupElement, Header, PreHeader, SigmaDslBuilder, SigmaProp, VersionContext}
 
 import java.math.BigInteger
@@ -141,18 +140,21 @@ object SType {
     *
     * The regression tests in `property("MethodCall Codes")` should pass.
     */
-  private val _types: Versioned[Map[Byte, STypeCompanion]] = Versioned({ version =>
-    val v5x = Seq(
-      SBoolean, SString, STuple, SGroupElement, SSigmaProp, SContext, SGlobal, SHeader, SPreHeader,
-      SAvlTree, SBox, SOption, SCollection, SBigInt
-    )
-    val v6 = if (version >= VersionContext.V6SoftForkVersion)
-      Seq(SByte, SShort, SInt, SLong)
-    else
-      Seq.empty
-    (v5x ++ v6).map { t => (t.typeId, t) }.toMap
-  })
-  def types: Map[Byte, STypeCompanion] = _types.get(VersionContext.current.activatedVersion)
+  private val v5Types = Seq(
+    SBoolean, SString, STuple, SGroupElement, SSigmaProp, SContext, SGlobal, SHeader, SPreHeader,
+    SAvlTree, SBox, SOption, SCollection, SBigInt
+  )
+  private val v6Types = v5Types ++ Seq(SByte, SShort, SInt, SLong)
+
+  private val v5TypesMap = v5Types.map { t => (t.typeId, t) }.toMap
+
+  private val v6TypesMap = v6Types.map { t => (t.typeId, t) }.toMap
+
+  def types: Map[Byte, STypeCompanion] = if (VersionContext.current.isV6SoftForkActivated) {
+    v6TypesMap
+  } else {
+    v5TypesMap
+  }
 
   /** Checks that the type of the value corresponds to the descriptor `tpe`.
     * If the value has complex structure only root type constructor is checked.

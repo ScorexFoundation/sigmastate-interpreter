@@ -5,7 +5,7 @@ import org.ergoplatform.validation._
 import sigma._
 import sigma.ast.SCollection.{SBooleanArray, SBoxArray, SByteArray, SByteArray2, SHeaderArray}
 import sigma.ast.SMethod.{MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
-import sigma.ast.SType.{TypeCode, paramT, tT}
+import sigma.ast.SType.TypeCode
 import sigma.ast.syntax.{SValue, ValueOps}
 import sigma.data.ExactIntegral.{ByteIsExactIntegral, IntIsExactIntegral, LongIsExactIntegral, ShortIsExactIntegral}
 import sigma.data.OverloadHack.Overloaded1
@@ -13,7 +13,6 @@ import sigma.data.{DataValueComparer, KeyValueColl, Nullable, RType, SigmaConsta
 import sigma.eval.{CostDetails, ErgoTreeEvaluator, TracedCost}
 import sigma.reflection.RClass
 import sigma.serialization.CoreByteWriter.ArgInfo
-import sigma.util.Versioned
 import sigma.utils.SparseArrayContainer
 
 import scala.annotation.unused
@@ -158,23 +157,30 @@ trait MonoTypeMethods extends MethodsContainer {
 
 trait SNumericTypeMethods extends MonoTypeMethods {
   import SNumericTypeMethods.tNum
-  private val _getMethods = Versioned({ version =>
-    val subst = Map(tNum -> this.ownerType)
-    val numericMethods = if (version < VersionContext.V6SoftForkVersion)
-      SNumericTypeMethods.methods.map { m =>
-        m.copy(stype = applySubst(m.stype, subst).asFunc )
-      }
-    else
-      SNumericTypeMethods.methods.map { m =>
-        m.copy(
-          objType = this, // associate the method with the concrete numeric type
-          stype = applySubst(m.stype, subst).asFunc
-        )}
-    super.getMethods() ++ numericMethods
-  })
 
-  protected override def getMethods(): Seq[SMethod] =
-    _getMethods.get(VersionContext.current.activatedVersion)
+  private val subst = Map(tNum -> this.ownerType)
+
+  private val v5Methods = {
+    SNumericTypeMethods.methods.map { m =>
+      m.copy(stype = applySubst(m.stype, subst).asFunc)
+    }
+  }
+
+  private val v6Methods = {
+    SNumericTypeMethods.methods.map { m =>
+      m.copy(
+        objType = this, // associate the method with the concrete numeric type
+        stype = applySubst(m.stype, subst).asFunc
+      )}
+  }
+
+  protected override def getMethods(): Seq[SMethod] = {
+    if (VersionContext.current.isV6SoftForkActivated) {
+      super.getMethods() ++ v6Methods
+    } else {
+      super.getMethods() ++ v5Methods
+    }
+  }
 }
 
 object SNumericTypeMethods extends MethodsContainer {

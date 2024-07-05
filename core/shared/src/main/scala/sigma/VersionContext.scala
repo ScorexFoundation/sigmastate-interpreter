@@ -25,12 +25,6 @@ case class VersionContext(activatedVersion: Byte, ergoTreeVersion: Byte) {
   /** @return true, if the activated script version of Ergo protocol on the network is
    * including Evolution update. */
   def isV6SoftForkActivated: Boolean = activatedVersion >= V6SoftForkVersion
-
-  /** @return true if another [[VersionContext]] is greater than this. */
-  def <= (that: VersionContext): Boolean = {
-    this.activatedVersion < that.activatedVersion ||
-    (this.activatedVersion == that.activatedVersion && this.ergoTreeVersion <= that.ergoTreeVersion)
-  }
 }
 
 object VersionContext {
@@ -110,11 +104,4 @@ object VersionContext {
     }
   }
 
-  /** Returns the VersionContext with V5 activation and the given ErgoTree version. */
-  def sinceV5AndTreeVersion(treeVersion: Byte): VersionContext =
-    VersionContext(JitActivationVersion, ergoTreeVersion = treeVersion)
-
-  /** Returns the VersionContext with V6 activation and the given ErgoTree version. */
-  def sinceV6AndTreeVersion(treeVersion: Byte): VersionContext =
-    VersionContext(V6SoftForkVersion, ergoTreeVersion = treeVersion)
 }
