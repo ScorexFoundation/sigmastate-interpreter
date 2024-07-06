@@ -3,6 +3,7 @@ package sigmastate.utxo
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, R6, R8}
 import org.ergoplatform._
 import sigma.Extensions.ArrayOps
+import sigma.VersionContext
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.SType.AnyOps
 import sigma.data.{AvlTreeData, CAnyValue, CSigmaDslBuilder}
@@ -133,6 +134,20 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
     val verifyEnv = env + (ScriptNameProp -> s"${name}_verify_ext")
     flexVerifier.verify(verifyEnv, tree, ctxExt, pr.proof, fakeMessage).get._1 shouldBe true
+  }
+
+  property("BigInt.toBits") {
+    def toBitsTest() = test("R1", env, ext,
+      """{
+        | val b = 1.toBigInt
+        | b.toBits == Coll(true)
+        |}""".stripMargin,
+      null
+    )
+
+    if(VersionContext.current.isV6SoftForkActivated) {
+      toBitsTest()
+    }
   }
 
   property("Unit register") {
