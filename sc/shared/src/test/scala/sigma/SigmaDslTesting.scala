@@ -843,7 +843,9 @@ class SigmaDslTesting extends AnyPropSpec
   )(implicit IR: IRContext, override val evalSettings: EvalSettings, val tA: RType[A], val tB: RType[B])
     extends Feature[A, B] {
     override def scalaFunc: A => B = { x =>
-      sys.error(s"Semantic Scala function is not defined for old implementation: $this")
+      sys.error(s"The Semantic Scala function is not defined for the current implementation: $this.
+      |Please update your implementation to the latest version.
+      |For more information, visit our Scala function documentation.".stripMargin.replaceAll("\n", " "))
     }
     implicit val cs = compilerSettingsInTests
 

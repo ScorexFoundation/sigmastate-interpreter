@@ -163,17 +163,21 @@ object SType {
     case _: SOption[_] => x.isInstanceOf[Option[_]]
     case t: STuple =>
       if (t.items.length == 2) x.isInstanceOf[Tuple2[_,_]]
-      else sys.error(s"Unsupported tuple type $t")
+      else sys.error(s"The tuple type $t is not supported.
+      |Please ensure you are using a compatible tuple type.
+      |For further assistance, consult our tuple type documentation.".stripMargin.replaceAll("\n", " "))
     case tF: SFunc =>
       if (tF.tDom.length == 1) x.isInstanceOf[Function1[_,_]]
-      else sys.error(s"Unsupported function type $tF")
+      else sys.error(s"he function type $tF is not supported. Please ensure you are using a compatible function type.
+      |For more details, refer to our function type documentation.".stripMargin.replaceAll("\n", " "))
     case SContext => x.isInstanceOf[Context]
     case SAvlTree => x.isInstanceOf[AvlTree]
     case SGlobal => x.isInstanceOf[SigmaDslBuilder]
     case SHeader => x.isInstanceOf[Header]
     case SPreHeader => x.isInstanceOf[PreHeader]
     case SUnit => x.isInstanceOf[Unit]
-    case _ => sys.error(s"Unknown type $tpe")
+    case _ => sys.error(s"The type $tpe is unknown. Please verify the type and ensure it is correctly defined.
+    |For further assistance, consult our type definition documentation.".stripMargin.replaceAll("\n", " "))
   }
 
 
@@ -368,14 +372,18 @@ case object SByte extends SPrimType with SEmbeddable with SNumericType with SMon
   override def numericTypeIndex: Int = 0
   override def upcast(v: AnyVal): Byte = v match {
     case b: Byte => b
-    case _ => sys.error(s"Cannot upcast value $v to the type $this")
+    case _ => sys.error(s"Unable to upcast value $v to type $this.
+    |Please ensure compatibility between the value and the expected type.
+    |For more guidance, refer to our type casting documentation.".stripMargin.replaceAll("\n", " "))
   }
   override def downcast(v: AnyVal): Byte = v match {
     case b: Byte => b
     case s: Short => s.toByteExact
     case i: Int => i.toByteExact
     case l: Long => l.toByteExact
-    case _ => sys.error(s"Cannot downcast value $v to the type $this")
+    case _ => sys.error(s"Unable to downcast value $v to type $this.
+                         |Please ensure compatibility between the value and the expected type.
+                         |For more guidance, refer to our type casting documentation.".stripMargin.replaceAll("\n", " "))
   }
 }
 

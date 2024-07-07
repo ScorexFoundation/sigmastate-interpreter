@@ -175,7 +175,9 @@ object Platform {
     case c: Coll[_] => tpe match {
       case STuple(items) => c.tItem == sigma.AnyType && c.length == items.length
       case _: SCollection[_] => true
-      case _ => sys.error(s"Collection value $c has unexpected type $tpe")
+      case _ => sys.error(s"The collection value $c has an unexpected type: $tpe.
+                            |Please ensure the value is of the expected type.
+                            |For more details, refer to our type compatibility guide.".stripMargin.replaceAll("\n", " "))
     }
     case _: Option[_] => tpe.isOption
     case _: Tuple2[_, _] => tpe.isTuple && tpe.asTuple.items.length == 2
