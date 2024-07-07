@@ -51,8 +51,8 @@ object Evaluation {
       val tpeArg = args(0)
       funcRType(stypeToRType(tpeArg), stypeToRType(tpeRange))
     case _ =>
-      sys.error(s"We couldn't convert SType $t to RType. Please ensure that $t is compatible with RType.
-      |For detailed guidance, visit our type conversion documentation.".stripMargin.replaceAll("\n", " "))
+      sys.error(s"""We couldn't convert SType $t to RType. Please ensure that $t is compatible with RType.
+      |For detailed guidance, visit our type conversion documentation.""".stripMargin.replaceAll("\n", " "))
   }).asInstanceOf[RType[T#WrappedType]]
 
   /** Transforms RType descriptor of SigmaDsl, which is used during evaluation,
@@ -83,8 +83,8 @@ object Evaluation {
     case ct: CollType[_] => SCollection(rtypeToSType(ct.tItem))
     case ft: FuncType[_,_] => SFunc(rtypeToSType(ft.tDom), rtypeToSType(ft.tRange))
     case pt: PairType[_,_] => STuple(rtypeToSType(pt.tFst), rtypeToSType(pt.tSnd))
-    case _ => sys.error(s"We couldn't convert SType $t to RType. Please ensure that $t is compatible with RType.
-              |For detailed guidance, visit our type conversion documentation.".stripMargin.replaceAll("\n", " "))
+    case _ => sys.error(s"""We couldn't convert SType $t to RType. Please ensure that $t is compatible with RType.
+              |For detailed guidance, visit our type conversion documentation.""".stripMargin.replaceAll("\n", " "))
   }
 
   /** Convert SigmaDsl representation of tuple to ErgoTree serializable representation. */
@@ -92,9 +92,9 @@ object Evaluation {
     case t: Tuple2[_,_] => TupleColl(t._1, t._2)
     case a: Coll[Any]@unchecked if a.tItem == sigma.AnyType => a
     case _ =>
-      sys.error(s"Execution failed for fromDslTuple with value $value and type $tupleTpe.
+      sys.error(s"""Execution failed for fromDslTuple with value $value and type $tupleTpe.
       |Please ensure the value matches the expected tuple type.
-      |For more details, refer to our DSL tuple documentation.".stripMargin.replaceAll("\n", " "))
+      |For more details, refer to our DSL tuple documentation.""".stripMargin.replaceAll("\n", " "))
   }
 
   /** Convert ErgoTree serializable representation of tuple to SigmaDsl representation. */

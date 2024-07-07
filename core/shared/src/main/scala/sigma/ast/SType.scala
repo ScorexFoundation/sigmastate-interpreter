@@ -163,21 +163,21 @@ object SType {
     case _: SOption[_] => x.isInstanceOf[Option[_]]
     case t: STuple =>
       if (t.items.length == 2) x.isInstanceOf[Tuple2[_,_]]
-      else sys.error(s"The tuple type $t is not supported.
+      else sys.error(s"""The tuple type $t is not supported.
       |Please ensure you are using a compatible tuple type.
-      |For further assistance, consult our tuple type documentation.".stripMargin.replaceAll("\n", " "))
+      |For further assistance, consult our tuple type documentation.""".stripMargin.replaceAll("\n", " "))
     case tF: SFunc =>
       if (tF.tDom.length == 1) x.isInstanceOf[Function1[_,_]]
-      else sys.error(s"he function type $tF is not supported. Please ensure you are using a compatible function type.
-      |For more details, refer to our function type documentation.".stripMargin.replaceAll("\n", " "))
+      else sys.error(s"""The function type $tF is not supported. Please ensure you are using a compatible function type.
+      |For more details, refer to our function type documentation.""".stripMargin.replaceAll("\n", " "))
     case SContext => x.isInstanceOf[Context]
     case SAvlTree => x.isInstanceOf[AvlTree]
     case SGlobal => x.isInstanceOf[SigmaDslBuilder]
     case SHeader => x.isInstanceOf[Header]
     case SPreHeader => x.isInstanceOf[PreHeader]
     case SUnit => x.isInstanceOf[Unit]
-    case _ => sys.error(s"The type $tpe is unknown. Please verify the type and ensure it is correctly defined.
-    |For further assistance, consult our type definition documentation.".stripMargin.replaceAll("\n", " "))
+    case _ => sys.error(s"""The type $tpe is unknown. Please verify the type and ensure it is correctly defined.
+    |For further assistance, consult our type definition documentation.""".stripMargin.replaceAll("\n", " "))
   }
 
 
@@ -350,7 +350,9 @@ object SNumericType extends STypeCompanion {
   override def typeId: TypeCode = 106: Byte
 
   /** Since this object is not used in SMethod instances. */
-  override def reprClass: RClass[_] = sys.error(s"Shouldn't be called.")
+  override def reprClass: RClass[_] = sys.error("""The reprClass method should not be invoked.
+      |Please review the documentation for correct usage.
+      |For more information, refer to our reprClass documentation.""".stripMargin.replaceAll("\n", " "))
 }
 
 /** Descriptor of ErgoTree type `Boolean` holding `true` or `false` values. */
@@ -372,18 +374,18 @@ case object SByte extends SPrimType with SEmbeddable with SNumericType with SMon
   override def numericTypeIndex: Int = 0
   override def upcast(v: AnyVal): Byte = v match {
     case b: Byte => b
-    case _ => sys.error(s"Unable to upcast value $v to type $this.
+    case _ => sys.error(s"""Unable to upcast value $v to type $this.
     |Please ensure compatibility between the value and the expected type.
-    |For more guidance, refer to our type casting documentation.".stripMargin.replaceAll("\n", " "))
+    |For more guidance, refer to our type casting documentation.""".stripMargin.replaceAll("\n", " "))
   }
   override def downcast(v: AnyVal): Byte = v match {
     case b: Byte => b
     case s: Short => s.toByteExact
     case i: Int => i.toByteExact
     case l: Long => l.toByteExact
-    case _ => sys.error(s"Unable to downcast value $v to type $this.
+    case _ => sys.error(s"""Unable to downcast value $v to type $this.
                          |Please ensure compatibility between the value and the expected type.
-                         |For more guidance, refer to our type casting documentation.".stripMargin.replaceAll("\n", " "))
+                         |For more guidance, refer to our type casting documentation.""".stripMargin.replaceAll("\n", " "))
   }
 }
 

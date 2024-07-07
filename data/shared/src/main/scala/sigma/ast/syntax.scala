@@ -58,7 +58,10 @@ object syntax {
     def length: Int = matchCase(_.items.length, _.value.length, _.items.length)
 
     /** Returns a sequence of items in the collection expression. */
-    def items: Seq[Value[SType]] = matchCase(_.items, _ => sys.error(s"Cannot get 'items' property of node $coll"), _.items)
+    def items: Seq[Value[SType]] = matchCase(_.items, _ => sys.error(
+      s"""Unable to retrieve the 'items' property of node $coll.
+         |Please ensure the node is correctly initialized and has the items property available.
+         |For further assistance, refer to our node documentation.""".stripMargin.replaceAll("\n", " ")), _.items)
 
     /** Abstracts from details of pattern matching collection expressions.
       * Folds over given `coll` structure.

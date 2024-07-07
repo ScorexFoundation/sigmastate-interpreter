@@ -63,7 +63,9 @@ class CoreDataSerializer {
       val len = arr.length
       assert(arr.length == t.items.length, s"Type $t doesn't correspond to value $arr")
       if (len > 0xFFFF)
-        sys.error(s"Length of tuple ${arr.length} exceeds ${0xFFFF} limit.")
+        sys.error(s"""The tuple length (${arr.length}) exceeds the maximum limit (${0xFFFF}).
+             |Please reduce the tuple size to meet the limit.
+             |For more details, refer to our tuple length documentation.""".stripMargin.replaceAll("\n", " "))
       var i = 0
       while (i < arr.length) {
         serialize[SType](arr(i), t.items(i), w)
