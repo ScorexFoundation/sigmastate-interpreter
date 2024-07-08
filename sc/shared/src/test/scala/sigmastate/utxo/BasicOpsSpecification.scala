@@ -172,6 +172,55 @@ class BasicOpsSpecification extends CompilerTestingCommons
     )
   }
 
+  property("Int.toBytes") {
+    def toBytesTest() = test("Int.toBytes", env, ext,
+      """{
+        |   val l = 1
+        |   l.toBytes == Coll(0.toByte, 0.toByte, 0.toByte, 1.toByte)
+        | }""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      toBytesTest()
+    } else {
+      an[Exception] shouldBe thrownBy(toBytesTest())
+    }
+  }
+
+  property("Byte.toBytes") {
+    def toBytesTest() = test("Byte.toBytes", env, ext,
+      """{
+        |   val l = 10.toByte
+        |   l.toBytes == Coll(10.toByte)
+        | }""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      toBytesTest()
+    } else {
+      an[Exception] shouldBe thrownBy(toBytesTest())
+    }
+  }
+
+
+  property("BigInt.toBytes") {
+    def toBytesTest() = test("BigInt.toBytes", env, ext,
+      s"""{
+        |   val l = bigInt("${CryptoConstants.groupOrder.divide(new BigInteger("2"))}")
+        |   l.toBytes.size == 32
+        | }""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      toBytesTest()
+    } else {
+      an[Exception] shouldBe thrownBy(toBytesTest())
+    }
+  }
+
   property("Relation operations") {
     test("R1", env, ext,
       "{ allOf(Coll(getVar[Boolean](trueVar).get, true, true)) }",

@@ -186,7 +186,11 @@ trait TreeBuilding extends Base { IR: IRContext =>
               .asInstanceOf[ConstantNode[SType]]
             s.put(constant)(builder)
           case None =>
-            mkConstant[tpe.type](x.asInstanceOf[tpe.WrappedType], tpe)
+            if(x.isInstanceOf[CollConst[_, _]]) { // hack used to process NumericToBigEndianBytes only
+              mkConstant[tpe.type](x.asInstanceOf[CollConst[_, _]].constValue.asInstanceOf[tpe.WrappedType], tpe)
+            } else {
+              mkConstant[tpe.type](x.asInstanceOf[tpe.WrappedType], tpe)
+            }
         }
       case Def(IR.ConstantPlaceholder(id, elem)) =>
         val tpe = elemToSType(elem)

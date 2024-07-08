@@ -71,8 +71,9 @@ trait NumericOps extends Base { self: IRContext =>
   /** Descriptor of unary `ToBigEndianBytes` conversion operation. */
   case class NumericToBigEndianBytes[T](n: ExactNumeric[T])
     extends UnOp[T, Coll[Byte]]("ToBigEndianBytes")(element[Coll[Byte]]) {
-    override def applySeq(x: T): Coll[Byte] =
-      n.toBigEndianBytes(x).asInstanceOf[Coll[Byte]]
+    override def applySeq(x: T): Coll[Byte] = {
+      liftableColl(Liftables.ByteIsLiftable).lift(n.toBigEndianBytes(x))
+    }
   }
 
   /** Descriptor of binary `/` operation (integral division). */
