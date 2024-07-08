@@ -1,7 +1,9 @@
 package sigma.data
 
-import sigma.Coll
+import sigma.{Coll, Colls}
 import sigma.data.ExactIntegral._
+
+import scala.collection.mutable
 
 /** Numeric operations with overflow checks.
   * Raise exception when overflow is detected.
@@ -37,7 +39,20 @@ trait ExactNumeric[T] {
     */
   def toBigEndianBytes(x: T): Coll[Byte]
 
-  def toBits(x: T): Coll[Boolean]
+  def toBits(x: T): Coll[Boolean] = {
+    def byte2Bools(b: Byte): Array[Boolean] =  (0 to 7).toArray.reverse.map(isBitSet(b))
+
+    def isBitSet(byte: Byte)(bit: Int): Boolean = ((byte >> bit) & 1) == 1
+
+    val bytes = toBigEndianBytes(x)
+    val builder = mutable.ArrayBuilder.make[Boolean]
+    val l = bytes.length
+    (0 until l).foreach{i=>
+      val b = bytes(i)
+      builder.addAll(byte2Bools(b))
+    }
+    Colls.fromArray(builder.result())
+  }
 
   /** A value of type T which corresponds to integer 0. */
   lazy val zero: T = fromInt(0)

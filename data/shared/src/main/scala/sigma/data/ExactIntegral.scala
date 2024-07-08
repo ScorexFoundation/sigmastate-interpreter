@@ -39,13 +39,6 @@ object ExactIntegral {
     override def minus(x: Byte, y: Byte): Byte = x.subtractExact(y)
     override def times(x: Byte, y: Byte): Byte = x.multiplyExact(y)
     override def toBigEndianBytes(x: Byte): Coll[Byte] = Colls.fromItems(x)
-    override def toBits(x: Byte): Coll[Boolean] = {
-      def byte2Bools(b: Byte): Array[Boolean] =  (0 to 7).toArray.reverse.map(isBitSet(b))
-
-      def isBitSet(byte: Byte)(bit: Int): Boolean = ((byte >> bit) & 1) == 1
-
-      Colls.fromArray(byte2Bools(x))
-    }
   }
 
   implicit object ShortIsExactIntegral extends ExactIntegral[Short] {
@@ -54,7 +47,6 @@ object ExactIntegral {
     override def minus(x: Short, y: Short): Short = x.subtractExact(y)
     override def times(x: Short, y: Short): Short = x.multiplyExact(y)
     override def toBigEndianBytes(x: Short): Coll[Byte] = Colls.fromItems((x >> 8).toByte, x.toByte)
-    override def toBits(x: Short): Coll[Boolean] = ???
   }
 
   implicit object IntIsExactIntegral extends ExactIntegral[Int] {
@@ -64,7 +56,6 @@ object ExactIntegral {
     override def times(x: Int, y: Int): Int = java7.compat.Math.multiplyExact(x, y)
     override def toBigEndianBytes(x: Int): Coll[Byte] =
       Colls.fromItems((x >> 24).toByte, (x >> 16).toByte, (x >> 8).toByte, x.toByte)
-    override def toBits(x: Int): Coll[Boolean] = ???
   }
 
   implicit object LongIsExactIntegral extends ExactIntegral[Long] {
@@ -74,7 +65,5 @@ object ExactIntegral {
     override def times(x: Long, y: Long): Long = java7.compat.Math.multiplyExact(x, y)
     override def toBigEndianBytes(x: Long): Coll[Byte] =
       Colls.fromItems((x >> 56).toByte, (x >> 48).toByte, (x >> 40).toByte, (x >> 32).toByte, (x >> 24).toByte, (x >> 16).toByte, (x >> 8).toByte, x.toByte)
-
-    override def toBits(x: Long): Coll[Boolean] = ???
   }
 }

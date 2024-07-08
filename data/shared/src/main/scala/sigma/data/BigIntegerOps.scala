@@ -92,8 +92,6 @@ object NumericOps {
     override def divisionRemainder(x: BigInt, y: BigInt): BigInt = x.mod(y)
 
     override def toBigEndianBytes(x: BigInt): Coll[Byte] = Colls.fromArray(x.toBigInteger.toByteArray)
-
-    override def toBits(x: BigInt): Coll[Boolean] = ???
   }
 
   /** The instance of [[scalan.ExactOrdering]] typeclass for [[BigInt]]. */

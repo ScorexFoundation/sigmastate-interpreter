@@ -152,6 +152,42 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
+  property("Long.toBits") {
+    def toBitsTest() = test("Long.toBits", env, ext,
+      """{
+        | val b = 1L
+        | val ba = b.toBits
+        |
+        | // only rightmost bit is set
+        | ba.size == 64 && ba(63) == true && ba.slice(0, 63).forall({ (b: Boolean ) => b == false })
+        |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      toBitsTest()
+    } else {
+      an[Exception] shouldBe thrownBy(toBitsTest())
+    }
+  }
+
+  property("BigInt.toBits") {
+    def toBitsTest() = test("BigInt.toBits", env, ext,
+      s"""{
+        | val b = bigInt("${CryptoConstants.groupOrder.divide(new BigInteger("2"))}")
+        | val ba = b.toBits
+        | ba.size == 256
+        |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      toBitsTest()
+    } else {
+      an[Exception] shouldBe thrownBy(toBitsTest())
+    }
+  }
+
   property("Unit register") {
     // TODO frontend: implement missing Unit support in compiler
     //  https://github.com/ScorexFoundation/sigmastate-interpreter/issues/820
