@@ -136,17 +136,19 @@ class BasicOpsSpecification extends CompilerTestingCommons
     flexVerifier.verify(verifyEnv, tree, ctxExt, pr.proof, fakeMessage).get._1 shouldBe true
   }
 
-  property("BigInt.toBits") {
-    def toBitsTest() = test("R1", env, ext,
+  property("Byte.toBits") {
+    def toBitsTest() = test("Byte.toBits", env, ext,
       """{
-        | val b = 1.toBigInt
-        | b.toBits == Coll(true)
+        | val b = 1.toByte
+        | b.toBits == Coll(false, false, false, false, false, false, false, true)
         |}""".stripMargin,
       null
     )
 
-    if(VersionContext.current.isV6SoftForkActivated) {
+    if (VersionContext.current.isV6SoftForkActivated) {
       toBitsTest()
+    } else {
+      an[Exception] shouldBe thrownBy(toBitsTest())
     }
   }
 

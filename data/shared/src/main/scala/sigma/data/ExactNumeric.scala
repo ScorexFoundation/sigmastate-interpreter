@@ -37,6 +37,8 @@ trait ExactNumeric[T] {
     */
   def toBigEndianBytes(x: T): Coll[Byte]
 
+  def toBits(x: T): Coll[Boolean]
+
   /** A value of type T which corresponds to integer 0. */
   lazy val zero: T = fromInt(0)
 

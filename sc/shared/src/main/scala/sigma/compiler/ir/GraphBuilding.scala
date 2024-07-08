@@ -1153,6 +1153,9 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
             case SNumericTypeMethods.ToBytesMethod.name =>
               val op = NumericToBigEndianBytes(elemToExactNumeric(x.elem))
               ApplyUnOp(op, x)
+            case SNumericTypeMethods.ToBitsMethod.name =>
+              val op = NumericToBits(elemToExactNumeric(x.elem))
+              ApplyUnOp(op, x)
             case _ => throwError()
           }
           case _ => throwError(s"Type ${stypeToRType(obj.tpe).name} doesn't have methods")

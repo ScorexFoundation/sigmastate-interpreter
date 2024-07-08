@@ -76,6 +76,14 @@ trait NumericOps extends Base { self: IRContext =>
     }
   }
 
+  /** Descriptor of unary `ToBigEndianBytes` conversion operation. */
+  case class NumericToBits[T](n: ExactNumeric[T])
+    extends UnOp[T, Coll[Boolean]]("ToBits")(element[Coll[Boolean]]) {
+    override def applySeq(x: T): Coll[Boolean] = {
+      liftableColl(Liftables.BooleanIsLiftable).lift(n.toBits(x))
+    }
+  }
+
   /** Descriptor of binary `/` operation (integral division). */
   case class IntegralDivide[T](i: ExactIntegral[T])(implicit elem: Elem[T]) extends DivOp[T]("/", i) {
     override def applySeq(x: T, y: T): T = i.quot(x, y)
