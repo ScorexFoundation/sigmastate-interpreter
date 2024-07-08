@@ -8,6 +8,7 @@ import sigma.ast.SMethod.{MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
 import sigma.ast.SType.TypeCode
 import sigma.ast.syntax.{SValue, ValueOps}
 import sigma.data.ExactIntegral.{ByteIsExactIntegral, IntIsExactIntegral, LongIsExactIntegral, ShortIsExactIntegral}
+import sigma.data.NumericOps.BigIntIsExactIntegral
 import sigma.data.OverloadHack.Overloaded1
 import sigma.data.{DataValueComparer, KeyValueColl, Nullable, RType, SigmaConstants}
 import sigma.eval.{CostDetails, ErgoTreeEvaluator, TracedCost}
@@ -258,6 +259,15 @@ object SNumericTypeMethods extends MethodsContainer {
   val ToBitsMethod: SMethod = SMethod(
     this, "toBits", SFunc(tNum, SBooleanArray), 7, ToBits_CostKind)
       .withIRInfo(MethodCallIrBuilder)
+      .withUserDefinedInvoke({ (m: SMethod, obj: Any, _: Array[Any]) =>
+        m.objType match {
+          case SByteMethods => ByteIsExactIntegral.toBits(obj.asInstanceOf[Byte])
+          case SShortMethods => ShortIsExactIntegral.toBits(obj.asInstanceOf[Short])
+          case SIntMethods => IntIsExactIntegral.toBits(obj.asInstanceOf[Int])
+          case SLongMethods => LongIsExactIntegral.toBits(obj.asInstanceOf[Long])
+          case SBigIntMethods => BigIntIsExactIntegral.toBits(obj.asInstanceOf[BigInt])
+        }
+      })
       .withInfo(PropertyCall,
         """ Returns a big-endian representation of this numeric in a collection of Booleans.
          |  Each boolean corresponds to one bit.
