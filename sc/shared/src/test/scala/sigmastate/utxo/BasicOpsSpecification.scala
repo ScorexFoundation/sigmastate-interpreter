@@ -206,6 +206,39 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
+  property("Byte.bitwiseInverse") {
+    def bitwiseInverseTest(): Assertion = test("Byte.bitwiseInverse", env, ext,
+      s"""{
+         | val b = 127.toByte
+         | b.bitwiseInverse == (-128).toByte
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      bitwiseInverseTest()
+    } else {
+      an[Exception] shouldBe thrownBy(bitwiseInverseTest())
+    }
+  }
+
+  property("Long.bitwiseInverse") {
+    def bitwiseInverseTest(): Assertion = test("Long.bitwiseInverse", env, ext,
+      s"""{
+         | val l = 9223372036854775807L
+         | val lb = l.bitwiseInverse
+         | lb.bitwiseInverse == l
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      bitwiseInverseTest()
+    } else {
+      an[Exception] shouldBe thrownBy(bitwiseInverseTest())
+    }
+  }
+
   property("Unit register") {
     // TODO frontend: implement missing Unit support in compiler
     //  https://github.com/ScorexFoundation/sigmastate-interpreter/issues/820
