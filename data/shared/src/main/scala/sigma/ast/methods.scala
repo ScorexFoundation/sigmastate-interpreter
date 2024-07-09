@@ -273,6 +273,26 @@ object SNumericTypeMethods extends MethodsContainer {
          |  Each boolean corresponds to one bit.
           """.stripMargin)
 
+  /** Cost of inverting bits of a number. */
+  val BitwiseInverse_CostKind = FixedCost(JitCost(5))
+
+  val BitwiseInverseMethod: SMethod = SMethod(
+    this, "bitwiseInverse", SFunc(tNum, tNum), 8, BitwiseInverse_CostKind)
+    .withIRInfo(MethodCallIrBuilder)
+    .withUserDefinedInvoke({ (m: SMethod, obj: Any, _: Array[Any]) =>
+      m.objType match {
+        case SByteMethods => ByteIsExactIntegral.bitwiseInverse(obj.asInstanceOf[Byte])
+        case SShortMethods => ShortIsExactIntegral.bitwiseInverse(obj.asInstanceOf[Short])
+        case SIntMethods => IntIsExactIntegral.bitwiseInverse(obj.asInstanceOf[Int])
+        case SLongMethods => LongIsExactIntegral.bitwiseInverse(obj.asInstanceOf[Long])
+        case SBigIntMethods => BigIntIsExactIntegral.bitwiseInverse(obj.asInstanceOf[BigInt])
+      }
+    })
+    .withInfo(PropertyCall,
+      """ Returns a big-endian representation of this numeric in a collection of Booleans.
+        |  Each boolean corresponds to one bit.
+          """.stripMargin)
+
   protected override def getMethods(): Seq[SMethod] = Array(
     ToByteMethod, // see Downcast
     ToShortMethod, // see Downcast
@@ -280,7 +300,8 @@ object SNumericTypeMethods extends MethodsContainer {
     ToLongMethod, // see Downcast
     ToBigIntMethod, // see Downcast
     ToBytesMethod,
-    ToBitsMethod
+    ToBitsMethod,
+    BitwiseInverseMethod
   )
 
   /** Collection of names of numeric casting methods (like `toByte`, `toInt`, etc). */

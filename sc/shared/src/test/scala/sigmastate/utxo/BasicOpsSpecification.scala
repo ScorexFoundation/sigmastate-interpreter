@@ -2,6 +2,7 @@ package sigmastate.utxo
 
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, R6, R8}
 import org.ergoplatform._
+import org.scalatest.Assertion
 import sigma.Extensions.ArrayOps
 import sigma.VersionContext
 import sigma.ast.SCollection.SByteArray
@@ -185,6 +186,23 @@ class BasicOpsSpecification extends CompilerTestingCommons
       toBitsTest()
     } else {
       an[Exception] shouldBe thrownBy(toBitsTest())
+    }
+  }
+
+  property("BigInt.bitwiseInverse") {
+    def bitwiseInverseTest(): Assertion = test("BigInt.bitwiseInverse", env, ext,
+      s"""{
+         | val b = bigInt("${CryptoConstants.groupOrder.divide(new BigInteger("2"))}")
+         | val bi = b.bitwiseInverse
+         | bi.bitwiseInverse == b
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      bitwiseInverseTest()
+    } else {
+      an[Exception] shouldBe thrownBy(bitwiseInverseTest())
     }
   }
 

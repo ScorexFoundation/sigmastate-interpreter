@@ -120,6 +120,13 @@ trait TreeBuilding extends Base { IR: IRContext =>
           builder.mkMethodCall(v.asNumValue, m, IndexedSeq.empty)
         }
         Some(mkNode)
+      case _: NumericBitwiseInverse[_] =>
+        val mkNode = { v: SValue =>
+          val receiverType = v.tpe.asNumTypeOrElse(error(s"Expected numeric type, got: ${v.tpe}"))
+          val m = SMethod.fromIds(receiverType.typeId, SNumericTypeMethods.BitwiseInverseMethod.methodId)
+          builder.mkMethodCall(v.asNumValue, m, IndexedSeq.empty)
+        }
+        Some(mkNode)
       case _ => None
     }
   }
