@@ -5,6 +5,7 @@ import org.ergoplatform.validation._
 import sigma._
 import sigma.ast.SCollection.{SBooleanArray, SBoxArray, SByteArray, SByteArray2, SHeaderArray}
 import sigma.ast.SMethod.{MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
+import sigma.ast.SNumericTypeMethods.BitwiseAndMethod
 import sigma.ast.SType.TypeCode
 import sigma.ast.syntax.{SValue, ValueOps}
 import sigma.data.ExactIntegral.{ByteIsExactIntegral, IntIsExactIntegral, LongIsExactIntegral, ShortIsExactIntegral}
@@ -328,15 +329,15 @@ object SNumericTypeMethods extends MethodsContainer {
           """.stripMargin)
 
   val BitwiseXorMethod: SMethod = SMethod(
-    this, "bitwiseInverse", SFunc(tNum, tNum), 11, BitwiseInverse_CostKind)
+    this, "bitwiseXor", SFunc(Array(tNum, tNum), tNum), 11, BitwiseInverse_CostKind)
     .withIRInfo(MethodCallIrBuilder)
-    .withUserDefinedInvoke({ (m: SMethod, obj: Any, _: Array[Any]) =>
+    .withUserDefinedInvoke({ (m: SMethod, obj: Any, other: Array[Any]) =>
       m.objType match {
-        case SByteMethods => ByteIsExactIntegral.bitwiseInverse(obj.asInstanceOf[Byte])
-        case SShortMethods => ShortIsExactIntegral.bitwiseInverse(obj.asInstanceOf[Short])
-        case SIntMethods => IntIsExactIntegral.bitwiseInverse(obj.asInstanceOf[Int])
-        case SLongMethods => LongIsExactIntegral.bitwiseInverse(obj.asInstanceOf[Long])
-        case SBigIntMethods => BigIntIsExactIntegral.bitwiseInverse(obj.asInstanceOf[BigInt])
+        case SByteMethods => ByteIsExactIntegral.bitwiseXor(obj.asInstanceOf[Byte], other.head.asInstanceOf[Byte])
+        case SShortMethods => ShortIsExactIntegral.bitwiseXor(obj.asInstanceOf[Short], other.head.asInstanceOf[Short])
+        case SIntMethods => IntIsExactIntegral.bitwiseXor(obj.asInstanceOf[Int], other.head.asInstanceOf[Int])
+        case SLongMethods => LongIsExactIntegral.bitwiseXor(obj.asInstanceOf[Long], other.head.asInstanceOf[Long])
+        case SBigIntMethods => BigIntIsExactIntegral.bitwiseXor(obj.asInstanceOf[BigInt], other.head.asInstanceOf[BigInt])
       }
     })
     .withInfo(PropertyCall,
@@ -354,7 +355,8 @@ object SNumericTypeMethods extends MethodsContainer {
     ToBitsMethod,
     BitwiseInverseMethod,
     BitwiseOrMethod,
-    BitwiseAndMethod
+    BitwiseAndMethod,
+    BitwiseXorMethod
   )
 
   /** Collection of names of numeric casting methods (like `toByte`, `toInt`, etc). */

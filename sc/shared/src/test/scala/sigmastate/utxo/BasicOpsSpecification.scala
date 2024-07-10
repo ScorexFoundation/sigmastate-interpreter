@@ -289,9 +289,8 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
-
   property("Short.bitwiseAnd") {
-    def bitwiseAndTest(): Assertion = test("BigInt.bitwiseAnd", env, ext,
+    def bitwiseAndTest(): Assertion = test("Short.bitwiseAnd", env, ext,
       s"""{
          | val x = (32767).toShort
          | val y = (-32768).toShort
@@ -304,6 +303,23 @@ class BasicOpsSpecification extends CompilerTestingCommons
       bitwiseAndTest()
     } else {
       an[Exception] shouldBe thrownBy(bitwiseAndTest())
+    }
+  }
+
+  property("Short.bitwiseXor") {
+    def bitwiseXorTest(): Assertion = test("Short.bitwiseXor", env, ext,
+      s"""{
+         | val x = (32767).toShort
+         | val y = (-32768).toShort
+         | x.bitwiseXor(y) == -1
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      bitwiseXorTest()
+    } else {
+      an[Exception] shouldBe thrownBy(bitwiseXorTest())
     }
   }
 

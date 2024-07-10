@@ -98,6 +98,8 @@ object NumericOps {
     def bitwiseOr(x: BigInt, y: BigInt): BigInt = CBigInt(x.toBigInteger.or(y.toBigInteger))
 
     def bitwiseAnd(x: BigInt, y: BigInt): BigInt = CBigInt(x.toBigInteger.and(y.toBigInteger))
+
+    def bitwiseXor(x: BigInt, y: BigInt): BigInt = CBigInt(x.toBigInteger.xor(y.toBigInteger))
   }
 
   /** The instance of [[scalan.ExactOrdering]] typeclass for [[BigInt]]. */

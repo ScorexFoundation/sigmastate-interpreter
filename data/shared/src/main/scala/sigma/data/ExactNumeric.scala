@@ -60,6 +60,8 @@ trait ExactNumeric[T] {
 
   def bitwiseAnd(x: T, y: T): T
 
+  def bitwiseXor(x: T, y: T): T
+
   /** A value of type T which corresponds to integer 0. */
   lazy val zero: T = fromInt(0)
 
