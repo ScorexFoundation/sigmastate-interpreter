@@ -1163,6 +1163,10 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
               val y = asRep[tNum](argsV(0))
               val op = NumericBitwiseOr(elemToExactNumeric(x.elem))(x.elem)
               ApplyBinOp(op, x, y)
+            case SNumericTypeMethods.BitwiseAndMethod.name =>
+              val y = asRep[tNum](argsV(0))
+              val op = NumericBitwiseAnd(elemToExactNumeric(x.elem))(x.elem)
+              ApplyBinOp(op, x, y)
             case _ => throwError()
           }
           case _ => throwError(s"Type ${stypeToRType(obj.tpe).name} doesn't have methods")

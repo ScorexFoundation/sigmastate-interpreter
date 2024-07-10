@@ -311,15 +311,15 @@ object SNumericTypeMethods extends MethodsContainer {
           """.stripMargin)
 
   val BitwiseAndMethod: SMethod = SMethod(
-    this, "bitwiseInverse", SFunc(tNum, tNum), 10, BitwiseInverse_CostKind)
+    this, "bitwiseAnd", SFunc(Array(tNum, tNum), tNum), 10, BitwiseInverse_CostKind)
     .withIRInfo(MethodCallIrBuilder)
-    .withUserDefinedInvoke({ (m: SMethod, obj: Any, _: Array[Any]) =>
+    .withUserDefinedInvoke({ (m: SMethod, obj: Any, other: Array[Any]) =>
       m.objType match {
-        case SByteMethods => ByteIsExactIntegral.bitwiseInverse(obj.asInstanceOf[Byte])
-        case SShortMethods => ShortIsExactIntegral.bitwiseInverse(obj.asInstanceOf[Short])
-        case SIntMethods => IntIsExactIntegral.bitwiseInverse(obj.asInstanceOf[Int])
-        case SLongMethods => LongIsExactIntegral.bitwiseInverse(obj.asInstanceOf[Long])
-        case SBigIntMethods => BigIntIsExactIntegral.bitwiseInverse(obj.asInstanceOf[BigInt])
+        case SByteMethods => ByteIsExactIntegral.bitwiseAnd(obj.asInstanceOf[Byte], other.head.asInstanceOf[Byte])
+        case SShortMethods => ShortIsExactIntegral.bitwiseAnd(obj.asInstanceOf[Short], other.head.asInstanceOf[Short])
+        case SIntMethods => IntIsExactIntegral.bitwiseAnd(obj.asInstanceOf[Int], other.head.asInstanceOf[Int])
+        case SLongMethods => LongIsExactIntegral.bitwiseAnd(obj.asInstanceOf[Long], other.head.asInstanceOf[Long])
+        case SBigIntMethods => BigIntIsExactIntegral.bitwiseAnd(obj.asInstanceOf[BigInt], other.head.asInstanceOf[BigInt])
       }
     })
     .withInfo(PropertyCall,
@@ -353,7 +353,8 @@ object SNumericTypeMethods extends MethodsContainer {
     ToBytesMethod,
     ToBitsMethod,
     BitwiseInverseMethod,
-    BitwiseOrMethod
+    BitwiseOrMethod,
+    BitwiseAndMethod
   )
 
   /** Collection of names of numeric casting methods (like `toByte`, `toInt`, etc). */

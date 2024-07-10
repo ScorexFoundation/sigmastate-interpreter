@@ -96,6 +96,8 @@ object NumericOps {
     override def bitwiseInverse(x: BigInt): BigInt = CBigInt(x.toBigInteger.not())
 
     def bitwiseOr(x: BigInt, y: BigInt): BigInt = CBigInt(x.toBigInteger.or(y.toBigInteger))
+
+    def bitwiseAnd(x: BigInt, y: BigInt): BigInt = CBigInt(x.toBigInteger.and(y.toBigInteger))
   }
 
   /** The instance of [[scalan.ExactOrdering]] typeclass for [[BigInt]]. */

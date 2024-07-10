@@ -257,7 +257,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
   }
 
   property("BigInt.bitwiseOr") {
-    def bitwiseInverseTest(): Assertion = test("BigInt.bitwiseInverse", env, ext,
+    def bitwiseOrTest(): Assertion = test("BigInt.bitwiseOr", env, ext,
       s"""{
          | val x = bigInt("${CryptoConstants.groupOrder.divide(new BigInteger("2"))}")
          | x.bitwiseOr(x) == x
@@ -266,9 +266,44 @@ class BasicOpsSpecification extends CompilerTestingCommons
     )
 
     if (VersionContext.current.isV6SoftForkActivated) {
-      bitwiseInverseTest()
+      bitwiseOrTest()
     } else {
-      an[Exception] shouldBe thrownBy(bitwiseInverseTest())
+      an[Exception] shouldBe thrownBy(bitwiseOrTest())
+    }
+  }
+
+  property("BigInt.bitwiseAnd") {
+    def bitwiseAndTest(): Assertion = test("BigInt.bitwiseAnd", env, ext,
+      s"""{
+         | val x = bigInt("${CryptoConstants.groupOrder.divide(new BigInteger("2"))}")
+         | val y = 0.toBigInt
+         | x.bitwiseAnd(y) == y
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      bitwiseAndTest()
+    } else {
+      an[Exception] shouldBe thrownBy(bitwiseAndTest())
+    }
+  }
+
+
+  property("Short.bitwiseAnd") {
+    def bitwiseAndTest(): Assertion = test("BigInt.bitwiseAnd", env, ext,
+      s"""{
+         | val x = (32767).toShort
+         | val y = (-32768).toShort
+         | x.bitwiseAnd(y) == 0
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      bitwiseAndTest()
+    } else {
+      an[Exception] shouldBe thrownBy(bitwiseAndTest())
     }
   }
 
