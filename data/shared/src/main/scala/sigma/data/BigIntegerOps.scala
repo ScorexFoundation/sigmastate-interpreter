@@ -94,6 +94,8 @@ object NumericOps {
     override def toBigEndianBytes(x: BigInt): Coll[Byte] = Colls.fromArray(x.toBigInteger.toByteArray)
 
     override def bitwiseInverse(x: BigInt): BigInt = CBigInt(x.toBigInteger.not())
+
+    def bitwiseOr(x: BigInt, y: BigInt): BigInt = CBigInt(x.toBigInteger.or(y.toBigInteger))
   }
 
   /** The instance of [[scalan.ExactOrdering]] typeclass for [[BigInt]]. */

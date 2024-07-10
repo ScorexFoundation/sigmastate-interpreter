@@ -209,7 +209,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
   property("Byte.bitwiseInverse") {
     def bitwiseInverseTest(): Assertion = test("Byte.bitwiseInverse", env, ext,
       s"""{
-         | val b = 127.toByte
+         | val b = (126 + 1).toByte  // max byte value
          | b.bitwiseInverse == (-128).toByte
          |}""".stripMargin,
       null
@@ -228,6 +228,39 @@ class BasicOpsSpecification extends CompilerTestingCommons
          | val l = 9223372036854775807L
          | val lb = l.bitwiseInverse
          | lb.bitwiseInverse == l
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      bitwiseInverseTest()
+    } else {
+      an[Exception] shouldBe thrownBy(bitwiseInverseTest())
+    }
+  }
+
+  property("Byte.bitwiseOr") {
+    def bitwiseOrTest(): Assertion = test("Byte.bitwiseOrTest", env, ext,
+      s"""{
+         | val x = 127.toByte
+         | val y = (-128).toByte
+         | x.bitwiseOr(y) == -1
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      bitwiseOrTest()
+    } else {
+      an[Exception] shouldBe thrownBy(bitwiseOrTest())
+    }
+  }
+
+  property("BigInt.bitwiseOr") {
+    def bitwiseInverseTest(): Assertion = test("BigInt.bitwiseInverse", env, ext,
+      s"""{
+         | val x = bigInt("${CryptoConstants.groupOrder.divide(new BigInteger("2"))}")
+         | x.bitwiseOr(x) == x
          |}""".stripMargin,
       null
     )

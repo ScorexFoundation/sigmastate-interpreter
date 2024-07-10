@@ -40,6 +40,7 @@ object ExactIntegral {
     override def times(x: Byte, y: Byte): Byte = x.multiplyExact(y)
     override def toBigEndianBytes(x: Byte): Coll[Byte] = Colls.fromItems(x)
     override def bitwiseInverse(x: Byte): Byte = (~x).toByte
+    override def bitwiseOr(x: Byte, y: Byte): Byte = (x | y).toByte
   }
 
   implicit object ShortIsExactIntegral extends ExactIntegral[Short] {
@@ -49,6 +50,7 @@ object ExactIntegral {
     override def times(x: Short, y: Short): Short = x.multiplyExact(y)
     override def toBigEndianBytes(x: Short): Coll[Byte] = Colls.fromItems((x >> 8).toByte, x.toByte)
     override def bitwiseInverse(x: Short): Short = (~x).toShort
+    override def bitwiseOr(x: Short, y: Short): Short = (x | y).toShort
   }
 
   implicit object IntIsExactIntegral extends ExactIntegral[Int] {
@@ -59,6 +61,7 @@ object ExactIntegral {
     override def toBigEndianBytes(x: Int): Coll[Byte] =
       Colls.fromItems((x >> 24).toByte, (x >> 16).toByte, (x >> 8).toByte, x.toByte)
     override def bitwiseInverse(x: Int): Int = ~x
+    override def bitwiseOr(x: Int, y: Int): Int = x | y
   }
 
   implicit object LongIsExactIntegral extends ExactIntegral[Long] {
@@ -69,5 +72,6 @@ object ExactIntegral {
     override def toBigEndianBytes(x: Long): Coll[Byte] =
       Colls.fromItems((x >> 56).toByte, (x >> 48).toByte, (x >> 40).toByte, (x >> 32).toByte, (x >> 24).toByte, (x >> 16).toByte, (x >> 8).toByte, x.toByte)
     override def bitwiseInverse(x: Long): Long = ~x
+    override def bitwiseOr(x: Long, y: Long): Long = x | y
   }
 }

@@ -293,6 +293,57 @@ object SNumericTypeMethods extends MethodsContainer {
         |  Each boolean corresponds to one bit.
           """.stripMargin)
 
+  val BitwiseOrMethod: SMethod = SMethod(
+    this, "bitwiseOr", SFunc(Array(tNum, tNum), tNum), 9, BitwiseInverse_CostKind)
+    .withIRInfo(MethodCallIrBuilder)
+    .withUserDefinedInvoke({ (m: SMethod, obj: Any, other: Array[Any]) =>
+      m.objType match {
+        case SByteMethods => ByteIsExactIntegral.bitwiseOr(obj.asInstanceOf[Byte], other.head.asInstanceOf[Byte])
+        case SShortMethods => ShortIsExactIntegral.bitwiseOr(obj.asInstanceOf[Short], other.head.asInstanceOf[Short])
+        case SIntMethods => IntIsExactIntegral.bitwiseOr(obj.asInstanceOf[Int], other.head.asInstanceOf[Int])
+        case SLongMethods => LongIsExactIntegral.bitwiseOr(obj.asInstanceOf[Long], other.head.asInstanceOf[Long])
+        case SBigIntMethods => BigIntIsExactIntegral.bitwiseOr(obj.asInstanceOf[BigInt], other.head.asInstanceOf[BigInt])
+      }
+    })
+    .withInfo(PropertyCall,
+      """ Returns a big-endian representation of this numeric in a collection of Booleans.
+        |  Each boolean corresponds to one bit.
+          """.stripMargin)
+
+  val BitwiseAndMethod: SMethod = SMethod(
+    this, "bitwiseInverse", SFunc(tNum, tNum), 10, BitwiseInverse_CostKind)
+    .withIRInfo(MethodCallIrBuilder)
+    .withUserDefinedInvoke({ (m: SMethod, obj: Any, _: Array[Any]) =>
+      m.objType match {
+        case SByteMethods => ByteIsExactIntegral.bitwiseInverse(obj.asInstanceOf[Byte])
+        case SShortMethods => ShortIsExactIntegral.bitwiseInverse(obj.asInstanceOf[Short])
+        case SIntMethods => IntIsExactIntegral.bitwiseInverse(obj.asInstanceOf[Int])
+        case SLongMethods => LongIsExactIntegral.bitwiseInverse(obj.asInstanceOf[Long])
+        case SBigIntMethods => BigIntIsExactIntegral.bitwiseInverse(obj.asInstanceOf[BigInt])
+      }
+    })
+    .withInfo(PropertyCall,
+      """ Returns a big-endian representation of this numeric in a collection of Booleans.
+        |  Each boolean corresponds to one bit.
+          """.stripMargin)
+
+  val BitwiseXorMethod: SMethod = SMethod(
+    this, "bitwiseInverse", SFunc(tNum, tNum), 11, BitwiseInverse_CostKind)
+    .withIRInfo(MethodCallIrBuilder)
+    .withUserDefinedInvoke({ (m: SMethod, obj: Any, _: Array[Any]) =>
+      m.objType match {
+        case SByteMethods => ByteIsExactIntegral.bitwiseInverse(obj.asInstanceOf[Byte])
+        case SShortMethods => ShortIsExactIntegral.bitwiseInverse(obj.asInstanceOf[Short])
+        case SIntMethods => IntIsExactIntegral.bitwiseInverse(obj.asInstanceOf[Int])
+        case SLongMethods => LongIsExactIntegral.bitwiseInverse(obj.asInstanceOf[Long])
+        case SBigIntMethods => BigIntIsExactIntegral.bitwiseInverse(obj.asInstanceOf[BigInt])
+      }
+    })
+    .withInfo(PropertyCall,
+      """ Returns a big-endian representation of this numeric in a collection of Booleans.
+        |  Each boolean corresponds to one bit.
+          """.stripMargin)
+
   protected override def getMethods(): Seq[SMethod] = Array(
     ToByteMethod, // see Downcast
     ToShortMethod, // see Downcast
@@ -301,7 +352,8 @@ object SNumericTypeMethods extends MethodsContainer {
     ToBigIntMethod, // see Downcast
     ToBytesMethod,
     ToBitsMethod,
-    BitwiseInverseMethod
+    BitwiseInverseMethod,
+    BitwiseOrMethod
   )
 
   /** Collection of names of numeric casting methods (like `toByte`, `toInt`, etc). */

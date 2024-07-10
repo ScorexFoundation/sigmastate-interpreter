@@ -56,6 +56,8 @@ trait ExactNumeric[T] {
 
   def bitwiseInverse(x: T): T
 
+  def bitwiseOr(x: T, y: T): T
+
   /** A value of type T which corresponds to integer 0. */
   lazy val zero: T = fromInt(0)
 

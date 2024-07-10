@@ -47,6 +47,11 @@ trait NumericOps extends Base { self: IRContext =>
     override def applySeq(x: T, y: T): T = n.times(x, y)
   }
 
+  /** Descriptor of unary `ToBits` conversion operation. */
+  case class NumericBitwiseOr[T: Elem](n: ExactNumeric[T]) extends EndoBinOp[T]("|") {
+    override def applySeq(x: T, y: T): T = n.bitwiseOr(x, y)
+  }
+
   /** Base class for descriptors of binary division operations. */
   abstract class DivOp[T: Elem](opName: String, n: ExactIntegral[T]) extends EndoBinOp[T](opName) {
     override def shouldPropagate(lhs: T, rhs: T) = rhs != n.zero

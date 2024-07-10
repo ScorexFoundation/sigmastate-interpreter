@@ -217,6 +217,13 @@ trait TreeBuilding extends Base { IR: IRContext =>
       case Def(IsContextProperty(v)) => v
       case s if s == sigmaDslBuilder => Global
 
+      case Def(ApplyBinOp(op, xSym, ySym)) if op.isInstanceOf[NumericBitwiseOr[_]] =>
+        val Seq(x, y) = Seq(xSym, ySym).map(recurse)
+        val receiverType = x.asNumValue.tpe.asNumTypeOrElse(error(s"Expected numeric type, got: ${x.tpe}"))
+        val m = SMethod.fromIds(receiverType.typeId, SNumericTypeMethods.BitwiseOrMethod.methodId)
+        builder.mkMethodCall(x.asNumValue, m, IndexedSeq(y))
+
+
       case Def(ApplyBinOp(IsArithOp(opCode), xSym, ySym)) =>
         val Seq(x, y) = Seq(xSym, ySym).map(recurse)
         mkArith(x.asNumValue, y.asNumValue, opCode)
