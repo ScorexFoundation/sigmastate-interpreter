@@ -43,6 +43,7 @@ object ExactIntegral {
     override def bitwiseOr(x: Byte, y: Byte): Byte = (x | y).toByte
     override def bitwiseAnd(x: Byte, y: Byte): Byte = (x & y).toByte
     override def bitwiseXor(x: Byte, y: Byte): Byte = (x ^ y).toByte
+    override def shiftLeft(x: Byte, y: Int): Byte = (x << y).toByte
   }
 
   implicit object ShortIsExactIntegral extends ExactIntegral[Short] {
@@ -55,6 +56,7 @@ object ExactIntegral {
     override def bitwiseOr(x: Short, y: Short): Short = (x | y).toShort
     override def bitwiseAnd(x: Short, y: Short): Short = (x & y).toShort
     override def bitwiseXor(x: Short, y: Short): Short = (x ^ y).toShort
+    override def shiftLeft(x: Short, y: Int): Short = (x << y).toShort
   }
 
   implicit object IntIsExactIntegral extends ExactIntegral[Int] {
@@ -68,6 +70,7 @@ object ExactIntegral {
     override def bitwiseOr(x: Int, y: Int): Int = x | y
     override def bitwiseAnd(x: Int, y: Int): Int = x & y
     override def bitwiseXor(x: Int, y: Int): Int = x ^ y
+    override def shiftLeft(x: Int, y: Int): Int = x << y
   }
 
   implicit object LongIsExactIntegral extends ExactIntegral[Long] {
@@ -81,5 +84,6 @@ object ExactIntegral {
     override def bitwiseOr(x: Long, y: Long): Long = x | y
     override def bitwiseAnd(x: Long, y: Long): Long = x & y
     override def bitwiseXor(x: Long, y: Long): Long = x ^ y
+    override def shiftLeft(x: Long, y: Int): Long = x << y
   }
 }

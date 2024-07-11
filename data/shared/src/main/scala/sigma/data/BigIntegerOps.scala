@@ -95,11 +95,13 @@ object NumericOps {
 
     override def bitwiseInverse(x: BigInt): BigInt = CBigInt(x.toBigInteger.not())
 
-    def bitwiseOr(x: BigInt, y: BigInt): BigInt = CBigInt(x.toBigInteger.or(y.toBigInteger))
+    override def bitwiseOr(x: BigInt, y: BigInt): BigInt = x.or(y)
 
-    def bitwiseAnd(x: BigInt, y: BigInt): BigInt = CBigInt(x.toBigInteger.and(y.toBigInteger))
+    override def bitwiseAnd(x: BigInt, y: BigInt): BigInt = x.and(y)
 
-    def bitwiseXor(x: BigInt, y: BigInt): BigInt = CBigInt(x.toBigInteger.xor(y.toBigInteger))
+    override def bitwiseXor(x: BigInt, y: BigInt): BigInt = x.xor(y)
+
+    override def shiftLeft(x: BigInt, y: Int): BigInt = x.shiftLeft(y)
   }
 
   /** The instance of [[scalan.ExactOrdering]] typeclass for [[BigInt]]. */

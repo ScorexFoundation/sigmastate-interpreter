@@ -345,6 +345,40 @@ object SNumericTypeMethods extends MethodsContainer {
         |  Each boolean corresponds to one bit.
           """.stripMargin)
 
+  val ShiftLeftMethod: SMethod = SMethod(
+    this, "shiftLeft", SFunc(Array(tNum, SInt), tNum), 12, BitwiseInverse_CostKind)
+    .withIRInfo(MethodCallIrBuilder)
+    .withUserDefinedInvoke({ (m: SMethod, obj: Any, other: Array[Any]) =>
+      m.objType match {
+        case SByteMethods => ByteIsExactIntegral.shiftLeft(obj.asInstanceOf[Byte], other.head.asInstanceOf[Int])
+        case SShortMethods => ShortIsExactIntegral.shiftLeft(obj.asInstanceOf[Short], other.head.asInstanceOf[Int])
+        case SIntMethods => IntIsExactIntegral.shiftLeft(obj.asInstanceOf[Int], other.head.asInstanceOf[Int])
+        case SLongMethods => LongIsExactIntegral.shiftLeft(obj.asInstanceOf[Long], other.head.asInstanceOf[Int])
+        case SBigIntMethods => BigIntIsExactIntegral.shiftLeft(obj.asInstanceOf[BigInt], other.head.asInstanceOf[Int])
+      }
+    })
+    .withInfo(PropertyCall,
+      """ Returns a big-endian representation of this numeric in a collection of Booleans.
+        |  Each boolean corresponds to one bit.
+          """.stripMargin)
+
+  val ShiftRightMethod: SMethod = SMethod(
+    this, "shiftRight", SFunc(Array(tNum, tNum), tNum), 13, BitwiseInverse_CostKind)
+    .withIRInfo(MethodCallIrBuilder)
+    .withUserDefinedInvoke({ (m: SMethod, obj: Any, other: Array[Any]) =>
+      m.objType match {
+        case SByteMethods => ByteIsExactIntegral.bitwiseXor(obj.asInstanceOf[Byte], other.head.asInstanceOf[Byte])
+        case SShortMethods => ShortIsExactIntegral.bitwiseXor(obj.asInstanceOf[Short], other.head.asInstanceOf[Short])
+        case SIntMethods => IntIsExactIntegral.bitwiseXor(obj.asInstanceOf[Int], other.head.asInstanceOf[Int])
+        case SLongMethods => LongIsExactIntegral.bitwiseXor(obj.asInstanceOf[Long], other.head.asInstanceOf[Long])
+        case SBigIntMethods => BigIntIsExactIntegral.bitwiseXor(obj.asInstanceOf[BigInt], other.head.asInstanceOf[BigInt])
+      }
+    })
+    .withInfo(PropertyCall,
+      """ Returns a big-endian representation of this numeric in a collection of Booleans.
+        |  Each boolean corresponds to one bit.
+          """.stripMargin)
+
   protected override def getMethods(): Seq[SMethod] = Array(
     ToByteMethod, // see Downcast
     ToShortMethod, // see Downcast
@@ -356,7 +390,8 @@ object SNumericTypeMethods extends MethodsContainer {
     BitwiseInverseMethod,
     BitwiseOrMethod,
     BitwiseAndMethod,
-    BitwiseXorMethod
+    BitwiseXorMethod,
+    ShiftLeftMethod
   )
 
   /** Collection of names of numeric casting methods (like `toByte`, `toInt`, etc). */

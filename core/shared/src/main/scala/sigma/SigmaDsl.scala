@@ -154,6 +154,10 @@ trait BigInt {
     */
   def or(that: BigInt): BigInt
   def |(that: BigInt): BigInt = or(that)
+
+  def xor(that: BigInt): BigInt
+
+  def shiftLeft(bits: Int): BigInt
 }
 
 /** Base class for points on elliptic curves. */

@@ -62,6 +62,8 @@ trait ExactNumeric[T] {
 
   def bitwiseXor(x: T, y: T): T
 
+  def shiftLeft(x: T, y: Int): T
+
   /** A value of type T which corresponds to integer 0. */
   lazy val zero: T = fromInt(0)
 

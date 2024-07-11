@@ -323,6 +323,73 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
+  property("Byte.shiftLeft") {
+    def shiftLeftTest(): Assertion = test("Byte.shiftLeft", env, ext,
+      s"""{
+         | val x = 4.toByte
+         | val y = 2
+         | x.shiftLeft(y) == 16.toByte
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      shiftLeftTest()
+    } else {
+      an[Exception] shouldBe thrownBy(shiftLeftTest())
+    }
+  }
+
+  property("Byte.shiftLeft - over limit") {
+    def shiftLeftTest(): Assertion = test("Byte.shiftLeft2", env, ext,
+      s"""{
+         | val x = 4.toByte
+         | val y = 2222
+         | x.shiftLeft(y) == 0
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      shiftLeftTest()
+    } else {
+      an[Exception] shouldBe thrownBy(shiftLeftTest())
+    }
+  }
+
+  property("BigInt.shiftLeft") {
+    def shiftLeftTest(): Assertion = test("BigInt.shiftLeft", env, ext,
+      s"""{
+         | val x = bigInt("${CryptoConstants.groupOrder.divide(new BigInteger("8"))}")
+         | val y = bigInt("${CryptoConstants.groupOrder.divide(new BigInteger("2"))}")
+         | x.shiftLeft(2) == y
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      shiftLeftTest()
+    } else {
+      an[Exception] shouldBe thrownBy(shiftLeftTest())
+    }
+  }
+
+  property("BigInt.shiftLeft over limits") {
+    def shiftLeftTest(): Assertion = test("BigInt.shiftLeft", env, ext,
+      s"""{
+         | val x = bigInt("${CryptoConstants.groupOrder.divide(new BigInteger("2"))}")
+         | x.shiftLeft(1) > x
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      an[ArithmeticException] shouldBe thrownBy(shiftLeftTest())
+    } else {
+      an[Exception] shouldBe thrownBy(shiftLeftTest())
+    }
+  }
+
   property("Unit register") {
     // TODO frontend: implement missing Unit support in compiler
     //  https://github.com/ScorexFoundation/sigmastate-interpreter/issues/820
