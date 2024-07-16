@@ -1,6 +1,6 @@
 package sigma.data
 
-import sigma.{Coll, Colls}
+import sigma.{BigInt, Coll, Colls}
 import sigma.data.ExactIntegral._
 
 import scala.collection.mutable
@@ -62,7 +62,9 @@ trait ExactNumeric[T] {
 
   def bitwiseXor(x: T, y: T): T
 
-  def shiftLeft(x: T, y: Int): T
+  def shiftLeft(x: T, bits: Int): T
+
+  def shiftRight(x: T, bits: Int): T
 
   /** A value of type T which corresponds to integer 0. */
   lazy val zero: T = fromInt(0)

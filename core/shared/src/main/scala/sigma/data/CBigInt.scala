@@ -53,4 +53,6 @@ case class CBigInt(override val wrappedValue: BigInteger) extends BigInt with Wr
   override def xor(that: BigInt): BigInt = CBigInt(wrappedValue.xor(that.asInstanceOf[CBigInt].wrappedValue))
 
   def shiftLeft(bits: Int): BigInt = CBigInt(wrappedValue.shiftLeft(bits).to256BitValueExact)
+
+  def shiftRight(bits: Int): BigInt = CBigInt(wrappedValue.shiftRight(bits).to256BitValueExact)
 }

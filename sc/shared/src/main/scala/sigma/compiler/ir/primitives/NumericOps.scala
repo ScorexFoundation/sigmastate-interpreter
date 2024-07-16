@@ -64,6 +64,10 @@ trait NumericOps extends Base { self: IRContext =>
     override def applySeq(x: T, y: Int): T = n.shiftLeft(x, y)
   }
 
+  case class NumericShiftRight[T: Elem](n: ExactNumeric[T]) extends BinDiffArgsOp[T, Int](">>") {
+    override def applySeq(x: T, y: Int): T = n.shiftRight(x, y)
+  }
+
   /** Base class for descriptors of binary division operations. */
   abstract class DivOp[T: Elem](opName: String, n: ExactIntegral[T]) extends EndoBinOp[T](opName) {
     override def shouldPropagate(lhs: T, rhs: T) = rhs != n.zero

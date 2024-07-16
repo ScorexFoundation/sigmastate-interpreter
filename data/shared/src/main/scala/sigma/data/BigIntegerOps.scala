@@ -102,6 +102,8 @@ object NumericOps {
     override def bitwiseXor(x: BigInt, y: BigInt): BigInt = x.xor(y)
 
     override def shiftLeft(x: BigInt, y: Int): BigInt = x.shiftLeft(y)
+
+    override def shiftRight(x: BigInt, y: Int): BigInt = x.shiftRight(y)
   }
 
   /** The instance of [[scalan.ExactOrdering]] typeclass for [[BigInt]]. */

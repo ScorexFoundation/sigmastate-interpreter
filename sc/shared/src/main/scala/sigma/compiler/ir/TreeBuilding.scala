@@ -241,6 +241,12 @@ trait TreeBuilding extends Base { IR: IRContext =>
         val m = SMethod.fromIds(receiverType.typeId, SNumericTypeMethods.ShiftLeftMethod.methodId)
         builder.mkMethodCall(x.asNumValue, m, IndexedSeq(y))
 
+      case Def(ApplyBinOpDiffArgs(op, xSym, ySym)) if op.isInstanceOf[NumericShiftRight[_]] =>
+        val Seq(x, y) = Seq(xSym, ySym).map(recurse)
+        val receiverType = x.asNumValue.tpe.asNumTypeOrElse(error(s"Expected numeric type, got: ${x.tpe}"))
+        val m = SMethod.fromIds(receiverType.typeId, SNumericTypeMethods.ShiftRightMethod.methodId)
+        builder.mkMethodCall(x.asNumValue, m, IndexedSeq(y))
+
 
       case Def(ApplyBinOp(IsArithOp(opCode), xSym, ySym)) =>
         val Seq(x, y) = Seq(xSym, ySym).map(recurse)

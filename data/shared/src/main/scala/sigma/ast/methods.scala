@@ -363,15 +363,15 @@ object SNumericTypeMethods extends MethodsContainer {
           """.stripMargin)
 
   val ShiftRightMethod: SMethod = SMethod(
-    this, "shiftRight", SFunc(Array(tNum, tNum), tNum), 13, BitwiseInverse_CostKind)
+    this, "shiftRight", SFunc(Array(tNum, SInt), tNum), 13, BitwiseInverse_CostKind)
     .withIRInfo(MethodCallIrBuilder)
     .withUserDefinedInvoke({ (m: SMethod, obj: Any, other: Array[Any]) =>
       m.objType match {
-        case SByteMethods => ByteIsExactIntegral.bitwiseXor(obj.asInstanceOf[Byte], other.head.asInstanceOf[Byte])
-        case SShortMethods => ShortIsExactIntegral.bitwiseXor(obj.asInstanceOf[Short], other.head.asInstanceOf[Short])
-        case SIntMethods => IntIsExactIntegral.bitwiseXor(obj.asInstanceOf[Int], other.head.asInstanceOf[Int])
-        case SLongMethods => LongIsExactIntegral.bitwiseXor(obj.asInstanceOf[Long], other.head.asInstanceOf[Long])
-        case SBigIntMethods => BigIntIsExactIntegral.bitwiseXor(obj.asInstanceOf[BigInt], other.head.asInstanceOf[BigInt])
+        case SByteMethods => ByteIsExactIntegral.shiftRight(obj.asInstanceOf[Byte], other.head.asInstanceOf[Int])
+        case SShortMethods => ShortIsExactIntegral.shiftRight(obj.asInstanceOf[Short], other.head.asInstanceOf[Int])
+        case SIntMethods => IntIsExactIntegral.shiftRight(obj.asInstanceOf[Int], other.head.asInstanceOf[Int])
+        case SLongMethods => LongIsExactIntegral.shiftRight(obj.asInstanceOf[Long], other.head.asInstanceOf[Int])
+        case SBigIntMethods => BigIntIsExactIntegral.shiftRight(obj.asInstanceOf[BigInt], other.head.asInstanceOf[Int])
       }
     })
     .withInfo(PropertyCall,
@@ -391,7 +391,8 @@ object SNumericTypeMethods extends MethodsContainer {
     BitwiseOrMethod,
     BitwiseAndMethod,
     BitwiseXorMethod,
-    ShiftLeftMethod
+    ShiftLeftMethod,
+    ShiftRightMethod
   )
 
   /** Collection of names of numeric casting methods (like `toByte`, `toInt`, etc). */

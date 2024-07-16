@@ -390,6 +390,127 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
+  property("Byte.shiftRight") {
+    def shiftRightTest(): Assertion = test("Byte.shiftRight", env, ext,
+      s"""{
+         | val x = 8.toByte
+         | val y = 2
+         | x.shiftRight(y) == 2.toByte
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      shiftRightTest()
+    } else {
+      an[Exception] shouldBe thrownBy(shiftRightTest())
+    }
+  }
+
+  property("Byte.shiftRight - neg") {
+    def shiftRightTest(): Assertion = test("Byte.shiftRight", env, ext,
+      s"""{
+         | val x = (-8).toByte
+         | val y = 2
+         | x.shiftRight(y) == (-2).toByte
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      shiftRightTest()
+    } else {
+      an[Exception] shouldBe thrownBy(shiftRightTest())
+    }
+  }
+
+  property("Byte.shiftRight - neg - neg shift") {
+    def shiftRightTest(): Assertion = test("Byte.shiftRight", env, ext,
+      s"""{
+         | val x = (-8).toByte
+         | val y = -2
+         | x.shiftRight(y) == (-1).toByte
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      shiftRightTest()
+    } else {
+      an[Exception] shouldBe thrownBy(shiftRightTest())
+    }
+  }
+
+  property("Long.shiftRight - neg") {
+    def shiftRightTest(): Assertion = test("Long.shiftRight", env, ext,
+      s"""{
+         | val x = -32L
+         | val y = 2
+         | x.shiftRight(y) == -8L
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      shiftRightTest()
+    } else {
+      an[Exception] shouldBe thrownBy(shiftRightTest())
+    }
+  }
+
+  property("Long.shiftRight - neg - neg shift") {
+    def shiftRightTest(): Assertion = test("Long.shiftRight", env, ext,
+      s"""{
+         | val x = -32L
+         | val y = -2
+         | x.shiftRight(y) == -1L
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      shiftRightTest()
+    } else {
+      an[Exception] shouldBe thrownBy(shiftRightTest())
+    }
+  }
+
+  property("BigInt.shiftRight") {
+    def shiftRightTest(): Assertion = test("BigInt.shiftRight", env, ext,
+      s"""{
+         | val x = bigInt("${CryptoConstants.groupOrder.divide(new BigInteger("2"))}")
+         | val y = 2
+         | val z = bigInt("${CryptoConstants.groupOrder.divide(new BigInteger("8"))}")
+         | x.shiftRight(y) == z
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      shiftRightTest()
+    } else {
+      an[Exception] shouldBe thrownBy(shiftRightTest())
+    }
+  }
+
+  property("BigInt.shiftRight - neg shift") {
+    def shiftRightTest(): Assertion = test("BigInt.shiftRight", env, ext,
+      s"""{
+         | val x = bigInt("${CryptoConstants.groupOrder.divide(new BigInteger("2"))}")
+         | val y = -2
+         | val z = bigInt("${CryptoConstants.groupOrder.divide(new BigInteger("8"))}")
+         | z.shiftRight(y) == x
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      shiftRightTest()
+    } else {
+      an[Exception] shouldBe thrownBy(shiftRightTest())
+    }
+  }
+
   property("Unit register") {
     // TODO frontend: implement missing Unit support in compiler
     //  https://github.com/ScorexFoundation/sigmastate-interpreter/issues/820

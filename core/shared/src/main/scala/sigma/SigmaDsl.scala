@@ -158,6 +158,8 @@ trait BigInt {
   def xor(that: BigInt): BigInt
 
   def shiftLeft(bits: Int): BigInt
+
+  def shiftRight(bits: Int): BigInt
 }
 
 /** Base class for points on elliptic curves. */
