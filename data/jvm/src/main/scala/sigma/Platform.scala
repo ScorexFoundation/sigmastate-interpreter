@@ -31,7 +31,10 @@ object Platform {
       case n: sigma.BigInt => Nullable(mkConstant[SBigInt.type](n, SBigInt))
       case ge: GroupElement => Nullable(mkConstant[SGroupElement.type](ge, SGroupElement))
       case b: Boolean => Nullable(if (b) TrueLeaf else FalseLeaf)
-      case v: String => Nullable(mkConstant[SString.type](v, SString))
+
+      // todo: check Header and UnsignedBigInt
+
+      case v: String if !VersionContext.current.isV6SoftForkActivated => Nullable(mkConstant[SString.type](v, SString))
 
       // The Box lifting was broken in v4.x. `SigmaDsl.Box(b)` was missing which means the
       // isCorrectType requirement would fail in ConstantNode constructor.
