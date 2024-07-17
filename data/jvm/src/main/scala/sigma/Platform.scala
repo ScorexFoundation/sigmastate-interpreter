@@ -27,7 +27,7 @@ object Platform {
       case v: Short => Nullable(mkConstant[SShort.type](v, SShort))
       case v: Int => Nullable(mkConstant[SInt.type](v, SInt))
       case v: Long => Nullable(mkConstant[SLong.type](v, SLong))
-      case v: BigInteger => Nullable(mkConstant[SBigInt.type](SigmaDsl.BigInt(v), SBigInt))
+      case v: BigInteger if !VersionContext.current.isV6SoftForkActivated  => Nullable(mkConstant[SBigInt.type](SigmaDsl.BigInt(v), SBigInt))
       case n: sigma.BigInt => Nullable(mkConstant[SBigInt.type](n, SBigInt))
       case ge: GroupElement => Nullable(mkConstant[SGroupElement.type](ge, SGroupElement))
       case b: Boolean => Nullable(if (b) TrueLeaf else FalseLeaf)
@@ -41,7 +41,7 @@ object Platform {
       // This method is used as part of consensus in SubstConstants operation, however
       // ErgoBox cannot be passed as argument as it is never valid value during evaluation.
       // Thus we can use activation-based versioning and fix this code when v5.0 is activated.
-      case b: ErgoBox =>
+      case b: ErgoBox if !VersionContext.current.isV6SoftForkActivated =>
         Nullable(mkConstant[SBox.type](SigmaDsl.Box(b), SBox)) // fixed in v5.0
 
       // this case is added in v5.0 and it can be useful when the box value comes from a

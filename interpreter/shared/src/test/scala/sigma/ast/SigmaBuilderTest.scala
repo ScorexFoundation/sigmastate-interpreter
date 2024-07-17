@@ -215,7 +215,11 @@ class SigmaBuilderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Ma
   property("liftToConstant BigInteger") {
     val v = BigInteger.valueOf(1L)
     val c = BigIntConstant(v)
-    testSuccess(v, c)             // TODO v6.0: both BigInteger and arrays should not be liftable directly (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/905)
+    if (!VersionContext.current.isV6SoftForkActivated) {
+      testSuccess(v, c)
+    } else {
+      testFailure(v)
+    }
     val arr = Array.fill(10)(v)
     if (!VersionContext.current.isV6SoftForkActivated) {
       testSuccess(arr, TransformingSigmaBuilder.mkCollectionConstant[SBigInt.type](arr.map(SigmaDsl.BigInt), c.tpe))
@@ -243,7 +247,11 @@ class SigmaBuilderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Ma
   property("liftToConstant ErgoBox") {
     val v = TestData.b2.asInstanceOf[CBox].wrappedValue
     val c = BoxConstant(TestData.b2)
-    testSuccess(v, c) // TODO v6.0: ErgoBox should not be liftable directly (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/905)
+    if (!VersionContext.current.isV6SoftForkActivated) {
+      testSuccess(v, c)
+    } else {
+      testFailure(v)
+    }
     testFailure(Array.fill(10)(v))
   }
 
