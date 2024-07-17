@@ -16,13 +16,13 @@ object Platform {
   private[sigma] def liftToConstant(obj: Any, builder: SigmaBuilder): Nullable[Constant[SType]] = {
     import builder._
     obj match {
-      case arr: Array[Boolean] => Nullable(mkCollectionConstant[SBoolean.type](arr, SBoolean))
-      case arr: Array[Byte] => Nullable(mkCollectionConstant[SByte.type](arr, SByte))
-      case arr: Array[Short] => Nullable(mkCollectionConstant[SShort.type](arr, SShort))
-      case arr: Array[Int] => Nullable(mkCollectionConstant[SInt.type](arr, SInt))
-      case arr: Array[Long] => Nullable(mkCollectionConstant[SLong.type](arr, SLong))
-      case arr: Array[BigInteger] => Nullable(mkCollectionConstant[SBigInt.type](arr.map(SigmaDsl.BigInt(_)), SBigInt))
-      case arr: Array[String] => Nullable(mkCollectionConstant[SString.type](arr, SString))
+      case arr: Array[Boolean] if !VersionContext.current.isV6SoftForkActivated => Nullable(mkCollectionConstant[SBoolean.type](arr, SBoolean))
+      case arr: Array[Byte] if !VersionContext.current.isV6SoftForkActivated => Nullable(mkCollectionConstant[SByte.type](arr, SByte))
+      case arr: Array[Short] if !VersionContext.current.isV6SoftForkActivated => Nullable(mkCollectionConstant[SShort.type](arr, SShort))
+      case arr: Array[Int] if !VersionContext.current.isV6SoftForkActivated => Nullable(mkCollectionConstant[SInt.type](arr, SInt))
+      case arr: Array[Long] if !VersionContext.current.isV6SoftForkActivated => Nullable(mkCollectionConstant[SLong.type](arr, SLong))
+      case arr: Array[BigInteger] if !VersionContext.current.isV6SoftForkActivated => Nullable(mkCollectionConstant[SBigInt.type](arr.map(SigmaDsl.BigInt(_)), SBigInt))
+      case arr: Array[String] if !VersionContext.current.isV6SoftForkActivated => Nullable(mkCollectionConstant[SString.type](arr, SString))
       case v: Byte => Nullable(mkConstant[SByte.type](v, SByte))
       case v: Short => Nullable(mkConstant[SShort.type](v, SShort))
       case v: Int => Nullable(mkConstant[SInt.type](v, SInt))

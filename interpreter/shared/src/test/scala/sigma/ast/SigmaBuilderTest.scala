@@ -122,6 +122,13 @@ class SigmaBuilderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Ma
     testSuccess(arr, TransformingSigmaBuilder.mkCollectionConstant(arr, c.tpe))
   }
 
+  def testArrayFailure[T <: SType]
+    (v: T#WrappedType, c: Constant[T])(implicit t: RType[T#WrappedType]) = {
+    // for any Byte and Short value `v`, lifting of array should succeed
+    val arr = Array.fill[T#WrappedType](10)(v)(t.classTag)
+    testFailure(arr)
+  }
+
   def testColl[T <: SType]
       (v: T#WrappedType, c: Constant[T])(implicit t: RType[T#WrappedType]) = {
     // for any Byte and Short value `v`, lifting of Coll should succeed
@@ -134,7 +141,11 @@ class SigmaBuilderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Ma
       val v = true
       val c = BooleanConstant(v)
       test[SBoolean.type](v, c)
-      testArray[SBoolean.type](v, c)  // TODO v6.0: arrays should not be liftable directly (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/905)
+      if (!VersionContext.current.isV6SoftForkActivated) {
+        testArray[SBoolean.type](v, c)
+      } else {
+        testArrayFailure[SBoolean.type](v, c)
+      }
       testColl[SBoolean.type](v, c)
   }
 
@@ -143,7 +154,11 @@ class SigmaBuilderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Ma
       val c = ByteConstant(v)
       testNumeric[SByte.type](v, c)
       testLiftingOfCAnyValue[SByte.type](v, c)
-      testArray[SByte.type](v, c)  // TODO v6.0: arrays should not be liftable directly (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/905)
+      if (!VersionContext.current.isV6SoftForkActivated) {
+        testArray[SByte.type](v, c)
+      } else {
+        testArrayFailure[SByte.type](v, c)
+      }
       testColl[SByte.type](v, c)
   }
 
@@ -152,7 +167,11 @@ class SigmaBuilderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Ma
     val c = ShortConstant(v)
     testNumeric[SShort.type](v, c)
     testLiftingOfCAnyValue[SShort.type](v, c)
-    testArray[SShort.type](v, c)   // TODO v6.0: arrays should not be liftable directly (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/905)
+    if (!VersionContext.current.isV6SoftForkActivated) {
+      testArray[SShort.type](v, c)
+    } else {
+      testArrayFailure[SShort.type](v, c)
+    }
     testColl[SShort.type](v, c)
   }
 
@@ -160,7 +179,11 @@ class SigmaBuilderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Ma
     val v = 1
     val c = IntConstant(v)
     test[SInt.type](v, c)
-    testArray[SInt.type](v, c)     // TODO v6.0: arrays should not be liftable directly (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/905)
+    if (!VersionContext.current.isV6SoftForkActivated) {
+      testArray[SInt.type](v, c)
+    } else {
+      testArrayFailure[SInt.type](v, c)
+    }
     testColl[SInt.type](v, c)
   }
 
@@ -168,7 +191,11 @@ class SigmaBuilderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Ma
     val v = 1L
     val c = LongConstant(v)
     test[SLong.type](v, c)
-    testArray[SLong.type](v, c)    // TODO v6.0: arrays should not be liftable directly (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/905)
+    if (!VersionContext.current.isV6SoftForkActivated) {
+      testArray[SLong.type](v, c)
+    } else {
+      testArrayFailure[SLong.type](v, c)
+    }
     testColl[SLong.type](v, c)
   }
   
@@ -190,7 +217,11 @@ class SigmaBuilderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Ma
     val c = BigIntConstant(v)
     testSuccess(v, c)             // TODO v6.0: both BigInteger and arrays should not be liftable directly (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/905)
     val arr = Array.fill(10)(v)
-    testSuccess(arr, TransformingSigmaBuilder.mkCollectionConstant[SBigInt.type](arr.map(SigmaDsl.BigInt), c.tpe))
+    if (!VersionContext.current.isV6SoftForkActivated) {
+      testSuccess(arr, TransformingSigmaBuilder.mkCollectionConstant[SBigInt.type](arr.map(SigmaDsl.BigInt), c.tpe))
+    } else {
+      testFailure(arr)
+    }
   }
 
   property("liftToConstant BigInt") {
