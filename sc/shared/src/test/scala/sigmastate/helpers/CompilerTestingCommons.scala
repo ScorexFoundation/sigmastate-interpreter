@@ -6,7 +6,7 @@ import org.scalacheck.Arbitrary.arbByte
 import org.scalacheck.Gen
 import sigma.util.BenchmarkUtil
 import scalan.TestContexts
-import sigma.ast.{Constant, CostItem, ErgoTree, JitCost, SOption, SType}
+import sigma.ast.{Apply, Block, Constant, CostItem, ErgoTree, JitCost, SOption, SType, ValNode}
 import sigma.{Colls, Evaluation, TestUtils}
 import sigma.data.{RType, SigmaBoolean}
 import sigma.validation.ValidationException
@@ -106,11 +106,13 @@ trait CompilerTestingCommons extends TestingCommons
     // The resulting tree should be serializable
     val compiledTree = {
       val compiler = SigmaCompiler(compilerSettings)
-      val res = compiler.compile(env, code)
-      checkCompilerResult(res)
-      if (lowerMethodCallsInTests) res.buildTree
+//      val res = compiler.compile(env, code)
+//      checkCompilerResult(res)
+//      val tree = res.buildTree
+      val tree = compiler.compileDirect(env, code)
+      if (lowerMethodCallsInTests) tree
       else {
-        compiler.unlowerMethodCalls(res.buildTree)
+        compiler.unlowerMethodCalls(tree)
       }
     }
     compiledTree
@@ -161,7 +163,10 @@ trait CompilerTestingCommons extends TestingCommons
       }
       (res.value, costDetails)
     }
-    val sigma.ast.Apply(funcVal, _) = expr.asInstanceOf[SValue]
+    val funcVal = expr match {
+      case Apply(funcVal, _) => funcVal
+      case Block(List(ValNode(_, _, body), _*), _) => body
+    }
     CompiledFunc(funcScript, bindings, funcVal, expr, f)
   }
 
