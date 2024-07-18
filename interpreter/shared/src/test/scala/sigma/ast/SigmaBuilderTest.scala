@@ -278,7 +278,11 @@ class SigmaBuilderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Ma
   property("liftToConstant AvlTreeData") {
     val v = TestData.t1.asInstanceOf[CAvlTree].wrappedValue
     val c = AvlTreeConstant(SigmaDsl.avlTree(v))
-    testSuccess(v, c) // TODO v6.0: AvlTreeData should not be liftable directly (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/905)
+    if (!VersionContext.current.isV6SoftForkActivated) {
+      testSuccess(v, c)
+    } else {
+      testFailure(v)
+    }
     testFailure(Array.fill(10)(v))
   }
 
