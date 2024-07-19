@@ -590,7 +590,9 @@ class SigmaDslTesting extends AnyPropSpec
       newRes shouldBe expected.value.get
       expected.newResults(ergoTreeVersionInTests)._2.foreach { expDetails =>
         if (newDetails.trace != expDetails.trace) {
-          printCostDetails(script, newDetails)
+          if (evalSettings.printTestVectors) {
+            printCostDetails(script, newDetails)
+          }
           if (evalSettings.isCheckTestVectors) {
             newDetails.trace shouldBe expDetails.trace
           }
@@ -631,7 +633,9 @@ class SigmaDslTesting extends AnyPropSpec
         // new cost expectation is specified, compare it with the actual result
         funcRes.foreach { case (_, newDetails) =>
           if (newDetails.trace != expectedTrace) {
-            printCostDetails(script, newDetails)
+            if (evalSettings.printTestVectors) {
+              printCostDetails(script, newDetails)
+            }
             if (evalSettings.isCheckTestVectors) {
               newDetails.trace shouldBe expectedTrace
             }
@@ -806,7 +810,9 @@ class SigmaDslTesting extends AnyPropSpec
             newValue shouldBe newExpectedRes.value.get
             newExpectedDetailsOpt.foreach { expDetails =>
               if (newDetails.trace != expDetails.trace) {
-                printCostDetails(script, newDetails)
+                if (evalSettings.printTestVectors) {
+                  printCostDetails(script, newDetails)
+                }
                 if (evalSettings.isCheckTestVectors) {
                   newDetails.trace shouldBe expDetails.trace
                 }

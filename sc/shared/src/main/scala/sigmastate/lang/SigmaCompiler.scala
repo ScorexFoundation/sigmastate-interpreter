@@ -94,7 +94,7 @@ class SigmaCompiler private(settings: CompilerSettings) {
     val typed = typecheck(env, code)
     val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
     val dc = new DirectCompiler(settings, predefinedFuncRegistry)
-    val compiled = dc.compileNode(env, typed)
+    val compiled = dc.lowering(typed)
     compiled
   }
 
