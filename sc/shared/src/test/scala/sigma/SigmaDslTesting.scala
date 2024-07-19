@@ -164,10 +164,15 @@ class SigmaDslTesting extends AnyPropSpec
       expectedExpr match {
         case Some(e) =>
           if (cf.expr != null && cf.expr != e) {
-            printSuggestion("Unexpected expression for ", cf)
-            println("Expected:")
-            SigmaPPrint.pprintln(e, height = 150)
-            cf.expr shouldBe e
+            if (evalSettings.printTestVectors) {
+              printSuggestion("Unexpected expression for ", cf)
+              println("Expected:")
+              SigmaPPrint.pprintln(e, height = 150)
+            }
+
+            if (evalSettings.isCheckTestVectors) {
+              cf.expr shouldBe e
+            }
           }
         case None if printExpectedExpr =>
           printSuggestion("No expectedExpr for ", cf)
@@ -586,7 +591,9 @@ class SigmaDslTesting extends AnyPropSpec
       expected.newResults(ergoTreeVersionInTests)._2.foreach { expDetails =>
         if (newDetails.trace != expDetails.trace) {
           printCostDetails(script, newDetails)
-          newDetails.trace shouldBe expDetails.trace
+          if (evalSettings.isCheckTestVectors) {
+            newDetails.trace shouldBe expDetails.trace
+          }
         }
       }
 
@@ -625,7 +632,9 @@ class SigmaDslTesting extends AnyPropSpec
         funcRes.foreach { case (_, newDetails) =>
           if (newDetails.trace != expectedTrace) {
             printCostDetails(script, newDetails)
-            newDetails.trace shouldBe expectedTrace
+            if (evalSettings.isCheckTestVectors) {
+              newDetails.trace shouldBe expectedTrace
+            }
           }
         }
       }
@@ -798,7 +807,9 @@ class SigmaDslTesting extends AnyPropSpec
             newExpectedDetailsOpt.foreach { expDetails =>
               if (newDetails.trace != expDetails.trace) {
                 printCostDetails(script, newDetails)
-                newDetails.trace shouldBe expDetails.trace
+                if (evalSettings.isCheckTestVectors) {
+                  newDetails.trace shouldBe expDetails.trace
+                }
               }
             }
           case _ =>

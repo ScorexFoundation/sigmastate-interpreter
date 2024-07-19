@@ -3,6 +3,7 @@ package sigma.ast
 import debox.cfor
 import sigma.Extensions.ArrayOps
 import sigma._
+import sigma.ast.FuncValue.{AddToEnvironmentDesc, AddToEnvironmentDesc_CostKind}
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.TypeCodes.ConstantCode
 import sigma.ast.syntax._
@@ -1066,6 +1067,25 @@ case class Block(bindings: Seq[Val], result: SValue) extends Value[SType] {
 
   /** This is not used as operation, but rather to form a program structure */
   override def opType: SFunc = Value.notSupportedError(this, "opType")
+
+  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+    var curEnv = env
+    val len    = bindings.length
+    addSeqCostNoOp(BlockValue.costKind, len)
+    cfor(0)(_ < len, _ + 1) { i =>
+      val vd = bindings(i)
+      val v  = vd.body.evalTo[Any](curEnv)
+      Value.checkType(vd, v)
+      E.addFixedCost(FuncValue.AddToEnvironmentDesc_CostKind,
+        FuncValue.AddToEnvironmentDesc) {
+        curEnv = curEnv + (vd.name -> v)
+      }
+    }
+    val res = result.evalTo[Any](curEnv)
+    Value.checkType(result, res)
+    res
+  }
+
 }
 
 object Block extends ValueCompanion {
@@ -1176,6 +1196,14 @@ case class Ident(name: String, tpe: SType = NoType) extends Value[SType] {
   override def companion = Ident
 
   override def opType: SFunc = SFunc(ArraySeq.empty, tpe)
+
+  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+    addCost(ValUse.costKind)
+    val res = env.getOrElse(name, syntax.error(s"cannot resolve $this"))
+    Value.checkType(this, res)
+    res
+  }
+
 }
 
 object Ident extends ValueCompanion {
@@ -1387,6 +1415,28 @@ case class Lambda(
 
   /** This is not used as operation, but rather to form a program structure */
   override def opType: SFunc = SFunc(Vector(), tpe)
+
+  protected final override def eval(env: DataEnv)(implicit E: ErgoTreeEvaluator): Any = {
+    addCost(FuncValue.costKind)
+    if (args.length == 1) {
+      val arg0 = args(0)
+      (vArg: Any) => {
+        Value.checkType(arg0._2, vArg)
+        var env1: DataEnv = null
+        E.addFixedCost(AddToEnvironmentDesc_CostKind, AddToEnvironmentDesc) {
+          env1 = env + (arg0._1 -> vArg)
+        }
+        body.map { b =>
+          val res = b.evalTo[Any](env1)
+          Value.checkType(b, res)
+          res
+        }.getOrElse(error(s"Lambda body is missing: $this"))
+      }
+    } else {
+      error(s"Function must have 1 argument, but was: $this")
+    }
+  }
+
 }
 
 object Lambda extends ValueCompanion {
