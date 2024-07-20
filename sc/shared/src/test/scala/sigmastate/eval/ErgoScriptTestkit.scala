@@ -136,7 +136,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
 
     def doCosting: CompilerResult[IR.type] = {
       val res = compiler.compileTyped(env, tree)
-      val calcF = res.compiledGraph
+      val calcF = res.compiledGraph.get
       if (printGraphs) {
         val str = calcF
         val strExp = expectedCalcF.toSeq
@@ -149,7 +149,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
 
     def doReduce(): Unit = {
       val res = doCosting
-      verifyIsProven(res.compiledGraph) shouldBe Success(())
+      verifyIsProven(res.compiledGraph.get) shouldBe Success(())
       val ergoTree = mkTestErgoTree(res.buildTree.asSigmaProp)
 
       if (expectedTree.isDefined) {

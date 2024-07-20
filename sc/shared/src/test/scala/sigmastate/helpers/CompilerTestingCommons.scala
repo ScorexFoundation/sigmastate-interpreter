@@ -106,10 +106,9 @@ trait CompilerTestingCommons extends TestingCommons
     // The resulting tree should be serializable
     val compiledTree = {
       val compiler = SigmaCompiler(compilerSettings)
-//      val res = compiler.compile(env, code)
-//      checkCompilerResult(res)
-//      val tree = res.buildTree
-      val tree = compiler.compileDirect(env, code)
+      val res = compiler.compile(env, code)
+      checkCompilerResult(res)
+      val tree = res.buildTree
       if (lowerMethodCallsInTests) tree
       else {
         compiler.unlowerMethodCalls(tree)

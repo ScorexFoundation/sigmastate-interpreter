@@ -25,11 +25,13 @@ import sigmastate.InterpreterReflection
   *                         call can be lowered to MapCollection node.
   *                         The lowering if preferable, because it is more compact (1 byte
   *                         for MapCollection instead of 3 bytes for MethodCall).
+  * @param enableOptimizations if true, then optimizations are applied to the compiled ErgoTree
   */
 case class CompilerSettings(
     networkPrefix: NetworkPrefix,
     builder: SigmaBuilder,
-    lowerMethodCalls: Boolean
+    lowerMethodCalls: Boolean,
+    enableOptimizations: Boolean = true
 )
 
 /** Result of ErgoScript source code compilation.
@@ -41,7 +43,7 @@ case class CompilerSettings(
 case class CompilerResult[Ctx <: IRContext](
   env: ScriptEnv,
   code: String,
-  compiledGraph: Ctx#Ref[Ctx#Context => Any],
+  compiledGraph: Option[Ctx#Ref[Ctx#Context => Any]],
   /** Tree obtained from graph created by GraphBuilding */
   buildTree: SValue
 )
@@ -89,19 +91,17 @@ class SigmaCompiler private(settings: CompilerSettings) {
     res
   }
 
-  /** Compiles the given ErgoScript source code. */
-  def compileDirect(env: ScriptEnv, code: String)(implicit IR: IRContext): SValue = {
-    val typed = typecheck(env, code)
-    val dc = new DirectCompiler(settings)
-    val compiled = dc.compileTyped(typed)
-    compiled
-  }
-
   /** Compiles the given typed expression. */
   def compileTyped(env: ScriptEnv, typedExpr: SValue)(implicit IR: IRContext): CompilerResult[IR.type] = {
-    val compiledGraph = IR.buildGraph(env, typedExpr)
-    val compiledTree = IR.buildTree(compiledGraph)
-    CompilerResult(env, "<no source code>", compiledGraph, compiledTree)
+    if (settings.enableOptimizations) {
+      val compiledGraph = IR.buildGraph(env, typedExpr)
+      val compiledTree = IR.buildTree(compiledGraph)
+      CompilerResult(env, "<no source code>", Some(compiledGraph), compiledTree)
+    } else {
+      val dc = new DirectCompiler(settings)
+      val compiledTree = dc.compileTyped(typedExpr)
+      CompilerResult(env, "<no source code>", None, compiledTree)
+    }
   }
 
   /** Compiles the given parsed contract source. */
