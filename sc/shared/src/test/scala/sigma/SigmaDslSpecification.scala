@@ -93,7 +93,7 @@ class SigmaDslSpecification extends SigmaDslTesting
 
     profilerOpt = Some(CErgoTreeEvaluator.DefaultProfiler),
     isTestRun = true,
-    isCheckTestVectors = false
+    isCheckTestVectors = true
   )
 
   def warmupSettings(p: Profiler) = evalSettingsInTests.copy(

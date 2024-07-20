@@ -164,7 +164,6 @@ trait CompilerTestingCommons extends TestingCommons
     }
     val funcVal = expr match {
       case Apply(funcVal, _) => funcVal
-      case Block(List(ValNode(_, _, body), _*), _) => body
       case BlockValue(Seq(ValDef(_, _, body), _*), _) => body
     }
     CompiledFunc(funcScript, bindings, funcVal, expr, f)

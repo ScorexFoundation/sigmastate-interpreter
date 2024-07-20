@@ -47,8 +47,6 @@ trait CompilerTestsBase extends TestsBase {
     val res = compiler.compile(env, code)
     checkCompilerResult(res)
     res.buildTree
-//    val res = compiler.compileDirect(env, code)
-//    res
   }
 
   /** Check the given [[CompilerResult]] meets equality and sanity requirements. */
