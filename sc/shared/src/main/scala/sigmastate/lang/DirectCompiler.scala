@@ -39,6 +39,9 @@ class DirectCompiler(
   def error(msg: String, srcCtx: Option[SourceContext]) = throw new CompilerException(msg, srcCtx)
   def error(msg: String, srcCtx: Nullable[SourceContext]): Nothing = error(msg, srcCtx.toOption)
 
+  /** Arg name introduced when transforming `(x, y) => ...` lambdas to one argument lambda. */
+  final val SyntheticArgNameInLambda = "__input__"
+
   /** Set of rules to lower ErgoScript expressions to ErgoTree nodes.
     * When a rule returns `null` then the original node should remain in the tree (i.e. no
     * rewriting is applied)
@@ -106,15 +109,21 @@ class DirectCompiler(
         case _: STuple => IntConstant(2)
       }
 
-    //      case sigma.ast.Lambda(_, Seq((accN, accTpe), (n, tpe)), _, Some(body)) =>
-    //        (stypeToElem(accTpe), stypeToElem(tpe)) match { case (eAcc: Elem[s], eA: Elem[a]) =>
-    //          val eArg = pairElement(eAcc, eA)
-    //          val f = fun { x: Ref[(s, a)] =>
-    //            buildNode(ctx, env + (accN -> x._1) + (n -> x._2), body)
-    //          }(Lazy(eArg))
-    //          f
-    //        }
-
+    case Lambda(tpeParams, Seq((accN, accTpe), (n, tpe)), resTpe, Some(body)) =>
+      val argTpe = SPair(accTpe, tpe)
+      val arg = Ident(SyntheticArgNameInLambda, argTpe).asTuple
+      val newVals = Seq(
+        ValNode(accN, accTpe, SelectField(arg, 1)),
+        ValNode(n,    tpe,    SelectField(arg, 2))
+      )
+      val newBody = body match {
+        case b @ Block(vals, _) => b.copy(bindings = newVals ++ vals)
+        case _ => Block(newVals, body)
+      }
+      Lambda(tpeParams,
+        Vector((SyntheticArgNameInLambda, argTpe)),
+        resTpe,
+        Some(newBody))
 
     // fallback rule for MethodCall, should be the last case in the list
     case mc @ MethodCall(obj, method, args, _) =>
