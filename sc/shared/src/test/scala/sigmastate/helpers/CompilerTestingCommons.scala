@@ -6,7 +6,7 @@ import org.scalacheck.Arbitrary.arbByte
 import org.scalacheck.Gen
 import sigma.util.BenchmarkUtil
 import scalan.TestContexts
-import sigma.ast.{Apply, Block, Constant, CostItem, ErgoTree, JitCost, SOption, SType, ValNode}
+import sigma.ast.{Apply, Block, BlockValue, Constant, CostItem, ErgoTree, JitCost, SOption, SType, ValDef, ValNode}
 import sigma.{Colls, Evaluation, TestUtils}
 import sigma.data.{RType, SigmaBoolean}
 import sigma.validation.ValidationException
@@ -166,6 +166,7 @@ trait CompilerTestingCommons extends TestingCommons
     val funcVal = expr match {
       case Apply(funcVal, _) => funcVal
       case Block(List(ValNode(_, _, body), _*), _) => body
+      case BlockValue(Seq(ValDef(_, _, body), _*), _) => body
     }
     CompiledFunc(funcScript, bindings, funcVal, expr, f)
   }

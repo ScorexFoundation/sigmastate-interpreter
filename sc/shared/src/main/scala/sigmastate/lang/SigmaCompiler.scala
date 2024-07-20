@@ -92,9 +92,8 @@ class SigmaCompiler private(settings: CompilerSettings) {
   /** Compiles the given ErgoScript source code. */
   def compileDirect(env: ScriptEnv, code: String)(implicit IR: IRContext): SValue = {
     val typed = typecheck(env, code)
-    val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
-    val dc = new DirectCompiler(settings, predefinedFuncRegistry)
-    val compiled = dc.lowering(typed)
+    val dc = new DirectCompiler(settings)
+    val compiled = dc.compileTyped(typed)
     compiled
   }
 

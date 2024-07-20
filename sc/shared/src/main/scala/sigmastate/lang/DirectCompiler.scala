@@ -10,7 +10,9 @@ import sigma.exceptions.CompilerException
 import sigma.kiama.==>
 import sigma.kiama.rewriting.Rewriter
 import sigma.kiama.rewriting.Rewriter.{Duplicator, strategy}
-import sigmastate.interpreter.Interpreter.ScriptEnv
+import sigmastate.lang.DirectCompiler.{DefEnv, emptyEnv}
+
+import scala.collection.mutable.ArrayBuffer
 
 case class ReducingTransformer[T](rwRules: T ==> T) {
   val transformRule = Rewriter.reduce(strategy[T](rwRules.andThen(Option(_))))
@@ -24,15 +26,10 @@ case class ReducingTransformer[T](rwRules: T ==> T) {
 /**
   * Type inference and analysis for Sigma expressions.
   */
-class DirectCompiler(
-  settings: CompilerSettings,
-  predefFuncRegistry: PredefinedFuncRegistry
-) {
+class DirectCompiler(settings: CompilerSettings) {
   /** Constructs an instance for the given network type and with default settings. */
-  def this(networkPrefix: Byte, predefFuncRegistry: PredefinedFuncRegistry) = this(
-    CompilerSettings(networkPrefix, TransformingSigmaBuilder, lowerMethodCalls = true),
-    predefFuncRegistry
-  )
+  def this(networkPrefix: Byte) = this(
+    CompilerSettings(networkPrefix, TransformingSigmaBuilder, lowerMethodCalls = true))
 
   import settings.builder._
 
@@ -352,34 +349,87 @@ class DirectCompiler(
     res.asInstanceOf[SValue]
   }
 
-  def compileNode(env: ScriptEnv, node: SValue): SValue = {
-    def recurse(node: SValue): SValue = compileNode(env, node)
+  def compileNode(env: DefEnv, node: SValue, defId: Int): SValue = {
+    def recurse(node: SValue): SValue = compileNode(env, node, defId)
     def throwError =
       error(s"Don't know how to compileNode($node)", node.sourceContext)
 
     // recursive helper to process any child
-    def recurseChild(env: ScriptEnv, child: Any): AnyRef = child match {
+    def recurseChild(env: DefEnv, child: Any, defId: Int): AnyRef = child match {
       case child: SValue =>
-        compileNode(env, child)
+        compileNode(env, child, defId)
       case xs: Seq[_] =>
-        xs.map(recurseChild(env, _))
+        xs.map(recurseChild(env, _, defId))
       case p: Product =>
-        recurseProduct(env, p).asInstanceOf[AnyRef]
+        recurseProduct(env, p, defId).asInstanceOf[AnyRef]
       case x => x.asInstanceOf[AnyRef] // everything else is left as is (modulo boxing)
     }
 
     // recursive helper to process any Product
-    def recurseProduct[T <: Product](env: ScriptEnv, node: T): T = {
+    def recurseProduct[T <: Product](env: DefEnv, node: T, defId: Int): T = {
       val children = node.productIterator
-        .map(recurseChild(env, _))
+        .map(recurseChild(env, _, defId))
         .toArray
       Duplicator(node, children)
     }
 
     node match {
+      case Ident(name, _) =>
+        env.get(name) match {
+          case Some((valId, tpe)) => ValUse(valId, tpe)
+          case None => error(s"Undefined symbol $name", node.sourceContext)
+        }
+      case Lambda(tpeParams, args, resTpe, bodyOpt) =>
+        val body = bodyOpt.getOrElse(error("Lambda body is missing", node.sourceContext))
+        val valId = defId + 1       // arguments are treated as ValDefs and occupy id space
+        val (argName, argTpe) = args(0)
+        val env1 = env + (argName -> (valId, argTpe))
+        val newBody = compileNode(env1, body, valId)
+        mkFuncValue(Array((valId, argTpe)), newBody)
+      case Block(bindings, result) =>
+        val valdefs = new ArrayBuffer[ValDef]
+        var curId = defId
+        var curEnv = env
+        for (v <- bindings) {
+          val rhs = compileNode(curEnv, v.body, curId)
+          curId += 1
+          val vd = ValDef(curId, Nil, rhs)
+          require(v.givenType == rhs.tpe,
+            s"Given type ${v.givenType} does not match inferred type ${rhs.tpe}")
+          curEnv = curEnv + (v.name -> (curId, rhs.tpe))  // assign valId to `name`, so it can be use in ValUse
+          valdefs += vd
+        }
+        val rhs = compileNode(curEnv, result, curId)
+        val res = if (valdefs.nonEmpty) {
+          (valdefs.toArray[BlockItem], rhs) match {
+            // simple optimization to avoid producing block sub-expressions like:
+            // `{ val idNew = id; idNew }` which this rules rewrites to just `id`
+            case (Array(ValDef(idNew, _, source @ ValUse(id, tpe))), ValUse(idUse, tpeUse))
+              if idUse == idNew && tpeUse == tpe => source
+            case (items, _) =>
+              BlockValue(items, rhs)
+          }
+        } else rhs
+        res
 
-      case _ =>
-        recurseProduct(env, node)
+      case _ => // fallback to recursive descent into term structure
+        recurseProduct(env, node, defId)
     }
   }
+
+  def compileTyped(node: SValue): SValue = {
+    val lowered = lowering(node)
+    val res = compileNode(emptyEnv, lowered,
+      defId = 0 // the ValDef numbering will start from 1
+    )
+    res
+  }
+}
+
+object DirectCompiler {
+  /** Describes assignment of valIds for symbols (ValNodes) which become ValDefs.
+    * Each ValDef in current scope have entry in this map. */
+  type DefEnv = Map[String, (Int, SType)]
+
+  val emptyEnv: DefEnv = Map.empty
 }
