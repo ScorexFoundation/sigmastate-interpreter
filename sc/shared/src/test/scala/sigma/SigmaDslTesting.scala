@@ -455,7 +455,7 @@ class SigmaDslTesting extends AnyPropSpec
         case Success((ok, cost)) =>
           ok shouldBe true
           val verificationCost = cost.toIntExact
-          if (expectedCost.isDefined) {
+          if (expectedCost.isDefined && evalSettings.isCheckTestVectors) {
             assertResult(expectedCost.get,
               s"Actual verify() cost $cost != expected ${expectedCost.get}")(verificationCost)
           }

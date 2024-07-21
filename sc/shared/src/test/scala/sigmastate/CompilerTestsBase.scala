@@ -19,6 +19,13 @@ trait CompilerTestsBase extends TestsBase {
     * DynamicVariable. */
   def lowerMethodCallsInTests: Boolean = _lowerMethodCalls.value
 
+  protected val _enableCompilerOptimization = new DynamicVariable[Boolean](true)
+
+  /** Returns true (by default) if compiler should optimize the tree.
+    * NOTE: The value of the flag is assigned dynamically using _enableCompilerOptimization
+    * DynamicVariable. */
+  def enableCompilerOptimizationInTests: Boolean = _enableCompilerOptimization.value
+
   /** If true, then all suite properties are executed with _lowerMethodCalls set to false.
     * This allow to test execution of MethodCall nodes in ErgoTree.
     */
@@ -31,7 +38,10 @@ trait CompilerTestsBase extends TestsBase {
   )
 
   def compilerSettingsInTests: CompilerSettings =
-    defaultCompilerSettings.copy(lowerMethodCalls = lowerMethodCallsInTests)
+    defaultCompilerSettings.copy(
+      lowerMethodCalls = lowerMethodCallsInTests,
+      enableOptimizations = enableCompilerOptimizationInTests
+    )
 
   def compiler = SigmaCompiler(compilerSettingsInTests)
 
