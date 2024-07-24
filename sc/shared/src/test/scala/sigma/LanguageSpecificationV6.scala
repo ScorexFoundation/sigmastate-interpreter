@@ -187,8 +187,10 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
         _.getMessage.contains("Cannot downcast value")
       )
     } else {
-      SBigInt.upcast(CBigInt(new BigInteger("0", 16)).asInstanceOf[AnyVal]) shouldBe CBigInt(new BigInteger("0"))
-      SBigInt.downcast(CBigInt(new BigInteger("0", 16)).asInstanceOf[AnyVal]) shouldBe CBigInt(new BigInteger("0"))
+      forAll { x: BigInteger =>
+        SBigInt.upcast(CBigInt(x).asInstanceOf[AnyVal]) shouldBe CBigInt(x)
+        SBigInt.downcast(CBigInt(x).asInstanceOf[AnyVal]) shouldBe CBigInt(x)
+      }
     }
 
     if (activatedVersionInTests < VersionContext.V6SoftForkVersion) {
@@ -227,6 +229,44 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
       }
       forAll { x: (BigInt, BigInt) =>
         Seq(compareTo, bitOr, bitAnd).foreach(_.checkEquality(x))
+      }
+
+      forAll { x: Long =>
+        assertExceptionThrown(
+          SLong.downcast(CBigInt(new BigInteger(x.toString)).asInstanceOf[AnyVal]),
+          _.getMessage.contains("Cannot downcast value")
+        )
+      }
+      forAll { x: Int =>
+        assertExceptionThrown(
+          SInt.downcast(CBigInt(new BigInteger(x.toString)).asInstanceOf[AnyVal]),
+          _.getMessage.contains("Cannot downcast value")
+        )
+      }
+      forAll { x: Byte =>
+        assertExceptionThrown(
+          SByte.downcast(CBigInt(new BigInteger(x.toString)).asInstanceOf[AnyVal]),
+          _.getMessage.contains("Cannot downcast value")
+        )
+      }
+      forAll { x: Short =>
+        assertExceptionThrown(
+          SShort.downcast(CBigInt(new BigInteger(x.toString)).asInstanceOf[AnyVal]),
+          _.getMessage.contains("Cannot downcast value")
+        )
+      }
+    } else {
+      forAll { x: Long =>
+          SLong.downcast(CBigInt(new BigInteger(x.toString)).asInstanceOf[AnyVal]) shouldBe x
+      }
+      forAll { x: Int =>
+          SInt.downcast(CBigInt(new BigInteger(x.toString)).asInstanceOf[AnyVal]) shouldBe x
+      }
+      forAll { x: Byte =>
+        SByte.downcast(CBigInt(new BigInteger(x.toString)).asInstanceOf[AnyVal]) shouldBe x
+      }
+      forAll { x: Short =>
+        SShort.downcast(CBigInt(new BigInteger(x.toString)).asInstanceOf[AnyVal]) shouldBe x
       }
     }
   }
