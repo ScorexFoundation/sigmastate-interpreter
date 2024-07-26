@@ -12,16 +12,19 @@ import sigma.data.{RType, SigmaBoolean}
 import sigma.validation.ValidationException
 import sigma.validation.ValidationRules.CheckSerializableTypeCode
 import sigma.ast.syntax.{SValue, SigmaPropValue}
+import sigma.compiler.{CompilerSettings, SigmaCompiler}
+import sigma.compiler.ir.IRContext
 import sigma.eval.{CostDetails, EvalSettings, Extensions, GivenCost, TracedCost}
 import sigmastate.helpers.TestingHelpers._
 import sigma.interpreter.ContextExtension.VarBinding
+import sigma.kiama.rewriting.Rewriter
+import sigma.kiama.rewriting.Rewriter.{everywherebu, strategy}
 import sigmastate.interpreter.CErgoTreeEvaluator.DefaultProfiler
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.interpreter._
-import sigmastate.lang.{CompilerSettings, SigmaCompiler}
 import sigma.serialization.SigmaSerializer
 import sigmastate.CompilerTestsBase
-import sigmastate.eval.{CContext, IRContext}
+import sigmastate.eval.CContext
 
 import scala.util.DynamicVariable
 
@@ -29,8 +32,7 @@ trait CompilerTestingCommons extends TestingCommons
     with TestUtils with TestContexts with ValidationSpecification
     with CompilerTestsBase {
 
-  class TestingIRContext extends TestContext with IRContext {
-  }
+  class TestingIRContext extends TestContext with IRContext
 
   case class CompiledFunc[A,B]
     (script: String, bindings: Seq[VarBinding], expr: SValue, compiledTree: SValue, func: A => (B, CostDetails))
@@ -161,6 +163,11 @@ trait CompilerTestingCommons extends TestingCommons
         printCostDetails(funcScript, costDetails)
       }
       (res.value, costDetails)
+    }
+    if (evalSettings.isDebug) {
+      // Deep clone expr using kiama. This is to make sure JS reflection works correctly.
+      val copyRule = strategy[Any] { case x: SValue => Some(Rewriter.copy(x)) }
+      val Some(copy) = everywherebu(copyRule)(expr)
     }
     val funcVal = expr match {
       case Apply(funcVal, _) => funcVal

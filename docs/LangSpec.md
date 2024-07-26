@@ -785,9 +785,6 @@ class Coll[A] {
     * Builds a new collection by applying a function to all elements of this collection
     * and using the elements of the resulting collections.
     *
-    * Function `f` is constrained to be of the form `x => x.someProperty`, otherwise
-    * it is illegal.
-    * 
     * @param f the function to apply to each element.
     * @tparam B the element type of the returned collection.
     * @return a new collection of type `Coll[B]` resulting from applying the given collection-valued function
@@ -984,6 +981,12 @@ def proveDHTuple(g: GroupElement, h: GroupElement,
   * to provide for a verifier a zero-knowledge proof of secret knowledge.
   */
 def proveDlog(value: GroupElement): SigmaProp
+
+/** Transforms Base16 encoded string literal into constant of type BigInt.
+  * It is a compile-time operation and only string literal (constant) can be its
+  * argument.
+  */
+def bigInt(input: String): BigInt
 
 /** Transforms Base16 encoded string literal into constant of type Coll[Byte].
   * It is a compile-time operation and only string literal (constant) can be its
