@@ -130,6 +130,11 @@ trait JsonCodecs {
     ).asJson
   })
 
+  /**
+    * JSON decoder for Header instance. Field "unparsedBytes" is optional for now, to preserve compatibility
+    * with clients using older JSON decoders (before node 5.0.23). Better to add an (empty) field anyway if possible.
+    * This field could become mandatory in future.
+    */
   implicit val headerDecoder: Decoder[Header] = Decoder.instance({ cursor =>
     for {
       version <- cursor.downField("version").as[Byte]
