@@ -15,7 +15,7 @@ import SCollectionMethods.{ExistsMethod, ForallMethod, MapMethod}
 import sigma.compiler.ir.{GraphIRReflection, IRContext}
 import sigma.compiler.phases.{SigmaBinder, SigmaTyper}
 import sigmastate.InterpreterReflection
-import sigmastate.lang.SigmaParser
+import sigmastate.lang.{DirectCompiler, SigmaParser}
 
 /**
   * @param networkPrefix    network prefix to decode an ergo address from string (PK op)

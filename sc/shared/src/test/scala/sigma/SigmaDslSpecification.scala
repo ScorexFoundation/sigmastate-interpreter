@@ -100,6 +100,8 @@ class SigmaDslSpecification extends SigmaDslTesting
   /** Set this to true to enable debug console output in tests */
   override val printDebugInfo: Boolean = false
 
+  override protected val testCompilerWithoutOptimizations: Boolean = true
+
   def warmupSettings(p: Profiler) = evalSettingsInTests.copy(
     isLogEnabled = false,
     printTestVectors = false,

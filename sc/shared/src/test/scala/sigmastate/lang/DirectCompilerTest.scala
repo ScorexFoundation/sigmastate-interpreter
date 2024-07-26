@@ -2,11 +2,12 @@ package sigmastate.lang
 
 import sigma.ast._
 import sigma.ast.syntax.SValue
+import sigma.compiler.CompilerSettings
+import sigma.compiler.ir.IRContext
 import sigma.exceptions.TyperException
 import sigma.serialization.ValueCodes.OpCode
 import sigma.serialization.generators.ObjectGenerators
 import sigmastate._
-import sigmastate.eval.IRContext
 import sigmastate.helpers.{CompilerTestingCommons, SigmaPPrint}
 import sigmastate.interpreter.Interpreter
 

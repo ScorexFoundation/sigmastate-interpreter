@@ -5,6 +5,7 @@ import sigma.ast.SigmaPredef.PredefinedFuncRegistry
 import sigma.ast.Value.Typed
 import sigma.ast._
 import sigma.ast.syntax.{SValue, ValueOps}
+import sigma.compiler.CompilerSettings
 import sigma.data.Nullable
 import sigma.exceptions.CompilerException
 import sigma.kiama.==>
