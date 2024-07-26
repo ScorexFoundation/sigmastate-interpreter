@@ -19,10 +19,10 @@ import sigma.serialization.{GroupElementSerializer, SigmaByteReader, SigmaByteWr
   * @param d  - distance between pseudo-random number, corresponding to nonce `n` and a secret,
   *           corresponding to `pk`. The lower `d` is, the harder it was to find this solution.
   */
-case class AutolykosSolution(pk: EcPointType,
-                             w: EcPointType,
-                             n: Array[Byte],
-                             d: BigInt) {
+class AutolykosSolution(val pk: EcPointType,
+                        val w: EcPointType,
+                        val n: Array[Byte],
+                        val d: BigInt) {
 
     val encodedPk: Array[Byte] = GroupElementSerializer.toBytes(pk)
 
@@ -52,7 +52,7 @@ object AutolykosSolution {
             val nonce = r.getBytes(8)
             val dBytesLength = r.getUByte()
             val d = BigInt(BigIntegers.fromUnsignedByteArray(r.getBytes(dBytesLength)))
-            AutolykosSolution(pk, w, nonce, d)
+            new AutolykosSolution(pk, w, nonce, d)
         }
     }
 
@@ -66,7 +66,7 @@ object AutolykosSolution {
         override def parse(r: SigmaByteReader): AutolykosSolution = {
             val pk = GroupElementSerializer.parse(r)
             val nonce = r.getBytes(8)
-            AutolykosSolution(pk, wForV2, nonce, dForV2)
+            new AutolykosSolution(pk, wForV2, nonce, dForV2)
         }
     }
 }

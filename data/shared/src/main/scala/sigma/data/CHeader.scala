@@ -123,7 +123,7 @@ object CHeader {
              votes: Coll[Byte],
              unparsedBytes: Coll[Byte]): CHeader = {
 
-    val solution = AutolykosSolution(
+    val solution = new AutolykosSolution(
       minerPk.asInstanceOf[CGroupElement].wrappedValue,
       powOnetimePk.asInstanceOf[CGroupElement].wrappedValue,
       powNonce.toArray,

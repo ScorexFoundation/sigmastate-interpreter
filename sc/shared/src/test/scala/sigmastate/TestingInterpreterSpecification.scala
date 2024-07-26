@@ -13,6 +13,8 @@ import org.scalatest.BeforeAndAfterAll
 import scorex.util.encode.Base58
 import sigma.Colls
 import sigma.VersionContext.V6SoftForkVersion
+import sigma.VersionContext
+import sigma.crypto.CryptoConstants
 import sigma.data.{CAND, CAvlTree, ProveDlog, SigmaBoolean, TrivialProp}
 import sigma.interpreter.ContextExtension
 import sigma.util.Extensions.IntOps
@@ -270,6 +272,46 @@ class TestingInterpreterSpecification extends CompilerTestingCommons
     testWithCasting("toInt")
     testWithCasting("toLong")
     testWithCasting("toBigInt")
+  }
+
+  property("BigInt downcasting to byte") {
+    def test() = testEval("{ sigmaProp(0L.toBigInt.toByte <= CONTEXT.preHeader.version) }")
+    if(VersionContext.current.isV6SoftForkActivated) {
+      test()
+    } else {
+      an[Exception] shouldBe thrownBy(test())
+    }
+  }
+
+  property("BigInt downcasting to short") {
+    def test() = testEval("{ sigmaProp(0L.toBigInt.toShort <= CONTEXT.preHeader.version.toShort) }")
+    if(VersionContext.current.isV6SoftForkActivated) {
+      test()
+    } else {
+      an[Exception] shouldBe thrownBy(test())
+    }
+  }
+
+  property("BigInt downcasting to int") {
+    def test() = testEval("{ sigmaProp(1L.toBigInt.toInt < CONTEXT.preHeader.timestamp.toInt) }")
+    if(VersionContext.current.isV6SoftForkActivated) {
+      test()
+    } else {
+      an[Exception] shouldBe thrownBy(test())
+    }
+  }
+
+  property("BigInt downcasting to long") {
+    def test() = testEval("{ sigmaProp(1L.toBigInt.toLong < CONTEXT.preHeader.timestamp) }")
+    if(VersionContext.current.isV6SoftForkActivated) {
+      test()
+    } else {
+      an[Exception] shouldBe thrownBy(test())
+    }
+  }
+
+  property("upcasting to bigint") {
+    testEval("{ sigmaProp(1L.toBigInt < bigInt(\"2\")) }")
   }
 
   property("Evaluate arithmetic ops") {

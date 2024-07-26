@@ -35,7 +35,7 @@ trait SerializationSpecification extends AnyPropSpec
     }
     withVersion match {
       case Some(ver) =>
-        VersionContext.withVersions(ver, 1) {
+        VersionContext.withVersions(ver, 0) {
           test()
         }
       case None =>

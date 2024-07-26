@@ -7,7 +7,7 @@ import sigma.data.OverloadHack.Overloaded1
 import sigma.data.{CBigInt, Nullable, SigmaConstants}
 import sigma.reflection.{RClass, RMethod, ReflectionData}
 import sigma.util.Extensions.{IntOps, LongOps, ShortOps}
-import sigma.{AvlTree, BigInt, Box, Coll, Context, Evaluation, GroupElement, Header, PreHeader, SigmaDslBuilder, SigmaProp}
+import sigma.{AvlTree, BigInt, Box, Coll, Context, Evaluation, GroupElement, Header, PreHeader, SigmaDslBuilder, SigmaProp, VersionContext}
 
 import java.math.BigInteger
 
@@ -375,6 +375,7 @@ case object SByte extends SPrimType with SEmbeddable with SNumericType with SMon
     case s: Short => s.toByteExact
     case i: Int => i.toByteExact
     case l: Long => l.toByteExact
+    case bi: BigInt if VersionContext.current.isV6SoftForkActivated => bi.toByte // toByteExact from int is called under the hood
     case _ => sys.error(s"Cannot downcast value $v to the type $this")
   }
 }
@@ -396,6 +397,7 @@ case object SShort extends SPrimType with SEmbeddable with SNumericType with SMo
     case s: Short => s
     case i: Int => i.toShortExact
     case l: Long => l.toShortExact
+    case bi: BigInt if VersionContext.current.isV6SoftForkActivated => bi.toShort // toShortExact from int is called under the hood
     case _ => sys.error(s"Cannot downcast value $v to the type $this")
   }
 }
@@ -419,6 +421,7 @@ case object SInt extends SPrimType with SEmbeddable with SNumericType with SMono
     case s: Short => s.toInt
     case i: Int => i
     case l: Long => l.toIntExact
+    case bi: BigInt if VersionContext.current.isV6SoftForkActivated => bi.toInt
     case _ => sys.error(s"Cannot downcast value $v to the type $this")
   }
 }
@@ -444,6 +447,7 @@ case object SLong extends SPrimType with SEmbeddable with SNumericType with SMon
     case s: Short => s.toLong
     case i: Int => i.toLong
     case l: Long => l
+    case bi: BigInt if VersionContext.current.isV6SoftForkActivated => bi.toLong
     case _ => sys.error(s"Cannot downcast value $v to the type $this")
   }
 }
@@ -465,24 +469,24 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
   override def numericTypeIndex: Int = 4
 
   override def upcast(v: AnyVal): BigInt = {
-    val bi = v match {
-      case x: Byte => BigInteger.valueOf(x.toLong)
-      case x: Short => BigInteger.valueOf(x.toLong)
-      case x: Int => BigInteger.valueOf(x.toLong)
-      case x: Long => BigInteger.valueOf(x)
+    v match {
+      case x: Byte => CBigInt(BigInteger.valueOf(x.toLong))
+      case x: Short => CBigInt(BigInteger.valueOf(x.toLong))
+      case x: Int => CBigInt(BigInteger.valueOf(x.toLong))
+      case x: Long => CBigInt(BigInteger.valueOf(x))
+      case x: BigInt if VersionContext.current.isV6SoftForkActivated => x
       case _ => sys.error(s"Cannot upcast value $v to the type $this")
     }
-    CBigInt(bi)
   }
   override def downcast(v: AnyVal): BigInt = {
-    val bi = v match {
-      case x: Byte => BigInteger.valueOf(x.toLong)
-      case x: Short => BigInteger.valueOf(x.toLong)
-      case x: Int => BigInteger.valueOf(x.toLong)
-      case x: Long => BigInteger.valueOf(x)
+    v match {
+      case x: Byte => CBigInt(BigInteger.valueOf(x.toLong))
+      case x: Short => CBigInt(BigInteger.valueOf(x.toLong))
+      case x: Int => CBigInt(BigInteger.valueOf(x.toLong))
+      case x: Long => CBigInt(BigInteger.valueOf(x))
+      case x: BigInt if VersionContext.current.isV6SoftForkActivated => x
       case _ => sys.error(s"Cannot downcast value $v to the type $this")
     }
-    CBigInt(bi)
   }
 }
 
