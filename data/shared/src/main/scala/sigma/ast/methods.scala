@@ -1467,18 +1467,19 @@ case object SHeaderMethods extends MonoTypeMethods {
     E.checkPow_eval(mc, header)
   }
 
+  private lazy val v5Methods = super.getMethods() ++ Seq(
+    idMethod, versionMethod, parentIdMethod, ADProofsRootMethod, stateRootMethod, transactionsRootMethod,
+    timestampMethod, nBitsMethod, heightMethod, extensionRootMethod, minerPkMethod, powOnetimePkMethod,
+    powNonceMethod, powDistanceMethod, votesMethod)
+
+  // 6.0 : checkPow method added
+  private lazy val v6Methods = v5Methods ++ Seq(checkPowMethod)
+
   protected override def getMethods() = {
     if (VersionContext.current.isV6SoftForkActivated) {
-      // 6.0 : checkPow method added
-      super.getMethods() ++ Seq(
-        idMethod, versionMethod, parentIdMethod, ADProofsRootMethod, stateRootMethod, transactionsRootMethod,
-        timestampMethod, nBitsMethod, heightMethod, extensionRootMethod, minerPkMethod, powOnetimePkMethod,
-        powNonceMethod, powDistanceMethod, votesMethod, checkPowMethod)
+      v6Methods
     } else {
-      super.getMethods() ++ Seq(
-        idMethod, versionMethod, parentIdMethod, ADProofsRootMethod, stateRootMethod, transactionsRootMethod,
-        timestampMethod, nBitsMethod, heightMethod, extensionRootMethod, minerPkMethod, powOnetimePkMethod,
-        powNonceMethod, powDistanceMethod, votesMethod)
+      v5Methods
     }
   }
 }

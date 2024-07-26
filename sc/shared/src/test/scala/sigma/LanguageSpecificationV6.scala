@@ -1,6 +1,6 @@
 package sigma
 
-import sigma.ast.{Apply, Downcast, FixedCost, FixedCostItem, FuncValue, GetVar, JitCost, OptionGet, SBigInt, SByte, SInt, SLong, SShort, ValUse}
+import sigma.ast.{Apply, Downcast, FixedCost, FixedCostItem, FuncValue, GetVar, JitCost, MethodCall, OptionGet, SBigInt, SBoolean, SByte, SHeader, SHeaderMethods, SInt, SLong, SShort, ValUse, Value}
 import sigma.data.{CBigInt, ExactNumeric}
 import sigma.eval.SigmaDsl
 import sigma.util.Extensions.{BooleanOps, ByteOps, IntOps, LongOps}
@@ -336,6 +336,34 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
         diff.checkEquality((x, y))
       }
     }
+  }
+
+  property("Header new methods") {
+    def checkPoW = newFeature({ (x: Header) => x.checkPow},
+      "{ (x: Header) => x.checkPow }",
+      FuncValue(
+        Array((1, SHeader)),
+        MethodCall.typed[Value[SBoolean.type]](
+          ValUse(1, SHeader),
+          SHeaderMethods.getMethodByName("checkPow"),
+          IndexedSeq(),
+          Map()
+        )
+      ),
+      sinceVersion = VersionContext.V6SoftForkVersion)
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      forAll { x: Header =>
+        Seq(checkPoW).map(_.checkEquality(x))
+      }
+    } else {
+      an[Exception] shouldBe thrownBy {
+        forAll { x: Header =>
+          Seq(checkPoW).map(_.checkEquality(x))
+        }
+      }
+    }
+
   }
 
   // TODO v6.0: implement Option.fold (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479)

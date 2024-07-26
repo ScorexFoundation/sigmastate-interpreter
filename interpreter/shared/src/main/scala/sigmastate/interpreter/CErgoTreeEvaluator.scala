@@ -218,6 +218,7 @@ class CErgoTreeEvaluator(
     }
   }
 
+  /** Implements evaluation of Header.checkPow method call ErgoTree node. */
   override def checkPow_eval(mc: MethodCall, header: Header): Boolean = {
     val checkPowCostInfo = OperationCostInfo(checkPowMethod.costKind.asInstanceOf[FixedCost], NamedDesc("Header.checkPow"))
     fixedCostOp(checkPowCostInfo){
