@@ -1549,8 +1549,9 @@ case object SGlobalMethods extends MonoTypeMethods {
 
   def powHit_eval(mc: MethodCall, G: SigmaDslBuilder, k: Int, msg: Coll[Byte], nonce: Coll[Byte], h: Coll[Byte], N: Int)
                   (implicit E: ErgoTreeEvaluator): BigInt = {
+    // todo: recheck cost
     E.addSeqCost(powHitCostKind, k * (msg.length + nonce.length + h.length), powHitMethod.opDesc) { () =>
-      CBigInt(Autolykos2PowValidation.hitForVersion2ForMessage(k, msg.toArray, nonce.toArray, h.toArray, N).bigInteger)
+      CBigInt(Autolykos2PowValidation.hitForVersion2ForMessageWithChecks(k, msg.toArray, nonce.toArray, h.toArray, N).bigInteger)
     }
   }
 

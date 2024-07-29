@@ -105,8 +105,15 @@ object Autolykos2PowValidation {
     toBigInt(hash(Bytes.concat(indexBytes, heightBytes, M)).drop(1))
   }
 
-  def hitForVersion2ForMessage(k: Int, msg: Array[Byte], nonce: Array[Byte], h: Array[Byte], N: Int): BigInt = {
+  def hitForVersion2ForMessageWithChecks(k: Int, msg: Array[Byte], nonce: Array[Byte], h: Array[Byte], N: Int): BigInt = {
+    require(k > 0)
+    require(k <= 128)
+    require(N > 0)
+    require(N <= Int.MaxValue)
+    hitForVersion2ForMessage(k, msg, nonce, h, N)
+  }
 
+  private def hitForVersion2ForMessage(k: Int, msg: Array[Byte], nonce: Array[Byte], h: Array[Byte], N: Int): BigInt = {
     val prei8 = BigIntegers.fromUnsignedByteArray(hash(Bytes.concat(msg, nonce)).takeRight(8))
     val i = BigIntegers.asUnsignedByteArray(4, prei8.mod(BigInt(N).underlying()))
     val f = Blake2b256(Bytes.concat(i, h, M)).drop(1) // .drop(1) is the same as takeRight(31)

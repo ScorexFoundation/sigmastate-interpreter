@@ -203,7 +203,7 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
   }
 
   override def powHit(k: Int, msg: Coll[Byte], nonce: Coll[Byte], h: Coll[Byte], N: Int): BigInt = {
-    val bi = Autolykos2PowValidation.hitForVersion2ForMessage(k, msg.toArray, nonce.toArray, h.toArray, N)
+    val bi = Autolykos2PowValidation.hitForVersion2ForMessageWithChecks(k, msg.toArray, nonce.toArray, h.toArray, N)
     this.BigInt(bi.bigInteger)
   }
 
