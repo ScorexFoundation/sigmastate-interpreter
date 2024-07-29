@@ -1512,21 +1512,23 @@ case object SGlobalMethods extends MonoTypeMethods {
     .withInfo(Xor, "Byte-wise XOR of two collections of bytes",
       ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))
 
+  private def powHitCostKind = PerItemCost(baseCost = JitCost(10), perChunkCost = JitCost(10), chunkSize = 128)
+
   lazy val powHitMethod = SMethod(
-    this, "powHit", SFunc(Array(SGlobal, SInt, SByteArray, SByteArray, SByteArray, SInt), SBigInt), 3, GroupGenerator.costKind) // todo: cost
+    this, "powHit", SFunc(Array(SGlobal, SInt, SByteArray, SByteArray, SByteArray, SInt), SBigInt), 3, powHitCostKind)
     .withIRInfo(MethodCallIrBuilder)
     .withInfo(MethodCall,
       "Calculating Proof-of-Work hit (Autolykos 2 hash value) for custom Autolykos 2 function",
       ArgInfo("k", "k parameter of Autolykos 2 (number of inputs in k-sum problem)"),
       ArgInfo("msg", "Message to calculate Autolykos hash 2 for"),
       ArgInfo("nonce", "Nonce used to pad the message to get Proof-of-Work hash function output with desirable properties"),
-      ArgInfo("h", "PoW protocol specific padding (e.g. block height in Ergo)"),
+      ArgInfo("h", "PoW protocol specific padding for table uniqueness (e.g. block height in Ergo)"),
       ArgInfo("N", "Size of table filled with pseudo-random data to find k elements in"),
     )
 
   def powHit_eval(mc: MethodCall, G: SigmaDslBuilder, k: Int, msg: Coll[Byte], nonce: Coll[Byte], h: Coll[Byte], N: Int)
                   (implicit E: ErgoTreeEvaluator): BigInt = {
-    E.addSeqCost(Xor.costKind, msg.length, Xor.opDesc) { () => // todo: proper costing
+    E.addSeqCost(powHitCostKind, k * (msg.length + nonce.length + h.length), powHitMethod.opDesc) { () =>
       CBigInt(Autolykos2PowValidation.hitForVersion2ForMessage(k, msg.toArray, nonce.toArray, h.toArray, N).bigInteger)
     }
   }

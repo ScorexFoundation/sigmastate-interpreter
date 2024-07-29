@@ -1,10 +1,13 @@
 package sigma
 
-import sigma.ast.{Apply, Downcast, FixedCost, FixedCostItem, FuncValue, GetVar, JitCost, OptionGet, SBigInt, SByte, SInt, SLong, SShort, ValUse}
+import sigma.ast.SCollection.SByteArray
+import sigma.ast.{Apply, BlockValue, Downcast, FixedCost, FixedCostItem, FuncValue, GetVar, Global, JitCost, MethodCall, OptionGet, SBigInt, SByte, SCollection, SGlobal, SGlobalMethods, SInt, SLong, SPair, SShort, SelectField, ValDef, ValUse, Value}
 import sigma.data.{CBigInt, ExactNumeric}
 import sigma.eval.SigmaDsl
+import sigma.pow.Autolykos2PowValidation
 import sigma.util.Extensions.{BooleanOps, ByteOps, IntOps, LongOps}
 import sigmastate.exceptions.MethodNotFound
+import sigma.BigIntRType
 
 import java.math.BigInteger
 import scala.util.Success
@@ -113,10 +116,6 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
         Seq(compareTo, bitOr, bitAnd).foreach(_.checkEquality(x))
       }
     }
-  }
-
-  property("") {
-
   }
 
   property("Int methods equivalence (new features)") {
