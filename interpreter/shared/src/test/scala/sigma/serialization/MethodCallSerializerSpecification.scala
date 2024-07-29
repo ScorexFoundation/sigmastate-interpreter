@@ -55,7 +55,6 @@ class MethodCallSerializerSpecification extends SerializationSpecification {
     val N = IntConstant(1024 * 1024)
 
     def code = {
-      val bi = BigIntConstant(5)
       val expr = MethodCall(Global,
         SGlobalMethods.powHitMethod,
         Vector(k, msg, nonce, h, N),

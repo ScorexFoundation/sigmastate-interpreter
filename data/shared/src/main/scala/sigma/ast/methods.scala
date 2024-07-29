@@ -1515,8 +1515,14 @@ case object SGlobalMethods extends MonoTypeMethods {
   lazy val powHitMethod = SMethod(
     this, "powHit", SFunc(Array(SGlobal, SInt, SByteArray, SByteArray, SByteArray, SInt), SBigInt), 3, GroupGenerator.costKind) // todo: cost
     .withIRInfo(MethodCallIrBuilder)
-    .withInfo(Xor, "Byte-wise XOR of two collections of bytes", // todo: desc
-      ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))
+    .withInfo(MethodCall,
+      "Calculating Proof-of-Work hit (Autolykos 2 hash value) for custom Autolykos 2 function",
+      ArgInfo("k", "k parameter of Autolykos 2 (number of inputs in k-sum problem)"),
+      ArgInfo("msg", "Message to calculate Autolykos hash 2 for"),
+      ArgInfo("nonce", "Nonce used to pad the message to get Proof-of-Work hash function output with desirable properties"),
+      ArgInfo("h", "PoW protocol specific padding (e.g. block height in Ergo)"),
+      ArgInfo("N", "Size of table filled with pseudo-random data to find k elements in"),
+    )
 
   def powHit_eval(mc: MethodCall, G: SigmaDslBuilder, k: Int, msg: Coll[Byte], nonce: Coll[Byte], h: Coll[Byte], N: Int)
                   (implicit E: ErgoTreeEvaluator): BigInt = {
@@ -1534,19 +1540,26 @@ case object SGlobalMethods extends MonoTypeMethods {
     Xor.xorWithCosting(ls, rs)
   }
 
+  private lazy val v5Methods = {
+    super.getMethods() ++ Seq(
+      groupGeneratorMethod,
+      xorMethod
+    )
+  }
+
+  private lazy val v6Methods = {
+    v5Methods ++ Seq(
+      powHitMethod
+    )
+  }
+
   protected override def getMethods(): Seq[SMethod] = {
     if (VersionContext.current.isV6SoftForkActivated) {
-      super.getMethods() ++ Seq(
-        groupGeneratorMethod,
-        xorMethod,
-        powHitMethod
-      )
+      v6Methods
     } else {
-      super.getMethods() ++ Seq(
-        groupGeneratorMethod,
-        xorMethod
-      )
+      v5Methods
     }
   }
+
 }
 
