@@ -1,11 +1,49 @@
 package sigma.pow
 
 
-import org.bouncycastle.util.BigIntegers
 import scorex.crypto.hash.Blake2b256
 import scorex.utils.{Bytes, Ints, Longs}
+import sigma.Header
+import sigma.crypto.{BcDlogGroup, BigIntegers, CryptoConstants}
+import sigma.util.NBitsUtils
 
+/**
+  * Functions used to validate Autolykos2 Proof-of-Work
+  */
 object Autolykos2PowValidation {
+
+  type Height = Int
+
+  val k = 32
+
+  val NStart = 26
+
+  val group: BcDlogGroup = CryptoConstants.dlogGroup
+
+  // Group order, used in Autolykos V.1 for non-outsourceability,
+  // and also to obtain target in both Autolykos v1 and v2
+  val q: BigInt = group.order
+
+  /**
+    * Number of elements in a table to find k-sum problem solution on top of
+    */
+  val NBase: Int = Math.pow(2, NStart.toDouble).toInt
+
+  /**
+    * Initial height since which table (`N` value) starting to increase by 5% per `IncreasePeriodForN` blocks
+    */
+  val IncreaseStart: Height = 600 * 1024
+
+  /**
+    * Table size (`N`) increased every 50 * 1024 blocks
+    */
+  val IncreasePeriodForN: Height = 50 * 1024
+
+  /**
+    * On this height, the table (`N` value) will stop to grow.
+    * Max N on and after this height would be 2,143,944,600 which is still less than 2^^31.
+    */
+  val NIncreasementHeightMax: Height = 4198400
 
   /**
     * Blake2b256 hash function invocation
@@ -25,6 +63,27 @@ object Autolykos2PowValidation {
     * Constant data to be added to hash function to increase its calculation time
     */
   val M: Array[Byte] = (0 until 1024).toArray.flatMap(i => Longs.toByteArray(i.toLong))
+
+  /**
+    * Calculates table size (N value) for a given height (moment of time)
+    *
+    * @see papers/yellow/pow/ErgoPow.tex for full description and test vectors
+    * @param headerHeight - height of a header to mine
+    * @return - N value
+    */
+  def calcN(headerHeight: Height): Int = {
+    val height = Math.min(NIncreasementHeightMax, headerHeight)
+    if (height < IncreaseStart) {
+      NBase
+    } else {
+      val itersNumber = (height - IncreaseStart) / IncreasePeriodForN + 1
+      (1 to itersNumber).foldLeft(NBase) { case (step, _) =>
+        step / 100 * 105
+      }
+    }
+  }
+
+  def calcN(header: Header): Int = calcN(header.height)
 
   /**
     * Hash function that takes `m` and `nonceBytes` and returns a list of size `k` with numbers in
@@ -62,6 +121,49 @@ object Autolykos2PowValidation {
     val array: Array[Byte] = BigIntegers.asUnsignedByteArray(32, f2.underlying())
     val ha = hash(array)
     toBigInt(ha)
+  }
+
+  /**
+    * Header digest ("message" for default GPU miners) a miner is working on
+    */
+  def msgByHeader(h: Header): Array[Byte] = Blake2b256(h.serializeWithoutPoW.toArray)
+
+  /**
+    * Get hit for Autolykos v2 header (to test it then against PoW target)
+    *
+    * @param header - header to check PoW for
+    * @return PoW hit
+    */
+  def hitForVersion2(header: Header): BigInt = {
+
+    val msg = msgByHeader(header)
+    val nonce = header.powNonce
+
+    val h = Ints.toByteArray(header.height)  // used in AL v.2 only
+
+    val N = calcN(header)
+
+    hitForVersion2ForMessage(k, msg, nonce.toArray, h, N)
+  }
+
+  /**
+    * Get target `b` from encoded difficulty `nBits`
+    */
+  def getB(nBits: Long): BigInt = {
+    q / NBitsUtils.decodeCompactBits(nBits)
+  }
+
+  /**
+    * Check PoW for Autolykos v2 header
+    *
+    * @param header - header to check PoW for
+    * @return whether PoW is valid or not
+    */
+  def checkPoWForVersion2(header: Header): Boolean = {
+    val b = getB(header.nBits)
+    // for version 2, we're calculating hit and compare it with target
+    val hit = hitForVersion2(header)
+    hit < b
   }
 
 }

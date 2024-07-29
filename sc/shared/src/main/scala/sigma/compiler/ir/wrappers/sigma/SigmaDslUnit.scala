@@ -78,6 +78,7 @@ import scalan._
       def powNonce: Ref[Coll[Byte]];
       def powDistance: Ref[BigInt];
       def votes: Ref[Coll[Byte]]
+      def checkPow: Ref[Boolean]
     };
     trait Context extends Def[Context] {
       def OUTPUTS: Ref[Coll[Box]];

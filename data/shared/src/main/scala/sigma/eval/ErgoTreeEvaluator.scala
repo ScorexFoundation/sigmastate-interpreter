@@ -1,6 +1,6 @@
 package sigma.eval
 
-import sigma.{AvlTree, Coll, Context}
+import sigma.{AvlTree, Coll, Context, Header}
 import sigma.ast.{Constant, FixedCost, MethodCall, OperationCostInfo, OperationDesc, PerItemCost, SType, TypeBasedCost}
 import sigma.data.KeyValueColl
 
@@ -138,6 +138,10 @@ abstract class ErgoTreeEvaluator {
   def remove_eval(
       mc: MethodCall, tree: AvlTree,
       operations: Coll[Coll[Byte]], proof: Coll[Byte]): Option[AvlTree]
+
+  /** Implements evaluation of Header.checkPow method call ErgoTree node. */
+  def checkPow_eval(mc: MethodCall, header: Header): Boolean
+
 }
 
 object ErgoTreeEvaluator {
