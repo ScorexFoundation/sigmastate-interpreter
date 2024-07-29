@@ -1,13 +1,12 @@
 package sigma
 
 import sigma.ast.SCollection.SByteArray
-import sigma.ast.{Apply, BlockValue, Downcast, FixedCost, FixedCostItem, FuncValue, GetVar, Global, JitCost, MethodCall, OptionGet, SBigInt, SByte, SCollection, SGlobal, SGlobalMethods, SInt, SLong, SPair, SShort, SelectField, ValDef, ValUse, Value}
+import sigma.ast.{Apply, BigIntConstant, BlockValue, Downcast, FixedCost, FixedCostItem, FuncValue, GT, GetVar, Global, IntConstant, JitCost, MethodCall, OptionGet, SBigInt, SByte, SCollection, SGlobal, SGlobalMethods, SInt, SLong, SPair, SShort, SelectField, ValDef, ValUse, Value}
 import sigma.data.{CBigInt, ExactNumeric}
 import sigma.eval.SigmaDsl
 import sigma.pow.Autolykos2PowValidation
 import sigma.util.Extensions.{BooleanOps, ByteOps, IntOps, LongOps}
 import sigmastate.exceptions.MethodNotFound
-import sigma.BigIntRType
 
 import java.math.BigInteger
 import scala.util.Success
@@ -114,6 +113,44 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
       }
       forAll { x: (Short, Short) =>
         Seq(compareTo, bitOr, bitAnd).foreach(_.checkEquality(x))
+      }
+    }
+  }
+  
+  property("Global.powHit") {
+
+    def powHit = newFeature(
+      { (x: Coll[Byte]) => Autolykos2PowValidation.hitForVersion2ForMessage(8, x.toArray, x.toArray, x.toArray, 255) > 0 },
+      "{ (x: Coll[Byte]) => Global.powHit(8, x, x, x, 255) > 0 }",
+      FuncValue(
+        Array((1, SByteArray)),
+        GT(
+          MethodCall.typed[Value[SBigInt.type]](
+            Global,
+            SGlobalMethods.getMethodByName("powHit"),
+            Array(
+              IntConstant(8),
+              ValUse(1, SByteArray),
+              ValUse(1, SByteArray),
+              ValUse(1, SByteArray),
+              IntConstant(255)
+            ),
+            Map()
+          ),
+          BigIntConstant(CBigInt(new BigInteger("0", 16)))
+        )
+      ),
+      sinceVersion = VersionContext.V6SoftForkVersion)
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      forAll { x: Coll[Byte] =>
+        Seq(powHit).map(_.checkEquality(x))
+      }
+    } else {
+      an[Exception] shouldBe thrownBy {
+        forAll { x: Coll[Byte] =>
+          Seq(powHit).map(_.checkEquality(x))
+        }
       }
     }
   }
