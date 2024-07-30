@@ -83,7 +83,7 @@ object PowHitCostKind extends CostKind {
     val baseCost = 100
 
     // the heaviest part inside is k + 1 Blake2b256 invocations
-    val c = baseCost + (k + 1) * ((msg.length + nonce.length + h.length) / chunkSize + 1) * perChunkCost
+    val c = baseCost + (k + 1) * ((msg.length + nonce.length + h.length) / chunkSize + 1) * perChunkCost.value
     JitCost(c)
   }
 }
