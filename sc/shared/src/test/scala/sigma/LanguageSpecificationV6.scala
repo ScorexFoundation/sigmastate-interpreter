@@ -1,8 +1,9 @@
 package sigma
 
-import sigma.ast.{Apply, Downcast, FixedCost, FixedCostItem, FuncValue, GetVar, JitCost, OptionGet, SBigInt, SByte, SInt, SLong, SShort, ValUse}
+import sigma.ast.{Apply, ArithOp, BlockValue, ByIndex, CompanionDesc, Constant, Downcast, FixedCost, FixedCostItem, FuncValue, GetVar, IntConstant, JitCost, LongConstant, MethodCall, OptionGet, OptionGetOrElse, PerItemCost, SBigInt, SByte, SCollection, SCollectionMethods, SCollectionType, SInt, SLong, SOption, SPair, SShort, STuple, STypeVar, SelectField, ValDef, ValUse, Value}
 import sigma.data.{CBigInt, ExactNumeric}
-import sigma.eval.SigmaDsl
+import sigma.eval.{SigmaDsl, TracedCost}
+import sigma.serialization.ValueCodes.OpCode
 import sigma.util.Extensions.{BooleanOps, ByteOps, IntOps, LongOps}
 import sigmastate.exceptions.MethodNotFound
 
@@ -168,7 +169,62 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
         Seq(compareTo, bitOr, bitAnd).foreach(_.checkEquality(x))
       }
     }
+  }
 
+  property("Option.getOrElse with lazy default") {
+    def getOrElse = newFeature(
+      { (x: Option[Long]) => x.getOrElse(1 / 0L) },
+      "{ (x: Option[Long]) => x.getOrElse(1 / 0L) }",
+      FuncValue(
+        Array((1, SOption(SLong))),
+        OptionGetOrElse(
+          ValUse(1, SOption(SLong)),
+          ArithOp(LongConstant(1L), LongConstant(0L), OpCode @@ (-99.toByte))
+        )
+      )
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      forAll { x: Option[Long] =>
+        Seq(getOrElse).map(_.checkEquality(x))
+      }
+    } else {
+      forAll { x: Option[Long] =>
+        if (x.isEmpty) {
+          Seq(getOrElse).map(_.checkEquality(x))
+        }
+      }
+    }
+  }
+
+  property("Coll getOrElse with lazy default") {
+    def getOrElse = newFeature(
+      (x: (Coll[Int], Int)) => x._1.toArray.unapply(x._2).getOrElse(1 / 0),
+      "{ (x: (Coll[Int], Int)) => x._1.getOrElse(x._2, 1 / 0) }",
+      FuncValue(
+        Array((1, SPair(SCollectionType(SInt), SInt))),
+        ByIndex(
+          SelectField.typed[Value[SCollection[SInt.type]]](
+            ValUse(1, SPair(SCollectionType(SInt), SInt)),
+            1.toByte
+          ),
+          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SCollectionType(SInt), SInt)), 2.toByte),
+          Some(ArithOp(IntConstant(1), IntConstant(0), OpCode @@ (-99.toByte)))
+        )
+      )
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      forAll { x: (Coll[Int], Int) =>
+        Seq(getOrElse).map(_.checkEquality(x))
+      }
+    } else {
+      forAll { x: (Coll[Int], Int) =>
+        if (x._1.isEmpty) {
+          Seq(getOrElse).map(_.checkEquality(x))
+        }
+      }
+    }
   }
 
   property("BigInt methods equivalence (new features)") {

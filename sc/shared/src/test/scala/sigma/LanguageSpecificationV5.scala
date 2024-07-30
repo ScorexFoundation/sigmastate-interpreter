@@ -7957,77 +7957,81 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
           )
         )
     )
-    verifyCases(
-      // (coll, (index, default))
-      {
-        def success[T](v: T) = Expected(Success(v), 1773, costDetails, 1773)
-        Seq(
-          ((Coll[Int](), (0, default)), success(default)),
-          ((Coll[Int](), (-1, default)), success(default)),
-          ((Coll[Int](1), (0, default)), success(1)),
-          ((Coll[Int](1), (1, default)), success(default)),
-          ((Coll[Int](1), (-1, default)), success(default)),
-          ((Coll[Int](1, 2), (0, default)), success(1)),
-          ((Coll[Int](1, 2), (1, default)), success(2)),
-          ((Coll[Int](1, 2), (2, default)), success(default)),
-          ((Coll[Int](1, 2), (-1, default)), success(default))
-        )
-      },
-      existingFeature((x: (Coll[Int], (Int, Int))) => x._1.getOrElse(x._2._1, x._2._2),
-        "{ (x: (Coll[Int], (Int, Int))) => x._1.getOrElse(x._2._1, x._2._2) }",
-        if (lowerMethodCallsInTests)
-          FuncValue(
-            Vector((1, SPair(SCollectionType(SInt), SPair(SInt, SInt)))),
-            BlockValue(
-              Vector(
-                ValDef(
-                  3,
-                  List(),
-                  SelectField.typed[Value[STuple]](
-                    ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
-                    2.toByte
-                  )
-                )
-              ),
-              ByIndex(
-                SelectField.typed[Value[SCollection[SInt.type]]](
-                  ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
-                  1.toByte
-                ),
-                SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 1.toByte),
-                Some(SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 2.toByte))
-              )
-            )
+
+    if(!VersionContext.current.isV6SoftForkActivated) {
+      verifyCases(
+        // (coll, (index, default))
+        {
+          def success[T](v: T) = Expected(Success(v), 1773, costDetails, 1773)
+
+          Seq(
+            ((Coll[Int](), (0, default)), success(default)),
+            ((Coll[Int](), (-1, default)), success(default)),
+            ((Coll[Int](1), (0, default)), success(1)),
+            ((Coll[Int](1), (1, default)), success(default)),
+            ((Coll[Int](1), (-1, default)), success(default)),
+            ((Coll[Int](1, 2), (0, default)), success(1)),
+            ((Coll[Int](1, 2), (1, default)), success(2)),
+            ((Coll[Int](1, 2), (2, default)), success(default)),
+            ((Coll[Int](1, 2), (-1, default)), success(default))
           )
-        else
-          FuncValue(
-            Array((1, SPair(SCollectionType(SInt), SPair(SInt, SInt)))),
-            BlockValue(
-              Array(
-                ValDef(
-                  3,
-                  List(),
-                  SelectField.typed[Value[STuple]](
-                    ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
-                    2.toByte
-                  )
-                )
-              ),
-              MethodCall.typed[Value[SInt.type]](
-                SelectField.typed[Value[SCollection[SInt.type]]](
-                  ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
-                  1.toByte
-                ),
-                SCollectionMethods.getMethodByName("getOrElse").withConcreteTypes(Map(STypeVar("IV") -> SInt)),
+        },
+        existingFeature((x: (Coll[Int], (Int, Int))) => x._1.getOrElse(x._2._1, x._2._2),
+          "{ (x: (Coll[Int], (Int, Int))) => x._1.getOrElse(x._2._1, x._2._2) }",
+          if (lowerMethodCallsInTests)
+            FuncValue(
+              Vector((1, SPair(SCollectionType(SInt), SPair(SInt, SInt)))),
+              BlockValue(
                 Vector(
-                  SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 1.toByte),
-                  SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 2.toByte)
+                  ValDef(
+                    3,
+                    List(),
+                    SelectField.typed[Value[STuple]](
+                      ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
+                      2.toByte
+                    )
+                  )
                 ),
-                Map()
+                ByIndex(
+                  SelectField.typed[Value[SCollection[SInt.type]]](
+                    ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
+                    1.toByte
+                  ),
+                  SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 1.toByte),
+                  Some(SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 2.toByte))
+                )
               )
             )
-          )
-      ))
+          else
+            FuncValue(
+              Array((1, SPair(SCollectionType(SInt), SPair(SInt, SInt)))),
+              BlockValue(
+                Array(
+                  ValDef(
+                    3,
+                    List(),
+                    SelectField.typed[Value[STuple]](
+                      ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
+                      2.toByte
+                    )
+                  )
+                ),
+                MethodCall.typed[Value[SInt.type]](
+                  SelectField.typed[Value[SCollection[SInt.type]]](
+                    ValUse(1, SPair(SCollectionType(SInt), SPair(SInt, SInt))),
+                    1.toByte
+                  ),
+                  SCollectionMethods.getMethodByName("getOrElse").withConcreteTypes(Map(STypeVar("IV") -> SInt)),
+                  Vector(
+                    SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 1.toByte),
+                    SelectField.typed[Value[SInt.type]](ValUse(3, SPair(SInt, SInt)), 2.toByte)
+                  ),
+                  Map()
+                )
+              )
+            )
+        ))
+    }
   }
 
   property("Tuple size method equivalence") {
@@ -8591,13 +8595,15 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
         "{ (x: Option[Long]) => x.isDefined }",
         FuncValue(Vector((1, SOption(SLong))), OptionIsDefined(ValUse(1, SOption(SLong))))))
 
-    verifyCases(
-      Seq(
-        (None -> Expected(Success(1L), 1766, costDetails3, 1766)),
-        (Some(10L) -> Expected(Success(10L), 1766, costDetails3, 1766))),
-      existingFeature({ (x: Option[Long]) => x.getOrElse(1L) },
-        "{ (x: Option[Long]) => x.getOrElse(1L) }",
-        FuncValue(Vector((1, SOption(SLong))), OptionGetOrElse(ValUse(1, SOption(SLong)), LongConstant(1L)))))
+    if (!VersionContext.current.isV6SoftForkActivated) {
+      verifyCases(
+        Seq(
+          (None -> Expected(Success(1L), 1766, costDetails3, 1766)),
+          (Some(10L) -> Expected(Success(10L), 1766, costDetails3, 1766))),
+        existingFeature({ (x: Option[Long]) => x.getOrElse(1L) },
+          "{ (x: Option[Long]) => x.getOrElse(1L) }",
+          FuncValue(Vector((1, SOption(SLong))), OptionGetOrElse(ValUse(1, SOption(SLong)), LongConstant(1L)))))
+    }
 
     verifyCases(
       Seq(
