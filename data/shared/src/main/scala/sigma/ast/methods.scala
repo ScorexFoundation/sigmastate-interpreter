@@ -1533,10 +1533,8 @@ case object SGlobalMethods extends MonoTypeMethods {
     .withInfo(Xor, "Byte-wise XOR of two collections of bytes",
       ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))
 
-  private def powHitCostKind = PerItemCost(baseCost = JitCost(10), perChunkCost = JitCost(10), chunkSize = 128)
-
   lazy val powHitMethod = SMethod(
-    this, "powHit", SFunc(Array(SGlobal, SInt, SByteArray, SByteArray, SByteArray, SInt), SBigInt), 3, powHitCostKind)
+    this, "powHit", SFunc(Array(SGlobal, SInt, SByteArray, SByteArray, SByteArray, SInt), SBigInt), 3, PowHitCostKind)
     .withIRInfo(MethodCallIrBuilder)
     .withInfo(MethodCall,
       "Calculating Proof-of-Work hit (Autolykos 2 hash value) for custom Autolykos 2 function",
@@ -1548,11 +1546,10 @@ case object SGlobalMethods extends MonoTypeMethods {
     )
 
   def powHit_eval(mc: MethodCall, G: SigmaDslBuilder, k: Int, msg: Coll[Byte], nonce: Coll[Byte], h: Coll[Byte], N: Int)
-                  (implicit E: ErgoTreeEvaluator): BigInt = {
-    // todo: recheck cost
-    E.addSeqCost(powHitCostKind, k * (msg.length + nonce.length + h.length), powHitMethod.opDesc) { () =>
-      CBigInt(Autolykos2PowValidation.hitForVersion2ForMessageWithChecks(k, msg.toArray, nonce.toArray, h.toArray, N).bigInteger)
-    }
+                 (implicit E: ErgoTreeEvaluator): BigInt = {
+    val cost = PowHitCostKind.cost(k, msg, nonce, h)
+    E.addCost(FixedCost(cost), powHitMethod.opDesc)
+    CBigInt(Autolykos2PowValidation.hitForVersion2ForMessageWithChecks(k, msg.toArray, nonce.toArray, h.toArray, N).bigInteger)
   }
 
   /** Implements evaluation of Global.xor method call ErgoTree node.

@@ -121,7 +121,7 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
   property("Global.powHit") {
 
     def powHit = newFeature(
-      { (x: Coll[Byte]) => Autolykos2PowValidation.hitForVersion2ForMessage(8, x.toArray, x.toArray, x.toArray, 255) > 0 },
+      { (x: Coll[Byte]) => Autolykos2PowValidation.hitForVersion2ForMessageWithChecks(8, x.toArray, x.toArray, x.toArray, 255) > 0 },
       "{ (x: Coll[Byte]) => Global.powHit(8, x, x, x, 255) > 0 }",
       FuncValue(
         Array((1, SByteArray)),

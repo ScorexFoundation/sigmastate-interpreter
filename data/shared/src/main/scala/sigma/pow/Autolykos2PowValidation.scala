@@ -109,7 +109,6 @@ object Autolykos2PowValidation {
     require(k > 0)
     require(k <= 128)
     require(N > 0)
-    require(N <= Int.MaxValue)
     hitForVersion2ForMessage(k, msg, nonce, h, N)
   }
 
