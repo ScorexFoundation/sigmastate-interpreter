@@ -176,6 +176,10 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
 
   override def groupGenerator: GroupElement = _generatorElement
 
+  def encodeNbits(bi: BigInt): Long = {
+    NBitsUtils.encodeCompactBits(bi.asInstanceOf[CBigInt].wrappedValue)
+  }
+
   def decodeNbits(l: Long): BigInt = {
     CBigInt(NBitsUtils.decodeCompactBits(l).bigInteger)
   }

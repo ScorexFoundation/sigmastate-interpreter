@@ -504,9 +504,6 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
         else
           error(s"The type of $obj is expected to be Collection to select 'size' property", obj.sourceContext.toOption)
 
-      case Select(obj, SBigIntMethods.ToNBits.name, _) if obj.tpe == SBigInt && VersionContext.current.isV6SoftForkActivated =>
-        eval(sigma.ast.MethodCall(obj, SBigIntMethods.ToNBits, IndexedSeq.empty, Map.empty))
-
       // Rule: proof.isProven --> IsValid(proof)
       case Select(p, SSigmaPropMethods.IsProven, _) if p.tpe == SSigmaProp =>
         eval(SigmaPropIsProven(p.asSigmaProp))
@@ -936,10 +933,6 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
         val objV = eval(obj)
         val argsV = args.map(eval)
         (objV, method.objType) match {
-          case (bi: Ref[BigInt]@unchecked, SBigIntMethods) => method.name match {
-            case SBigIntMethods.ToNBits.name =>
-              bi.nbits
-          }
           case (xs: RColl[t]@unchecked, SCollectionMethods) => method.name match {
             case SCollectionMethods.IndicesMethod.name =>
               xs.indices
@@ -1154,6 +1147,9 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
               val c1 = asRep[Coll[Byte]](argsV(0))
               val c2 = asRep[Coll[Byte]](argsV(1))
               g.xor(c1, c2)
+            case SGlobalMethods.encodeNBitsMethod.name if VersionContext.current.isV6SoftForkActivated =>
+              val c1 = asRep[BigInt](argsV(0))
+              g.encodeNbits(c1)
             case SGlobalMethods.decodeNBitsMethod.name if VersionContext.current.isV6SoftForkActivated =>
               val c1 = asRep[Long](argsV(0))
               g.decodeNbits(c1)

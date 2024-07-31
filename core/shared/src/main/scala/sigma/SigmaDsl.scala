@@ -154,8 +154,6 @@ trait BigInt {
     */
   def or(that: BigInt): BigInt
   def |(that: BigInt): BigInt = or(that)
-
-  def nbits: Long
 }
 
 /** Base class for points on elliptic curves. */
@@ -697,6 +695,18 @@ trait SigmaDslBuilder {
     */
   def groupGenerator: GroupElement
 
+  /**
+    * @return big integer provided as input approximately encoded using NBits,
+    *         see (https://bitcoin.stackexchange.com/questions/57184/what-does-the-nbits-value-represent)
+    *         for format details
+    */
+  def encodeNbits(bi: BigInt): Long
+
+  /**
+    * @return big integer decoded from NBits value provided,
+    *         see (https://bitcoin.stackexchange.com/questions/57184/what-does-the-nbits-value-represent)
+    *         for format details
+    */
   def decodeNbits(l: Long): BigInt
 
   /**

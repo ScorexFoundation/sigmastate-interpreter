@@ -24,12 +24,12 @@ class MethodCallSerializerSpecification extends SerializationSpecification {
     roundTripTest(expr)
   }
 
-  property("MethodCall deserialization round trip for BigInt.nbits") {
+  property("MethodCall deserialization round trip for Global.encodeNBits") {
     def code = {
       val bi = BigIntConstant(5)
-      val expr = MethodCall(bi,
-        SBigIntMethods.ToNBits,
-        Vector(),
+      val expr = MethodCall(Global,
+        SGlobalMethods.encodeNBitsMethod,
+        Vector(bi),
         Map()
       )
       roundTripTest(expr)
@@ -46,12 +46,12 @@ class MethodCallSerializerSpecification extends SerializationSpecification {
       })
   }
 
-  property("MethodCall deserialization round trip for BigInt.nbits") {
+  property("MethodCall deserialization round trip for Global.decodeNBits") {
     def code = {
-      val bi = BigIntConstant(5)
-      val expr = MethodCall(bi,
-        SBigIntMethods.ToNBits,
-        Vector(),
+      val l = LongConstant(5)
+      val expr = MethodCall(Global,
+        SGlobalMethods.decodeNBitsMethod,
+        Vector(l),
         Map()
       )
       roundTripTest(expr)

@@ -303,22 +303,12 @@ case object SIntMethods extends SNumericTypeMethods {
 case object SLongMethods extends SNumericTypeMethods {
   /** Type for which this container defines methods. */
   override def ownerType: SMonoType = SLong
-
-  protected override def getMethods(): Seq[SMethod] = super.getMethods()
-
 }
 
 /** Methods of BigInt type. Implemented using [[java.math.BigInteger]]. */
 case object SBigIntMethods extends SNumericTypeMethods {
   /** Type for which this container defines methods. */
   override def ownerType: SMonoType = SBigInt
-
-  final val ToNBitsCostInfo = OperationCostInfo(
-    FixedCost(JitCost(5)), NamedDesc("NBitsMethodCall"))
-
-  //id = 8 to make it after toBits
-  val ToNBits = SMethod(this, "nbits", SFunc(this.ownerType, SLong), 8, ToNBitsCostInfo.costKind)
-                  .withInfo(ModQ, "Encode this big integer value as NBits")
 
   /** The following `modQ` methods are not fully implemented in v4.x and this descriptors.
     * This descritors are remain here in the code and are waiting for full implementation
@@ -337,7 +327,7 @@ case object SBigIntMethods extends SNumericTypeMethods {
 
   protected override def getMethods(): Seq[SMethod]  = {
     if (VersionContext.current.isV6SoftForkActivated) {
-      super.getMethods() ++ Seq(ToNBits)
+      super.getMethods()
       //    ModQMethod,
       //    PlusModQMethod,
       //    MinusModQMethod,
@@ -347,14 +337,6 @@ case object SBigIntMethods extends SNumericTypeMethods {
       super.getMethods()
     }
   }
-
-  /**
-    *
-    */
-  def nbits_eval(mc: MethodCall, bi: sigma.BigInt)(implicit E: ErgoTreeEvaluator): Long = {
-    E.nbits(mc, bi)
-  }
-
 }
 
 /** Methods of type `String`. */
@@ -1523,37 +1505,50 @@ case object SGlobalMethods extends MonoTypeMethods {
     Xor.xorWithCosting(ls, rs)
   }
 
-  lazy val decodeNBitsMethod: SMethod = SMethod(
-    this, "decodeNbits", SFunc(Array(SGlobal, SLong), SBigInt), 3, FixedCost(JitCost(5)))
+  private lazy val EnDecodeNBitsCost = FixedCost(JitCost(5)) // the same cost for nbits encoding and decoding
+
+  lazy val encodeNBitsMethod: SMethod = SMethod(
+    this, "encodeNbits", SFunc(Array(SGlobal, SBigInt), SLong), 3, EnDecodeNBitsCost)
     .withIRInfo(MethodCallIrBuilder)
-    .withInfo(Xor, "Byte-wise XOR of two collections of bytes", ArgInfo("left", "left operand"))
+    .withInfo(MethodCall, "Encode big integer number as nbits", ArgInfo("bigInt", "Big integer"))
+
+  lazy val decodeNBitsMethod: SMethod = SMethod(
+    this, "decodeNbits", SFunc(Array(SGlobal, SLong), SBigInt), 4, EnDecodeNBitsCost)
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall, "Decode nbits-encoded big integer number", ArgInfo("nbits", "NBits-encoded argument"))
 
   /**
-    *
+    * encodeNBits evaluation with costing
     */
-  def decodeNbits_eval(mc: MethodCall, G: SigmaDslBuilder, l: Long)(implicit E: ErgoTreeEvaluator): BigInt = {
-    CBigInt(NBitsUtils.decodeCompactBits(l).bigInteger) // todo: costing is ignored here
-  }
-
-  {
-    if (VersionContext.current.isV6SoftForkActivated) {
-      super.getMethods() ++ Seq(decodeNBitsMethod)
-    } else {
-      super.getMethods()
+  def encodeNbits_eval(mc: MethodCall, G: SigmaDslBuilder, bigInt: BigInt)(implicit E: ErgoTreeEvaluator): Long = {
+    E.addFixedCost(EnDecodeNBitsCost, encodeNBitsMethod.opDesc) {
+      NBitsUtils.encodeCompactBits(bigInt.asInstanceOf[CBigInt].wrappedValue)
     }
   }
 
-  protected override def getMethods() = if (VersionContext.current.isV6SoftForkActivated) {
-    super.getMethods() ++ Seq(
-      groupGeneratorMethod,
-      xorMethod,
-      decodeNBitsMethod
-    )
-  } else {
-    super.getMethods() ++ Seq(
-      groupGeneratorMethod,
-      xorMethod
-    )
+  /**
+    * decodeNBits evaluation with costing
+    */
+  def decodeNbits_eval(mc: MethodCall, G: SigmaDslBuilder, l: Long)(implicit E: ErgoTreeEvaluator): BigInt = {
+    E.addFixedCost(EnDecodeNBitsCost, decodeNBitsMethod.opDesc) {
+      CBigInt(NBitsUtils.decodeCompactBits(l).bigInteger)
+    }
+  }
+
+  protected override def getMethods() = {
+    if (VersionContext.current.isV6SoftForkActivated) {
+      super.getMethods() ++ Seq(
+        groupGeneratorMethod,
+        xorMethod,
+        encodeNBitsMethod,
+        decodeNBitsMethod
+      )
+    } else {
+      super.getMethods() ++ Seq(
+        groupGeneratorMethod,
+        xorMethod
+      )
+    }
   }
 }
 

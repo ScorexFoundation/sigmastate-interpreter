@@ -13,7 +13,6 @@ import scalan._
       def mod(m: Ref[BigInt]): Ref[BigInt];
       def min(that: Ref[BigInt]): Ref[BigInt];
       def max(that: Ref[BigInt]): Ref[BigInt];
-      def nbits: Ref[Long]
     };
     trait GroupElement extends Def[GroupElement] {
       def exp(k: Ref[BigInt]): Ref[GroupElement];
@@ -115,6 +114,7 @@ import scalan._
       /** This method will be used in v6.0 to handle CreateAvlTree operation in GraphBuilding */
       def avlTree(operationFlags: Ref[Byte], digest: Ref[Coll[Byte]], keyLength: Ref[Int], valueLengthOpt: Ref[WOption[Int]]): Ref[AvlTree];
       def xor(l: Ref[Coll[Byte]], r: Ref[Coll[Byte]]): Ref[Coll[Byte]]
+      def encodeNbits(bi: Ref[BigInt]): Ref[Long]
       def decodeNbits(l: Ref[Long]): Ref[BigInt]
     };
     trait CostModelCompanion;

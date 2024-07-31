@@ -97,13 +97,6 @@ object BigInt extends EntityObject("BigInt") {
         Array[AnyRef](that),
         true, false, element[BigInt]))
     }
-
-    override def nbits: Ref[Long] = {
-      asRep[Long](mkMethodCall(self,
-        BigIntClass.getMethod("nbits"),
-        Array[AnyRef](),
-        neverInvoke = true, isAdapterCall = false, element[Long]))
-    }
   }
 
   implicit object LiftableBigInt
@@ -171,13 +164,6 @@ object BigInt extends EntityObject("BigInt") {
         BigIntClass.getMethod("max", classOf[Sym]),
         Array[AnyRef](that),
         true, true, element[BigInt]))
-    }
-
-    def nbits: Ref[Long] = {
-      asRep[Long](mkMethodCall(source,
-        BigIntClass.getMethod("nbits", classOf[Sym]),
-        Array[AnyRef](),
-        neverInvoke = true, isAdapterCall = true, element[Long]))
     }
   }
 
@@ -1960,10 +1946,17 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         true, false, element[Coll[Byte]]))
     }
 
+    override def encodeNbits(bi: Ref[BigInt]): Ref[Long] = {
+      asRep[Long](mkMethodCall(self,
+        SigmaDslBuilderClass.getMethod("encodeNbits", classOf[Sym]),
+        Array[AnyRef](bi),
+        true, false, element[Long]))
+    }
+
     override def decodeNbits(l: Ref[Long]): Ref[BigInt] = {
       asRep[BigInt](mkMethodCall(self,
         SigmaDslBuilderClass.getMethod("decodeNbits", classOf[Sym]),
-        Array[AnyRef](),
+        Array[AnyRef](l),
         true, false, element[BigInt]))
     }
   }
@@ -2124,6 +2117,13 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         SigmaDslBuilderClass.getMethod("xor", classOf[Sym], classOf[Sym]),
         Array[AnyRef](l, r),
         true, true, element[Coll[Byte]]))
+    }
+
+    override def encodeNbits(bi: Ref[BigInt]): Ref[Long] = {
+      asRep[Long](mkMethodCall(source,
+        SigmaDslBuilderClass.getMethod("encodeNbits", classOf[Sym]),
+        Array[AnyRef](bi),
+        true, true, element[Long]))
     }
 
     override def decodeNbits(l: Ref[Long]): Ref[BigInt] = {

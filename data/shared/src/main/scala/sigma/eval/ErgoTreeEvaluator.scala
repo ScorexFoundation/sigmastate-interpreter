@@ -98,9 +98,6 @@ abstract class ErgoTreeEvaluator {
   /** Represents blockchain data context for ErgoTree evaluation. */
   def context: Context
 
-  /** Implements evaluation of BigInt.nbits method call ErgoTree node. */
-  def nbits(mc: MethodCall, bi: sigma.BigInt): Long
-
   /** Create an instance of [[AvlTreeVerifier]] for the given tree and proof. */
   def createTreeVerifier(tree: AvlTree, proof: Coll[Byte]): AvlTreeVerifier
 

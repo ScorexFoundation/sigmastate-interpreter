@@ -10,7 +10,6 @@ import org.ergoplatform._
 import org.scalatest.BeforeAndAfterAll
 import scorex.util.encode.Base58
 import sigma.VersionContext
-import sigma.crypto.CryptoConstants
 import sigma.data.{AvlTreeData, CAND, ProveDlog, SigmaBoolean, TrivialProp}
 import sigma.VersionContext.V6SoftForkVersion
 import sigma.util.Extensions.IntOps
@@ -207,7 +206,7 @@ class TestingInterpreterSpecification extends CompilerTestingCommons
       """
         |{
         | val b: BigInt = 11999.toBigInt
-        | b.nbits == 36626176
+        | Global.encodeNbits(b) == 36626176
         |}
         |""".stripMargin
     if (activatedVersionInTests < V6SoftForkVersion) {

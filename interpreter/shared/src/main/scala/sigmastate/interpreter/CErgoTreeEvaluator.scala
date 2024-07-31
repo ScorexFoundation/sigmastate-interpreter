@@ -67,12 +67,6 @@ class CErgoTreeEvaluator(
   override def createTreeVerifier(tree: AvlTree, proof: Coll[Byte]): AvlTreeVerifier =
     CAvlTreeVerifier(tree, proof)
 
-  def nbits(mc: MethodCall, bi: sigma.BigInt): Long = {
-    addFixedCost(SBigIntMethods.ToNBitsCostInfo) {
-      bi.nbits
-    }
-  }
-
   /** Creates [[sigma.eval.AvlTreeVerifier]] for the given tree and proof. */
   def createVerifier(tree: AvlTree, proof: Coll[Byte]) = {
     // the cost of tree reconstruction from proof is O(proof.length)

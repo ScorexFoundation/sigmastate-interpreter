@@ -2,15 +2,15 @@ package sigmastate.eval
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import sigma.ast.{BigIntConstant, ErgoTree, JitCost, MethodCall, SBigIntMethods}
+import sigma.ast.{BigIntConstant, ErgoTree, Global, JitCost, MethodCall, SBigIntMethods, SGlobalMethods}
 import sigma.crypto.SecP256K1Group
-import sigma.data.{CBigInt, CSigmaDslBuilder, TrivialProp}
+import sigma.data.{CBigInt, TrivialProp}
 import sigma.eval.SigmaDsl
 import sigma.util.Extensions.SigmaBooleanOps
 import sigma.util.NBitsUtils
 
 import java.math.BigInteger
-import sigma.{ContractsTestkit, SigmaDslBuilder, SigmaProp}
+import sigma.{ContractsTestkit, SigmaProp}
 import sigmastate.interpreter.{CErgoTreeEvaluator, CostAccumulator}
 import sigmastate.interpreter.CErgoTreeEvaluator.DefaultProfiler
 
@@ -72,7 +72,7 @@ class BasicOpsTests extends AnyFunSuite with ContractsTestkit with Matchers {
     * Checks BigInt.nbits evaluation for SigmaDSL as well as AST interpreter (MethodCall) layers
     */
   test("nbits evaluation") {
-    SigmaDsl.BigInt(BigInteger.valueOf(0)).nbits should be
+    SigmaDsl.encodeNbits(CBigInt(BigInteger.valueOf(0))) should be
       (NBitsUtils.encodeCompactBits(0))
 
     val es = CErgoTreeEvaluator.DefaultEvalSettings
@@ -84,7 +84,7 @@ class BasicOpsTests extends AnyFunSuite with ContractsTestkit with Matchers {
       constants = ErgoTree.EmptyConstants,
       coster = accumulator, DefaultProfiler, es)
 
-    val res = MethodCall(BigIntConstant(BigInteger.valueOf(0)), SBigIntMethods.ToNBits, IndexedSeq.empty, Map.empty)
+    val res = MethodCall(Global, SGlobalMethods.encodeNBitsMethod, IndexedSeq(BigIntConstant(BigInteger.valueOf(0))), Map.empty)
         .evalTo[Long](Map.empty)(evaluator)
 
     res should be (NBitsUtils.encodeCompactBits(0))
