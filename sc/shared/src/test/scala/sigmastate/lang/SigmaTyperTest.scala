@@ -19,7 +19,9 @@ import sigmastate.lang.parsers.ParserException
 import sigma.serialization.ErgoTreeSerializer
 import sigma.serialization.generators.ObjectGenerators
 import sigma.ast.Select
+import sigma.compiler.phases.{SigmaBinder, SigmaTyper}
 import sigma.exceptions.TyperException
+import sigmastate.helpers.SigmaPPrint
 
 class SigmaTyperTest extends AnyPropSpec
   with ScalaCheckPropertyChecks with Matchers with LangTests with ObjectGenerators {
@@ -27,6 +29,7 @@ class SigmaTyperTest extends AnyPropSpec
   private val predefFuncRegistry = new PredefinedFuncRegistry(StdSigmaBuilder)
   import predefFuncRegistry._
 
+  /** Checks that parsing, binding and typing of `x` results in the given expected value. */
   def typecheck(env: ScriptEnv, x: String, expected: SValue = null): SType = {
     try {
       val builder = TransformingSigmaBuilder
@@ -34,10 +37,16 @@ class SigmaTyperTest extends AnyPropSpec
       val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
       val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix, predefinedFuncRegistry)
       val bound = binder.bind(parsed)
-      val typer = new SigmaTyper(builder, predefinedFuncRegistry, lowerMethodCalls = true)
+      val typeEnv = env.collect { case (k, v: SType) => k -> v }
+      val typer = new SigmaTyper(builder, predefinedFuncRegistry, typeEnv, lowerMethodCalls = true)
       val typed = typer.typecheck(bound)
       assertSrcCtxForAllNodes(typed)
-      if (expected != null) typed shouldBe expected
+      if (expected != null) {
+        if (expected != typed) {
+          SigmaPPrint.pprintln(typed, width = 100)
+        }
+        typed shouldBe expected
+      }
       typed.tpe
     } catch {
       case e: Exception => throw e
@@ -51,7 +60,8 @@ class SigmaTyperTest extends AnyPropSpec
       val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
       val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix, predefinedFuncRegistry)
       val bound = binder.bind(parsed)
-      val typer = new SigmaTyper(builder, predefinedFuncRegistry, lowerMethodCalls = true)
+      val typeEnv = env.collect { case (k, v: SType) => k -> v }
+      val typer = new SigmaTyper(builder, predefinedFuncRegistry, typeEnv, lowerMethodCalls = true)
       typer.typecheck(bound)
     }, {
       case te: TyperException =>
