@@ -14,7 +14,6 @@ import scorex.util.encode.Base58
 import sigma.Colls
 import sigma.VersionContext.V6SoftForkVersion
 import sigma.VersionContext
-import sigma.crypto.CryptoConstants
 import sigma.data.{CAND, CAvlTree, ProveDlog, SigmaBoolean, TrivialProp}
 import sigma.interpreter.ContextExtension
 import sigma.util.Extensions.IntOps
@@ -434,6 +433,24 @@ class TestingInterpreterSpecification extends CompilerTestingCommons
       ByteArrayConstant(bytes)).toSigmaProp)
 
     verifier.verify(prop3, env, proof, challenge).map(_._1).getOrElse(false) shouldBe false
+  }
+
+  property("blake2b - test vector") {
+    testEval(
+      """ {
+        |     val input = fromBase16("68656c6c6f20776f726c64")
+        |     val output = fromBase16("256c83b297114d201b30179f3f0ef0cace9783622da5974326b436178aeef610")
+        |     blake2b256(input) == output
+        | }""".stripMargin)
+  }
+
+  property("blake2b - test vector #2") {
+    testEval(
+      """ {
+        |     val input = fromBase16("02ac2101807f0000ca01ff0119db227f202201007f62000177a080005d440896d05d3f80dcff7f5e7f59007294c180808d0158d1ff6ba10000f901c7f0ef87dcfff17fffacb6ff7f7f1180d2ff7f1e24ffffe1ff937f807f0797b9ff6ebdae007e5c8c00b8403d3701557181c8df800001b6d5009e2201c6ff807d71808c00019780d085adb3fcdbc0b3441480887f80007f4b01cf7f013ff1ffff564a0000b9a54f00770e807f41ff88c00240000080c02500000000")
+        |     val output = fromBase16("bdb84cda5b105c3eb522857b50a0882f88ed5bb3cc8cf3325a1edf7eeb6a0954")
+        |     blake2b256(input) == output
+        | }""".stripMargin)
   }
 
   property("passing a lambda argument") {

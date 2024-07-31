@@ -156,6 +156,12 @@ class IsosSpec extends IsosSpecBase with sdk.generators.ObjectGenerators {
     }
   }
 
+  property("Iso.isoBigIntToLong - test vector") {
+    val l = 4928911477310178288L
+    val js =  sigma.js.Isos.isoBigIntToLong.from(l)
+    l.toString shouldBe js.toString()
+  }
+
   property("Iso.isoAmount") {
     forAll { (c: Long) =>
       roundtrip(DataIsos.isoAmount)(c)
