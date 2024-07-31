@@ -1542,7 +1542,7 @@ case object SGlobalMethods extends MonoTypeMethods {
       ArgInfo("msg", "Message to calculate Autolykos hash 2 for"),
       ArgInfo("nonce", "Nonce used to pad the message to get Proof-of-Work hash function output with desirable properties"),
       ArgInfo("h", "PoW protocol specific padding for table uniqueness (e.g. block height in Ergo)"),
-      ArgInfo("N", "Size of table filled with pseudo-random data to find k elements in"),
+      ArgInfo("N", "Size of table filled with pseudo-random data to find k elements in")
     )
 
   def powHit_eval(mc: MethodCall, G: SigmaDslBuilder, k: Int, msg: Coll[Byte], nonce: Coll[Byte], h: Coll[Byte], N: Int)
@@ -1583,4 +1583,3 @@ case object SGlobalMethods extends MonoTypeMethods {
   }
 
 }
-
