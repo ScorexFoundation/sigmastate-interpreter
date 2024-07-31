@@ -444,10 +444,10 @@ object ReflectionData {
         mkMethod(clazz, "decodePoint", Array[Class[_]](cColl)) { (obj, args) =>
           obj.asInstanceOf[SigmaDslBuilder].decodePoint(args(0).asInstanceOf[Coll[Byte]])
         },
-        mkMethod(clazz, "encodeNbits", Array[Class[_]](cColl)) { (obj, args) =>
+        mkMethod(clazz, "encodeNbits", Array[Class[_]](classOf[BigInt])) { (obj, args) =>
           obj.asInstanceOf[SigmaDslBuilder].encodeNbits(args(0).asInstanceOf[BigInt])
         },
-        mkMethod(clazz, "decodeNbits", Array[Class[_]](cColl)) { (obj, args) =>
+        mkMethod(clazz, "decodeNbits", Array[Class[_]](classOf[Long])) { (obj, args) =>
           obj.asInstanceOf[SigmaDslBuilder].decodeNbits(args(0).asInstanceOf[Long])
         }
       )
