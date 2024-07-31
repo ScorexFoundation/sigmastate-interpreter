@@ -170,10 +170,10 @@ class BasicOpsSpecification extends CompilerTestingCommons
       null
     )
 
-    if(VersionContext.current.isV6SoftForkActivated) {
+    if (VersionContext.current.isV6SoftForkActivated) {
       optTest()
     } else {
-      an[Exception] shouldBe thrownBy(optTest())
+      assertExceptionThrown(optTest(), _.isInstanceOf[NoSuchElementException])
     }
   }
 

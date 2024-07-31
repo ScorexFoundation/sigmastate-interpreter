@@ -199,7 +199,7 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
 
   property("Coll getOrElse with lazy default") {
     def getOrElse = newFeature(
-      (x: (Coll[Int], Int)) => x._1.toArray.unapply(x._2).getOrElse(1 / 0),
+      (x: (Coll[Int], Int)) => x._1.toArray.toIndexedSeq.unapply(x._2).getOrElse(1 / 0),
       "{ (x: (Coll[Int], Int)) => x._1.getOrElse(x._2, 1 / 0) }",
       FuncValue(
         Array((1, SPair(SCollectionType(SInt), SInt))),
