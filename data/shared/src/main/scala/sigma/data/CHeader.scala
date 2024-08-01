@@ -67,10 +67,7 @@ class CHeader(val ergoHeader: ErgoHeader) extends Header with WrapperOf[ErgoHead
   override def wrappedValue: ErgoHeader = ergoHeader
 
   override def serializeWithoutPoW: Coll[Byte] = {
-    val headerWithoutPow = HeaderWithoutPow(version, bytesToId(parentId.toArray), Digest32 @@ ADProofsRoot.toArray,
-      ADDigest @@ stateRoot.digest.toArray, Digest32 @@ transactionsRoot.toArray, timestamp,
-      nBits, height, Digest32 @@ extensionRoot.toArray, votes.toArray, unparsedBytes.toArray)
-    Colls.fromArray(HeaderWithoutPowSerializer.toBytes(headerWithoutPow))
+    Colls.fromArray(HeaderWithoutPowSerializer.toBytes(ergoHeader))
   }
 
   override def checkPow: Boolean = {
