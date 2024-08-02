@@ -14,6 +14,8 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import scalan.Platform.threadSleepOrNoOp
 import sigma.Extensions.ArrayOps
 import sigma.data.{CBox, CollType, OptionType, PairType, ProveDlog, RType, SigmaLeaf}
+import sigma.VersionContext.V6SoftForkVersion
+import sigma.data.{CollType, OptionType, PairType, RType}
 import sigma.util.BenchmarkUtil
 import sigma.util.CollectionUtil._
 import sigma.util.Extensions._
@@ -1032,6 +1034,30 @@ class SigmaDslTesting extends AnyPropSpec
         override val newResults = defaultNewResults.map {
           case (ExpectedResult(v, _), _) =>
             (ExpectedResult(v, Some(expectedNewCost)), Some(expectedDetails))
+        }
+      }
+
+    /** Used when the old and new value and costs are the same for all versions, but Version 3 (Ergo 6.0) will have a different cost due to deserialization cost being added.
+     * Different versions of ErgoTree can have different deserialization costs as well
+     *
+     * @param value           expected result of tested function
+     * @param cost            expected verification cost
+     * @param expectedDetails expected cost details for all versions <= V3
+     * @param expectedNewCost expected new verification cost for all versions <= V3
+     * @param expectedV3Cost expected cost for >=V3
+     */
+    def apply[A](value: Try[A],
+                 cost: Int,
+                 expectedDetails: CostDetails,
+                 expectedNewCost: Int,
+                 expectedV3Costs: Seq[Int]
+                 )(implicit dummy: DummyImplicit): Expected[A] =
+      new Expected(ExpectedResult(value, Some(cost))) {
+        override val newResults = defaultNewResults.zipWithIndex.map {
+          case ((ExpectedResult(v, _), _), version) => {
+            var cost = if (activatedVersionInTests >= V6SoftForkVersion) expectedV3Costs(version) else expectedNewCost
+            (ExpectedResult(v, Some(cost)), Some(expectedDetails))
+          }
         }
       }
 
