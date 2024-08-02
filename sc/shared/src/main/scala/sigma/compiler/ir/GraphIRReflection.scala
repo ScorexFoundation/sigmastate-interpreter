@@ -407,6 +407,9 @@ object GraphIRReflection {
         },
         mkMethod(clazz, "powDistance", Array[Class[_]]()) { (obj, args) =>
           obj.asInstanceOf[ctx.Header].powDistance
+        },
+        mkMethod(clazz, "checkPow", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.Header].checkPow
         }
       )
     )
