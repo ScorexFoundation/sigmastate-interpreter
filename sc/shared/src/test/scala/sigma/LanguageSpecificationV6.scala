@@ -1,14 +1,14 @@
 package sigma
 
-import sigma.ast.{Apply, ArithOp, BlockValue, ByIndex, CompanionDesc, Constant, Downcast, FixedCost, FixedCostItem, FuncValue, GetVar, IntConstant, JitCost, LongConstant, MethodCall, OptionGet, OptionGetOrElse, PerItemCost, SBigInt, SByte, SCollection, SCollectionMethods, SCollectionType, SInt, SLong, SOption, SPair, SShort, STuple, STypeVar, SelectField, ValDef, ValUse, Value}
+import sigma.ast.{Apply, ByIndex, Downcast, FixedCost, FixedCostItem, FuncValue, GetVar, IntConstant, JitCost, LongConstant, MethodCall, OptionGet, OptionGetOrElse, PerItemCost, SBigInt, SByte, SCollection, SCollectionMethods, SCollectionType, SInt, SLong, SOption, SPair, SShort, STuple, STypeVar, SelectField, ValDef, ValUse, Value}
 import sigma.data.{CBigInt, ExactNumeric}
-import sigma.eval.{SigmaDsl, TracedCost}
+import sigma.eval.{CostDetails, SigmaDsl, TracedCost}
 import sigma.serialization.ValueCodes.OpCode
 import sigma.util.Extensions.{BooleanOps, ByteOps, IntOps, LongOps}
 import sigmastate.exceptions.MethodNotFound
 
 import java.math.BigInteger
-import scala.util.Success
+import scala.util.{Failure, Success}
 
 /** This suite tests all operations for v6.0 version of the language.
   * The base classes establish the infrastructure for the tests.
@@ -172,29 +172,29 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
   }
 
   property("Option.getOrElse with lazy default") {
-    def getOrElse = newFeature(
-      { (x: Option[Long]) => x.getOrElse(1 / 0L) },
-      "{ (x: Option[Long]) => x.getOrElse(1 / 0L) }",
-      FuncValue(
-        Array((1, SOption(SLong))),
-        OptionGetOrElse(
-          ValUse(1, SOption(SLong)),
-          ArithOp(LongConstant(1L), LongConstant(0L), OpCode @@ (-99.toByte))
-        )
+    verifyCases(
+      Seq(
+        Some(0L) -> Expected(Failure(new java.lang.ArithmeticException("/ by zero")), 6, CostDetails.ZeroCost, 1793,
+          newVersionedResults = {
+            Seq(0 -> (ExpectedResult(Success(6L), Some(1793)) -> None))
+          } ),
+        None -> Expected(Failure(new java.lang.ArithmeticException("/ by zero")), 6)
+      ),
+      changedFeature(
+        { (x: Option[Long]) => val default = 1 / 0L; x.getOrElse(default) },
+        { (x: Option[Long]) => if (VersionContext.current.isV6SoftForkActivated) {x.getOrElse(1 / 0L)} else {val default = 1 / 0L; x.getOrElse(default)} },
+        "{ (x: Option[Long]) => x.getOrElse(1 / 0L) }",
+        FuncValue(
+          Array((1, SOption(SLong))),
+          OptionGetOrElse(
+            ValUse(1, SOption(SLong)),
+            ArithOp(LongConstant(1L), LongConstant(0L), OpCode @@ (-99.toByte))
+          )
+        ),
+        allowNewToSucceed = true,
+        changedIn = VersionContext.V6SoftForkVersion
       )
     )
-
-    if (VersionContext.current.isV6SoftForkActivated) {
-      forAll { x: Option[Long] =>
-        Seq(getOrElse).map(_.checkEquality(x))
-      }
-    } else {
-      forAll { x: Option[Long] =>
-        if (x.isEmpty) {
-          Seq(getOrElse).map(_.checkEquality(x))
-        }
-      }
-    }
   }
 
   property("Coll getOrElse with lazy default") {
