@@ -3,6 +3,7 @@ package sigmastate.interpreter
 import debox.cfor
 import org.ergoplatform.ErgoLikeContext
 import org.ergoplatform.validation.ValidationRules._
+import scorex.crypto.encode.Base16
 import sigma.VersionContext
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.syntax._
@@ -247,7 +248,12 @@ trait Interpreter {
       val currCost = addCostChecked(context.initCost, deserializeSubstitutionCost, context.costLimit)
       val context1 = context.withInitCost(currCost).asInstanceOf[CTX]
       val (propTree, context2) = trySoftForkable[(SigmaPropValue, CTX)](whenSoftFork = (TrueSigmaProp, context1)) {
-        applyDeserializeContextJITC(context, prop)
+        // Before ErgoTree V3 the deserialization cost was not added to the total cost
+        applyDeserializeContextJITC(if (VersionContext.current.activatedVersion >= VersionContext.V6SoftForkVersion) {
+          context1
+        } else {
+          context
+        }, prop)
       }
 
       // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds

@@ -1,10 +1,10 @@
 package sigma
 
-import sigma.ast.ErgoTree.{HeaderType, ZeroHeader}
+import sigma.ast.ErgoTree.ZeroHeader
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.syntax.TrueSigmaProp
-import sigma.ast.{BoolToSigmaProp, CompanionDesc, ConcreteCollection, Constant, ConstantPlaceholder, Downcast, ErgoTree, FalseLeaf, FixedCostItem, FuncValue, Global, JitCost, MethodCall, PerItemCost, SBigInt, SByte, SCollection, SGlobalMethods, SInt, SLong, SPair, SShort, SSigmaProp, STypeVar, SelectField, SubstConstants, ValUse, Value}
-import sigma.data.{CBigInt, ExactNumeric, RType}
+import sigma.ast._
+import sigma.data.{CBigInt, ExactNumeric}
 import sigma.eval.{CostDetails, SigmaDsl, TracedCost}
 import sigma.util.Extensions.{BooleanOps, ByteOps, IntOps, LongOps}
 import sigmastate.exceptions.MethodNotFound
@@ -165,21 +165,26 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
   }
 
   property("BigInt methods equivalence (new features)") {
-    // TODO v6.0: the behavior of `upcast` for BigInt is different from all other Numeric types (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/877)
-    // The `Upcast(bigInt, SBigInt)` node is never produced by ErgoScript compiler, but is still valid ErgoTree.
-    // It makes sense to fix this inconsistency as part of upcoming forks
-    assertExceptionThrown(
-      SBigInt.upcast(CBigInt(new BigInteger("0", 16)).asInstanceOf[AnyVal]),
-      _.getMessage.contains("Cannot upcast value")
-    )
+    if (activatedVersionInTests < VersionContext.V6SoftForkVersion) {
+      // The `Upcast(bigInt, SBigInt)` node is never produced by ErgoScript compiler, but is still valid ErgoTree.
+      // Fixed in 6.0
+      assertExceptionThrown(
+        SBigInt.upcast(CBigInt(new BigInteger("0", 16)).asInstanceOf[AnyVal]),
+        _.getMessage.contains("Cannot upcast value")
+      )
 
-    // TODO v6.0: the behavior of `downcast` for BigInt is different from all other Numeric types (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/877)
-    // The `Downcast(bigInt, SBigInt)` node is never produced by ErgoScript compiler, but is still valid ErgoTree.
-    // It makes sense to fix this inconsistency as part of HF
-    assertExceptionThrown(
-      SBigInt.downcast(CBigInt(new BigInteger("0", 16)).asInstanceOf[AnyVal]),
-      _.getMessage.contains("Cannot downcast value")
-    )
+      // The `Downcast(bigInt, SBigInt)` node is never produced by ErgoScript compiler, but is still valid ErgoTree.
+      // Fixed in 6.0
+      assertExceptionThrown(
+        SBigInt.downcast(CBigInt(new BigInteger("0", 16)).asInstanceOf[AnyVal]),
+        _.getMessage.contains("Cannot downcast value")
+      )
+    } else {
+      forAll { x: BigInteger =>
+        SBigInt.upcast(CBigInt(x).asInstanceOf[AnyVal]) shouldBe CBigInt(x)
+        SBigInt.downcast(CBigInt(x).asInstanceOf[AnyVal]) shouldBe CBigInt(x)
+      }
+    }
 
     if (activatedVersionInTests < VersionContext.V6SoftForkVersion) {
       // NOTE, for such versions the new features are not supported
@@ -217,6 +222,44 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
       }
       forAll { x: (BigInt, BigInt) =>
         Seq(compareTo, bitOr, bitAnd).foreach(_.checkEquality(x))
+      }
+
+      forAll { x: Long =>
+        assertExceptionThrown(
+          SLong.downcast(CBigInt(new BigInteger(x.toString)).asInstanceOf[AnyVal]),
+          _.getMessage.contains("Cannot downcast value")
+        )
+      }
+      forAll { x: Int =>
+        assertExceptionThrown(
+          SInt.downcast(CBigInt(new BigInteger(x.toString)).asInstanceOf[AnyVal]),
+          _.getMessage.contains("Cannot downcast value")
+        )
+      }
+      forAll { x: Byte =>
+        assertExceptionThrown(
+          SByte.downcast(CBigInt(new BigInteger(x.toString)).asInstanceOf[AnyVal]),
+          _.getMessage.contains("Cannot downcast value")
+        )
+      }
+      forAll { x: Short =>
+        assertExceptionThrown(
+          SShort.downcast(CBigInt(new BigInteger(x.toString)).asInstanceOf[AnyVal]),
+          _.getMessage.contains("Cannot downcast value")
+        )
+      }
+    } else {
+      forAll { x: Long =>
+          SLong.downcast(CBigInt(new BigInteger(x.toString)).asInstanceOf[AnyVal]) shouldBe x
+      }
+      forAll { x: Int =>
+          SInt.downcast(CBigInt(new BigInteger(x.toString)).asInstanceOf[AnyVal]) shouldBe x
+      }
+      forAll { x: Byte =>
+        SByte.downcast(CBigInt(new BigInteger(x.toString)).asInstanceOf[AnyVal]) shouldBe x
+      }
+      forAll { x: Short =>
+        SShort.downcast(CBigInt(new BigInteger(x.toString)).asInstanceOf[AnyVal]) shouldBe x
       }
     }
   }
@@ -375,17 +418,17 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
           Success(Helpers.decodeBytes("100108d27300")),
           cost = 1793,
           expectedDetails = CostDetails.ZeroCost,
-          newCost = 1793,
-          newVersionedResults = expectedSuccessForAllTreeVersions(Helpers.decodeBytes("100108d27300"), 1793, costDetails(1))
-         ),
+          newCost = 2065,
+          newVersionedResults = expectedSuccessForAllTreeVersions(Helpers.decodeBytes("100108d27300"), 2065, costDetails(1)),
+        ),
         // for tree version > 0, the result depend on activated version
         {
           (Coll(t2.bytes: _*), 0) -> Expected(
             Success(expectedTreeBytes_beforeV6),
             cost = 1793,
             expectedDetails = CostDetails.ZeroCost,
-            newCost = 1793,
-            newVersionedResults = expectedSuccessForAllTreeVersions(expectedTreeBytes_V6, 1793, costDetails(1)))
+            newCost = 2065,
+            newVersionedResults = expectedSuccessForAllTreeVersions(expectedTreeBytes_V6, 2065, costDetails(1)))
         }
       ),
       changedFeature(

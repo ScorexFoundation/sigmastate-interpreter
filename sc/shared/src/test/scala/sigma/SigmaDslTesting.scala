@@ -14,6 +14,7 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import scalan.Platform.threadSleepOrNoOp
 import sigma.Extensions.ArrayOps
 import sigma.data.{CBox, CollType, OptionType, PairType, ProveDlog, RType, SigmaLeaf}
+import sigma.VersionContext.V6SoftForkVersion
 import sigma.util.BenchmarkUtil
 import sigma.util.CollectionUtil._
 import sigma.util.Extensions._
@@ -329,14 +330,16 @@ class SigmaDslTesting extends AnyPropSpec
         // Compile script the same way it is performed by applications (i.e. via Ergo Appkit)
         val prop = compile(env, code)(IR).asSigmaProp
 
-        // Add additional oparations which are not yet implemented in ErgoScript compiler
+        // Add additional operations which are not yet implemented in ErgoScript compiler
         val multisig = AtLeast(
           IntConstant(2),
           Array(
             pkAlice,
             DeserializeRegister(ErgoBox.R5, SSigmaProp),  // deserialize pkBob
             DeserializeContext(2, SSigmaProp)))           // deserialize pkCarol
-        val header = ErgoTree.headerWithVersion(ZeroHeader, ergoTreeVersionInTests)
+        // We set size for trees v0 as well, to have the same size and so the same cost in V6 interpreter
+        // (where tree size is accounted in cost)
+        val header = ErgoTree.setSizeBit(ErgoTree.headerWithVersion(ZeroHeader, ergoTreeVersionInTests))
         ErgoTree.withSegregation(header, SigmaOr(prop, multisig))
       }
 
@@ -459,7 +462,7 @@ class SigmaDslTesting extends AnyPropSpec
           val verificationCost = cost.toIntExact
           if (expectedCost.isDefined) {
             assertResult(expectedCost.get,
-              s"Actual verify() cost $cost != expected ${expectedCost.get}")(verificationCost)
+              s"Actual verify() cost $cost != expected ${expectedCost.get} (version: ${VersionContext.current.activatedVersion})")(verificationCost)
           }
 
         case Failure(t) => throw t
@@ -1009,6 +1012,30 @@ class SigmaDslTesting extends AnyPropSpec
         }
       }
 
+    /** Used when the old and new value and costs are the same for all versions, but Version 3 (Ergo 6.0) will have a different cost due to deserialization cost being added.
+     * Different versions of ErgoTree can have different deserialization costs as well
+     *
+     * @param value           expected result of tested function
+     * @param cost            expected verification cost
+     * @param expectedDetails expected cost details for all versions <= V3
+     * @param expectedNewCost expected new verification cost for all versions <= V3
+     * @param expectedV3Cost expected cost for >=V3
+     */
+    def apply[A](value: Try[A],
+                 cost: Int,
+                 expectedDetails: CostDetails,
+                 expectedNewCost: Int,
+                 expectedV3Costs: Seq[Int]
+                 )(implicit dummy: DummyImplicit): Expected[A] =
+      new Expected(ExpectedResult(value, Some(cost))) {
+        override val newResults = defaultNewResults.zipWithIndex.map {
+          case ((ExpectedResult(v, _), _), version) => {
+            var cost = if (activatedVersionInTests >= V6SoftForkVersion) expectedV3Costs(version) else expectedNewCost
+            (ExpectedResult(v, Some(cost)), Some(expectedDetails))
+          }
+        }
+      }
+
     /** Used when operation semantics changes in new versions. For those versions expected
       * test vectors can be specified.
       *
@@ -1019,8 +1046,10 @@ class SigmaDslTesting extends AnyPropSpec
       * @param newVersionedResults new results returned by each changed feature function in
       *                            v5.+ for each ErgoTree version.
       */
-    def apply[A](value: Try[A], cost: Int,
-                 expectedDetails: CostDetails, newCost: Int,
+    def apply[A](value: Try[A],
+                 cost: Int,
+                 expectedDetails: CostDetails,
+                 newCost: Int,
                  newVersionedResults: Seq[(Int, (ExpectedResult[A], Option[CostDetails]))]): Expected[A] =
       new Expected[A](ExpectedResult(value, Some(cost))) {
         override val newResults = {
