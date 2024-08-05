@@ -185,7 +185,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
     val w = new VLQByteBufferWriter(new ByteArrayBuilder()).putInt(value)
     val bytes = Base16.encode(w.toBytes)
     def deserTest() = {test("deserializeTo", env, ext,
-      s"{ val ba = fromBase16(\"$bytes\"); Global.deserializeTo[Int](ba) == $value }",
+      s"""{ val ba = fromBase16("$bytes"); Global.deserializeTo[Int](ba) == $value }""",
       null,
       true
     )}
@@ -204,7 +204,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
 
     def deserTest() = {
       test("deserializeTo", env, ext,
-        s"{val ba = fromBase16(\"$bytes\"); val coll = Global.deserializeTo[Coll[Int]](ba); coll(0) == 5 }",
+        s"""{val ba = fromBase16("$bytes"); val coll = Global.deserializeTo[Coll[Int]](ba); coll(0) == 5 }""",
         null,
         true
       )

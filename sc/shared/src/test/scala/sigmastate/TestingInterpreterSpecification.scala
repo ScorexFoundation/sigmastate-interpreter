@@ -15,6 +15,10 @@ import sigma.Colls
 import sigma.VersionContext.V6SoftForkVersion
 import sigma.data.{CAND, CAvlTree, ProveDlog, SigmaBoolean, TrivialProp}
 import sigma.interpreter.ContextExtension
+import scorex.util.encode.Base58
+import sigma.VersionContext
+import sigma.crypto.CryptoConstants
+import sigma.data.{AvlTreeData, CAND, ProveDlog, SigmaBoolean, TrivialProp}
 import sigma.util.Extensions.IntOps
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
 import sigmastate.helpers.TestingHelpers._
@@ -272,6 +276,46 @@ class TestingInterpreterSpecification extends CompilerTestingCommons
     testWithCasting("toBigInt")
   }
 
+  property("BigInt downcasting to byte") {
+    def test() = testEval("{ sigmaProp(0L.toBigInt.toByte <= CONTEXT.preHeader.version) }")
+    if(VersionContext.current.isV6SoftForkActivated) {
+      test()
+    } else {
+      an[Exception] shouldBe thrownBy(test())
+    }
+  }
+
+  property("BigInt downcasting to short") {
+    def test() = testEval("{ sigmaProp(0L.toBigInt.toShort <= CONTEXT.preHeader.version.toShort) }")
+    if(VersionContext.current.isV6SoftForkActivated) {
+      test()
+    } else {
+      an[Exception] shouldBe thrownBy(test())
+    }
+  }
+
+  property("BigInt downcasting to int") {
+    def test() = testEval("{ sigmaProp(1L.toBigInt.toInt < CONTEXT.preHeader.timestamp.toInt) }")
+    if(VersionContext.current.isV6SoftForkActivated) {
+      test()
+    } else {
+      an[Exception] shouldBe thrownBy(test())
+    }
+  }
+
+  property("BigInt downcasting to long") {
+    def test() = testEval("{ sigmaProp(1L.toBigInt.toLong < CONTEXT.preHeader.timestamp) }")
+    if(VersionContext.current.isV6SoftForkActivated) {
+      test()
+    } else {
+      an[Exception] shouldBe thrownBy(test())
+    }
+  }
+
+  property("upcasting to bigint") {
+    testEval("{ sigmaProp(1L.toBigInt < bigInt(\"2\")) }")
+  }
+
   property("Evaluate arithmetic ops") {
     def testWithCasting(castSuffix: String): Unit = {
       testEval(s"1.$castSuffix + 2.$castSuffix == 3.$castSuffix")
@@ -438,9 +482,6 @@ class TestingInterpreterSpecification extends CompilerTestingCommons
   }
 
   property("checkPow") {
-
-    //todo: check invalid header
-
     val source = """ {
                    |     val h = CONTEXT.headers(0)
                    |      h.checkPow
