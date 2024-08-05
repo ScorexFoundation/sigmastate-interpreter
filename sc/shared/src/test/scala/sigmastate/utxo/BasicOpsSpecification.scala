@@ -24,7 +24,6 @@ import sigma.serialization.ErgoTreeSerializer
 import sigmastate.utils.Helpers._
 
 import java.math.BigInteger
-import scala.reflect.internal.pickling.PickleFormat
 
 class BasicOpsSpecification extends CompilerTestingCommons
   with CompilerCrossVersionProps {

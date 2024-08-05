@@ -31,6 +31,9 @@ class SigmaBinderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Mat
     res
   }
 
+  /** Checks that parsing and binding results in the expected value.
+    * @return the inferred type of the expression
+    */
   def checkBound(env: ScriptEnv, x: String, expected: SValue) = {
     val bound = bind(env, x)
     if (expected != bound) {

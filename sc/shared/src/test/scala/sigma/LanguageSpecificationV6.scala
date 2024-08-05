@@ -419,17 +419,15 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
           cost = 1793,
           expectedDetails = CostDetails.ZeroCost,
           newCost = 2065,
-          newVersionedResults = expectedSuccessForAllTreeVersions(Helpers.decodeBytes("100108d27300"), 2065, costDetails(1)),
+          newVersionedResults = expectedSuccessForAllTreeVersions(Helpers.decodeBytes("100108d27300"), 2065, costDetails(1))
         ),
         // for tree version > 0, the result depend on activated version
-        {
-          (Coll(t2.bytes: _*), 0) -> Expected(
-            Success(expectedTreeBytes_beforeV6),
-            cost = 1793,
-            expectedDetails = CostDetails.ZeroCost,
-            newCost = 2065,
-            newVersionedResults = expectedSuccessForAllTreeVersions(expectedTreeBytes_V6, 2065, costDetails(1)))
-        }
+        (Coll(t2.bytes: _*), 0) -> Expected(
+          Success(expectedTreeBytes_beforeV6),
+          cost = 1793,
+          expectedDetails = CostDetails.ZeroCost,
+          newCost = 2065,
+          newVersionedResults = expectedSuccessForAllTreeVersions(expectedTreeBytes_V6, 2065, costDetails(1)))
       ),
       changedFeature(
         changedInVersion = VersionContext.V6SoftForkVersion,
@@ -464,4 +462,5 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
     tree.constants.length shouldBe t2.constants.length
     tree.root shouldBe t2.root
   }
+
 }
