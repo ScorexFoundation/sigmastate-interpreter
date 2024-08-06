@@ -1458,14 +1458,10 @@ case object SHeaderMethods extends MonoTypeMethods {
 
   // cost of checkPoW is 700 as about 2*32 hashes required, and 1 hash (id) over short data costs 10
   lazy val checkPowMethod = SMethod(
-    this, "checkPow", SFunc(Array(SHeader), SBoolean), 16, FixedCost(JitCost(700)))
+    this, "checkPow", SFunc(Array(SHeader), SBoolean), 16, FixedCost(JitCost(700)),
+    sinceVersion = VersionContext.V6SoftForkVersion)
     .withIRInfo(MethodCallIrBuilder)
     .withInfo(MethodCall, "Validate header's proof-of-work")
-
-  def checkPow_eval(mc: MethodCall, G: SigmaDslBuilder, header: Header)
-                 (implicit E: ErgoTreeEvaluator): Boolean = {
-    E.checkPow_eval(mc, header)
-  }
 
   private lazy val v5Methods = super.getMethods() ++ Seq(
     idMethod, versionMethod, parentIdMethod, ADProofsRootMethod, stateRootMethod, transactionsRootMethod,

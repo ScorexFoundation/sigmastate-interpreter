@@ -75,7 +75,8 @@ case class SMethod(
     irInfo: MethodIRInfo,
     docInfo: Option[OperationInfo],
     costFunc: Option[MethodCostFunc],
-    userDefinedInvoke: Option[SMethod.InvokeHandler]
+    userDefinedInvoke: Option[SMethod.InvokeHandler],
+    sinceVersion: Byte
 ) {
 
   /** Operation descriptor of this method. */
@@ -314,7 +315,17 @@ object SMethod {
   ): SMethod = {
     SMethod(
       objType, name, stype, methodId, costKind, explicitTypeArgs,
-      MethodIRInfo(None, None, None), None, None, None)
+      MethodIRInfo(None, None, None), None, None, None, 0)
+  }
+
+  /** Convenience factory method. */
+  def apply(objType: MethodsContainer, name: String, stype: SFunc,
+            methodId: Byte,
+            costKind: CostKind,
+            sinceVersion: Byte): SMethod = {
+    SMethod(
+      objType, name, stype, methodId, costKind, Nil,
+      MethodIRInfo(None, None, None), None, None, None, sinceVersion)
   }
 
 

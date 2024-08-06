@@ -1,10 +1,12 @@
 package sigma
 
+import org.ergoplatform.ErgoHeader
+import scorex.util.encode.Base16
 import sigma.ast.ErgoTree.ZeroHeader
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.syntax.TrueSigmaProp
 import sigma.ast._
-import sigma.data.{CBigInt, ExactNumeric}
+import sigma.data.{CBigInt, CHeader, ExactNumeric}
 import sigma.eval.{CostDetails, SigmaDsl, TracedCost}
 import sigma.util.Extensions.{BooleanOps, ByteOps, IntOps, LongOps}
 import sigmastate.exceptions.MethodNotFound
@@ -331,34 +333,6 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
     }
   }
 
-  property("Header new methods") {
-    def checkPoW = newFeature({ (x: Header) => x.checkPow},
-      "{ (x: Header) => x.checkPow }",
-      FuncValue(
-        Array((1, SHeader)),
-        MethodCall.typed[Value[SBoolean.type]](
-          ValUse(1, SHeader),
-          SHeaderMethods.getMethodByName("checkPow"),
-          IndexedSeq(),
-          Map()
-        )
-      ),
-      sinceVersion = VersionContext.V6SoftForkVersion)
-
-    if (VersionContext.current.isV6SoftForkActivated) {
-      forAll { x: Header =>
-        Seq(checkPoW).map(_.checkEquality(x))
-      }
-    } else {
-      an[Exception] shouldBe thrownBy {
-        forAll { x: Header =>
-          Seq(checkPoW).map(_.checkEquality(x))
-        }
-      }
-    }
-
-  }
-
   // TODO v6.0: implement Option.fold (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479)
   property("Option new methods") {
     val n = ExactNumeric.LongIsExactNumeric
@@ -489,6 +463,37 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
     tree.header shouldBe t2.header
     tree.constants.length shouldBe t2.constants.length
     tree.root shouldBe t2.root
+  }
+
+  property("Header new methods") {
+
+    def checkPoW = {
+      newFeature(
+        { (x: Header) => x.checkPow},
+        "{ (x: Header) => x.checkPow }",
+        FuncValue(
+          Array((1, SHeader)),
+          MethodCall.typed[Value[SBoolean.type]](
+            ValUse(1, SHeader),
+            SHeaderMethods.checkPowMethod,
+            IndexedSeq(),
+            Map()
+          )
+        ),
+        sinceVersion = VersionContext.V6SoftForkVersion
+      )
+    }
+
+    // bytes of real mainnet block header at height 614,440
+    val headerBytes = "02ac2101807f0000ca01ff0119db227f202201007f62000177a080005d440896d05d3f80dcff7f5e7f59007294c180808d0158d1ff6ba10000f901c7f0ef87dcfff17fffacb6ff7f7f1180d2ff7f1e24ffffe1ff937f807f0797b9ff6ebdae007e5c8c00b8403d3701557181c8df800001b6d5009e2201c6ff807d71808c00019780f087adb3fcdbc0b3441480887f80007f4b01cf7f013ff1ffff564a0000b9a54f00770e807f41ff88c00240000080c0250000000003bedaee069ff4829500b3c07c4d5fe6b3ea3d3bf76c5c28c1d4dcdb1bed0ade0c0000000000003105"
+    val header1 = new CHeader(ErgoHeader.sigmaSerializer.fromBytes(Base16.decode(headerBytes).get))
+
+    verifyCases(
+      Seq(
+        header1 -> new Expected(ExpectedResult(Success(true), None))
+      ),
+      checkPoW
+    )
   }
 
 }
