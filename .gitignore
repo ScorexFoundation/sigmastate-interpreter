@@ -8,6 +8,8 @@
 *.fdb_latexmk
 *.gz
 
+
+yarn.lock
 *.log
 docs/spec/out/
 test-out/

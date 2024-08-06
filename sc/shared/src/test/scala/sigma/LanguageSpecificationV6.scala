@@ -1,10 +1,14 @@
 package sigma
 
-import sigma.ast.{Apply, Downcast, FixedCost, FixedCostItem, FuncValue, GetVar, JitCost, OptionGet, SBigInt, SByte, SInt, SLong, SShort, ValUse}
+import sigma.ast.ErgoTree.ZeroHeader
+import sigma.ast.SCollection.SByteArray
+import sigma.ast.syntax.TrueSigmaProp
+import sigma.ast._
 import sigma.data.{CBigInt, ExactNumeric}
-import sigma.eval.SigmaDsl
+import sigma.eval.{CostDetails, SigmaDsl, TracedCost}
 import sigma.util.Extensions.{BooleanOps, ByteOps, IntOps, LongOps}
 import sigmastate.exceptions.MethodNotFound
+import sigmastate.utils.Helpers
 
 import java.math.BigInteger
 import scala.util.Success
@@ -16,17 +20,6 @@ import scala.util.Success
   */
 class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
   override def languageVersion: Byte = VersionContext.V6SoftForkVersion
-
-  implicit override def evalSettings = super.evalSettings.copy(printTestVectors = true)
-
-
-  val baseTrace = Array(
-    FixedCostItem(Apply),
-    FixedCostItem(FuncValue),
-    FixedCostItem(GetVar),
-    FixedCostItem(OptionGet),
-    FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5)))
-  )
 
   property("Boolean.toByte") {
     val toByte = newFeature((x: Boolean) => x.toByte, "{ (x: Boolean) => x.toByte }",
@@ -387,5 +380,87 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
     }
   }
 
+  property("Fix substConstants in v6.0 for ErgoTree version > 0") {
+    // tree with one segregated constant and v0
+    val t1 = ErgoTree(
+      header = ErgoTree.setConstantSegregation(ZeroHeader),
+      constants = Vector(TrueSigmaProp),
+      ConstantPlaceholder(0, SSigmaProp))
+
+    // tree with one segregated constant and max supported version
+    val t2 = ErgoTree(
+      header = ErgoTree.setConstantSegregation(
+        ErgoTree.headerWithVersion(ZeroHeader, VersionContext.MaxSupportedScriptVersion)
+      ),
+      Vector(TrueSigmaProp),
+      ConstantPlaceholder(0, SSigmaProp))
+
+    def costDetails(nItems: Int) = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(SelectField),
+        FixedCostItem(ConcreteCollection),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(ConcreteCollection),
+        FixedCostItem(Constant),
+        FixedCostItem(BoolToSigmaProp),
+        ast.SeqCostItem(CompanionDesc(SubstConstants), PerItemCost(JitCost(100), JitCost(100), 1), nItems)
+      )
+    )
+
+    val expectedTreeBytes_beforeV6 = Helpers.decodeBytes("1b0108d27300")
+    val expectedTreeBytes_V6 = Helpers.decodeBytes("1b050108d27300")
+
+    verifyCases(
+      Seq(
+        // for tree v0, the result is the same for all versions
+        (Coll(t1.bytes: _*), 0) -> Expected(
+          Success(Helpers.decodeBytes("100108d27300")),
+          cost = 1793,
+          expectedDetails = CostDetails.ZeroCost,
+          newCost = 2065,
+          newVersionedResults = expectedSuccessForAllTreeVersions(Helpers.decodeBytes("100108d27300"), 2065, costDetails(1))
+        ),
+        // for tree version > 0, the result depend on activated version
+        (Coll(t2.bytes: _*), 0) -> Expected(
+          Success(expectedTreeBytes_beforeV6),
+          cost = 1793,
+          expectedDetails = CostDetails.ZeroCost,
+          newCost = 2065,
+          newVersionedResults = expectedSuccessForAllTreeVersions(expectedTreeBytes_V6, 2065, costDetails(1)))
+      ),
+      changedFeature(
+        changedInVersion = VersionContext.V6SoftForkVersion,
+        { (x: (Coll[Byte], Int)) =>
+          SigmaDsl.substConstants(x._1, Coll[Int](x._2), Coll[Any](SigmaDsl.sigmaProp(false))(sigma.AnyType))
+        },
+        { (x: (Coll[Byte], Int)) =>
+          SigmaDsl.substConstants(x._1, Coll[Int](x._2), Coll[Any](SigmaDsl.sigmaProp(false))(sigma.AnyType))
+        },
+        "{ (x: (Coll[Byte], Int)) => substConstants[Any](x._1, Coll[Int](x._2), Coll[Any](sigmaProp(false))) }",
+        FuncValue(
+          Vector((1, SPair(SByteArray, SInt))),
+          SubstConstants(
+            SelectField.typed[Value[SCollection[SByte.type]]](ValUse(1, SPair(SByteArray, SInt)), 1.toByte),
+            ConcreteCollection(
+              Array(SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SByteArray, SInt)), 2.toByte)),
+              SInt
+            ),
+            ConcreteCollection(Array(BoolToSigmaProp(FalseLeaf)), SSigmaProp)
+          )
+        )
+      )
+    )
+
+    // before v6.0 the expected tree is not parsable
+    ErgoTree.fromBytes(expectedTreeBytes_beforeV6.toArray).isRightParsed shouldBe false
+
+    // in v6.0 the expected tree should be parsable and similar to the original tree
+    val tree = ErgoTree.fromBytes(expectedTreeBytes_V6.toArray)
+    tree.isRightParsed shouldBe true
+    tree.header shouldBe t2.header
+    tree.constants.length shouldBe t2.constants.length
+    tree.root shouldBe t2.root
+  }
 
 }
