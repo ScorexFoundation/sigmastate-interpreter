@@ -218,14 +218,6 @@ class CErgoTreeEvaluator(
     }
   }
 
-  /** Implements evaluation of Header.checkPow method call ErgoTree node. */
-  override def checkPow_eval(mc: MethodCall, header: Header): Boolean = {
-    val checkPowCostInfo = OperationCostInfo(checkPowMethod.costKind.asInstanceOf[FixedCost], NamedDesc("Header.checkPow"))
-    fixedCostOp(checkPowCostInfo){
-      header.checkPow
-    }(this)
-  }
-
   /** Evaluates the given expression in the given data environment. */
   def eval(env: DataEnv, exp: SValue): Any = {
     VersionContext.checkVersions(context.activatedScriptVersion, context.currentErgoTreeVersion)

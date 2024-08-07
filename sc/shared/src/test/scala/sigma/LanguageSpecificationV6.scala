@@ -1,13 +1,17 @@
 package sigma
 
+import org.ergoplatform.ErgoHeader
+import scorex.util.encode.Base16
+import sigma.ast.ErgoTree.ZeroHeader
 import sigma.ast.SCollection.SByteArray
-import sigma.ast.{Apply, BigIntConstant, BlockValue, Downcast, FixedCost, FixedCostItem, FuncValue, GT, GetVar, Global, IntConstant, JitCost, MethodCall, OptionGet, SBigInt, SByte, SCollection, SGlobal, SGlobalMethods, SInt, SLong, SPair, SShort, SelectField, ValDef, ValUse, Value}
-import sigma.ast.{Apply, Downcast, FixedCost, FixedCostItem, FuncValue, GetVar, JitCost, MethodCall, OptionGet, SBigInt, SBoolean, SByte, SHeader, SHeaderMethods, SInt, SLong, SShort, ValUse, Value}
-import sigma.data.{CBigInt, ExactNumeric}
-import sigma.eval.SigmaDsl
+import sigma.ast.syntax.TrueSigmaProp
+import sigma.ast._
+import sigma.data.{CBigInt, CHeader, ExactNumeric}
+import sigma.eval.{CostDetails, SigmaDsl, TracedCost}
 import sigma.pow.Autolykos2PowValidation
 import sigma.util.Extensions.{BooleanOps, ByteOps, IntOps, LongOps}
 import sigmastate.exceptions.MethodNotFound
+import sigmastate.utils.Helpers
 
 import java.math.BigInteger
 import scala.util.Success
@@ -19,17 +23,6 @@ import scala.util.Success
   */
 class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
   override def languageVersion: Byte = VersionContext.V6SoftForkVersion
-
-  implicit override def evalSettings = super.evalSettings.copy(printTestVectors = true)
-
-
-  val baseTrace = Array(
-    FixedCostItem(Apply),
-    FixedCostItem(FuncValue),
-    FixedCostItem(GetVar),
-    FixedCostItem(OptionGet),
-    FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5)))
-  )
 
   property("Boolean.toByte") {
     val toByte = newFeature((x: Boolean) => x.toByte, "{ (x: Boolean) => x.toByte }",
@@ -114,44 +107,6 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
       }
       forAll { x: (Short, Short) =>
         Seq(compareTo, bitOr, bitAnd).foreach(_.checkEquality(x))
-      }
-    }
-  }
-
-  property("Global.powHit") {
-
-    def powHit = newFeature(
-      { (x: Coll[Byte]) => Autolykos2PowValidation.hitForVersion2ForMessageWithChecks(8, x.toArray, x.toArray, x.toArray, 255) > 0 },
-      "{ (x: Coll[Byte]) => Global.powHit(8, x, x, x, 255) > 0 }",
-      FuncValue(
-        Array((1, SByteArray)),
-        GT(
-          MethodCall.typed[Value[SBigInt.type]](
-            Global,
-            SGlobalMethods.getMethodByName("powHit"),
-            Array(
-              IntConstant(8),
-              ValUse(1, SByteArray),
-              ValUse(1, SByteArray),
-              ValUse(1, SByteArray),
-              IntConstant(255)
-            ),
-            Map()
-          ),
-          BigIntConstant(CBigInt(new BigInteger("0", 16)))
-        )
-      ),
-      sinceVersion = VersionContext.V6SoftForkVersion)
-
-    if (VersionContext.current.isV6SoftForkActivated) {
-      forAll { x: Coll[Byte] =>
-        Seq(powHit).map(_.checkEquality(x))
-      }
-    } else {
-      an[Exception] shouldBe thrownBy {
-        forAll { x: Coll[Byte] =>
-          Seq(powHit).map(_.checkEquality(x))
-        }
       }
     }
   }
@@ -379,34 +334,6 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
     }
   }
 
-  property("Header new methods") {
-    def checkPoW = newFeature({ (x: Header) => x.checkPow},
-      "{ (x: Header) => x.checkPow }",
-      FuncValue(
-        Array((1, SHeader)),
-        MethodCall.typed[Value[SBoolean.type]](
-          ValUse(1, SHeader),
-          SHeaderMethods.getMethodByName("checkPow"),
-          IndexedSeq(),
-          Map()
-        )
-      ),
-      sinceVersion = VersionContext.V6SoftForkVersion)
-
-    if (VersionContext.current.isV6SoftForkActivated) {
-      forAll { x: Header =>
-        Seq(checkPoW).map(_.checkEquality(x))
-      }
-    } else {
-      an[Exception] shouldBe thrownBy {
-        forAll { x: Header =>
-          Seq(checkPoW).map(_.checkEquality(x))
-        }
-      }
-    }
-
-  }
-
   // TODO v6.0: implement Option.fold (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479)
   property("Option new methods") {
     val n = ExactNumeric.LongIsExactNumeric
@@ -456,5 +383,164 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
     }
   }
 
+  property("Fix substConstants in v6.0 for ErgoTree version > 0") {
+    // tree with one segregated constant and v0
+    val t1 = ErgoTree(
+      header = ErgoTree.setConstantSegregation(ZeroHeader),
+      constants = Vector(TrueSigmaProp),
+      ConstantPlaceholder(0, SSigmaProp))
+
+    // tree with one segregated constant and max supported version
+    val t2 = ErgoTree(
+      header = ErgoTree.setConstantSegregation(
+        ErgoTree.headerWithVersion(ZeroHeader, VersionContext.MaxSupportedScriptVersion)
+      ),
+      Vector(TrueSigmaProp),
+      ConstantPlaceholder(0, SSigmaProp))
+
+    def costDetails(nItems: Int) = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(SelectField),
+        FixedCostItem(ConcreteCollection),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(ConcreteCollection),
+        FixedCostItem(Constant),
+        FixedCostItem(BoolToSigmaProp),
+        ast.SeqCostItem(CompanionDesc(SubstConstants), PerItemCost(JitCost(100), JitCost(100), 1), nItems)
+      )
+    )
+
+    val expectedTreeBytes_beforeV6 = Helpers.decodeBytes("1b0108d27300")
+    val expectedTreeBytes_V6 = Helpers.decodeBytes("1b050108d27300")
+
+    verifyCases(
+      Seq(
+        // for tree v0, the result is the same for all versions
+        (Coll(t1.bytes: _*), 0) -> Expected(
+          Success(Helpers.decodeBytes("100108d27300")),
+          cost = 1793,
+          expectedDetails = CostDetails.ZeroCost,
+          newCost = 2065,
+          newVersionedResults = expectedSuccessForAllTreeVersions(Helpers.decodeBytes("100108d27300"), 2065, costDetails(1))
+        ),
+        // for tree version > 0, the result depend on activated version
+        (Coll(t2.bytes: _*), 0) -> Expected(
+          Success(expectedTreeBytes_beforeV6),
+          cost = 1793,
+          expectedDetails = CostDetails.ZeroCost,
+          newCost = 2065,
+          newVersionedResults = expectedSuccessForAllTreeVersions(expectedTreeBytes_V6, 2065, costDetails(1)))
+      ),
+      changedFeature(
+        changedInVersion = VersionContext.V6SoftForkVersion,
+        { (x: (Coll[Byte], Int)) =>
+          SigmaDsl.substConstants(x._1, Coll[Int](x._2), Coll[Any](SigmaDsl.sigmaProp(false))(sigma.AnyType))
+        },
+        { (x: (Coll[Byte], Int)) =>
+          SigmaDsl.substConstants(x._1, Coll[Int](x._2), Coll[Any](SigmaDsl.sigmaProp(false))(sigma.AnyType))
+        },
+        "{ (x: (Coll[Byte], Int)) => substConstants[Any](x._1, Coll[Int](x._2), Coll[Any](sigmaProp(false))) }",
+        FuncValue(
+          Vector((1, SPair(SByteArray, SInt))),
+          SubstConstants(
+            SelectField.typed[Value[SCollection[SByte.type]]](ValUse(1, SPair(SByteArray, SInt)), 1.toByte),
+            ConcreteCollection(
+              Array(SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SByteArray, SInt)), 2.toByte)),
+              SInt
+            ),
+            ConcreteCollection(Array(BoolToSigmaProp(FalseLeaf)), SSigmaProp)
+          )
+        )
+      )
+    )
+
+    // before v6.0 the expected tree is not parsable
+    ErgoTree.fromBytes(expectedTreeBytes_beforeV6.toArray).isRightParsed shouldBe false
+
+    // in v6.0 the expected tree should be parsable and similar to the original tree
+    val tree = ErgoTree.fromBytes(expectedTreeBytes_V6.toArray)
+    tree.isRightParsed shouldBe true
+    tree.header shouldBe t2.header
+    tree.constants.length shouldBe t2.constants.length
+    tree.root shouldBe t2.root
+  }
+
+  property("Header new methods") {
+
+    def checkPoW = {
+      newFeature(
+        { (x: Header) => x.checkPow},
+        "{ (x: Header) => x.checkPow }",
+        FuncValue(
+          Array((1, SHeader)),
+          MethodCall.typed[Value[SBoolean.type]](
+            ValUse(1, SHeader),
+            SHeaderMethods.checkPowMethod,
+            IndexedSeq(),
+            Map()
+          )
+        ),
+        sinceVersion = VersionContext.V6SoftForkVersion
+      )
+    }
+
+    // bytes of real mainnet block header at height 614,440
+    val headerBytes = "02ac2101807f0000ca01ff0119db227f202201007f62000177a080005d440896d05d3f80dcff7f5e7f59007294c180808d0158d1ff6ba10000f901c7f0ef87dcfff17fffacb6ff7f7f1180d2ff7f1e24ffffe1ff937f807f0797b9ff6ebdae007e5c8c00b8403d3701557181c8df800001b6d5009e2201c6ff807d71808c00019780f087adb3fcdbc0b3441480887f80007f4b01cf7f013ff1ffff564a0000b9a54f00770e807f41ff88c00240000080c0250000000003bedaee069ff4829500b3c07c4d5fe6b3ea3d3bf76c5c28c1d4dcdb1bed0ade0c0000000000003105"
+    val header1 = new CHeader(ErgoHeader.sigmaSerializer.fromBytes(Base16.decode(headerBytes).get))
+
+    verifyCases(
+      Seq(
+        header1 -> new Expected(ExpectedResult(Success(true), None))
+      ),
+      checkPoW
+    )
+  }
+
+  property("Global.powHit") {
+    def powHit: Feature[Coll[Byte], sigma.BigInt] = newFeature(
+      { (x: Coll[Byte]) =>
+        val msg = x.slice(0, 7).toArray
+        val nonce = x.slice(7, 15).toArray
+        val h = x.slice(15, 19).toArray
+        CBigInt(Autolykos2PowValidation.hitForVersion2ForMessageWithChecks(8, msg, nonce, h, 255).bigInteger) },
+      "{ (x: Coll[Byte]) => val msg = x.slice(0,7); val nonce = x.slice(7,15); val h = x.slice(15,19); " +
+         "Global.powHit(32, msg, nonce, h, 1024 * 1024) }",
+      FuncValue(
+        Array((1, SByteArray)),
+        GT(
+          MethodCall.typed[Value[SBigInt.type]](
+            Global,
+            SGlobalMethods.powHitMethod,
+            Array(
+              IntConstant(8),
+              ValUse(1, SByteArray),
+              ValUse(1, SByteArray),
+              ValUse(1, SByteArray),
+              IntConstant(255)
+            ),
+            Map()
+          ),
+          BigIntConstant(CBigInt(new BigInteger("0", 16)))
+        )
+      ),
+      sinceVersion = VersionContext.V6SoftForkVersion)
+
+    // bytes of real mainnet block header at height 614,440
+    val msg = Base16.decode("0a101b8c6a4f2e").get
+    val nonce = Base16.decode("000000000000002c").get
+    val h = Base16.decode("00000000").get
+    val x = Colls.fromArray(msg ++ nonce ++ h)
+
+    val hit = CBigInt(new BigInteger("326674862673836209462483453386286740270338859283019276168539876024851191344"))
+
+    verifyCases(
+      Seq(
+        x -> new Expected(ExpectedResult(Success(hit), None))
+      ),
+      powHit
+    )
+
+  }
 
 }

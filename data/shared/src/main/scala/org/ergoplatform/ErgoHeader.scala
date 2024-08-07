@@ -7,6 +7,10 @@ import sigma.Colls
 import sigma.crypto.{BigIntegers, CryptoConstants, EcPointType}
 import sigma.serialization.{GroupElementSerializer, SigmaByteReader, SigmaByteWriter, SigmaSerializer}
 
+import scala.runtime.ScalaRunTime
+import scala.util.hashing.MurmurHash3
+
+
 
 /**
   * Solution for an Autolykos PoW puzzle.
@@ -26,6 +30,25 @@ class AutolykosSolution(val pk: EcPointType,
 
     val encodedPk: Array[Byte] = GroupElementSerializer.toBytes(pk)
 
+    override def hashCode(): Int = {
+        var h = pk.hashCode()
+        h = h * 31 + w.hashCode()
+        h = h * 31 + MurmurHash3.arrayHash(n)
+        h = h * 31 + d.hashCode()
+        h
+    }
+
+    override def equals(obj: Any): Boolean = {
+        obj match {
+            case other: AutolykosSolution =>
+                this.pk == other.pk &&
+                  this.n.sameElements(other.n) &&
+                  this.w == other.w &&
+                  this.d == other.d
+
+            case _ => false
+        }
+    }
 }
 
 
