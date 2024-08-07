@@ -334,7 +334,11 @@ class TestingInterpreterSpecification extends CompilerTestingCommons
     if (activatedVersionInTests < V6SoftForkVersion) {
       an [sigmastate.exceptions.MethodNotFound] should be thrownBy testEval(source)
     } else {
-      testEval(source)
+      if(ergoTreeVersionInTests >= V6SoftForkVersion) {
+        testEval(source)
+      } else {
+        an [java.lang.reflect.InvocationTargetException] should be thrownBy testEval(source)
+      }
     }
   }
 
