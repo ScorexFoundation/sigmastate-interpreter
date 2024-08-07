@@ -3,17 +3,15 @@ package sigmastate.eval
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import scorex.util.encode.Base16
-import sigma.ast.{ByteArrayConstant, ErgoTree, Global, IntConstant, JitCost, MethodCall, SGlobal, SGlobalMethods}
+import sigma.Extensions.ArrayOps
+import sigma.ast.{ByteArrayConstant, ErgoTree, Global, IntConstant, JitCost, MethodCall, SGlobalMethods}
 import sigma.crypto.SecP256K1Group
-import sigma.data.{CBigInt, CSigmaDslBuilder, TrivialProp}
-import sigma.data.{CSigmaDslBuilder => SigmaDsl, TrivialProp}
+import sigma.data.{CBigInt, TrivialProp, CSigmaDslBuilder => SigmaDsl}
 import sigma.util.Extensions.SigmaBooleanOps
-
 import java.math.BigInteger
-import sigma.{ContractsTestkit, SigmaDslBuilder, SigmaProp}
+import sigma.{Box, ContractsTestkit, SigmaProp, VersionContext}
 import sigmastate.interpreter.CErgoTreeEvaluator.DefaultProfiler
 import sigmastate.interpreter.{CErgoTreeEvaluator, CostAccumulator}
-import sigma.{ContractsTestkit, SigmaProp}
 
 import scala.language.implicitConversions
 
@@ -85,18 +83,26 @@ class BasicOpsTests extends AnyFunSuite with ContractsTestkit with Matchers {
     val accumulator = new CostAccumulator(
       initialCost = JitCost(0),
       costLimit = Some(JitCost.fromBlockCost(es.scriptCostLimitInEvaluator)))
+
+    val context = new CContext(
+      noInputs.toColl, noHeaders, dummyPreHeader,
+      Array[Box]().toColl, Array[Box]().toColl, 0, null, 0, null,
+      dummyPubkey.toColl, Colls.emptyColl, VersionContext.V6SoftForkVersion, VersionContext.V6SoftForkVersion)
+
     val evaluator = new CErgoTreeEvaluator(
-      context = null,
+      context = context,
       constants = ErgoTree.EmptyConstants,
       coster = accumulator, DefaultProfiler, es)
 
 
-    val res = MethodCall(Global, SGlobalMethods.powHitMethod,
-                          IndexedSeq(IntConstant(k), ByteArrayConstant(msg), ByteArrayConstant(nonce),
-                                      ByteArrayConstant(hbs), IntConstant(N)), Map.empty)
-                .evalTo[sigma.BigInt](Map.empty)(evaluator)
+    VersionContext.withVersions(VersionContext.V6SoftForkVersion, VersionContext.V6SoftForkVersion) {
+      val res = MethodCall(Global, SGlobalMethods.powHitMethod,
+        IndexedSeq(IntConstant(k), ByteArrayConstant(msg), ByteArrayConstant(nonce),
+          ByteArrayConstant(hbs), IntConstant(N)), Map.empty)
+        .evalTo[sigma.BigInt](Map.empty)(evaluator)
 
-    res should be (CBigInt(new BigInteger("326674862673836209462483453386286740270338859283019276168539876024851191344")))
+      res should be(CBigInt(new BigInteger("326674862673836209462483453386286740270338859283019276168539876024851191344")))
+    }
   }
 
 }

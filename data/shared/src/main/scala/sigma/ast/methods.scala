@@ -1530,7 +1530,8 @@ case object SGlobalMethods extends MonoTypeMethods {
       ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))
 
   lazy val powHitMethod = SMethod(
-    this, "powHit", SFunc(Array(SGlobal, SInt, SByteArray, SByteArray, SByteArray, SInt), SBigInt), 3, PowHitCostKind)
+    this, "powHit", SFunc(Array(SGlobal, SInt, SByteArray, SByteArray, SByteArray, SInt), SBigInt), methodId = 3,
+    PowHitCostKind, sinceVersion = VersionContext.V6SoftForkVersion)
     .withIRInfo(MethodCallIrBuilder)
     .withInfo(MethodCall,
       "Calculating Proof-of-Work hit (Autolykos 2 hash value) for custom Autolykos 2 function",
@@ -1543,6 +1544,9 @@ case object SGlobalMethods extends MonoTypeMethods {
 
   def powHit_eval(mc: MethodCall, G: SigmaDslBuilder, k: Int, msg: Coll[Byte], nonce: Coll[Byte], h: Coll[Byte], N: Int)
                  (implicit E: ErgoTreeEvaluator): BigInt = {
+    if(E.context.currentErgoTreeVersion < VersionContext.V6SoftForkVersion) {
+      syntax.error(s"Global.powHit is called from a tree with version < 3")
+    }
     val cost = PowHitCostKind.cost(k, msg, nonce, h)
     E.addCost(FixedCost(cost), powHitMethod.opDesc)
     CBigInt(Autolykos2PowValidation.hitForVersion2ForMessageWithChecks(k, msg.toArray, nonce.toArray, h.toArray, N).bigInteger)

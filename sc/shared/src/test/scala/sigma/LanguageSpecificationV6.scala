@@ -503,25 +503,22 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
         val msg = x.slice(0, 7).toArray
         val nonce = x.slice(7, 15).toArray
         val h = x.slice(15, 19).toArray
-        CBigInt(Autolykos2PowValidation.hitForVersion2ForMessageWithChecks(8, msg, nonce, h, 255).bigInteger) },
+        CBigInt(Autolykos2PowValidation.hitForVersion2ForMessageWithChecks(32, msg, nonce, h, 1024 * 1024).bigInteger) },
       "{ (x: Coll[Byte]) => val msg = x.slice(0,7); val nonce = x.slice(7,15); val h = x.slice(15,19); " +
          "Global.powHit(32, msg, nonce, h, 1024 * 1024) }",
       FuncValue(
         Array((1, SByteArray)),
-        GT(
-          MethodCall.typed[Value[SBigInt.type]](
-            Global,
-            SGlobalMethods.powHitMethod,
-            Array(
-              IntConstant(8),
-              ValUse(1, SByteArray),
-              ValUse(1, SByteArray),
-              ValUse(1, SByteArray),
-              IntConstant(255)
-            ),
-            Map()
+        MethodCall.typed[Value[SBigInt.type]](
+          Global,
+          SGlobalMethods.powHitMethod,
+          Array(
+            IntConstant(32),
+            Slice(ValUse(1, SByteArray), IntConstant(0), IntConstant(7)),
+            Slice(ValUse(1, SByteArray), IntConstant(7), IntConstant(15)),
+            Slice(ValUse(1, SByteArray), IntConstant(15), IntConstant(19)),
+            IntConstant(1048576)
           ),
-          BigIntConstant(CBigInt(new BigInteger("0", 16)))
+          Map()
         )
       ),
       sinceVersion = VersionContext.V6SoftForkVersion)
@@ -531,7 +528,6 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
     val nonce = Base16.decode("000000000000002c").get
     val h = Base16.decode("00000000").get
     val x = Colls.fromArray(msg ++ nonce ++ h)
-
     val hit = CBigInt(new BigInteger("326674862673836209462483453386286740270338859283019276168539876024851191344"))
 
     verifyCases(
