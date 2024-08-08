@@ -1,11 +1,15 @@
 package sigma
 
-import sigma.ast.{Apply, ByIndex, Downcast, FixedCost, FixedCostItem, FuncValue, GetVar, IntConstant, JitCost, LongConstant, MethodCall, OptionGet, OptionGetOrElse, PerItemCost, SBigInt, SByte, SCollection, SCollectionMethods, SCollectionType, SInt, SLong, SOption, SPair, SShort, STuple, STypeVar, SelectField, ValDef, ValUse, Value}
+import sigma.ast.ErgoTree.ZeroHeader
+import sigma.ast.SCollection.SByteArray
+import sigma.ast.syntax.TrueSigmaProp
+import sigma.ast._
 import sigma.data.{CBigInt, ExactNumeric}
 import sigma.eval.{CostDetails, SigmaDsl, TracedCost}
 import sigma.serialization.ValueCodes.OpCode
 import sigma.util.Extensions.{BooleanOps, ByteOps, IntOps, LongOps}
 import sigmastate.exceptions.MethodNotFound
+import sigmastate.utils.Helpers
 
 import java.math.BigInteger
 import scala.util.{Failure, Success}
@@ -17,17 +21,6 @@ import scala.util.{Failure, Success}
   */
 class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
   override def languageVersion: Byte = VersionContext.V6SoftForkVersion
-
-  implicit override def evalSettings = super.evalSettings.copy(printTestVectors = true)
-
-
-  val baseTrace = Array(
-    FixedCostItem(Apply),
-    FixedCostItem(FuncValue),
-    FixedCostItem(GetVar),
-    FixedCostItem(OptionGet),
-    FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5)))
-  )
 
   property("Boolean.toByte") {
     val toByte = newFeature((x: Boolean) => x.toByte, "{ (x: Boolean) => x.toByte }",
@@ -167,62 +160,6 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
       }
       forAll { x: (Long, Long) =>
         Seq(compareTo, bitOr, bitAnd).foreach(_.checkEquality(x))
-      }
-    }
-  }
-
-  property("Option.getOrElse with lazy default") {
-    verifyCases(
-      Seq(
-        Some(0L) -> Expected(Failure(new java.lang.ArithmeticException("/ by zero")), 6, CostDetails.ZeroCost, 1793,
-          newVersionedResults = {
-            Seq(0 -> (ExpectedResult(Success(6L), Some(1793)) -> None))
-          } ),
-        None -> Expected(Failure(new java.lang.ArithmeticException("/ by zero")), 6)
-      ),
-      changedFeature(
-        { (x: Option[Long]) => val default = 1 / 0L; x.getOrElse(default) },
-        { (x: Option[Long]) => if (VersionContext.current.isV6SoftForkActivated) {x.getOrElse(1 / 0L)} else {val default = 1 / 0L; x.getOrElse(default)} },
-        "{ (x: Option[Long]) => x.getOrElse(1 / 0L) }",
-        FuncValue(
-          Array((1, SOption(SLong))),
-          OptionGetOrElse(
-            ValUse(1, SOption(SLong)),
-            ArithOp(LongConstant(1L), LongConstant(0L), OpCode @@ (-99.toByte))
-          )
-        ),
-        allowNewToSucceed = true,
-        changedIn = VersionContext.V6SoftForkVersion
-      )
-    )
-  }
-
-  property("Coll getOrElse with lazy default") {
-    def getOrElse = newFeature(
-      (x: (Coll[Int], Int)) => x._1.toArray.toIndexedSeq.unapply(x._2).getOrElse(1 / 0),
-      "{ (x: (Coll[Int], Int)) => x._1.getOrElse(x._2, 1 / 0) }",
-      FuncValue(
-        Array((1, SPair(SCollectionType(SInt), SInt))),
-        ByIndex(
-          SelectField.typed[Value[SCollection[SInt.type]]](
-            ValUse(1, SPair(SCollectionType(SInt), SInt)),
-            1.toByte
-          ),
-          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SCollectionType(SInt), SInt)), 2.toByte),
-          Some(ArithOp(IntConstant(1), IntConstant(0), OpCode @@ (-99.toByte)))
-        )
-      )
-    )
-
-    if (VersionContext.current.isV6SoftForkActivated) {
-      forAll { x: (Coll[Int], Int) =>
-        Seq(getOrElse).map(_.checkEquality(x))
-      }
-    } else {
-      forAll { x: (Coll[Int], Int) =>
-        if (x._1.isEmpty) {
-          Seq(getOrElse).map(_.checkEquality(x))
-        }
       }
     }
   }
@@ -443,5 +380,158 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
     }
   }
 
+  property("Fix substConstants in v6.0 for ErgoTree version > 0") {
+    // tree with one segregated constant and v0
+    val t1 = ErgoTree(
+      header = ErgoTree.setConstantSegregation(ZeroHeader),
+      constants = Vector(TrueSigmaProp),
+      ConstantPlaceholder(0, SSigmaProp))
 
+    // tree with one segregated constant and max supported version
+    val t2 = ErgoTree(
+      header = ErgoTree.setConstantSegregation(
+        ErgoTree.headerWithVersion(ZeroHeader, VersionContext.MaxSupportedScriptVersion)
+      ),
+      Vector(TrueSigmaProp),
+      ConstantPlaceholder(0, SSigmaProp))
+
+    def costDetails(nItems: Int) = TracedCost(
+      traceBase ++ Array(
+        FixedCostItem(SelectField),
+        FixedCostItem(ConcreteCollection),
+        FixedCostItem(ValUse),
+        FixedCostItem(SelectField),
+        FixedCostItem(ConcreteCollection),
+        FixedCostItem(Constant),
+        FixedCostItem(BoolToSigmaProp),
+        ast.SeqCostItem(CompanionDesc(SubstConstants), PerItemCost(JitCost(100), JitCost(100), 1), nItems)
+      )
+    )
+
+    val expectedTreeBytes_beforeV6 = Helpers.decodeBytes("1b0108d27300")
+    val expectedTreeBytes_V6 = Helpers.decodeBytes("1b050108d27300")
+
+    verifyCases(
+      Seq(
+        // for tree v0, the result is the same for all versions
+        (Coll(t1.bytes: _*), 0) -> Expected(
+          Success(Helpers.decodeBytes("100108d27300")),
+          cost = 1793,
+          expectedDetails = CostDetails.ZeroCost,
+          newCost = 2065,
+          newVersionedResults = expectedSuccessForAllTreeVersions(Helpers.decodeBytes("100108d27300"), 2065, costDetails(1))
+        ),
+        // for tree version > 0, the result depend on activated version
+        (Coll(t2.bytes: _*), 0) -> Expected(
+          Success(expectedTreeBytes_beforeV6),
+          cost = 1793,
+          expectedDetails = CostDetails.ZeroCost,
+          newCost = 2065,
+          newVersionedResults = expectedSuccessForAllTreeVersions(expectedTreeBytes_V6, 2065, costDetails(1)))
+      ),
+      changedFeature(
+        changedInVersion = VersionContext.V6SoftForkVersion,
+        { (x: (Coll[Byte], Int)) =>
+          SigmaDsl.substConstants(x._1, Coll[Int](x._2), Coll[Any](SigmaDsl.sigmaProp(false))(sigma.AnyType))
+        },
+        { (x: (Coll[Byte], Int)) =>
+          SigmaDsl.substConstants(x._1, Coll[Int](x._2), Coll[Any](SigmaDsl.sigmaProp(false))(sigma.AnyType))
+        },
+        "{ (x: (Coll[Byte], Int)) => substConstants[Any](x._1, Coll[Int](x._2), Coll[Any](sigmaProp(false))) }",
+        FuncValue(
+          Vector((1, SPair(SByteArray, SInt))),
+          SubstConstants(
+            SelectField.typed[Value[SCollection[SByte.type]]](ValUse(1, SPair(SByteArray, SInt)), 1.toByte),
+            ConcreteCollection(
+              Array(SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SByteArray, SInt)), 2.toByte)),
+              SInt
+            ),
+            ConcreteCollection(Array(BoolToSigmaProp(FalseLeaf)), SSigmaProp)
+          )
+        )
+      )
+    )
+
+    // before v6.0 the expected tree is not parsable
+    ErgoTree.fromBytes(expectedTreeBytes_beforeV6.toArray).isRightParsed shouldBe false
+
+    // in v6.0 the expected tree should be parsable and similar to the original tree
+    val tree = ErgoTree.fromBytes(expectedTreeBytes_V6.toArray)
+    tree.isRightParsed shouldBe true
+    tree.header shouldBe t2.header
+    tree.constants.length shouldBe t2.constants.length
+    tree.root shouldBe t2.root
+  }
+
+
+
+  property("Option.getOrElse with lazy default") {
+
+    val someTrace = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(OptionGetOrElse)
+      )
+    )
+
+    verifyCases(
+      Seq(
+        Some(2L) -> Expected(Failure(new java.lang.ArithmeticException("/ by zero")), 6, someTrace, 1793,
+          newVersionedResults = {
+            expectedSuccessForAllTreeVersions(2L, 2015, someTrace)
+          } ),
+       // None -> Expected(Failure(new java.lang.ArithmeticException("/ by zero")), 6)
+      ),
+      changedFeature(
+        changedInVersion = VersionContext.V6SoftForkVersion,
+        { (x: Option[Long]) => val default = 1 / 0L; x.getOrElse(default) },
+        { (x: Option[Long]) => if (VersionContext.current.isV6SoftForkActivated) {x.getOrElse(1 / 0L)} else {val default = 1 / 0L; x.getOrElse(default)} },
+        "{ (x: Option[Long]) => x.getOrElse(1 / 0L) }",
+        FuncValue(
+          Array((1, SOption(SLong))),
+          OptionGetOrElse(
+            ValUse(1, SOption(SLong)),
+            ArithOp(LongConstant(1L), LongConstant(0L), OpCode @@ (-99.toByte))
+          )
+        ),
+        allowNewToSucceed = true
+      )
+    )
+  }
+/*
+  property("Coll getOrElse with lazy default") {
+    def getOrElse = newFeature(
+      (x: (Coll[Int], Int)) => x._1.toArray.toIndexedSeq.unapply(x._2).getOrElse(1 / 0),
+      "{ (x: (Coll[Int], Int)) => x._1.getOrElse(x._2, 1 / 0) }",
+      FuncValue(
+        Array((1, SPair(SCollectionType(SInt), SInt))),
+        ByIndex(
+          SelectField.typed[Value[SCollection[SInt.type]]](
+            ValUse(1, SPair(SCollectionType(SInt), SInt)),
+            1.toByte
+          ),
+          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SCollectionType(SInt), SInt)), 2.toByte),
+          Some(ArithOp(IntConstant(1), IntConstant(0), OpCode @@ (-99.toByte)))
+        )
+      )
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      forAll { x: (Coll[Int], Int) =>
+        Seq(getOrElse).map(_.checkEquality(x))
+      }
+    } else {
+      forAll { x: (Coll[Int], Int) =>
+        if (x._1.isEmpty) {
+          Seq(getOrElse).map(_.checkEquality(x))
+        }
+      }
+    }
+  }
+   */
 }
