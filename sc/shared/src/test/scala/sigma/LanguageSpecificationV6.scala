@@ -467,7 +467,7 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
 
   property("Option.getOrElse with lazy default") {
 
-    val someTrace = TracedCost(
+    val trace = TracedCost(
       Array(
         FixedCostItem(Apply),
         FixedCostItem(FuncValue),
@@ -481,11 +481,11 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
 
     verifyCases(
       Seq(
-        Some(2L) -> Expected(Failure(new java.lang.ArithmeticException("/ by zero")), 6, someTrace, 1793,
+        Some(2L) -> Expected(Failure(new java.lang.ArithmeticException("/ by zero")), 6, trace, 1793,
           newVersionedResults = {
-            expectedSuccessForAllTreeVersions(2L, 2015, someTrace)
+            expectedSuccessForAllTreeVersions(2L, 2015, trace)
           } ),
-       // None -> Expected(Failure(new java.lang.ArithmeticException("/ by zero")), 6)
+        None -> Expected(Failure(new java.lang.ArithmeticException("/ by zero")), 6, trace, 1793)
       ),
       changedFeature(
         changedInVersion = VersionContext.V6SoftForkVersion,
@@ -503,35 +503,56 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
       )
     )
   }
-/*
+
   property("Coll getOrElse with lazy default") {
-    def getOrElse = newFeature(
-      (x: (Coll[Int], Int)) => x._1.toArray.toIndexedSeq.unapply(x._2).getOrElse(1 / 0),
-      "{ (x: (Coll[Int], Int)) => x._1.getOrElse(x._2, 1 / 0) }",
-      FuncValue(
-        Array((1, SPair(SCollectionType(SInt), SInt))),
-        ByIndex(
-          SelectField.typed[Value[SCollection[SInt.type]]](
-            ValUse(1, SPair(SCollectionType(SInt), SInt)),
-            1.toByte
-          ),
-          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SCollectionType(SInt), SInt)), 2.toByte),
-          Some(ArithOp(IntConstant(1), IntConstant(0), OpCode @@ (-99.toByte)))
-        )
+
+    val trace = TracedCost(
+      Array(
+        FixedCostItem(Apply),
+        FixedCostItem(FuncValue),
+        FixedCostItem(GetVar),
+        FixedCostItem(OptionGet),
+        FixedCostItem(FuncValue.AddToEnvironmentDesc, FixedCost(JitCost(5))),
+        FixedCostItem(ValUse),
+        FixedCostItem(Constant),
+        FixedCostItem(ByIndex)
       )
     )
 
-    if (VersionContext.current.isV6SoftForkActivated) {
-      forAll { x: (Coll[Int], Int) =>
-        Seq(getOrElse).map(_.checkEquality(x))
-      }
-    } else {
-      forAll { x: (Coll[Int], Int) =>
-        if (x._1.isEmpty) {
-          Seq(getOrElse).map(_.checkEquality(x))
-        }
-      }
+    def scalaFuncNew(x: Coll[Int]) = {
+      if (VersionContext.current.isV6SoftForkActivated) {
+        x.toArray.toIndexedSeq.headOption.getOrElse(1 / 0)
+      } else scalaFuncOld(x)
     }
+
+    def scalaFuncOld(x: Coll[Int]) = {
+      x.getOrElse(0, 1 / 0)
+    }
+
+    verifyCases(
+      Seq(
+        Coll(1) -> Expected(Failure(new java.lang.ArithmeticException("/ by zero")), 6, trace, 1793,
+          newVersionedResults = {
+            expectedSuccessForAllTreeVersions(1, 2029, trace)
+          } ),
+        Coll[Int]() -> Expected(Failure(new java.lang.ArithmeticException("/ by zero")), 6, trace, 1793)
+      ),
+      changedFeature(
+        changedInVersion = VersionContext.V6SoftForkVersion,
+        scalaFuncOld,
+        scalaFuncNew,
+        "{ (x: Coll[Int]) => x.getOrElse(0, 1 / 0) }",
+        FuncValue(
+          Array((1, SCollectionType(SInt))),
+          ByIndex(
+            ValUse(1, SCollectionType(SInt)),
+            IntConstant(0),
+            Some(ArithOp(IntConstant(1), IntConstant(0), OpCode @@ (-99.toByte)))
+          )
+        ),
+        allowNewToSucceed = true
+      )
+    )
   }
-   */
+
 }

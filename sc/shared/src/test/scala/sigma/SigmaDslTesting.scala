@@ -261,6 +261,7 @@ class SigmaDslTesting extends AnyPropSpec
             s"""Should succeed with the same value or fail with the same exception, but was:
               |First result: $b1
               |Second result: $b2
+              |Input: $x
               |Root cause: $cause
               |""".stripMargin)
       }
@@ -715,11 +716,17 @@ class SigmaDslTesting extends AnyPropSpec
     override def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, CostDetails)] = {
       // check the old implementation against Scala semantic function
       var oldRes: Try[(B, CostDetails)] = null
-      if (ergoTreeVersionInTests < VersionContext.JitActivationVersion)
         oldRes = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
           try checkEq(scalaFunc)(oldF)(input)
           catch {
-            case e: TestFailedException => throw e
+            case e: TestFailedException =>
+              if(activatedVersionInTests < changedInVersion) {
+                throw e
+              } else {
+                // old ergoscript may succeed in new version while old scalafunc may fail,
+                // see e.g. "Option.getOrElse with lazy default" test
+                Failure(e)
+              }
             case t: Throwable =>
               Failure(t)
           }
@@ -764,7 +771,7 @@ class SigmaDslTesting extends AnyPropSpec
     override def checkExpected(input: A, expected: Expected[B]): Unit = {
       // check the new implementation with Scala semantic function
       val newRes = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
-        checkEq(scalaFuncNew)(newF)(input)
+          checkEq(scalaFuncNew)(newF)(input)
       }
 
       if (VersionContext.current.activatedVersion < changedInVersion) {
