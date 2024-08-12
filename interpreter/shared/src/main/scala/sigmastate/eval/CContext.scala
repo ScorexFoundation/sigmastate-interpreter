@@ -2,7 +2,7 @@ package sigmastate.eval
 
 import debox.cfor
 import org.ergoplatform.{ErgoLikeTransactionTemplate, UnsignedInput}
-import sigma.Evaluation.{stypeToRType, toDslTuple}
+import sigma.Evaluation.stypeToRType
 import sigma.Extensions.ArrayOps
 import sigma._
 import sigma.ast.SType
@@ -74,7 +74,7 @@ case class CContext(
   }
 
   override def getVarFromInput[T](inputId: Short, id: Byte)(implicit tT: RType[T]): Option[T] = {
-    spendingTransaction.inputs.unapply(inputId).flatMap(_.extension.get(id)) match {
+    spendingTransaction.inputs.lift(inputId).flatMap(_.extension.get(id)) match {
       case Some(v) if stypeToRType[SType](v.tpe) == tT => Some(v.value.asInstanceOf[T])
       case _ =>
         None
