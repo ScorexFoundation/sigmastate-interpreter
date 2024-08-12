@@ -5,7 +5,7 @@ import org.ergoplatform._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import sigma.Colls
+import sigma.{Colls, VersionContext}
 import sigma.ast.SCollection._
 import sigma.ast._
 import sigma.ast.syntax.{SValue, SigmaPropValue, SigmaPropValueOps}
@@ -21,6 +21,7 @@ import sigma.serialization.generators.ObjectGenerators
 import sigma.ast.Select
 import sigma.compiler.phases.{SigmaBinder, SigmaTyper}
 import sigma.exceptions.TyperException
+import sigmastate.helpers.SigmaPPrint
 
 class SigmaTyperTest extends AnyPropSpec
   with ScalaCheckPropertyChecks with Matchers with LangTests with ObjectGenerators {
@@ -28,6 +29,7 @@ class SigmaTyperTest extends AnyPropSpec
   private val predefFuncRegistry = new PredefinedFuncRegistry(StdSigmaBuilder)
   import predefFuncRegistry._
 
+  /** Checks that parsing, binding and typing of `x` results in the given expected value. */
   def typecheck(env: ScriptEnv, x: String, expected: SValue = null): SType = {
     try {
       val builder = TransformingSigmaBuilder
@@ -39,7 +41,12 @@ class SigmaTyperTest extends AnyPropSpec
       val typer = new SigmaTyper(builder, predefinedFuncRegistry, typeEnv, lowerMethodCalls = true)
       val typed = typer.typecheck(bound)
       assertSrcCtxForAllNodes(typed)
-      if (expected != null) typed shouldBe expected
+      if (expected != null) {
+        if (expected != typed) {
+          SigmaPPrint.pprintln(typed, width = 100)
+        }
+        typed shouldBe expected
+      }
       typed.tpe
     } catch {
       case e: Exception => throw e
