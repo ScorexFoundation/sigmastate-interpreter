@@ -2,7 +2,6 @@ package sigma.ast
 
 import org.ergoplatform._
 import org.ergoplatform.validation._
-import sigma.Evaluation.stypeToRType
 import sigma._
 import sigma.ast.SCollection.{SBooleanArray, SBoxArray, SByteArray, SByteArray2, SHeaderArray}
 import sigma.ast.SMethod.{MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
@@ -1427,24 +1426,22 @@ case object SContextMethods extends MonoTypeMethods {
 
   lazy val getVarV6Method = SMethod(
     this, "getVar", SFunc(ContextFuncDom, SOption(tT), Array(paramT)), 11, GetVar.costKind, Seq(tT))
-    .withIRInfo(MethodCallIrBuilder)
+    .withIRInfo(
+      MethodCallIrBuilder,
+      javaMethodOf[Context, Byte, RType[_]]("getVar"),
+      { mtype => Array(mtype.tRange.asOption[SType].elemType) })
     .withInfo(MethodCall, "") // todo: desc
 
   // todo: costing, desc
   lazy val getVarFromInputMethod = SMethod(
     this, "getVarFromInput", SFunc(Array(SContext, SShort, SByte), SOption(tT), Array(paramT)), 12, GetVar.costKind, Seq(tT))
-    .withIRInfo(MethodCallIrBuilder)
+    .withIRInfo(
+      MethodCallIrBuilder,
+      javaMethodOf[Context, Short, Byte, RType[_]]("getVarFromInput"),
+      { mtype => Array(mtype.tRange.asOption[SType].elemType) })
     .withInfo(MethodCall, "Multiply this number with \\lst{other} by module Q.", ArgInfo("other", "Number to multiply with this."))
 
-  def getVarFromInput_eval[T](mc: MethodCall, ctx: sigma.Context, inputId: Short, varId: Byte)
-                          (implicit E: ErgoTreeEvaluator): Option[T] = {
-    // E.addCost(getVarFromInputMethod.costKind)
-    val rt = stypeToRType(mc.typeSubst.get(tT).get)
-    val res = ctx.getVarFromInput(inputId, varId)(rt).asInstanceOf[Option[T]]
-    res
-  }
-
-  private lazy val commonMethods = Array(
+  private lazy val commonMethods = super.getMethods() ++ Array(
     dataInputsMethod, headersMethod, preHeaderMethod, inputsMethod, outputsMethod, heightMethod, selfMethod,
     selfBoxIndexMethod, lastBlockUtxoRootHashMethod, minerPubKeyMethod
   )
@@ -1459,9 +1456,9 @@ case object SContextMethods extends MonoTypeMethods {
 
   protected override def getMethods(): Seq[SMethod] = {
     if (VersionContext.current.isV6SoftForkActivated) {
-      super.getMethods() ++ v6Methods
+      v6Methods
     } else {
-      super.getMethods() ++ v5Methods
+      v5Methods
     }
   }
 

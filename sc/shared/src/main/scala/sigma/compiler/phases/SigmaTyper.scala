@@ -165,7 +165,7 @@ class SigmaTyper(val builder: SigmaBuilder,
                   .getOrElse(mkMethodCall(newObj, method, newArgs, subst))
               } else {
                 val newSelect = mkSelect(newObj, n, Some(concrFunTpe)).withSrcCtx(sel.sourceContext)
-                mkApply(newSelect, newArgs.toArray[SValue])
+                mkApply(newSelect, newArgs)
               }
             case Some(method) =>
               error(s"Don't know how to handle method $method in obj $p", sel.sourceContext)
@@ -423,11 +423,6 @@ class SigmaTyper(val builder: SigmaBuilder,
         case _ =>
           error(s"Invalid application of type arguments $app: function $input doesn't have type parameters", input.sourceContext)
       }
-
-//    case app @ ApplyTypes(in, targs) =>
-//      val newIn = assignType(env, in)
-//      ApplyTypes(newIn, targs)
-//      error(s"Invalid application of type arguments $app: expression doesn't have type parameters")
 
     case If(c, t, e) =>
       val c1 = assignType(env, c).asValue[SBoolean.type]

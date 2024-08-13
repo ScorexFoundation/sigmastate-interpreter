@@ -1312,7 +1312,7 @@ case class MethodCall(
     val objV = obj.evalTo[Any](env)
     addCost(MethodCall.costKind) // MethodCall overhead
     method.costKind match {
-      case fixed: FixedCost if method.explicitTypeArgs.isEmpty =>
+      case fixed: FixedCost =>
         val extra    = method.extraDescriptors
         val extraLen = extra.length
         val len      = args.length

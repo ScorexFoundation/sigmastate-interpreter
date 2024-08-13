@@ -27,7 +27,7 @@ trait MethodCalls extends Base { self: IRContext =>
     *                      given `method`.
     */
   case class MethodCall private[MethodCalls](receiver: Sym, method: RMethod, args: Seq[AnyRef], neverInvoke: Boolean)
-                                            (val resultType: Elem[Any], val isAdapterCall: Boolean = false, val typeSubst: Map[STypeVar, SType] = Map()) extends Def[Any] {
+                                            (val resultType: Elem[Any], val isAdapterCall: Boolean = false, val typeSubst: Map[STypeVar, SType]) extends Def[Any] {
 
     override def mirror(t: Transformer): Ref[Any] = {
       val len = args.length

@@ -142,26 +142,19 @@ class BasicOpsSpecification extends CompilerTestingCommons
     flexVerifier.verify(verifyEnv, tree, ctxExt, pr.proof, fakeMessage).get._1 shouldBe true
   }
 
-  property("Unit register") {
-    // TODO frontend: implement missing Unit support in compiler
-    //  https://github.com/ScorexFoundation/sigmastate-interpreter/issues/820
-    test("R1", env, ext,
-      script = "", /* means cannot be compiled
-                     the corresponding script is { SELF.R4[Unit].isDefined } */
-      ExtractRegisterAs[SUnit.type](Self, reg1)(SUnit).isDefined.toSigmaProp,
-      additionalRegistersOpt = Some(Map(
-        reg1 -> UnitConstant.instance
-      ))
-    )
+  property("Context.getVar") {
+    def varTest() = {
+      test("GetVar1", env, ext,
+        "{ CONTEXT.getVar[Int](intVar2.toByte).get == 2 }",
+        null
+      )
+    }
 
-    test("R2", env, ext,
-      script = "", /* means cannot be compiled
-                   the corresponding script is "{ SELF.R4[Unit].get == () }" */
-      EQ(ExtractRegisterAs[SUnit.type](Self, reg1)(SUnit).get, UnitConstant.instance).toSigmaProp,
-      additionalRegistersOpt = Some(Map(
-        reg1 -> UnitConstant.instance
-      ))
-    )
+    if(VersionContext.current.isV6SoftForkActivated) {
+      varTest()
+    } else {
+      an[Exception] should be thrownBy(varTest())
+    }
   }
 
   property("getVarFromInput") {
@@ -454,21 +447,6 @@ class BasicOpsSpecification extends CompilerTestingCommons
         EQ(SizeOf(data), IntConstant(1)).toSigmaProp
       }
     )
-  }
-
-  property("Context.getVar") {
-    def varTest() = {
-      test("GetVar1", env, ext,
-        "{ CONTEXT.getVar[Int](intVar2).get == 2 }",
-        null
-      )
-    }
-
-    if(VersionContext.current.isV6SoftForkActivated) {
-      varTest()
-    } else {
-      an[Exception] should be thrownBy(varTest())
-    }
   }
 
   property("GetVar") {
@@ -837,6 +815,28 @@ class BasicOpsSpecification extends CompilerTestingCommons
         |""".stripMargin
 
     test("subst", env, ext, hostScript, null)
+  }
+
+  property("Unit register") {
+    // TODO frontend: implement missing Unit support in compiler
+    //  https://github.com/ScorexFoundation/sigmastate-interpreter/issues/820
+    test("R1", env, ext,
+      script = "", /* means cannot be compiled
+                     the corresponding script is { SELF.R4[Unit].isDefined } */
+      ExtractRegisterAs[SUnit.type](Self, reg1)(SUnit).isDefined.toSigmaProp,
+      additionalRegistersOpt = Some(Map(
+        reg1 -> UnitConstant.instance
+      ))
+    )
+
+    test("R2", env, ext,
+      script = "", /* means cannot be compiled
+                   the corresponding script is "{ SELF.R4[Unit].get == () }" */
+      EQ(ExtractRegisterAs[SUnit.type](Self, reg1)(SUnit).get, UnitConstant.instance).toSigmaProp,
+      additionalRegistersOpt = Some(Map(
+        reg1 -> UnitConstant.instance
+      ))
+    )
   }
 
 }
