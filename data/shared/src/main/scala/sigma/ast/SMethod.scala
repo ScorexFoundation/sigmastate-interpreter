@@ -63,6 +63,7 @@ case class MethodIRInfo(
   * @param docInfo         optional human readable method description data
   * @param costFunc        optional specification of how the cost should be computed for the
   *                        given method call (See ErgoTreeEvaluator.calcCost method).
+  * @param userDefinedInvoke optional custom method evaluation function
   */
 case class SMethod(
     objType: MethodsContainer,
@@ -73,7 +74,9 @@ case class SMethod(
     explicitTypeArgs: Seq[STypeVar],
     irInfo: MethodIRInfo,
     docInfo: Option[OperationInfo],
-    costFunc: Option[MethodCostFunc]) {
+    costFunc: Option[MethodCostFunc],
+    userDefinedInvoke: Option[SMethod.InvokeHandler]
+) {
 
   /** Operation descriptor of this method. */
   lazy val opDesc = MethodDesc(this)
@@ -114,7 +117,12 @@ case class SMethod(
   /** Invoke this method on the given object with the arguments.
     * This is used for methods with FixedCost costKind. */
   def invokeFixed(obj: Any, args: Array[Any]): Any = {
-    javaMethod.invoke(obj, args.asInstanceOf[Array[AnyRef]]:_*)
+    userDefinedInvoke match {
+      case Some(h) =>
+        h(this, obj, args)
+      case None =>
+        javaMethod.invoke(obj, args.asInstanceOf[Array[AnyRef]]:_*)
+    }
   }
 
   // TODO optimize: avoid lookup when this SMethod is created via `specializeFor`
@@ -152,6 +160,11 @@ case class SMethod(
       throw new RuntimeException(s"Cannot find eval method def $methodName(${Seq(paramTypes:_*)})", e)
     }
     m
+  }
+
+  /** Create a new instance with the given user-defined invoke handler. */
+  def withUserDefinedInvoke(handler: SMethod.InvokeHandler): SMethod = {
+    copy(userDefinedInvoke = Some(handler))
   }
 
   /** Create a new instance with the given stype. */
@@ -263,6 +276,12 @@ object SMethod {
     */
   type InvokeDescBuilder = SFunc => Seq[SType]
 
+  /** Type of user-defined function which is called to handle method invocation.
+    * Instances of this type can be attached to [[SMethod]] instances.
+    * @see SNumericTypeMethods.ToBytesMethod
+    */
+  type InvokeHandler = (SMethod, Any, Array[Any]) => Any
+
   /** Return [[Method]] descriptor for the given `methodName` on the given `cT` type.
     * @param methodName the name of the method to lookup
     * @param cT the class where to search the methodName
@@ -297,7 +316,7 @@ object SMethod {
   ): SMethod = {
     SMethod(
       objType, name, stype, methodId, costKind, explicitTypeArgs,
-      MethodIRInfo(None, None, None), None, None)
+      MethodIRInfo(None, None, None), None, None, None)
   }
 
 

@@ -2,7 +2,6 @@ package sigma.serialization
 
 import sigma.VersionContext
 import sigma.ast.SCollection.SByteArray
-import sigma.ast.SType.tT
 import sigma.ast._
 import sigma.validation.ValidationException
 

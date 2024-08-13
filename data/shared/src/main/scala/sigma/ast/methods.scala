@@ -1,7 +1,6 @@
 package sigma.ast
 
 import org.ergoplatform._
-import org.ergoplatform.validation.ValidationRules.CheckMinimalErgoTreeVersion
 import org.ergoplatform.validation._
 import sigma._
 import sigma.ast.SCollection.{SBooleanArray, SBoxArray, SByteArray, SByteArray2, SHeaderArray}
@@ -1534,7 +1533,6 @@ case object SGlobalMethods extends MonoTypeMethods {
     */
   def serialize_eval(mc: MethodCall, G: SigmaDslBuilder, value: SType#WrappedType)
       (implicit E: ErgoTreeEvaluator): Coll[Byte] = {
-    CheckMinimalErgoTreeVersion(E.context.currentErgoTreeVersion, VersionContext.V6SoftForkVersion)
 
     E.addCost(SigmaByteWriter.StartWriterCost)
 
