@@ -7,7 +7,6 @@ import sigma.Colls
 import sigma.crypto.{BigIntegers, CryptoConstants, EcPointType}
 import sigma.serialization.{GroupElementSerializer, SigmaByteReader, SigmaByteWriter, SigmaSerializer}
 
-import scala.runtime.ScalaRunTime
 import scala.util.hashing.MurmurHash3
 
 

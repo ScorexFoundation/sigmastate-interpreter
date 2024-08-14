@@ -5,13 +5,14 @@ import org.ergoplatform.validation._
 import sigma._
 import sigma.ast.SCollection.{SBooleanArray, SBoxArray, SByteArray, SByteArray2, SHeaderArray}
 import sigma.ast.SMethod.{MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
-import sigma.ast.SType.TypeCode
+import sigma.ast.SType.{TypeCode, paramT, tT}
 import sigma.ast.syntax.{SValue, ValueOps}
 import sigma.data.OverloadHack.Overloaded1
 import sigma.data.{DataValueComparer, KeyValueColl, Nullable, RType, SigmaConstants}
 import sigma.eval.{CostDetails, ErgoTreeEvaluator, TracedCost}
 import sigma.reflection.RClass
 import sigma.serialization.CoreByteWriter.ArgInfo
+import sigma.serialization.{DataSerializer, SigmaByteWriter, SigmaSerializer}
 import sigma.utils.SparseArrayContainer
 
 import scala.annotation.unused
@@ -1535,9 +1536,48 @@ case object SGlobalMethods extends MonoTypeMethods {
     Xor.xorWithCosting(ls, rs)
   }
 
-  protected override def getMethods() = super.getMethods() ++ Seq(
-    groupGeneratorMethod,
-    xorMethod
-  )
+  lazy val serializeMethod = SMethod(this, "serialize",
+    SFunc(Array(SGlobal, tT), SByteArray, Array(paramT)), 3, DynamicCost)
+      .withIRInfo(MethodCallIrBuilder)
+      .withInfo(MethodCall, "Serializes the given `value` into bytes using the default serialization format.",
+        ArgInfo("value", "value to be serialized"))
+
+
+  /** Implements evaluation of Global.serialize method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod
+    */
+  def serialize_eval(mc: MethodCall, G: SigmaDslBuilder, value: SType#WrappedType)
+      (implicit E: ErgoTreeEvaluator): Coll[Byte] = {
+
+    E.addCost(SigmaByteWriter.StartWriterCost)
+
+    val addFixedCostCallback = { (costInfo: OperationCostInfo[FixedCost]) =>
+      E.addCost(costInfo)
+    }
+    val addPerItemCostCallback = { (info: OperationCostInfo[PerItemCost], nItems: Int) =>
+      E.addSeqCostNoOp(info.costKind, nItems, info.opDesc)
+    }
+    val w = SigmaSerializer.startWriter(None,
+      Some(addFixedCostCallback), Some(addPerItemCostCallback))
+
+    DataSerializer.serialize(value, mc.args(0).tpe, w)
+    Colls.fromArray(w.toBytes)
+  }
+
+  protected override def getMethods() = super.getMethods() ++ {
+    if (VersionContext.current.isV6SoftForkActivated) {
+      Seq(
+        groupGeneratorMethod,
+        xorMethod,
+        serializeMethod
+      )
+    } else {
+      Seq(
+        groupGeneratorMethod,
+        xorMethod
+      )
+    }
+  }
 }
 

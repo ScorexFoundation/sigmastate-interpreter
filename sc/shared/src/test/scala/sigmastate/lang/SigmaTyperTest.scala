@@ -21,6 +21,7 @@ import sigma.serialization.generators.ObjectGenerators
 import sigma.ast.Select
 import sigma.compiler.phases.{SigmaBinder, SigmaTyper}
 import sigma.exceptions.TyperException
+import sigmastate.exceptions.MethodNotFound
 import sigmastate.helpers.SigmaPPrint
 
 class SigmaTyperTest extends AnyPropSpec
@@ -670,4 +671,36 @@ class SigmaTyperTest extends AnyPropSpec
     )
     typecheck(customEnv, "substConstants(scriptBytes, positions, newVals)") shouldBe SByteArray
   }
+
+  property("Global.serialize") {
+    runWithVersion(VersionContext.V6SoftForkVersion) {
+      typecheck(env, "Global.serialize(1)",
+        MethodCall.typed[Value[SCollection[SByte.type]]](
+          Global,
+          SGlobalMethods.getMethodByName("serialize").withConcreteTypes(Map(STypeVar("T") -> SInt)),
+          Array(IntConstant(1)),
+          Map()
+        )) shouldBe SByteArray
+    }
+
+    runWithVersion((VersionContext.V6SoftForkVersion - 1).toByte) {
+      assertExceptionThrown(
+        typecheck(env, "Global.serialize(1)"),
+        exceptionLike[MethodNotFound]("Cannot find method 'serialize' in in the object Global")
+      )
+    }
+  }
+
+  property("predefined serialize") {
+    runWithVersion(VersionContext.V6SoftForkVersion) {
+      typecheck(env, "serialize((1, 2L))",
+        expected = MethodCall.typed[Value[SCollection[SByte.type]]](
+          Global,
+          SGlobalMethods.getMethodByName("serialize").withConcreteTypes(Map(STypeVar("T") -> SPair(SInt, SLong))),
+          Array(Tuple(Vector(IntConstant(1), LongConstant(2L)))),
+          Map()
+        )) shouldBe SByteArray
+    }
+  }
+
 }

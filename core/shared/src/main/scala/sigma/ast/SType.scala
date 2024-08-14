@@ -5,7 +5,7 @@ import sigma.ast.SCollection.SByteArray
 import sigma.ast.SType.TypeCode
 import sigma.data.OverloadHack.Overloaded1
 import sigma.data.{CBigInt, Nullable, SigmaConstants}
-import sigma.reflection.{RClass, RMethod, ReflectionData}
+import sigma.reflection.{RClass, ReflectionData}
 import sigma.util.Extensions.{IntOps, LongOps, ShortOps}
 import sigma.{AvlTree, BigInt, Box, Coll, Context, Evaluation, GroupElement, Header, PreHeader, SigmaDslBuilder, SigmaProp, VersionContext}
 
