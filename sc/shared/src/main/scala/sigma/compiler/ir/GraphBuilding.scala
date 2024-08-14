@@ -1179,6 +1179,12 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
             case SGlobalMethods.serializeMethod.name =>
               val value = asRep[Any](argsV(0))
               g.serialize(value)
+            case SGlobalMethods.encodeNBitsMethod.name if VersionContext.current.isV6SoftForkActivated =>
+              val c1 = asRep[BigInt](argsV(0))
+              g.encodeNbits(c1)
+            case SGlobalMethods.decodeNBitsMethod.name if VersionContext.current.isV6SoftForkActivated =>
+              val c1 = asRep[Long](argsV(0))
+              g.decodeNbits(c1)
             case _ => throwError
           }
           case _ => throwError

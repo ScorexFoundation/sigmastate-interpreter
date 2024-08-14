@@ -4,15 +4,17 @@ import org.ergoplatform._
 import org.ergoplatform.validation._
 import sigma.Evaluation.stypeToRType
 import sigma._
+import sigma.{VersionContext, _}
 import sigma.ast.SCollection.{SBooleanArray, SBoxArray, SByteArray, SByteArray2, SHeaderArray}
 import sigma.ast.SMethod.{MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
 import sigma.ast.SType.{TypeCode, paramT, tT}
 import sigma.ast.syntax.{SValue, ValueOps}
 import sigma.data.OverloadHack.Overloaded1
-import sigma.data.{DataValueComparer, KeyValueColl, Nullable, RType, SigmaConstants}
+import sigma.data.{CBigInt, DataValueComparer, KeyValueColl, Nullable, RType, SigmaConstants}
 import sigma.eval.{CostDetails, ErgoTreeEvaluator, TracedCost}
 import sigma.reflection.RClass
 import sigma.serialization.CoreByteWriter.ArgInfo
+import sigma.util.NBitsUtils
 import sigma.serialization.{DataSerializer, SigmaByteWriter, SigmaSerializer}
 import sigma.utils.SparseArrayContainer
 
@@ -311,13 +313,6 @@ case object SBigIntMethods extends SNumericTypeMethods {
   /** Type for which this container defines methods. */
   override def ownerType: SMonoType = SBigInt
 
-  final val ToNBitsCostInfo = OperationCostInfo(
-    FixedCost(JitCost(5)), NamedDesc("NBitsMethodCall"))
-
-  //id = 8 to make it after toBits
-  val ToNBits = SMethod(this, "nbits", SFunc(this.ownerType, SLong), 8, ToNBitsCostInfo.costKind)
-                  .withInfo(ModQ, "Encode this big integer value as NBits")
-
   /** The following `modQ` methods are not fully implemented in v4.x and this descriptors.
     * This descritors are remain here in the code and are waiting for full implementation
     * is upcoming soft-forks at which point the cost parameters should be calculated and
@@ -335,7 +330,7 @@ case object SBigIntMethods extends SNumericTypeMethods {
 
   protected override def getMethods(): Seq[SMethod]  = {
     if (VersionContext.current.isV6SoftForkActivated) {
-      super.getMethods() ++ Seq(ToNBits)
+      super.getMethods()
       //    ModQMethod,
       //    PlusModQMethod,
       //    MinusModQMethod,
@@ -345,14 +340,6 @@ case object SBigIntMethods extends SNumericTypeMethods {
       super.getMethods()
     }
   }
-
-  /**
-    *
-    */
-  def nbits_eval(mc: MethodCall, bi: sigma.BigInt)(implicit E: ErgoTreeEvaluator): Long = {
-    ???
-  }
-
 }
 
 /** Methods of type `String`. */
@@ -1549,6 +1536,36 @@ case object SGlobalMethods extends MonoTypeMethods {
     Xor.xorWithCosting(ls, rs)
   }
 
+  private lazy val EnDecodeNBitsCost = FixedCost(JitCost(5)) // the same cost for nbits encoding and decoding
+
+  lazy val encodeNBitsMethod: SMethod = SMethod(
+    this, "encodeNbits", SFunc(Array(SGlobal, SBigInt), SLong), 5, EnDecodeNBitsCost)
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall, "Encode big integer number as nbits", ArgInfo("bigInt", "Big integer"))
+
+  lazy val decodeNBitsMethod: SMethod = SMethod(
+    this, "decodeNbits", SFunc(Array(SGlobal, SLong), SBigInt), 6, EnDecodeNBitsCost)
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall, "Decode nbits-encoded big integer number", ArgInfo("nbits", "NBits-encoded argument"))
+
+  /**
+    * encodeNBits evaluation with costing
+    */
+  def encodeNbits_eval(mc: MethodCall, G: SigmaDslBuilder, bigInt: BigInt)(implicit E: ErgoTreeEvaluator): Long = {
+    E.addFixedCost(EnDecodeNBitsCost, encodeNBitsMethod.opDesc) {
+      NBitsUtils.encodeCompactBits(bigInt.asInstanceOf[CBigInt].wrappedValue)
+    }
+  }
+
+  /**
+    * decodeNBits evaluation with costing
+    */
+  def decodeNbits_eval(mc: MethodCall, G: SigmaDslBuilder, l: Long)(implicit E: ErgoTreeEvaluator): BigInt = {
+    E.addFixedCost(EnDecodeNBitsCost, decodeNBitsMethod.opDesc) {
+      CBigInt(NBitsUtils.decodeCompactBits(l).bigInteger)
+    }
+  }
+
   lazy val serializeMethod = SMethod(this, "serialize",
     SFunc(Array(SGlobal, tT), SByteArray, Array(paramT)), 4, DynamicCost)
       .withIRInfo(MethodCallIrBuilder)
@@ -1593,7 +1610,9 @@ case object SGlobalMethods extends MonoTypeMethods {
         groupGeneratorMethod,
         xorMethod,
         serializeMethod,
-        deserializeToMethod
+        deserializeToMethod,
+        encodeNBitsMethod,
+        decodeNBitsMethod
       )
     } else {
       Seq(

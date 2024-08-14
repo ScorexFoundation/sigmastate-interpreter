@@ -1960,6 +1960,20 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         true, false, element[Coll[Byte]]))
     }
 
+    override def encodeNbits(bi: Ref[BigInt]): Ref[Long] = {
+      asRep[Long](mkMethodCall(self,
+        SigmaDslBuilderClass.getMethod("encodeNbits", classOf[Sym]),
+        Array[AnyRef](bi),
+        true, false, element[Long]))
+    }
+
+    override def decodeNbits(l: Ref[Long]): Ref[BigInt] = {
+      asRep[BigInt](mkMethodCall(self,
+        SigmaDslBuilderClass.getMethod("decodeNbits", classOf[Sym]),
+        Array[AnyRef](l),
+        true, false, element[BigInt]))
+    }
+
     override def deserializeTo[T](l: Ref[Coll[Byte]])(implicit cT: Elem[T]): Ref[T] = {
       asRep[T](mkMethodCall(self,
         SigmaDslBuilderClass.getMethod("deserializeTo", classOf[Sym], classOf[Elem[T]]),
@@ -2134,6 +2148,20 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         true, true, element[Coll[Byte]]))
     }
 
+    override def encodeNbits(bi: Ref[BigInt]): Ref[Long] = {
+      asRep[Long](mkMethodCall(source,
+        SigmaDslBuilderClass.getMethod("encodeNbits", classOf[Sym]),
+        Array[AnyRef](bi),
+        true, true, element[Long]))
+    }
+
+    override def decodeNbits(l: Ref[Long]): Ref[BigInt] = {
+      asRep[BigInt](mkMethodCall(source,
+        SigmaDslBuilderClass.getMethod("decodeNbits", classOf[Sym]),
+        Array[AnyRef](l),
+        true, true, element[BigInt]))
+    }
+
     def serialize[T](value: Ref[T]): Ref[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(source,
         SigmaDslBuilderClass.getMethod("serialize", classOf[Sym]),
@@ -2164,9 +2192,9 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
     override protected def collectMethods: Map[RMethod, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(RClass(classOf[SigmaDslBuilder]), RClass(classOf[SSigmaDslBuilder]), Set(
-        "Colls", "verifyZK", "atLeast", "allOf", "allZK", "anyOf", "anyZK", "xorOf", "sigmaProp", "blake2b256", "sha256",
-          "byteArrayToBigInt", "longToByteArray", "byteArrayToLong", "proveDlog", "proveDHTuple", "groupGenerator", "substConstants",
-          "decodePoint", "avlTree", "xor", "deserializeTo", "serialize"
+        "Colls", "verifyZK", "atLeast", "allOf", "allZK", "anyOf", "anyZK", "xorOf", "sigmaProp", "blake2b256",
+          "sha256", "byteArrayToBigInt", "longToByteArray", "byteArrayToLong", "proveDlog", "proveDHTuple", "groupGenerator",
+          "substConstants", "decodePoint", "avlTree", "xor", "encodeNBits", "decodeNBits", "deserializeTo", "serialize"
         ))
     }
   }

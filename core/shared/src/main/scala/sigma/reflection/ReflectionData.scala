@@ -453,6 +453,12 @@ object ReflectionData {
         },
         mkMethod(clazz, "deserializeTo", Array[Class[_]](classOf[SType], cColl, classOf[RType[_]])) { (obj, args) =>
           obj.asInstanceOf[SigmaDslBuilder].deserializeTo(args(0).asInstanceOf[SType], args(1).asInstanceOf[Coll[Byte]])(args(2).asInstanceOf[RType[_]])
+        },
+        mkMethod(clazz, "encodeNbits", Array[Class[_]](classOf[BigInt])) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].encodeNbits(args(0).asInstanceOf[BigInt])
+        },
+        mkMethod(clazz, "decodeNbits", Array[Class[_]](classOf[Long])) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].decodeNbits(args(0).asInstanceOf[Long])
         }
       )
     )

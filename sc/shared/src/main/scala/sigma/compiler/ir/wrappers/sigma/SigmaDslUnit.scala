@@ -117,6 +117,8 @@ import scalan._
       def xor(l: Ref[Coll[Byte]], r: Ref[Coll[Byte]]): Ref[Coll[Byte]]
       def serialize[T](value: Ref[T]): Ref[Coll[Byte]]
       def deserializeTo[T](bytes: Ref[Coll[Byte]])(implicit cT: Elem[T]): Ref[T]
+      def encodeNbits(bi: Ref[BigInt]): Ref[Long]
+      def decodeNbits(l: Ref[Long]): Ref[BigInt]
     };
     trait CostModelCompanion;
     trait BigIntCompanion;

@@ -452,7 +452,7 @@ case object SLong extends SPrimType with SEmbeddable with SNumericType with SMon
   }
 }
 
-/** Type of 256 bit integet values. Implemented using [[java.math.BigInteger]]. */
+/** Type of 256 bit integer values. Implemented using [[java.math.BigInteger]]. */
 case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SMonoType {
   override type WrappedType = BigInt
   override val typeCode: TypeCode = 6: Byte
