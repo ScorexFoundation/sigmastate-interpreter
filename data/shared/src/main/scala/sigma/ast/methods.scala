@@ -1536,9 +1536,10 @@ case object SGlobalMethods extends MonoTypeMethods {
   lazy val desJava = ownerType.reprClass.getMethod("deserializeTo", classOf[SType], classOf[Coll[Byte]], classOf[RType[_]])
 
   lazy val deserializeToMethod = SMethod(
-    this, "deserializeTo", SFunc(Array(SGlobal, SByteArray), tT, Array(paramT)), 3, Xor.costKind) // todo: cost
-    .copy(irInfo = MethodIRInfo(None, Some(desJava), None))
-    .withInfo(Xor, "Byte-wise XOR of two collections of bytes",  // todo: desc
+    this, "deserializeTo", SFunc(Array(SGlobal, SByteArray), tT, Array(paramT)), 3, Xor.costKind, Seq(tT)) // todo: cost
+    .withIRInfo(MethodCallIrBuilder, desJava)
+ //   .copy(irInfo = MethodIRInfo(None, Some(desJava), None))
+    .withInfo(MethodCall, "Byte-wise XOR of two collections of bytes",  // todo: desc
       ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))
 
   /** Implements evaluation of Global.xor method call ErgoTree node.

@@ -98,11 +98,13 @@ class MethodCallSerializerSpecification extends SerializationSpecification {
       val h = HeaderConstant(headerGen.sample.get)
       val expr = MethodCall(h,
         SGlobalMethods.deserializeToMethod,
-        Vector(h),
+        Array(h),
         Map(tT -> SHeader)
       )
       roundTripTest(expr)
     }
+
+    println(SGlobalMethods.deserializeToMethod.hasExplicitTypeArgs)
 
     VersionContext.withVersions(VersionContext.V6SoftForkVersion, 1) {
       code
