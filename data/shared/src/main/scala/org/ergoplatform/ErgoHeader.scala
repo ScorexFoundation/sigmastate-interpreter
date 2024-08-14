@@ -4,6 +4,7 @@ import scorex.crypto.authds.ADDigest
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ModifierId
 import sigma.Colls
+import sigma.crypto.{CryptoConstants, EcPointType}
 import sigma.crypto.{BigIntegers, CryptoConstants, EcPointType}
 import sigma.serialization.{GroupElementSerializer, SigmaByteReader, SigmaByteWriter, SigmaSerializer}
 

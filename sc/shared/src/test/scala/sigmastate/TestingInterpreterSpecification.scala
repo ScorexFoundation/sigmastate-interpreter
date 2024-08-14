@@ -13,7 +13,12 @@ import sigma.Colls
 import sigma.VersionContext.V6SoftForkVersion
 import sigma.VersionContext
 import sigma.data.{CAND, CAvlTree, CHeader, ProveDlog, SigmaBoolean, TrivialProp}
+import sigma.data.{CAND, CAvlTree, ProveDlog, SigmaBoolean, TrivialProp}
 import sigma.interpreter.ContextExtension
+import scorex.util.encode.Base58
+import sigma.VersionContext
+import sigma.crypto.CryptoConstants
+import sigma.data.{AvlTreeData, CAND, ProveDlog, SigmaBoolean, TrivialProp}
 import sigma.util.Extensions.IntOps
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
 import sigmastate.helpers.TestingHelpers._
@@ -467,6 +472,24 @@ class TestingInterpreterSpecification extends CompilerTestingCommons
     val source = """ {
                    |     val h = CONTEXT.headers(0)
                    |      h.checkPow
+                   | }
+                   | """.stripMargin
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an [sigmastate.exceptions.MethodNotFound] should be thrownBy testEval(source)
+    } else {
+      testEval(source)
+    }
+  }
+
+  property("bytes") {
+    
+    // checking hash of bytes(id) against known value
+    val source = s""" {
+                   |     val h = CONTEXT.headers(0)
+                   |     val hb = Global.serialize(h)
+                   |        blake2b256(hb) == h.id &&
+                   |        h.id == fromBase16("5603a937ec1988220fc44fb5022fb82d5565b961f005ebb55d85bd5a9e6f801f")
                    | }
                    | """.stripMargin
 

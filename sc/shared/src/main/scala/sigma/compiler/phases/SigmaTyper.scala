@@ -4,6 +4,7 @@ import sigma.ast.SCollection.{SBooleanArray, SByteArray}
 import sigma.ast.SigmaPredef._
 import sigma.ast._
 import sigma.ast.syntax.{SValue, _}
+import sigma.compiler.ir.deserializeToBytes
 import sigma.data.{Nullable, SigmaBoolean}
 import sigma.exceptions.TyperException
 import sigma.serialization.OpCodes
@@ -37,7 +38,7 @@ class SigmaTyper(val builder: SigmaBuilder,
 
   private def processGlobalMethod(srcCtx: Nullable[SourceContext],
                                   method: SMethod,
-                                  args: IndexedSeq[SValue]) = {
+                                  args: IndexedSeq[SValue]): SValue = {
     val global = Global.withPropagatedSrcCtx(srcCtx)
     val node = for {
       pf <- method.irInfo.irBuilder if lowerMethodCalls
@@ -137,6 +138,18 @@ class SigmaTyper(val builder: SigmaBuilder,
       val newObj = assignType(env, obj)
       val newArgs = args.map(assignType(env, _))
       obj.tpe match {
+        case SGlobal =>
+          SGlobalMethods.method(n) match {
+            case Some(method) =>
+              val srcCtx = sel.sourceContext
+              if(method.name == SGlobalMethods.deserializeToMethod.name) {
+                deserializeToBytes(args(0).asInstanceOf[Value[SByteArray]], rangeTpe)
+              } else {
+                processGlobalMethod(srcCtx, method, newArgs)
+              }
+            case _ =>
+              error(s"Cannot find Global method: $n", bound.sourceContext)
+          }
         case p: SProduct =>
           MethodsContainer.getMethod(p, n) match {
             case Some(method: SMethod) =>

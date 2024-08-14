@@ -1,6 +1,7 @@
 package sigma.serialization
 
 import sigma.VersionContext
+import sigma.ast.SType.tT
 import sigma.ast.SCollection.SByteArray
 import sigma.ast._
 import sigma.validation.ValidationException
@@ -78,6 +79,31 @@ class MethodCallSerializerSpecification extends SerializationSpecification {
       )
       roundTripTest(expr)
     }
+
+    VersionContext.withVersions(VersionContext.V6SoftForkVersion, 1) {
+      code
+    }
+
+    // sigma.serialization.SerializerException: Don't know how to serialize (sigma.data.CHeader@51dbec76, SHeader)
+    an[SerializerException] should be thrownBy (
+      VersionContext.withVersions((VersionContext.V6SoftForkVersion - 1).toByte, 1) {
+        code
+      }
+    )
+  }
+
+  property("MethodCall deserialization round trip for Global.deserializeTo[]") {
+    def code = {
+      val h = HeaderConstant(headerGen.sample.get)
+      val expr = MethodCall(h,
+        SGlobalMethods.deserializeToMethod,
+        Array(h),
+        Map(tT -> SHeader)
+      )
+      roundTripTest(expr)
+    }
+
+    println(SGlobalMethods.deserializeToMethod.hasExplicitTypeArgs)
 
     VersionContext.withVersions(VersionContext.V6SoftForkVersion, 1) {
       code

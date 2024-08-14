@@ -10,7 +10,7 @@ import sigma.data.js.{Isos => DataIsos}
 import sigma.data.CHeader
 import sigma.interpreter.{ContextExtension, ProverResult}
 import sigma.js.AvlTree
-import sigmastate.eval.CPreHeader
+import sigmastate.eval.{CHeader, CPreHeader}
 import sigmastate.fleetSdkCommon.distEsmTypesBoxesMod.Box
 import sigmastate.fleetSdkCommon.distEsmTypesRegistersMod.NonMandatoryRegisters
 import sigmastate.fleetSdkCommon.distEsmTypesTokenMod.TokenAmount

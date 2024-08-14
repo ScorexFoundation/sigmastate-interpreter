@@ -2,6 +2,7 @@ package sigma.ast
 
 import org.ergoplatform._
 import org.ergoplatform.validation._
+import sigma.Evaluation.stypeToRType
 import sigma._
 import sigma.ast.SCollection.{SBooleanArray, SBoxArray, SByteArray, SByteArray2, SHeaderArray}
 import sigma.ast.SMethod.{MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
@@ -1527,6 +1528,18 @@ case object SGlobalMethods extends MonoTypeMethods {
     .withInfo(Xor, "Byte-wise XOR of two collections of bytes",
       ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))
 
+  private val deserializeCostKind = PerItemCost(
+    baseCost = JitCost(20), perChunkCost = JitCost(7), chunkSize = 128)
+
+  lazy val desJava = ownerType.reprClass.getMethod("deserializeTo", classOf[SType], classOf[Coll[Byte]], classOf[RType[_]])
+
+  lazy val deserializeToMethod = SMethod(
+    this, "deserializeTo", SFunc(Array(SGlobal, SByteArray), tT, Array(paramT)), 3, deserializeCostKind, Seq(tT))
+    .withIRInfo(MethodCallIrBuilder, desJava)
+ //   .copy(irInfo = MethodIRInfo(None, Some(desJava), None))
+    .withInfo(MethodCall, "Byte-wise XOR of two collections of bytes",  // todo: desc
+      ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))
+
   /** Implements evaluation of Global.xor method call ErgoTree node.
     * Called via reflection based on naming convention.
     * @see SMethod.evalMethod, Xor.eval, Xor.xorWithCosting
@@ -1537,7 +1550,7 @@ case object SGlobalMethods extends MonoTypeMethods {
   }
 
   lazy val serializeMethod = SMethod(this, "serialize",
-    SFunc(Array(SGlobal, tT), SByteArray, Array(paramT)), 3, DynamicCost)
+    SFunc(Array(SGlobal, tT), SByteArray, Array(paramT)), 4, DynamicCost)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall, "Serializes the given `value` into bytes using the default serialization format.",
         ArgInfo("value", "value to be serialized"))
@@ -1565,12 +1578,22 @@ case object SGlobalMethods extends MonoTypeMethods {
     Colls.fromArray(w.toBytes)
   }
 
+  def deserializeTo_eval(mc: MethodCall, G: SigmaDslBuilder, bytes: Coll[Byte])
+                        (implicit E: ErgoTreeEvaluator): Any = {
+    val tpe = mc.tpe
+    val cT = stypeToRType(tpe)
+    E.addSeqCost(deserializeCostKind, bytes.length, deserializeToMethod.opDesc) { () =>
+      G.deserializeTo(tpe, bytes)(cT)
+    }
+  }
+
   protected override def getMethods() = super.getMethods() ++ {
     if (VersionContext.current.isV6SoftForkActivated) {
       Seq(
         groupGeneratorMethod,
         xorMethod,
-        serializeMethod
+        serializeMethod,
+        deserializeToMethod
       )
     } else {
       Seq(
@@ -1579,5 +1602,6 @@ case object SGlobalMethods extends MonoTypeMethods {
       )
     }
   }
+
 }
 
