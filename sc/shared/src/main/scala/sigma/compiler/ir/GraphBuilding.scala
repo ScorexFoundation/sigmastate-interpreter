@@ -15,28 +15,9 @@ import sigma.data.{CSigmaDslBuilder, ExactIntegral, ExactNumeric, ExactOrdering,
 import sigma.exceptions.GraphBuildingException
 import sigma.serialization.OpCodes
 import sigma.util.Extensions.ByteOps
-import sigma.{SigmaException, ast}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 
 import scala.collection.mutable.ArrayBuffer
-
-
-case class deserializeToBytes[V <: SType](bytes: Value[SByteArray], tpe: V) extends NotReadyValue[V] {
-  /** The companion node descriptor with opCode, cost and other metadata. */
-  override def companion: ValueCompanion = ???
-
-  /** Every value represents an operation and that operation can be associated with a function type,
-    * describing functional meaning of the operation, kind of operation signature.
-    * Thus, we can obtain global operation identifiers by combining Value.opName with Value.opType,
-    * so that if (v1.opName == v2.opName) && (v1.opType == v2.opType) then v1 and v2 are functionally
-    * point-wise equivalent.
-    * This in particular means that if two _different_ ops have the same opType they _should_ have
-    * different opNames.
-    * Thus defined op ids are used in a v4.x Cost Model - a table of all existing primitives coupled with
-    * performance parameters.
-    * */
-  override def opType: SFunc = Value.notSupportedError(this, "opType")
-}
 
 
 /** Perform translation of typed expression given by [[Value]] to a graph in IRContext.
@@ -569,9 +550,6 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
       case GetVar(id, optTpe) =>
         val e = stypeToElem(optTpe.elemType)
         ctx.getVar(id)(e)
-
-      case deserializeToBytes(bytes, tpe) =>
-        sigmaDslBuilder.deserializeTo(asRep[Coll[Byte]](eval(bytes)))(stypeToElem(tpe))
 
       case ValUse(valId, _) =>
         env.getOrElse(valId, !!!(s"ValUse $valId not found in environment $env"))

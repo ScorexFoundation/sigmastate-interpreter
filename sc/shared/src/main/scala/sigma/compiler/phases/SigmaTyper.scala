@@ -4,7 +4,6 @@ import sigma.ast.SCollection.{SBooleanArray, SByteArray}
 import sigma.ast.SigmaPredef._
 import sigma.ast._
 import sigma.ast.syntax.{SValue, _}
-import sigma.compiler.ir.deserializeToBytes
 import sigma.data.{Nullable, SigmaBoolean}
 import sigma.exceptions.TyperException
 import sigma.serialization.OpCodes
@@ -38,13 +37,14 @@ class SigmaTyper(val builder: SigmaBuilder,
 
   private def processGlobalMethod(srcCtx: Nullable[SourceContext],
                                   method: SMethod,
-                                  args: IndexedSeq[SValue]): SValue = {
+                                  args: IndexedSeq[SValue],
+                                  subst: Map[STypeVar, SType] = EmptySubst): SValue = {
     val global = Global.withPropagatedSrcCtx(srcCtx)
     val node = for {
       pf <- method.irInfo.irBuilder if lowerMethodCalls
-      res <- pf.lift((builder, global, method, args, EmptySubst))
+      res <- pf.lift((builder, global, method, args, subst))
     } yield res
-    node.getOrElse(mkMethodCall(global, method, args, EmptySubst).withPropagatedSrcCtx(srcCtx))
+    node.getOrElse(mkMethodCall(global, method, args, subst).withPropagatedSrcCtx(srcCtx))
   }
   /**
     * Rewrite tree to typed tree.  Checks constituent names and types.  Uses
@@ -142,11 +142,9 @@ class SigmaTyper(val builder: SigmaBuilder,
           SGlobalMethods.method(n) match {
             case Some(method) =>
               val srcCtx = sel.sourceContext
-              if(method.name == SGlobalMethods.deserializeToMethod.name) {
-                deserializeToBytes(args(0).asInstanceOf[Value[SByteArray]], rangeTpe)
-              } else {
-                processGlobalMethod(srcCtx, method, newArgs)
-              }
+              val genFunTpe = method.stype
+              val subst = Map(genFunTpe.tpeParams.head.ident -> rangeTpe)
+              processGlobalMethod(srcCtx, method, newArgs, subst)
             case _ =>
               error(s"Cannot find Global method: $n", bound.sourceContext)
           }

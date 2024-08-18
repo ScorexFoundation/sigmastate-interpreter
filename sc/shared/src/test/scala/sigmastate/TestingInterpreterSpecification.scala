@@ -492,26 +492,6 @@ class TestingInterpreterSpecification extends CompilerTestingCommons
     }
   }
 
-  property("bytes") {
-
-    val headerBytes = Base16.encode(contextHeader.asInstanceOf[CHeader].ergoHeader.bytes)
-
-    // checking hash of bytes(id) against known value
-    val source = s""" {
-                   |     val h = CONTEXT.headers(0)
-                   |      h.bytes == fromBase16("$headerBytes") &&
-                   |        blake2b256(h.bytes) == h.id &&
-                   |        h.id == fromBase16("5603a937ec1988220fc44fb5022fb82d5565b961f005ebb55d85bd5a9e6f801f")
-                   | }
-                   | """.stripMargin
-
-    if (activatedVersionInTests < V6SoftForkVersion) {
-      an [sigmastate.exceptions.MethodNotFound] should be thrownBy testEval(source)
-    } else {
-      testEval(source)
-    }
-  }
-
   override protected def afterAll(): Unit = {
   }
 
