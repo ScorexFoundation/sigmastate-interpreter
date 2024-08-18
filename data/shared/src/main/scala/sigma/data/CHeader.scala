@@ -81,8 +81,6 @@ case class CHeader(ergoHeader: ErgoHeader) extends Header with WrapperOf[ErgoHea
     }
   }
 
-  override def bytes: Coll[Byte] = Colls.fromArray(ergoHeader.bytes)
-
 }
 
 object CHeader {

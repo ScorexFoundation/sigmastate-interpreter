@@ -7,15 +7,14 @@ import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ByteArrayBuilder
 import scorex.util.encode.Base16
-import scorex.util.serialization.{VLQByteBufferReader, VLQByteBufferWriter}
-import scorex.utils.{Ints, Longs, Shorts}
-import sigma.{BigInt, Colls, SigmaTestingData}
-import scorex.util.encode.Base16
+import scorex.util.serialization.VLQByteBufferWriter
+import scorex.utils.Longs
+import sigma.{Colls, SigmaTestingData}
 import sigma.Extensions.ArrayOps
 import sigma.VersionContext.V6SoftForkVersion
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.SType.AnyOps
-import sigma.data.{AvlTreeData, AvlTreeFlags, CAND, CAnyValue, CSigmaDslBuilder, CSigmaProp}
+import sigma.data.{AvlTreeData, AvlTreeFlags, CAND, CAnyValue, CHeader, CSigmaDslBuilder, CSigmaProp}
 import sigma.util.StringUtil._
 import sigma.ast._
 import sigma.ast.syntax._
@@ -29,10 +28,9 @@ import sigmastate.interpreter.Interpreter._
 import sigma.ast.Apply
 import sigma.eval.EvalSettings
 import sigma.exceptions.InvalidType
-import sigma.serialization.{ConstantStore, DataSerializer, ErgoTreeSerializer, SigmaByteReader, SigmaByteWriter, ValueSerializer}
+import sigma.serialization.{DataSerializer, ErgoTreeSerializer, SigmaByteWriter}
 import sigma.util.Extensions
 import sigmastate.utils.Helpers
-import sigma.serialization.ErgoTreeSerializer
 import sigmastate.utils.Helpers._
 
 import java.math.BigInteger
@@ -420,7 +418,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
   property("deserializeTo - header") {
     val td = new SigmaTestingData {}
     val h1 = td.TestData.h1
-    val headerBytes = h1.bytes
+    val headerBytes = h1.asInstanceOf[CHeader].ergoHeader.bytes
 
     val headerStateBytes = AvlTreeData.serializer.toBytes(Extensions.CoreAvlTreeOps(h1.stateRoot).toAvlTreeData)
     val customExt = Seq(21.toByte -> ByteArrayConstant(headerBytes), 22.toByte -> ByteArrayConstant(headerStateBytes))
@@ -447,7 +445,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
 
   property("deserializeTo - header option") {
     val td = new SigmaTestingData {}
-    val h1 = td.TestData.h1
+    val h1 = td.TestData.h1.asInstanceOf[CHeader].ergoHeader
     val headerBytes = Colls.fromArray(Array(1.toByte) ++ h1.bytes.toArray)
 
     val customExt = Seq(21.toByte -> ByteArrayConstant(headerBytes))

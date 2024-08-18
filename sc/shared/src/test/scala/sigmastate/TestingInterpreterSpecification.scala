@@ -13,12 +13,9 @@ import org.scalatest.BeforeAndAfterAll
 import scorex.util.encode.{Base16, Base58}
 import sigma.Colls
 import sigma.VersionContext.V6SoftForkVersion
-import sigma.data.{CAND, CAvlTree, ProveDlog, SigmaBoolean, TrivialProp}
+import sigma.data.{CAND, CAvlTree, CHeader, ProveDlog, SigmaBoolean, TrivialProp}
 import sigma.interpreter.ContextExtension
-import scorex.util.encode.Base58
 import sigma.VersionContext
-import sigma.crypto.CryptoConstants
-import sigma.data.{AvlTreeData, CAND, ProveDlog, SigmaBoolean, TrivialProp}
 import sigma.util.Extensions.IntOps
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
 import sigmastate.helpers.TestingHelpers._
@@ -497,7 +494,7 @@ class TestingInterpreterSpecification extends CompilerTestingCommons
 
   property("bytes") {
 
-    val headerBytes = Base16.encode(contextHeader.bytes.toArray)
+    val headerBytes = Base16.encode(contextHeader.asInstanceOf[CHeader].ergoHeader.bytes)
 
     // checking hash of bytes(id) against known value
     val source = s""" {
