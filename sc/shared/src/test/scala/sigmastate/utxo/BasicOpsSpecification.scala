@@ -3,7 +3,6 @@ package sigmastate.utxo
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, R6, R8}
 import org.ergoplatform._
 import scorex.util.encode.Base16
-import scorex.util.encode.Base16
 import scorex.utils.Ints
 import sigma.Extensions.ArrayOps
 import sigma.VersionContext

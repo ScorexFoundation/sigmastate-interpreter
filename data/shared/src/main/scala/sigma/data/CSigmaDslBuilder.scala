@@ -4,11 +4,11 @@ import debox.cfor
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.validation.ValidationRules
 import scorex.crypto.hash.{Blake2b256, Sha256}
-import scorex.utils.{Ints, Longs, Shorts}
-import sigma.ast.{AtLeast, SBigInt, SByte, SInt, SLong, SShort, SType, SubstConstants}
+import scorex.utils.{Ints, Longs}
+import sigma.ast.{AtLeast, SBigInt, SubstConstants}
 import sigma.crypto.{CryptoConstants, EcPointType, Ecp}
 import sigma.eval.Extensions.EvalCollOps
-import sigma.serialization.{CoreDataSerializer, DataSerializer, GroupElementSerializer, SerializerException, SigmaSerializer}
+import sigma.serialization.{GroupElementSerializer, SerializerException, SigmaSerializer}
 import sigma.util.Extensions.BigIntegerOps
 import sigma.validation.SigmaValidationSettings
 import sigma.{AvlTree, BigInt, Box, Coll, CollBuilder, GroupElement, SigmaDslBuilder, SigmaProp, VersionContext}
@@ -201,38 +201,37 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
     this.GroupElement(p)
   }
 
-  override def fromBigEndianBytes[T](tpe: SType, bytes: Coll[Byte])(implicit cT: RType[T]): T = {
-    tpe match {
-      case SByte => if (bytes.length != 1) {
+  override def fromBigEndianBytes[T](bytes: Coll[Byte])(implicit cT: RType[T]): T = {
+    cT match {
+      case sigma.ByteType => if (bytes.length != 1) {
         throw new IllegalArgumentException("To deserialize SByte with fromBigEndianBytes, exactly one byte should be provided")
       } else {
         bytes.apply(0).asInstanceOf[T]
       }
-      case SShort => if (bytes.length != 2) {
+      case sigma.ShortType => if (bytes.length != 2) {
         throw new IllegalArgumentException("To deserialize SShort with fromBigEndianBytes, exactly two bytes should be provided")
       } else {
         val b0 = bytes(0)
         val b1 = bytes(1)
         ((b0 & 0xFF) << 8 | (b1 & 0xFF)).toShort.asInstanceOf[T]
       }
-      case SInt => if (bytes.length != 4) {
+      case sigma.IntType => if (bytes.length != 4) {
         throw new IllegalArgumentException("To deserialize SInt with fromBigEndianBytes, exactly four bytes should be provided")
       } else {
         Ints.fromByteArray(bytes.toArray).asInstanceOf[T]
       }
-      case SLong => if (bytes.length != 8) {
+      case sigma.LongType => if (bytes.length != 8) {
         throw new IllegalArgumentException("To deserialize SLong with fromBigEndianBytes, exactly eight bytes should be provided")
       } else {
         Longs.fromByteArray(bytes.toArray).asInstanceOf[T]
       }
-      case SBigInt =>
+      case sigma.BigIntRType =>
         if (bytes.length > SBigInt.MaxSizeInBytes) {
           throw SerializerException(s"BigInt value doesn't not fit into ${SBigInt.MaxSizeInBytes} bytes in fromBigEndianBytes")
         }
         CBigInt(new BigInteger(bytes.toArray)).asInstanceOf[T]
       // todo: UnsignedBitInt
       case _ => throw new IllegalArgumentException("Unsupported type provided in fromBigEndianBytes")
-
     }
   }
 }

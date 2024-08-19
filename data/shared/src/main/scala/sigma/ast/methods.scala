@@ -1520,19 +1520,16 @@ case object SGlobalMethods extends MonoTypeMethods {
     Xor.xorWithCosting(ls, rs)
   }
 
-  lazy val fromBigEndianBytesMethod = SMethod(
-    this, "fromBigEndianBytes", SFunc(Array(SGlobal, SByteArray), tT, Array(paramT)), 30, Xor.costKind, Seq(tT)) // todo: id, cossting
-    .withIRInfo(MethodCallIrBuilder)
-    .withInfo(MethodCall, "Multiply this number with \\lst{other} by module Q.", ArgInfo("other", "Number to multiply with this.")) // todo: desc
+  private val BigEndianBytesCostKind = FixedCost(JitCost(10))
 
-  def fromBigEndianBytes_eval(mc: MethodCall, G: SigmaDslBuilder, bytes: Coll[Byte])
-                             (implicit E: ErgoTreeEvaluator): Any = {
-    val tpe = mc.tpe
-    val cT = stypeToRType(tpe)
-    E.addSeqCost(Xor.costKind, bytes.length, Xor.opDesc) { () => // todo: cost
-      G.fromBigEndianBytes(tpe, bytes)(cT)
-    }
-  }
+  lazy val fromBigEndianBytesMethod = SMethod(
+    this, "fromBigEndianBytes", SFunc(Array(SGlobal, SByteArray), tT, Array(paramT)), 10, BigEndianBytesCostKind, Seq(tT)) // todo: id
+    .withIRInfo(MethodCallIrBuilder,
+      javaMethodOf[SigmaDslBuilder, Coll[Byte], RType[_]]("fromBigEndianBytes"),
+      { mtype => Array(mtype.tRange) })
+    .withInfo(MethodCall,
+      "Decode a number from big endian bytes.",
+      ArgInfo("first", "Bytes which are big-endian encoded number."))
 
   private val v5Methods = super.getMethods() ++ Seq(
     groupGeneratorMethod,
