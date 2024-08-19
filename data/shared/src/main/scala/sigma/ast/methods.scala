@@ -1463,8 +1463,6 @@ case object SHeaderMethods extends MonoTypeMethods {
     .withIRInfo(MethodCallIrBuilder)
     .withInfo(Xor, "Check PoW of this header") // todo: desc
 
-  lazy val bytesMethod = propertyCall("bytes", SByteArray, 17, FixedCost(JitCost(10)))
-
   def checkPow_eval(mc: MethodCall, G: SigmaDslBuilder, header: Header)
                  (implicit E: ErgoTreeEvaluator): Boolean = {
     E.checkPow_eval(mc, header)
@@ -1476,7 +1474,7 @@ case object SHeaderMethods extends MonoTypeMethods {
       super.getMethods() ++ Seq(
         idMethod, versionMethod, parentIdMethod, ADProofsRootMethod, stateRootMethod, transactionsRootMethod,
         timestampMethod, nBitsMethod, heightMethod, extensionRootMethod, minerPkMethod, powOnetimePkMethod,
-        powNonceMethod, powDistanceMethod, votesMethod, checkPowMethod, bytesMethod)
+        powNonceMethod, powDistanceMethod, votesMethod, checkPowMethod)
     } else {
       super.getMethods() ++ Seq(
         idMethod, versionMethod, parentIdMethod, ADProofsRootMethod, stateRootMethod, transactionsRootMethod,
@@ -1541,9 +1539,8 @@ case object SGlobalMethods extends MonoTypeMethods {
   lazy val deserializeToMethod = SMethod(
     this, "deserializeTo", SFunc(Array(SGlobal, SByteArray), tT, Array(paramT)), 3, deserializeCostKind, Seq(tT))
     .withIRInfo(MethodCallIrBuilder, desJava)
- //   .copy(irInfo = MethodIRInfo(None, Some(desJava), None))
-    .withInfo(MethodCall, "Byte-wise XOR of two collections of bytes",  // todo: desc
-      ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))
+    .withInfo(MethodCall, "Deserialize provided bytes into an object of requested type",
+      ArgInfo("first", "Bytes to deserialize"))
 
   /** Implements evaluation of Global.xor method call ErgoTree node.
     * Called via reflection based on naming convention.

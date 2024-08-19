@@ -77,7 +77,7 @@ case class MethodCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value[S
   ): SMethod = {
     // TODO optimize: avoid repeated transformation of method type (by morphic)
     // TODO: should we use the method with .withConcreteTypes done? It breaks ergotree roundtrip tests
-    val method = methodTemplate.withConcreteTypes(explicitTypeSubst)
+   // val method = methodTemplate.withConcreteTypes(explicitTypeSubst)
     val nArgs = args.length
     val argTypes: Seq[SType] =
       if (nArgs == 0) SType.EmptySeq

@@ -4,13 +4,15 @@ import sigma.ast.ErgoTree.ZeroHeader
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.syntax.TrueSigmaProp
 import sigma.ast._
-import sigma.data.{CBigInt, ExactNumeric}
+import sigma.crypto.SecP256K1Group
+import sigma.data.{CBigInt, CGroupElement, CSigmaDslBuilder, ExactNumeric}
 import sigma.eval.{CostDetails, SigmaDsl, TracedCost}
 import sigma.util.Extensions.{BooleanOps, ByteOps, IntOps, LongOps}
 import sigmastate.exceptions.MethodNotFound
 import sigmastate.utils.Helpers
 
 import java.math.BigInteger
+import scala.collection.immutable.ArraySeq
 import scala.util.Success
 
 /** This suite tests all operations for v6.0 version of the language.
@@ -461,6 +463,42 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
     tree.header shouldBe t2.header
     tree.constants.length shouldBe t2.constants.length
     tree.root shouldBe t2.root
+  }
+
+  property("Global.deserializeTo") {
+    def checkPoW: Feature[GroupElement, Boolean] = {
+      newFeature(
+        { (x: GroupElement) => CSigmaDslBuilder.deserializeTo[GroupElement](SGroupElement, x.getEncoded) == x},
+        "{ (x: GroupElement) => Global.deserializeTo[GroupElement](x.getEncoded) == x }",
+        FuncValue(
+          Array((1, SGroupElement)),
+          EQ(
+            MethodCall.typed[Value[SGroupElement.type]](
+              Global,
+              SGlobalMethods.deserializeToMethod,
+              Vector(
+                MethodCall.typed[Value[SCollection[SByte.type]]](
+                  ValUse(1, SGroupElement),
+                  SGroupElementMethods.getMethodByName("getEncoded"),
+                  ArraySeq(),
+                  Map()
+                )
+              ),
+              Map(STypeVar("T") -> SGroupElement)
+            ),
+            ValUse(1, SGroupElement)
+          )
+        ),
+        sinceVersion = VersionContext.V6SoftForkVersion
+      )
+    }
+
+    verifyCases(
+      Seq(
+        CGroupElement(SecP256K1Group.generator) -> new Expected(ExpectedResult(Success(true), None))
+      ),
+      checkPoW
+    )
   }
 
 }
