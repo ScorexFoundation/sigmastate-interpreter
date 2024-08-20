@@ -5,7 +5,6 @@ import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress}
 import scorex.util.encode.{Base16, Base58, Base64}
 import sigma.ast.SCollection.{SByteArray, SIntArray}
 import sigma.ast.SOption.SIntOption
-import sigma.ast.SigmaPropConstant
 import sigma.ast.syntax._
 import sigma.data.Nullable
 import sigma.exceptions.InvalidArguments
@@ -561,7 +560,7 @@ object SigmaPredef {
 
     val funcs: Map[String, PredefinedFunc] = globalFuncs ++ infixFuncs ++ unaryFuncs
 
-    /** WARNING: This operations are not used in frontend, and should be be used.
+    /** WARNING: This operations are not used in frontend, and should not be used.
       * They are used in SpecGen only the source of metadata for the corresponding ErgoTree nodes.
       */
     val specialFuncs: Map[String, PredefinedFunc] = Seq(

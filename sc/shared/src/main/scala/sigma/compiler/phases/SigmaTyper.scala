@@ -139,7 +139,8 @@ class SigmaTyper(val builder: SigmaBuilder,
       obj.tpe match {
         case p: SProduct =>
           MethodsContainer.getMethod(p, n) match {
-            case Some(method @ SMethod(_, _, genFunTpe @ SFunc(_, _, _), _, _, _, _, _)) =>
+            case Some(method: SMethod) =>
+              val genFunTpe = method.stype
               val subst = Map(genFunTpe.tpeParams.head.ident -> rangeTpe)
               val concrFunTpe = applySubst(genFunTpe, subst)
               val expectedArgs = concrFunTpe.asFunc.tDom.tail
@@ -522,6 +523,7 @@ class SigmaTyper(val builder: SigmaBuilder,
     case v: SigmaBoolean => v
     case v: Upcast[_, _] => v
     case v @ Select(_, _, Some(_)) => v
+    case v @ MethodCall(_, _, _, _) => v
     case v =>
       error(s"Don't know how to assignType($v)", v.sourceContext)
   }).ensuring(v => v.tpe != NoType,
