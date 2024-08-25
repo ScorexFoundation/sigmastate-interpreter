@@ -20,7 +20,6 @@ import java.math.BigInteger
   * @see [[SigmaDslBuilder]] for detailed descriptions
   */
 class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
-  implicit val validationSettings: SigmaValidationSettings = ValidationRules.currentSettings
 
   override val Colls: CollBuilder = sigma.Colls
 
@@ -193,7 +192,7 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
       case e: Throwable =>
         throw new RuntimeException(s"Cannot evaluate substConstants($scriptBytes, $positions, $newValues)", e)
     }
-    val (res, _)  = SubstConstants.eval(scriptBytes.toArray, positions.toArray, constants)(validationSettings)
+    val (res, _)  = SubstConstants.eval(scriptBytes.toArray, positions.toArray, constants)
     Colls.fromArray(res)
   }
 

@@ -653,7 +653,7 @@ case class SubstConstants[T <: SType](scriptBytes: Value[SByteArray], positions:
       val (newBytes, nConstants) = SubstConstants.eval(
         scriptBytes = scriptBytesV.toArray,
         positions = positionsV.toArray,
-        newVals = typedNewVals)(SigmaDsl.validationSettings)
+        newVals = typedNewVals)
 
       res = Colls.fromArray(newBytes)
       nConstants
@@ -684,7 +684,7 @@ object SubstConstants extends ValueCompanion {
     */
   def eval(scriptBytes: Array[Byte],
            positions: Array[Int],
-           newVals: Array[Constant[SType]])(implicit vs: SigmaValidationSettings): (Array[Byte], Int) =
+           newVals: Array[Constant[SType]]): (Array[Byte], Int) =
     ErgoTreeSerializer.DefaultSerializer.substituteConstants(scriptBytes, positions, newVals)
 }
 
