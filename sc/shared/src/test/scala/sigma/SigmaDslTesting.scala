@@ -14,6 +14,7 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import scalan.Platform.threadSleepOrNoOp
 import sigma.Extensions.ArrayOps
 import sigma.data.{CBox, CollType, OptionType, PairType, ProveDlog, RType, SigmaLeaf}
+import sigma.VersionContext.V6SoftForkVersion
 import sigma.util.BenchmarkUtil
 import sigma.util.CollectionUtil._
 import sigma.util.Extensions._
@@ -126,8 +127,8 @@ class SigmaDslTesting extends AnyPropSpec
     /** Checks if this feature is supported in the given version context. */
     def isSupportedIn(vc: VersionContext): Boolean
 
-    /** Version in which the feature is first implemented or changed. */
-    def sinceVersion: VersionContext
+    /** Version in which the feature is first implemented of changed. */
+    def sinceVersion: Byte
 
     /** Script containing this feature. */
     def script: String
@@ -329,14 +330,16 @@ class SigmaDslTesting extends AnyPropSpec
         // Compile script the same way it is performed by applications (i.e. via Ergo Appkit)
         val prop = compile(env, code)(IR).asSigmaProp
 
-        // Add additional oparations which are not yet implemented in ErgoScript compiler
+        // Add additional operations which are not yet implemented in ErgoScript compiler
         val multisig = AtLeast(
           IntConstant(2),
           Array(
             pkAlice,
             DeserializeRegister(ErgoBox.R5, SSigmaProp),  // deserialize pkBob
             DeserializeContext(2, SSigmaProp)))           // deserialize pkCarol
-        val header = ErgoTree.headerWithVersion(ZeroHeader, ergoTreeVersionInTests)
+        // We set size for trees v0 as well, to have the same size and so the same cost in V6 interpreter
+        // (where tree size is accounted in cost)
+        val header = ErgoTree.setSizeBit(ErgoTree.headerWithVersion(ZeroHeader, ergoTreeVersionInTests))
         ErgoTree.withSegregation(header, SigmaOr(prop, multisig))
       }
 
@@ -400,7 +403,7 @@ class SigmaDslTesting extends AnyPropSpec
         ctx
       }
 
-      val (expectedResult, expectedCost) = if (activatedVersionInTests < sinceVersion.activatedVersion)
+      val (expectedResult, expectedCost) = if (activatedVersionInTests < sinceVersion)
         (expected.oldResult, expected.verificationCostOpt)
       else {
         val res = expected.newResults(ergoTreeVersionInTests)
@@ -459,7 +462,7 @@ class SigmaDslTesting extends AnyPropSpec
           val verificationCost = cost.toIntExact
           if (expectedCost.isDefined) {
             assertResult(expectedCost.get,
-              s"Actual verify() cost $cost != expected ${expectedCost.get}")(verificationCost)
+              s"Actual verify() cost $cost != expected ${expectedCost.get} (version: ${VersionContext.current.activatedVersion})")(verificationCost)
           }
 
         case Failure(t) => throw t
@@ -507,7 +510,7 @@ class SigmaDslTesting extends AnyPropSpec
 
     implicit val cs = compilerSettingsInTests
 
-    override def sinceVersion: VersionContext = VersionContext(0, 0) // has always been supported
+    override def sinceVersion: Byte = 0
 
     override def isSupportedIn(vc: VersionContext): Boolean = true
 
@@ -669,7 +672,7 @@ class SigmaDslTesting extends AnyPropSpec
     * @param allowDifferentErrors if true, allow v4.x and v5.0 to fail with different error
     */
   case class ChangedFeature[A, B](
-    changedInVersion: VersionContext,
+    changedInVersion: Byte,
     script: String,
     scalaFunc: A => B,
     override val scalaFuncNew: A => B,
@@ -683,7 +686,7 @@ class SigmaDslTesting extends AnyPropSpec
 
     implicit val cs = compilerSettingsInTests
 
-    override def sinceVersion: VersionContext = changedInVersion
+    override def sinceVersion: Byte = changedInVersion
 
     override def isSupportedIn(vc: VersionContext): Boolean = true
 
@@ -764,7 +767,7 @@ class SigmaDslTesting extends AnyPropSpec
         checkEq(scalaFuncNew)(newF)(input)
       }
 
-      if (VersionContext.current.activatedVersion < changedInVersion.activatedVersion) {
+      if (VersionContext.current.activatedVersion < changedInVersion) {
         // check the old implementation with Scala semantic
         val expectedOldRes = expected.value
 
@@ -859,7 +862,7 @@ class SigmaDslTesting extends AnyPropSpec
     * @param logScript         if true, log scripts to console
     */
   case class NewFeature[A, B](
-    sinceVersion: VersionContext,
+    sinceVersion: Byte,
     script: String,
     override val scalaFuncNew: A => B,
     expectedExpr: Option[SValue],
@@ -868,10 +871,8 @@ class SigmaDslTesting extends AnyPropSpec
   )(implicit IR: IRContext, override val evalSettings: EvalSettings, val tA: RType[A], val tB: RType[B])
     extends Feature[A, B] {
 
-    override def isSupportedIn(vc: VersionContext): Boolean = {
-      sinceVersion.activatedVersion < vc.activatedVersion ||
-        (sinceVersion.activatedVersion == vc.activatedVersion && sinceVersion.ergoTreeVersion <= vc.ergoTreeVersion)
-    }
+    override def isSupportedIn(vc: VersionContext): Boolean =
+      vc.activatedVersion >= sinceVersion
 
     override def scalaFunc: A => B = { x =>
       sys.error(s"Semantic Scala function is not defined for old implementation: $this")
@@ -1011,6 +1012,30 @@ class SigmaDslTesting extends AnyPropSpec
         }
       }
 
+    /** Used when the old and new value and costs are the same for all versions, but Version 3 (Ergo 6.0) will have a different cost due to deserialization cost being added.
+     * Different versions of ErgoTree can have different deserialization costs as well
+     *
+     * @param value           expected result of tested function
+     * @param cost            expected verification cost
+     * @param expectedDetails expected cost details for all versions <= V3
+     * @param expectedNewCost expected new verification cost for all versions <= V3
+     * @param expectedV3Cost expected cost for >=V3
+     */
+    def apply[A](value: Try[A],
+                 cost: Int,
+                 expectedDetails: CostDetails,
+                 expectedNewCost: Int,
+                 expectedV3Costs: Seq[Int]
+                 )(implicit dummy: DummyImplicit): Expected[A] =
+      new Expected(ExpectedResult(value, Some(cost))) {
+        override val newResults = defaultNewResults.zipWithIndex.map {
+          case ((ExpectedResult(v, _), _), version) => {
+            var cost = if (activatedVersionInTests >= V6SoftForkVersion) expectedV3Costs(version) else expectedNewCost
+            (ExpectedResult(v, Some(cost)), Some(expectedDetails))
+          }
+        }
+      }
+
     /** Used when operation semantics changes in new versions. For those versions expected
       * test vectors can be specified.
       *
@@ -1021,8 +1046,10 @@ class SigmaDslTesting extends AnyPropSpec
       * @param newVersionedResults new results returned by each changed feature function in
       *                            v5.+ for each ErgoTree version.
       */
-    def apply[A](value: Try[A], cost: Int,
-                 expectedDetails: CostDetails, newCost: Int,
+    def apply[A](value: Try[A],
+                 cost: Int,
+                 expectedDetails: CostDetails,
+                 newCost: Int,
                  newVersionedResults: Seq[(Int, (ExpectedResult[A], Option[CostDetails]))]): Expected[A] =
       new Expected[A](ExpectedResult(value, Some(cost))) {
         override val newResults = {
@@ -1065,7 +1092,7 @@ class SigmaDslTesting extends AnyPropSpec
     *         various ways
     */
   def changedFeature[A: RType, B: RType]
-      (changedInVersion: VersionContext,
+      (changedInVersion: Byte,
        scalaFunc: A => B,
        scalaFuncNew: A => B,
        script: String,
@@ -1090,8 +1117,7 @@ class SigmaDslTesting extends AnyPropSpec
     *         various ways
     */
   def newFeature[A: RType, B: RType]
-      (scalaFunc: A => B, script: String, expectedExpr: SValue = null,
-       sinceVersion: VersionContext = VersionContext(VersionContext.JitActivationVersion, 0))
+      (scalaFunc: A => B, script: String, expectedExpr: SValue = null, sinceVersion: Byte = VersionContext.JitActivationVersion)
       (implicit IR: IRContext, es: EvalSettings): Feature[A, B] = {
     NewFeature(sinceVersion, script, scalaFunc, Option(expectedExpr))
   }

@@ -163,13 +163,13 @@ trait SNumericTypeMethods extends MonoTypeMethods {
   private val subst = Map(tNum -> this.ownerType)
 
   private val v5Methods = {
-    SNumericTypeMethods.methods.map { m =>
+    SNumericTypeMethods.v5Methods.map { m =>
       m.copy(stype = applySubst(m.stype, subst).asFunc)
     }
   }
 
   private val v6Methods = {
-    SNumericTypeMethods.methods.map { m =>
+    SNumericTypeMethods.v6Methods.map { m =>
       m.copy(
         objType = this, // associate the method with the concrete numeric type
         stype = applySubst(m.stype, subst).asFunc
@@ -379,14 +379,17 @@ object SNumericTypeMethods extends MethodsContainer {
         |  Each boolean corresponds to one bit.
           """.stripMargin)
 
-  protected override def getMethods(): Seq[SMethod] = Array(
+  lazy val v5Methods = Array(
     ToByteMethod, // see Downcast
     ToShortMethod, // see Downcast
     ToIntMethod, // see Downcast
     ToLongMethod, // see Downcast
     ToBigIntMethod, // see Downcast
     ToBytesMethod,
-    ToBitsMethod,
+    ToBitsMethod
+  )
+
+  lazy val v6Methods = v5Methods ++ Array(
     BitwiseInverseMethod,
     BitwiseOrMethod,
     BitwiseAndMethod,
@@ -395,7 +398,16 @@ object SNumericTypeMethods extends MethodsContainer {
     ShiftRightMethod
   )
 
+  protected override def getMethods(): Seq[SMethod] = {
+    if (VersionContext.current.isV6SoftForkActivated) {
+      v6Methods
+    } else {
+      v5Methods
+    }
+  }
+
   /** Collection of names of numeric casting methods (like `toByte`, `toInt`, etc). */
+  // todo: add unsigned big int
   val castMethods: Array[String] =
     Array(ToByteMethod, ToShortMethod, ToIntMethod, ToLongMethod, ToBigIntMethod)
         .map(_.name)
@@ -460,31 +472,9 @@ case object SBigIntMethods extends SNumericTypeMethods {
   /** Type for which this container defines methods. */
   override def ownerType: SMonoType = SBigInt
 
-  final val ToNBitsCostInfo = OperationCostInfo(
-    FixedCost(JitCost(5)), NamedDesc("NBitsMethodCall"))
-
-  //id = 20 to make it after toBits and reserve space for future methods at SNumericTypeMethods
-  val ToNBits = SMethod(this, "nbits", SFunc(this.ownerType, SLong), 20, ToNBitsCostInfo.costKind)
-                  .withInfo(ModQ, "Encode this big integer value as NBits")
-
-  /** The following `modQ` methods are not fully implemented in v4.x and this descriptors.
-    * This descritors are remain here in the code and are waiting for full implementation
-    * is upcoming soft-forks at which point the cost parameters should be calculated and
-    * changed.
-    */
-  val ModQMethod = SMethod(this, "modQ", SFunc(this.ownerType, SBigInt), 1, FixedCost(JitCost(1)))
-      .withInfo(ModQ, "Returns this \\lst{mod} Q, i.e. remainder of division by Q, where Q is an order of the cryprographic group.")
-  val PlusModQMethod = SMethod(this, "plusModQ", SFunc(IndexedSeq(this.ownerType, SBigInt), SBigInt), 2, FixedCost(JitCost(1)))
-      .withInfo(ModQArithOp.PlusModQ, "Adds this number with \\lst{other} by module Q.", ArgInfo("other", "Number to add to this."))
-  val MinusModQMethod = SMethod(this, "minusModQ", SFunc(IndexedSeq(this.ownerType, SBigInt), SBigInt), 3, FixedCost(JitCost(1)))
-      .withInfo(ModQArithOp.MinusModQ, "Subtracts \\lst{other} number from this by module Q.", ArgInfo("other", "Number to subtract from this."))
-  val MultModQMethod = SMethod(this, "multModQ", SFunc(IndexedSeq(this.ownerType, SBigInt), SBigInt), 4, FixedCost(JitCost(1)))
-      .withIRInfo(MethodCallIrBuilder)
-      .withInfo(MethodCall, "Multiply this number with \\lst{other} by module Q.", ArgInfo("other", "Number to multiply with this."))
-
   protected override def getMethods(): Seq[SMethod]  = {
     if (VersionContext.current.isV6SoftForkActivated) {
-      super.getMethods() ++ Seq(ToNBits)
+      super.getMethods()
       //    ModQMethod,
       //    PlusModQMethod,
       //    MinusModQMethod,
@@ -495,12 +485,6 @@ case object SBigIntMethods extends SNumericTypeMethods {
     }
   }
 
-  /**
-    *
-    */
-  def nbits_eval(mc: MethodCall, bi: sigma.BigInt)(implicit E: ErgoTreeEvaluator): Long = {
-    ???
-  }
 
 }
 

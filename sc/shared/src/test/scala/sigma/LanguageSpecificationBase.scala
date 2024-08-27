@@ -2,7 +2,7 @@ package sigma
 
 import org.scalatest.BeforeAndAfterAll
 import sigma.ast.{Apply, FixedCostItem, FuncValue, GetVar, JitCost, OptionGet, ValUse}
-import sigma.eval.{EvalSettings, Profiler}
+import sigma.eval.{CostDetails, EvalSettings, Profiler}
 import sigmastate.CompilerCrossVersionProps
 import sigmastate.interpreter.CErgoTreeEvaluator
 
@@ -136,5 +136,11 @@ abstract class LanguageSpecificationBase extends SigmaDslTesting
     FixedCostItem(FuncValue.AddToEnvironmentDesc, FuncValue.AddToEnvironmentDesc_CostKind),
     FixedCostItem(ValUse)
   )
+
+  /** Helper method to create the given expected results for all tree versions. */
+  def expectedSuccessForAllTreeVersions[A](value: A, cost: Int, costDetails: CostDetails) = {
+    val res = ExpectedResult(Success(value), Some(cost)) -> Some(costDetails)
+    Seq(0, 1, 2, 3).map(version => version -> res)
+  }
 
 }

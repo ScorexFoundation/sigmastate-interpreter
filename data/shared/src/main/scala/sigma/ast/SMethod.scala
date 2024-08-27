@@ -63,6 +63,7 @@ case class MethodIRInfo(
   * @param docInfo         optional human readable method description data
   * @param costFunc        optional specification of how the cost should be computed for the
   *                        given method call (See ErgoTreeEvaluator.calcCost method).
+  * @param userDefinedInvoke optional custom method evaluation function
   */
 case class SMethod(
     objType: MethodsContainer,

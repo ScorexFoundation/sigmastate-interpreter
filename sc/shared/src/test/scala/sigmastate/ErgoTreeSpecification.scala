@@ -332,7 +332,13 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit with C
           MInfo(4, ToLongMethod),
           MInfo(5, ToBigIntMethod),
           MInfo(6, ToBytesMethod),
-          MInfo(7, ToBitsMethod)
+          MInfo(7, ToBitsMethod),
+          MInfo(8, BitwiseInverseMethod, isResolvableFromIds = true),
+          MInfo(9, BitwiseOrMethod, isResolvableFromIds = true),
+          MInfo(10, BitwiseAndMethod, isResolvableFromIds = true),
+          MInfo(11, BitwiseXorMethod, isResolvableFromIds = true),
+          MInfo(12, ShiftLeftMethod, isResolvableFromIds = true),
+          MInfo(13, ShiftRightMethod, isResolvableFromIds = true)
         ), true)
       else
         (SByte.typeId, Seq.empty[MInfo], false)
@@ -346,7 +352,13 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit with C
           MInfo(4, ToLongMethod),
           MInfo(5, ToBigIntMethod),
           MInfo(6, ToBytesMethod),
-          MInfo(7, ToBitsMethod)
+          MInfo(7, ToBitsMethod),
+          MInfo(8, BitwiseInverseMethod, isResolvableFromIds = true),
+          MInfo(9, BitwiseOrMethod, isResolvableFromIds = true),
+          MInfo(10, BitwiseAndMethod, isResolvableFromIds = true),
+          MInfo(11, BitwiseXorMethod, isResolvableFromIds = true),
+          MInfo(12, ShiftLeftMethod, isResolvableFromIds = true),
+          MInfo(13, ShiftRightMethod, isResolvableFromIds = true)
         ), true)
       else
         (SShort.typeId, Seq.empty[MInfo], false)
@@ -360,7 +372,13 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit with C
           MInfo(4, ToLongMethod),
           MInfo(5, ToBigIntMethod),
           MInfo(6, ToBytesMethod),
-          MInfo(7, ToBitsMethod)
+          MInfo(7, ToBitsMethod),
+          MInfo(8, BitwiseInverseMethod, isResolvableFromIds = true),
+          MInfo(9, BitwiseOrMethod, isResolvableFromIds = true),
+          MInfo(10, BitwiseAndMethod, isResolvableFromIds = true),
+          MInfo(11, BitwiseXorMethod, isResolvableFromIds = true),
+          MInfo(12, ShiftLeftMethod, isResolvableFromIds = true),
+          MInfo(13, ShiftRightMethod, isResolvableFromIds = true)
         ), true)
       else
         (SInt.typeId, Seq.empty[MInfo], false)
@@ -374,7 +392,13 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit with C
           MInfo(4, ToLongMethod),
           MInfo(5, ToBigIntMethod),
           MInfo(6, ToBytesMethod),
-          MInfo(7, ToBitsMethod)
+          MInfo(7, ToBitsMethod),
+          MInfo(8, BitwiseInverseMethod, isResolvableFromIds = true),
+          MInfo(9, BitwiseOrMethod, isResolvableFromIds = true),
+          MInfo(10, BitwiseAndMethod, isResolvableFromIds = true),
+          MInfo(11, BitwiseXorMethod, isResolvableFromIds = true),
+          MInfo(12, ShiftLeftMethod, isResolvableFromIds = true),
+          MInfo(13, ShiftRightMethod, isResolvableFromIds = true)
         ), true)
       else
         (SLong.typeId, Seq.empty[MInfo], false)
@@ -401,7 +425,12 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit with C
         MInfo(7, ToBitsMethod, isResolvableFromIds = if (isV6Activated) true else false)) ++
         (if (isV6Activated) Seq(
           // methods added in v6.0
-          MInfo(20, SBigIntMethods.ToNBits)
+          MInfo(8, BitwiseInverseMethod, isResolvableFromIds = true),
+          MInfo(9, BitwiseOrMethod, isResolvableFromIds = true),
+          MInfo(10, BitwiseAndMethod, isResolvableFromIds = true),
+          MInfo(11, BitwiseXorMethod, isResolvableFromIds = true),
+          MInfo(12, ShiftLeftMethod, isResolvableFromIds = true),
+          MInfo(13, ShiftRightMethod, isResolvableFromIds = true)
         ) else Seq.empty)
         , true)
     },
@@ -550,7 +579,12 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit with C
           assert(canHaveMethods, s"Type $tyDesc should NOT have methods")
 
           val mc = MethodsContainer(tyDesc.typeId)
+
+          println("mc: " + mc.methods.map(_.name))
+          println("methods: " + methods.map(_.method.name))
+
           mc.methods.length shouldBe methods.length
+
           for (expectedMethod <- methods) {
             if (expectedMethod.isResolvableFromIds) {
 

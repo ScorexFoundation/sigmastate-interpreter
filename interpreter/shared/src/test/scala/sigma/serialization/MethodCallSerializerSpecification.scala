@@ -24,25 +24,4 @@ class MethodCallSerializerSpecification extends SerializationSpecification {
     roundTripTest(expr)
   }
 
-  property("MethodCall deserialization round trip for BigInt.nbits") {
-    def code = {
-      val bi = BigIntConstant(5)
-      val expr = MethodCall(bi,
-        SBigIntMethods.ToNBits,
-        Vector(),
-        Map()
-      )
-      roundTripTest(expr)
-    }
-
-    VersionContext.withVersions(VersionContext.V6SoftForkVersion, 1) {
-      code
-    }
-
-    an[ValidationException] should be thrownBy (
-      VersionContext.withVersions((VersionContext.V6SoftForkVersion - 1).toByte, 1) {
-        code
-      }
-      )
-  }
 }
