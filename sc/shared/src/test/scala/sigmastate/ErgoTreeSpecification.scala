@@ -580,9 +580,6 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit with C
 
           val mc = MethodsContainer(tyDesc.typeId)
 
-          println("mc: " + mc.methods.map(_.name))
-          println("methods: " + methods.map(_.method.name))
-
           mc.methods.length shouldBe methods.length
 
           for (expectedMethod <- methods) {

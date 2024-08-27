@@ -186,6 +186,7 @@ trait SNumericTypeMethods extends MonoTypeMethods {
 }
 
 object SNumericTypeMethods extends MethodsContainer {
+
   /** Type for which this container defines methods. */
   override def ownerType: STypeCompanion = SNumericType
 
@@ -399,11 +400,8 @@ object SNumericTypeMethods extends MethodsContainer {
   )
 
   protected override def getMethods(): Seq[SMethod] = {
-    if (VersionContext.current.isV6SoftForkActivated) {
-      v6Methods
-    } else {
-      v5Methods
-    }
+    // this .getMethods shouldn't ever be called
+    ???
   }
 
   /** Collection of names of numeric casting methods (like `toByte`, `toInt`, etc). */
