@@ -5,7 +5,7 @@ import org.ergoplatform._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-import sigma.Colls
+import sigma.{Colls, VersionContext}
 import sigma.ast.SCollection._
 import sigma.ast._
 import sigma.ast.syntax.{SValue, SigmaPropValue, SigmaPropValueOps}

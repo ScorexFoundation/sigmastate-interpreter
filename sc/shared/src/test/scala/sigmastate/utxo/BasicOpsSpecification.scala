@@ -2,6 +2,7 @@ package sigmastate.utxo
 
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, R6, R8}
 import org.ergoplatform._
+import scorex.util.encode.Base16
 import sigma.Extensions.ArrayOps
 import sigma.VersionContext
 import sigma.ast.SCollection.SByteArray
@@ -20,6 +21,7 @@ import sigmastate.interpreter.Interpreter._
 import sigma.ast.Apply
 import sigma.eval.EvalSettings
 import sigma.exceptions.InvalidType
+import sigma.serialization.ErgoTreeSerializer
 import sigmastate.utils.Helpers._
 
 import java.math.BigInteger
@@ -878,4 +880,46 @@ class BasicOpsSpecification extends CompilerTestingCommons
       true
     )
   }
+
+  property("substConstants") {
+    val initTreeScript =
+      """
+        | {
+        |   val v1 = 1  // 0
+        |   val v2 = 2  // 2
+        |   val v3 = 3  // 4
+        |   val v4 = 4  // 3
+        |   val v5 = 5  // 1
+        |   sigmaProp(v1 == -v5 && v2 == -v4 && v3 == v2 + v4)
+        | }
+        |""".stripMargin
+
+    val iet = ErgoTree.fromProposition(compile(Map.empty, initTreeScript).asInstanceOf[SigmaPropValue])
+
+    iet.constants.toArray shouldBe Array(IntConstant(1), IntConstant(5), IntConstant(2), IntConstant(4), IntConstant(3), IntConstant(6))
+
+    val originalBytes = Base16.encode(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(iet))
+
+    val set = ErgoTree(
+      iet.header,
+      IndexedSeq(IntConstant(-2), IntConstant(2), IntConstant(-1), IntConstant(1), IntConstant(0), IntConstant(0)),
+      iet.toProposition(false)
+    )
+
+    val hostScript =
+      s"""
+        |{
+        | val bytes = fromBase16("${originalBytes}")
+        |
+        | val substBytes = substConstants[Int](bytes, Coll[Int](0, 2, 4, 3, 1, 5), Coll[Int](-2, -1, 0, 1, 2, 0))
+        |
+        | val checkSubst = substBytes == fromBase16("${Base16.encode(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(set))}")
+        |
+        | sigmaProp(checkSubst)
+        |}
+        |""".stripMargin
+
+    test("subst", env, ext, hostScript, null)
+  }
+
 }
