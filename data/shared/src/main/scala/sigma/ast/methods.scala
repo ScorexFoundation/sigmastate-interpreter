@@ -922,8 +922,7 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
     baseCost = JitCost(10), perChunkCost = JitCost(1), chunkSize = 10)
 
   val ZipMethod = SMethod(this, "zip",
-    SFunc(Array(ThisType, tOVColl), SCollection(STuple(tIV, tOV)), Array[STypeParam](tIV, tOV)),
-    29, Zip_CostKind)
+    SFunc(Array(ThisType, tOVColl), SCollection(STuple(tIV, tOV)), Array[STypeParam](tIV, tOV)), 29, Zip_CostKind)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall, "")
 
@@ -939,11 +938,10 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
     }
   }
 
+  // ======== 6.0 methods below ===========
 
-  // 6.0 methods below
   val ReverseMethod = SMethod(this, "reverse",
-    SFunc(Array(ThisType), ThisType, paramIVSeq),
-    30, Zip_CostKind) // todo: costing
+    SFunc(Array(ThisType), ThisType, paramIVSeq), 30, Zip_CostKind) // todo: costing
     .withIRInfo(MethodCallIrBuilder)
     .withInfo(MethodCall, "")
 
@@ -960,8 +958,7 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
   }
 
   val DistinctMethod = SMethod(this, "distinct",
-    SFunc(Array(ThisType), ThisType, paramIVSeq),
-    31, Zip_CostKind) // todo: costing
+    SFunc(Array(ThisType), ThisType, paramIVSeq), 31, Zip_CostKind) // todo: costing
     .withIRInfo(MethodCallIrBuilder)
     .withInfo(MethodCall, "")
 
@@ -978,8 +975,7 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
   }
 
   val StartsWithMethod = SMethod(this, "startsWith",
-    SFunc(Array(ThisType, ThisType), SBoolean, paramIVSeq),
-    32, Zip_CostKind) // todo: costing
+    SFunc(Array(ThisType, ThisType), SBoolean, paramIVSeq), 32, Zip_CostKind) // todo: costing
     .withIRInfo(MethodCallIrBuilder)
     .withInfo(MethodCall, "")
 
@@ -996,8 +992,7 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
   }
 
   val EndsWithMethod = SMethod(this, "endsWith",
-    SFunc(Array(ThisType, ThisType), SBoolean, paramIVSeq),
-    33, Zip_CostKind) // todo: costing
+    SFunc(Array(ThisType, ThisType), SBoolean, paramIVSeq), 33, Zip_CostKind) // todo: costing
     .withIRInfo(MethodCallIrBuilder)
     .withInfo(MethodCall, "")
 
@@ -1018,18 +1013,7 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
     .withIRInfo(MethodCallIrBuilder)
     .withInfo(MethodCall, "")
 
-  /** Implements evaluation of Coll.zip method call ErgoTree node.
-    * Called via reflection based on naming convention.
-    * @see SMethod.evalMethod
-    */
-  def get_eval[A](mc: MethodCall, xs: Coll[A], index: Int)
-                      (implicit E: ErgoTreeEvaluator): Option[A] = {
-    E.addCost(ByIndex.costKind, mc.method.opDesc) //todo: costing
-    ??? // todo: this get is not actually executed, why?
-    xs.get(index)
-  }
-
-  private val v5Methods = Seq(
+  private val v5Methods = super.getMethods() ++ Seq(
     SizeMethod,
     GetOrElseMethod,
     MapMethod,
@@ -1049,7 +1033,7 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
     ZipMethod
   )
 
-  private val v6Methods = Seq(
+  private val v6Methods = v5Methods ++ Seq(
     ReverseMethod,
     DistinctMethod,
     StartsWithMethod,
@@ -1061,10 +1045,10 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
     * Typical override: `super.getMethods() ++ Seq(m1, m2, m3)`
     */
   override protected def getMethods(): Seq[SMethod] = {
-    if(VersionContext.current.isV6SoftForkActivated) {
-      super.getMethods() ++ v5Methods ++ v6Methods
+    if (VersionContext.current.isV6SoftForkActivated) {
+      v6Methods
     } else {
-      super.getMethods() ++ v5Methods
+      v5Methods
     }
   }
 
