@@ -1313,9 +1313,6 @@ case class MethodCall(
     addCost(MethodCall.costKind) // MethodCall overhead
     method.costKind match {
       case fixed: FixedCost =>
-        if (method.sinceVersion > 0 && E.context.currentErgoTreeVersion < method.sinceVersion) {
-          syntax.error(s"Method ${method.name} is not supported in tree version ${E.context.currentErgoTreeVersion}")
-        }
         val extra    = method.extraDescriptors
         val extraLen = extra.length
         val len      = args.length

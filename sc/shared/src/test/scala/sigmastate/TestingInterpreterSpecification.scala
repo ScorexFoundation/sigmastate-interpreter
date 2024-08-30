@@ -499,11 +499,7 @@ class TestingInterpreterSpecification extends CompilerTestingCommons
     if (activatedVersionInTests < V6SoftForkVersion) {
       an [Exception] should be thrownBy testEval(source)
     } else {
-      if(ergoTreeVersionInTests >= V6SoftForkVersion) {
-        testEval(source)
-      } else {
-        an [Exception] should be thrownBy testEval(source)
-      }
+      testEval(source)
     }
   }
 
