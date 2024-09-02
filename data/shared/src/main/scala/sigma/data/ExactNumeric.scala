@@ -1,7 +1,10 @@
 package sigma.data
 
+import debox.cfor
+import sigma.Evaluation.stypeToRType
 import sigma.{BigInt, Coll, Colls}
 import sigma.data.ExactIntegral._
+import sigma.data.RType.SomeType
 
 import scala.collection.mutable
 
@@ -40,18 +43,22 @@ trait ExactNumeric[T] {
   def toBigEndianBytes(x: T): Coll[Byte]
 
   def toBits(x: T): Coll[Boolean] = {
-    def byte2Bools(b: Byte): Array[Boolean] =  (0 to 7).toArray.reverse.map(isBitSet(b))
 
     def isBitSet(byte: Byte)(bit: Int): Boolean = ((byte >> bit) & 1) == 1
 
+    def byte2Bools(b: Byte): Array[Boolean] =  (0 to 7).toArray.reverse.map(isBitSet(b))
+
     val bytes = toBigEndianBytes(x)
-    val builder = mutable.ArrayBuilder.make[Boolean]
     val l = bytes.length
-    (0 until l).foreach{i=>
+    val res = new Array[Boolean](l * 8)
+    var offset = 0
+    cfor(0)(_ < l, _ + 1) { i =>
       val b = bytes(i)
-      builder.addAll(byte2Bools(b))
+      val bits = byte2Bools(b)
+      Array.copy(bits, 0, res, offset, 8)
+      offset += 8
     }
-    Colls.fromArray(builder.result())
+    Colls.fromArray(res)
   }
 
   def bitwiseInverse(x: T): T
