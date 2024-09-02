@@ -14,7 +14,7 @@ import sigma.data.{CSigmaDslBuilder, ExactIntegral, ExactNumeric, ExactOrdering,
 import sigma.exceptions.GraphBuildingException
 import sigma.serialization.OpCodes
 import sigma.util.Extensions.ByteOps
-import sigma.{SigmaException, ast}
+import sigma.{SigmaException, VersionContext, ast}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 
 import scala.collection.mutable.ArrayBuffer
@@ -1138,6 +1138,8 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
               h.powDistance
             case SHeaderMethods.votesMethod.name =>
               h.votes
+            case SHeaderMethods.checkPowMethod.name if VersionContext.current.isV6SoftForkActivated =>
+              h.checkPow
             case _ => throwError()
           }
           case (g: Ref[SigmaDslBuilder]@unchecked, SGlobalMethods) => method.name match {

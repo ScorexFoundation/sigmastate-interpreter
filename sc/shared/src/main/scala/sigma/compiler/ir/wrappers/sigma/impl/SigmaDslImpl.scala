@@ -1368,6 +1368,13 @@ object Header extends EntityObject("Header") {
         ArraySeq.empty,
         true, false, element[Coll[Byte]]))
     }
+
+    override def checkPow: Ref[Boolean] = {
+      asRep[Boolean](mkMethodCall(self,
+        HeaderClass.getMethod("checkPow"),
+        ArraySeq.empty,
+        true, false, element[Boolean]))
+    }
   }
 
   implicit object LiftableHeader
@@ -1492,6 +1499,13 @@ object Header extends EntityObject("Header") {
         ArraySeq.empty,
         true, true, element[Coll[Byte]]))
     }
+
+    def checkPow: Ref[Boolean] = {
+      asRep[Boolean](mkMethodCall(source,
+        HeaderClass.getMethod("checkPow"),
+        ArraySeq.empty,
+        true, true, element[Boolean]))
+    }
   }
 
   // entityUnref: single unref method for each type family
@@ -1509,7 +1523,7 @@ object Header extends EntityObject("Header") {
     override protected def collectMethods: Map[RMethod, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(RClass(classOf[Header]), RClass(classOf[SHeader]), Set(
-        "id", "version", "parentId", "ADProofsRoot", "stateRoot", "transactionsRoot", "timestamp", "nBits", "height", "extensionRoot", "minerPk", "powOnetimePk", "powNonce", "powDistance", "votes"
+        "id", "version", "parentId", "ADProofsRoot", "stateRoot", "transactionsRoot", "timestamp", "nBits", "height", "extensionRoot", "minerPk", "powOnetimePk", "powNonce", "powDistance", "votes", "checkPow"
         ))
     }
   }

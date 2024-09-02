@@ -1589,11 +1589,27 @@ case object SHeaderMethods extends MonoTypeMethods {
   lazy val powDistanceMethod      = propertyCall("powDistance", SBigInt, 14, FixedCost(JitCost(10)))
   lazy val votesMethod            = propertyCall("votes", SByteArray, 15, FixedCost(JitCost(10)))
 
-  protected override def getMethods() = super.getMethods() ++ Seq(
+  // cost of checkPoW is 700 as about 2*32 hashes required, and 1 hash (id) over short data costs 10
+  lazy val checkPowMethod = SMethod(
+    this, "checkPow", SFunc(Array(SHeader), SBoolean), 16, FixedCost(JitCost(700)))
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall, "Validate header's proof-of-work")
+
+  private lazy val v5Methods = super.getMethods() ++ Seq(
     idMethod, versionMethod, parentIdMethod, ADProofsRootMethod, stateRootMethod, transactionsRootMethod,
     timestampMethod, nBitsMethod, heightMethod, extensionRootMethod, minerPkMethod, powOnetimePkMethod,
-    powNonceMethod, powDistanceMethod, votesMethod
-  )
+    powNonceMethod, powDistanceMethod, votesMethod)
+
+  // 6.0 : checkPow method added
+  private lazy val v6Methods = v5Methods ++ Seq(checkPowMethod)
+
+  protected override def getMethods() = {
+    if (VersionContext.current.isV6SoftForkActivated) {
+      v6Methods
+    } else {
+      v5Methods
+    }
+  }
 }
 
 /** Type descriptor of `PreHeader` type of ErgoTree. */

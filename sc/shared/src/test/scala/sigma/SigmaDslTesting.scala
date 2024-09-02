@@ -875,7 +875,11 @@ class SigmaDslTesting extends AnyPropSpec
       vc.activatedVersion >= sinceVersion
 
     override def scalaFunc: A => B = { x =>
-      sys.error(s"Semantic Scala function is not defined for old implementation: $this")
+      if (isSupportedIn(VersionContext.current)) {
+        scalaFuncNew(x)
+      } else {
+        sys.error(s"Semantic Scala function is not defined for old implementation: $this")
+      }
     }
     implicit val cs = compilerSettingsInTests
 
@@ -925,8 +929,14 @@ class SigmaDslTesting extends AnyPropSpec
                             printTestCases: Boolean,
                             failOnTestVectors: Boolean): Unit = {
       val funcRes = checkEquality(input, printTestCases)
-      funcRes.isFailure shouldBe true
-      Try(scalaFunc(input)) shouldBe expected.value
+      if(!isSupportedIn(VersionContext.current)) {
+        funcRes.isFailure shouldBe true
+      }
+      if(isSupportedIn(VersionContext.current)) {
+        Try(scalaFunc(input)) shouldBe expected.value
+      } else {
+        Try(scalaFunc(input)).isFailure shouldBe true
+      }
     }
   }
 
