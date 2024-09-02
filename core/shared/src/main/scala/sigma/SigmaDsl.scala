@@ -471,6 +471,11 @@ trait Header {
     */
   def serializeWithoutPoW: Coll[Byte]
 
+  /**
+    * @return result of header's proof-of-work validation
+    */
+  def checkPow: Boolean
+
 }
 
 /** Runtime representation of Context ErgoTree type.

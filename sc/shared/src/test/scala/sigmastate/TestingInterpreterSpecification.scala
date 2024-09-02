@@ -6,16 +6,13 @@ import sigma.ast._
 import sigma.ast.syntax._
 import sigmastate.interpreter._
 import Interpreter._
-import io.circe.parser.parse
 import org.ergoplatform._
-import org.ergoplatform.sdk.JsonCodecs
 import org.scalatest.BeforeAndAfterAll
-import scorex.util.encode.Base58
+import scorex.util.encode.{Base16, Base58}
 import sigma.Colls
 import sigma.VersionContext.V6SoftForkVersion
 import sigma.VersionContext
-import sigma.crypto.CryptoConstants
-import sigma.data.{CAND, CAvlTree, ProveDlog, SigmaBoolean, TrivialProp}
+import sigma.data.{CAND, CAvlTree, CHeader, ProveDlog, SigmaBoolean, TrivialProp}
 import sigma.interpreter.ContextExtension
 import sigma.util.Extensions.IntOps
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
@@ -39,40 +36,9 @@ class TestingInterpreterSpecification extends CompilerTestingCommons
   lazy val verifier = new ErgoLikeTestInterpreter
   
   def testingContext(h: Int = 614401) = {
-
-    // valid header from Ergo blockchain
-    val headerJson =
-      """
-        |{
-        |  "extensionId" : "00cce45975d87414e8bdd8146bc88815be59cd9fe37a125b5021101e05675a18",
-        |  "votes" : "000000",
-        |  "timestamp" : 4928911477310178288,
-        |  "size" : 223,
-        |  "unparsedBytes" : "",
-        |  "stateRoot" : {
-        |      "digest" : "5c8c00b8403d3701557181c8df800001b6d5009e2201c6ff807d71808c00019780",
-        |      "treeFlags" : "0",
-        |      "keyLength" : "32"
-        |  },
-        |  "height" : 614400,
-        |  "nBits" : 37748736,
-        |  "version" : 2,
-        |  "id" : "5603a937ec1988220fc44fb5022fb82d5565b961f005ebb55d85bd5a9e6f801f",
-        |  "adProofsRoot" : "5d3f80dcff7f5e7f59007294c180808d0158d1ff6ba10000f901c7f0ef87dcff",
-        |  "transactionsRoot" : "f17fffacb6ff7f7f1180d2ff7f1e24ffffe1ff937f807f0797b9ff6ebdae007e",
-        |  "extensionRoot" : "1480887f80007f4b01cf7f013ff1ffff564a0000b9a54f00770e807f41ff88c0",
-        |  "minerPk" : "03bedaee069ff4829500b3c07c4d5fe6b3ea3d3bf76c5c28c1d4dcdb1bed0ade0c",
-        |  "powOnetimePk" : "0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
-        |  "powNonce" : "0000000000003105",
-        |  "powDistance" : 0,
-        |  "adProofsId" : "dec129290a763f4de41f04e87e2b661dd59758af6bdd00dd51f5d97c3a8cb9b5",
-        |  "transactionsId" : "eba1dd82cf51147232e09c1f72b37c554c30f63274d5093bff36849a83472a42",
-        |  "parentId" : "ac2101807f0000ca01ff0119db227f202201007f62000177a080005d440896d0"
-        |}
-        |""".stripMargin
-
-    object JsonCodecs extends JsonCodecs
-    val header1 = JsonCodecs.headerDecoder.decodeJson(parse(headerJson).toOption.get).toOption.get
+    // bytes of real mainnet block header at height 614,440
+    val headerBytes = "02ac2101807f0000ca01ff0119db227f202201007f62000177a080005d440896d05d3f80dcff7f5e7f59007294c180808d0158d1ff6ba10000f901c7f0ef87dcfff17fffacb6ff7f7f1180d2ff7f1e24ffffe1ff937f807f0797b9ff6ebdae007e5c8c00b8403d3701557181c8df800001b6d5009e2201c6ff807d71808c00019780f087adb3fcdbc0b3441480887f80007f4b01cf7f013ff1ffff564a0000b9a54f00770e807f41ff88c00240000080c0250000000003bedaee069ff4829500b3c07c4d5fe6b3ea3d3bf76c5c28c1d4dcdb1bed0ade0c0000000000003105"
+    val header1 = new CHeader(ErgoHeader.sigmaSerializer.fromBytes(Base16.decode(headerBytes).get))
 
     val boxesToSpend = IndexedSeq(fakeSelf)
 
@@ -436,6 +402,24 @@ class TestingInterpreterSpecification extends CompilerTestingCommons
     verifier.verify(prop3, env, proof, challenge).map(_._1).getOrElse(false) shouldBe false
   }
 
+  property("blake2b - test vector") {
+    testEval(
+      """ {
+        |     val input = fromBase16("68656c6c6f20776f726c64")
+        |     val output = fromBase16("256c83b297114d201b30179f3f0ef0cace9783622da5974326b436178aeef610")
+        |     blake2b256(input) == output
+        | }""".stripMargin)
+  }
+
+  property("blake2b - test vector #2") {
+    testEval(
+      """ {
+        |     val input = fromBase16("02ac2101807f0000ca01ff0119db227f202201007f62000177a080005d440896d05d3f80dcff7f5e7f59007294c180808d0158d1ff6ba10000f901c7f0ef87dcfff17fffacb6ff7f7f1180d2ff7f1e24ffffe1ff937f807f0797b9ff6ebdae007e5c8c00b8403d3701557181c8df800001b6d5009e2201c6ff807d71808c00019780d085adb3fcdbc0b3441480887f80007f4b01cf7f013ff1ffff564a0000b9a54f00770e807f41ff88c00240000080c02500000000")
+        |     val output = fromBase16("bdb84cda5b105c3eb522857b50a0882f88ed5bb3cc8cf3325a1edf7eeb6a0954")
+        |     blake2b256(input) == output
+        | }""".stripMargin)
+  }
+
   property("passing a lambda argument") {
     // single expression
     testEval(
@@ -468,6 +452,29 @@ class TestingInterpreterSpecification extends CompilerTestingCommons
   property("deserialize") {
     val str = Base58.encode(ValueSerializer.serialize(ByteArrayConstant(Array[Byte](2))))
     testEval(s"""deserialize[Coll[Byte]]("$str")(0) == 2""")
+  }
+
+  property("header.id") {
+    testEval(
+      """ {
+        |     val h = CONTEXT.headers(0)
+        |     val id = h.id
+        |     id.size == 32
+        | }""".stripMargin)
+  }
+
+  property("checkPow") {
+    val source = """ {
+                   |     val h = CONTEXT.headers(0)
+                   |      h.checkPow
+                   | }
+                   | """.stripMargin
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an [Exception] should be thrownBy testEval(source)
+    } else {
+      testEval(source)
+    }
   }
 
   override protected def afterAll(): Unit = {

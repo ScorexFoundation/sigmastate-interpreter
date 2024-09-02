@@ -4,6 +4,7 @@ import org.ergoplatform.{AutolykosSolution, ErgoHeader, HeaderWithoutPow, Header
 import scorex.crypto.authds.ADDigest
 import scorex.crypto.hash.Digest32
 import scorex.util.{bytesToId, idToBytes}
+import sigma.pow.Autolykos2PowValidation
 import sigma.{AvlTree, BigInt, Coll, Colls, GroupElement, Header}
 
 /** A default implementation of [[Header]] interface.
@@ -66,10 +67,11 @@ class CHeader(val ergoHeader: ErgoHeader) extends Header with WrapperOf[ErgoHead
   override def wrappedValue: ErgoHeader = ergoHeader
 
   override def serializeWithoutPoW: Coll[Byte] = {
-    val headerWithoutPow = HeaderWithoutPow(version, bytesToId(parentId.toArray), Digest32 @@ ADProofsRoot.toArray,
-      ADDigest @@ stateRoot.digest.toArray, Digest32 @@ transactionsRoot.toArray, timestamp,
-      nBits, height, Digest32 @@ extensionRoot.toArray, votes.toArray, unparsedBytes.toArray)
-    Colls.fromArray(HeaderWithoutPowSerializer.toBytes(headerWithoutPow))
+    Colls.fromArray(HeaderWithoutPowSerializer.toBytes(ergoHeader))
+  }
+
+  override def checkPow: Boolean = {
+    Autolykos2PowValidation.checkPoWForVersion2(this)
   }
 
   override def toString: String =

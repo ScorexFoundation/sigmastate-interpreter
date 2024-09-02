@@ -12,7 +12,7 @@ import scala.scalajs.js.annotation.JSExportTopLevel
 class Header(
     /** Hex representation of ModifierId of this Header */
     val id: String,
-    /** Block version, to be increased on every soft and hardfork. */
+    /** Block version, to be increased on every soft- or hard-fork. */
     val version: Byte,
     /** Hex representation of ModifierId of the parent block */
     val parentId: String,
