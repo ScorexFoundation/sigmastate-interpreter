@@ -9822,30 +9822,6 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
     }
   }
 
-  property("higher order lambdas") {
-    val f = existingFeature(
-      { (xs: Coll[Int]) =>
-        val inc = { (x: Int) => x + 1 }
-
-        def apply(in: (Int => Int, Int)) = in._1(in._2)
-
-        xs.map { (x: Int) => apply((inc, x)) }
-      },
-      """{(xs: Coll[Int]) =>
-       |   val inc = { (x: Int) => x + 1 }
-       |   def apply(in: (Int => Int, Int)) = in._1(in._2)
-       |   xs.map { (x: Int) => apply((inc, x)) }
-       | }
-       |""".stripMargin
-    )
-
-    // TODO v6.0: Add support of SFunc in TypeSerializer (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/847)
-    assertExceptionThrown(
-      f.verifyCase(Coll[Int](), Expected(Success(Coll[Int]()), 0)),
-      exceptionLike[MatchError]("(SInt$) => SInt$ (of class sigma.ast.SFunc)")
-    )
-  }
-
   override protected def afterAll(): Unit = {
     printDebug(CErgoTreeEvaluator.DefaultProfiler.generateReport)
     printDebug("==========================================================")

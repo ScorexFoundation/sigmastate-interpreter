@@ -1196,7 +1196,7 @@ case object SBoxMethods extends MonoTypeMethods {
          | identifier followed by box index in the transaction outputs.
         """.stripMargin ) // see ExtractCreationInfo
 
-  lazy val getRegMethod = SMethod(this, "getReg",
+  lazy val getRegMethodV5 = SMethod(this, "getReg",
     SFunc(Array(SBox, SInt), SOption(tT), Array(paramT)), 7, ExtractRegisterAs.costKind)
       .withInfo(ExtractRegisterAs,
         """ Extracts register by id and type.
@@ -1205,23 +1205,49 @@ case object SBoxMethods extends MonoTypeMethods {
         """.stripMargin,
         ArgInfo("regId", "zero-based identifier of the register."))
 
+  lazy val getRegMethodV6 = SMethod(this, "getReg",
+    SFunc(Array(SBox, SInt), SOption(tT), Array(paramT)), 7, ExtractRegisterAs.costKind, Seq(tT))
+    .withIRInfo(MethodCallIrBuilder,
+      javaMethodOf[Box, Int, RType[_]]("getReg"),
+      { mtype => Array(mtype.tRange.asOption[SType].elemType) })
+    .withInfo(MethodCall, """ Extracts register by id and type.
+                            | Type param \lst{T} expected type of the register.
+                            | Returns \lst{Some(value)} if the register is defined and has given type and \lst{None} otherwise
+        """.stripMargin,
+      ArgInfo("regId", "zero-based identifier of the register."))
+
   lazy val tokensMethod = SMethod(
     this, "tokens", SFunc(SBox, ErgoBox.STokensRegType), 8, FixedCost(JitCost(15)))
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(PropertyCall, "Secondary tokens")
 
-
-  // should be lazy to solve recursive initialization
-  protected override def getMethods() = super.getMethods() ++ Array(
+  lazy val commonBoxMethods = super.getMethods() ++ Array(
     ValueMethod, // see ExtractAmount
     PropositionBytesMethod, // see ExtractScriptBytes
     BytesMethod, // see ExtractBytes
     BytesWithoutRefMethod, // see ExtractBytesWithNoRef
     IdMethod, // see ExtractId
     creationInfoMethod,
-    getRegMethod,
     tokensMethod
   ) ++ registers(8)
+
+  lazy val v5Methods = commonBoxMethods ++ Array(
+    getRegMethodV5
+  )
+
+  lazy val v6Methods = commonBoxMethods ++ Array(
+    getRegMethodV6
+  )
+
+  // should be lazy to solve recursive initialization
+  protected override def getMethods() = {
+    if (VersionContext.current.isV6SoftForkActivated) {
+      v6Methods
+    } else {
+      v5Methods
+    }
+  }
+
 }
 
 /** Type descriptor of `AvlTree` type of ErgoTree. */

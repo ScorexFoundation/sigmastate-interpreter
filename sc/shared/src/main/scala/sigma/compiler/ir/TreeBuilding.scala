@@ -346,13 +346,10 @@ trait TreeBuilding extends Base { IR: IRContext =>
         mkExtractAmount(box.asBox)
       case BoxM.propositionBytes(In(box)) =>
         mkExtractScriptBytes(box.asBox)
-      case BoxM.getReg(In(box), regId, _) =>
+      case BoxM.getReg(In(box), regId, _) if regId.isConst =>
         val tpe = elemToSType(s.elem).asOption
-        if (regId.isConst)
-          mkExtractRegisterAs(box.asBox, ErgoBox.allRegisters(valueFromRep(regId)), tpe)
-        else
-          error(s"Non constant expressions (${regId.node}) are not supported in getReg")
-      case BoxM.creationInfo(In(box)) =>
+        mkExtractRegisterAs(box.asBox, ErgoBox.allRegisters(valueFromRep(regId)), tpe)
+     case BoxM.creationInfo(In(box)) =>
         mkExtractCreationInfo(box.asBox)
       case BoxM.id(In(box)) =>
         mkExtractId(box.asBox)
@@ -455,13 +452,14 @@ trait TreeBuilding extends Base { IR: IRContext =>
         mkMultiplyGroup(obj.asGroupElement, arg.asGroupElement)
 
       // Fallback MethodCall rule: should be the last in this list of cases
-      case Def(MethodCall(objSym, m, argSyms, _)) =>
+      case Def(mc @ MethodCall(objSym, m, argSyms, _)) =>
         val obj = recurse[SType](objSym)
         val args = argSyms.collect { case argSym: Sym => recurse[SType](argSym) }
         MethodsContainer.getMethod(obj.tpe, m.getName) match {
           case Some(method) =>
-            val specMethod = method.specializeFor(obj.tpe, args.map(_.tpe))
-            builder.mkMethodCall(obj, specMethod, args.toIndexedSeq, Map())
+            val typeSubst = mc.typeSubst
+            val specMethod = method.specializeFor(obj.tpe, args.map(_.tpe)).withConcreteTypes(typeSubst)
+            builder.mkMethodCall(obj, specMethod, args.toIndexedSeq, typeSubst)
           case None =>
             error(s"Cannot find method ${m.getName} in object $obj")
         }
