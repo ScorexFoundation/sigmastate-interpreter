@@ -458,6 +458,32 @@ class BasicOpsSpecification extends CompilerTestingCommons
       rootCause(_).isInstanceOf[NoSuchElementException])
   }
 
+  property("higher order lambdas") {
+    def holTest() = test("HOL", env, ext,
+      """
+        | {
+        |   val c = Coll(Coll(1))
+        |   def fn(xs: Coll[Int]) = {
+        |     val inc = { (x: Int) => x + 1 }
+        |     def apply(in: (Int => Int, Int)) = in._1(in._2)
+        |     val ys = xs.map { (x: Int) => apply((inc, x)) }
+        |     ys.size == xs.size && ys != xs
+        |   }
+        |
+        |   c.exists(fn)
+        | }
+        |""".stripMargin,
+      null,
+      true
+    )
+
+    if(VersionContext.current.isV6SoftForkActivated) {
+      holTest()
+    } else {
+      an[Exception] shouldBe thrownBy(holTest())
+    }
+  }
+
   property("OptionGetOrElse") {
     test("OptGet1", env, ext,
       "{ SELF.R5[Int].getOrElse(3) == 1 }",
