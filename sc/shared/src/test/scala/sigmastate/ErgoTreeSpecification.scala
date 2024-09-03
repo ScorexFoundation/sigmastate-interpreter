@@ -313,6 +313,8 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit with C
     */
   case class MInfo(methodId: Byte, method: SMethod, isResolvableFromIds: Boolean = true)
 
+  def isV6Activated = VersionContext.current.isV6SoftForkActivated
+
   // NOTE, the type code constants are checked above
   // The methodId codes as checked here, they MUST be PRESERVED.
   // The following table should be made dependent on HF activation
@@ -402,7 +404,11 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit with C
         MInfo(7, timestampMethod), MInfo(8, nBitsMethod), MInfo(9, heightMethod),
         MInfo(10, extensionRootMethod), MInfo(11, minerPkMethod), MInfo(12, powOnetimePkMethod),
         MInfo(13, powNonceMethod), MInfo(14, powDistanceMethod), MInfo(15, votesMethod)
-      ), true)
+      ) ++ (if (VersionContext.current.isV6SoftForkActivated) {
+        Seq(MInfo(16, checkPowMethod))
+      } else {
+        Seq.empty[MInfo]
+      }), true)
     },
     { import SPreHeaderMethods._
       (SPreHeader.typeId,  Seq(
