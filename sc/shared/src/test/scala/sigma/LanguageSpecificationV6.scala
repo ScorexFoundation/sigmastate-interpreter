@@ -11,6 +11,7 @@ import sigma.ast.syntax.TrueSigmaProp
 import sigma.ast._
 import sigma.data.{CBigInt, CHeader, CBox, ExactNumeric}
 import sigma.eval.{CostDetails, SigmaDsl, TracedCost}
+import sigma.serialization.ValueCodes.OpCode
 import sigma.util.Extensions.{BooleanOps, ByteOps, IntOps, LongOps}
 import sigmastate.exceptions.MethodNotFound
 import sigmastate.utils.Helpers
@@ -510,6 +511,77 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
         header1 -> new Expected(ExpectedResult(Success(true), None))
       ),
       checkPoW
+    )
+  }
+
+  property("higher order lambdas") {
+    val f = newFeature[Coll[Int], Coll[Int]](
+      { (xs: Coll[Int]) =>
+        val inc = { (x: Int) => x + 1 }
+
+        def apply(in: (Int => Int, Int)) = in._1(in._2)
+
+        xs.map { (x: Int) => apply((inc, x)) }
+      },
+      """{(xs: Coll[Int]) =>
+        |   val inc = { (x: Int) => x + 1 }
+        |   def apply(in: (Int => Int, Int)) = in._1(in._2)
+        |   xs.map { (x: Int) => apply((inc, x)) }
+        | }
+        |""".stripMargin,
+      FuncValue(
+        Array((1, SCollectionType(SInt))),
+        MapCollection(
+          ValUse(1, SCollectionType(SInt)),
+          FuncValue(
+            Array((3, SInt)),
+            Apply(
+              FuncValue(
+                Array((5, SPair(SFunc(Array(SInt), SInt, List()), SInt))),
+                Apply(
+                  SelectField.typed[Value[SFunc]](
+                    ValUse(5, SPair(SFunc(Array(SInt), SInt, List()), SInt)),
+                    1.toByte
+                  ),
+                  Array(
+                    SelectField.typed[Value[SInt.type]](
+                      ValUse(5, SPair(SFunc(Array(SInt), SInt, List()), SInt)),
+                      2.toByte
+                    )
+                  )
+                )
+              ),
+              Array(
+                Tuple(
+                  Vector(
+                    FuncValue(
+                      Array((5, SInt)),
+                      ArithOp(ValUse(5, SInt), IntConstant(1), OpCode @@ (-102.toByte))
+                    ),
+                    ValUse(3, SInt)
+                  )
+                )
+              )
+            )
+          )
+        )
+      ),
+    sinceVersion = VersionContext.V6SoftForkVersion
+    )
+
+    verifyCases(
+      Seq(
+        Coll(1, 2) -> Expected(
+          Success(Coll(2, 3)),
+          cost = 1793,
+          expectedDetails = CostDetails.ZeroCost
+        )
+      ),
+      f,
+      preGeneratedSamples = Some(Seq(
+        Coll(Int.MinValue, Int.MaxValue - 1),
+        Coll(0, 1, 2, 3, 100, 1000)
+      ))
     )
   }
 
