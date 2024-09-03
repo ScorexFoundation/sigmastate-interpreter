@@ -1,10 +1,10 @@
 package sigma
 
+import org.ergoplatform.ErgoHeader
+import scorex.util.encode.Base16
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.Token
 import scorex.util.ModifierId
-import scorex.util.encode.Base16
-import org.ergoplatform.ErgoHeader
 import sigma.ast.ErgoTree.ZeroHeader
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.syntax.TrueSigmaProp
