@@ -1,12 +1,8 @@
 package sigma.data
 
 import debox.cfor
-import sigma.Evaluation.stypeToRType
-import sigma.{BigInt, Coll, Colls}
+import sigma.{Coll, Colls}
 import sigma.data.ExactIntegral._
-import sigma.data.RType.SomeType
-
-import scala.collection.mutable
 
 /** Numeric operations with overflow checks.
   * Raise exception when overflow is detected.

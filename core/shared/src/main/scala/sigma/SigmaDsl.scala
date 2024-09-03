@@ -155,6 +155,9 @@ trait BigInt {
   def or(that: BigInt): BigInt
   def |(that: BigInt): BigInt = or(that)
 
+  /**
+    * @return a big integer whose value is `this xor that`
+    */
   def xor(that: BigInt): BigInt
 
   def shiftLeft(bits: Int): BigInt

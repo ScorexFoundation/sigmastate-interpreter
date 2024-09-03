@@ -5,7 +5,6 @@ import org.ergoplatform.validation._
 import sigma._
 import sigma.ast.SCollection.{SBooleanArray, SBoxArray, SByteArray, SByteArray2, SHeaderArray}
 import sigma.ast.SMethod.{MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
-import sigma.ast.SNumericTypeMethods.BitwiseAndMethod
 import sigma.ast.SType.TypeCode
 import sigma.ast.syntax.{SValue, ValueOps}
 import sigma.data.ExactIntegral.{ByteIsExactIntegral, IntIsExactIntegral, LongIsExactIntegral, ShortIsExactIntegral}

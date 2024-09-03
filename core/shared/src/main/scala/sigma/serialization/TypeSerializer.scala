@@ -4,7 +4,6 @@ import debox.cfor
 import sigma.VersionContext
 import sigma.ast.SCollectionType.{CollectionTypeCode, NestedCollectionTypeCode}
 import sigma.ast._
-import sigma.serialization.{CoreByteReader, CoreByteWriter, InvalidTypePrefix}
 import sigma.util.safeNewArray
 import sigma.validation.ValidationRules.{CheckPrimitiveTypeCode, CheckTypeCode}
 
@@ -215,7 +214,6 @@ class TypeSerializer {
             STypeParam(ident.asInstanceOf[STypeVar])
           }
           SFunc(tDom, tRange, tpeParams)
-        // todo: serialize tParams
         case _ =>
           // todo: 6.0: replace 1008 check with identical behavior but other opcode, to activate
           //  ReplacedRule(1008 -> new opcode) during 6.0 activation
