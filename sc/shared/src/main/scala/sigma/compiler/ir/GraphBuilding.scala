@@ -1,6 +1,7 @@
 package sigma.compiler.ir
 
 import org.ergoplatform._
+import sigma.ast.SType.tT
 import sigma.ast.TypeCodes.LastConstantCode
 import sigma.ast.Value.Typed
 import sigma.ast.syntax.{SValue, ValueOps}
@@ -13,7 +14,7 @@ import sigma.data.{CSigmaDslBuilder, ExactIntegral, ExactNumeric, ExactOrdering,
 import sigma.exceptions.GraphBuildingException
 import sigma.serialization.OpCodes
 import sigma.util.Extensions.ByteOps
-import sigma.{SigmaException, ast}
+import sigma.{SigmaException, VersionContext, ast}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 
 import scala.collection.mutable.ArrayBuffer
@@ -928,7 +929,7 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
         sigmaDslBuilder.decodePoint(bytes)
 
       // fallback rule for MethodCall, should be the last case in the list
-      case sigma.ast.MethodCall(obj, method, args, _) =>
+      case sigma.ast.MethodCall(obj, method, args, typeSubst) =>
         val objV = eval(obj)
         val argsV = args.map(eval)
         (objV, method.objType) match {
@@ -1017,6 +1018,10 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
           case (box: Ref[Box]@unchecked, SBoxMethods) => method.name match {
             case SBoxMethods.tokensMethod.name =>
               box.tokens
+            case SBoxMethods.getRegMethodV6.name if VersionContext.current.isV6SoftForkActivated =>
+              val c1 = asRep[Int](argsV(0))
+              val c2 = stypeToElem(typeSubst.apply(tT))
+              box.getReg(c1)(c2)
             case _ => throwError
           }
           case (ctx: Ref[Context]@unchecked, SContextMethods) => method.name match {
@@ -1137,6 +1142,8 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
               h.powDistance
             case SHeaderMethods.votesMethod.name =>
               h.votes
+            case SHeaderMethods.checkPowMethod.name if VersionContext.current.isV6SoftForkActivated =>
+              h.checkPow
             case _ => throwError
           }
           case (g: Ref[SigmaDslBuilder]@unchecked, SGlobalMethods) => method.name match {

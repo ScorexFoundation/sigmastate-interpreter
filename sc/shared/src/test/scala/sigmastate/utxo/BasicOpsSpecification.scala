@@ -3,7 +3,9 @@ package sigmastate.utxo
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, R6, R8}
 import org.ergoplatform._
 import scorex.util.encode.Base16
+import org.scalatest.Assertion
 import sigma.Extensions.ArrayOps
+import sigma.VersionContext
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.SType.AnyOps
 import sigma.data.{AvlTreeData, CAnyValue, CSigmaDslBuilder}
@@ -763,6 +765,47 @@ class BasicOpsSpecification extends CompilerTestingCommons
         |""".stripMargin
 
     test("subst", env, ext, hostScript, null)
+  }
+
+  property("Box.getReg") {
+    def getRegTest(): Assertion = {
+      test("Box.getReg", env, ext,
+        """{
+          |   val x = SELF
+          |   x.getReg[Long](0).get == SELF.value &&
+          |   x.getReg[Coll[(Coll[Byte], Long)]](2).get == SELF.tokens &&
+          |   x.getReg[Int](9).isEmpty
+          |}""".stripMargin,
+        null
+      )
+    }
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      getRegTest()
+    } else {
+      an[Exception] should be thrownBy getRegTest()
+    }
+  }
+
+  property("Box.getReg - computable index") {
+    val ext: Seq[VarBinding] = Seq(
+      (intVar1, IntConstant(0))
+    )
+    def getRegTest(): Assertion = {
+      test("Box.getReg", env, ext,
+        """{
+          |   val x = SELF.getReg[Long](getVar[Int](1).get).get
+          |   x == SELF.value
+          |}""".stripMargin,
+        null
+      )
+    }
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      getRegTest()
+    } else {
+      an[Exception] should be thrownBy getRegTest()
+    }
   }
 
 }
