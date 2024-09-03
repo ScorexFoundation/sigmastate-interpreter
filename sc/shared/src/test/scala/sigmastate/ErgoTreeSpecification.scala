@@ -21,14 +21,14 @@ import sigma.compiler.CompilerSettings
 import sigma.eval.EvalSettings
 import sigma.exceptions.{CostLimitException, InterpreterException}
 import sigma.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.Plus
+import sigmastate.{CrossVersionProps, Plus}
 import sigmastate.utils.Helpers.TryOps
 
 
 /** Regression tests with ErgoTree related test vectors.
   * This test vectors verify various constants which are consensus critical and should not change.
   */
-class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
+class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit with CrossVersionProps {
 
   property("Value.sourceContext") {
     val srcCtx = SourceContext.fromParserIndex(0, "")
@@ -316,7 +316,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
   // NOTE, the type code constants are checked above
   // The methodId codes as checked here, they MUST be PRESERVED.
   // The following table should be made dependent on HF activation
-  val methods = Table(
+  def methods = Table(
     ("typeId",        "methods",               "CanHaveMethods"),
     (SBoolean.typeId, Seq.empty[MInfo], true),
     (SByte.typeId,    Seq.empty[MInfo], false),
@@ -367,9 +367,12 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit {
         MInfo(4, BytesWithoutRefMethod),
         MInfo(5, IdMethod),
         MInfo(6, creationInfoMethod),
-        MInfo(7, getRegMethod),
         MInfo(8, tokensMethod)
-      ) ++ registers(idOfs = 8)
+      ) ++ (if (VersionContext.current.isV6SoftForkActivated) {
+        Seq(MInfo(7, getRegMethodV6))
+      } else {
+        Seq(MInfo(7, getRegMethodV5))
+      }) ++ registers(idOfs = 8)
         .zipWithIndex
         .map { case (m,i) => MInfo((8 + i + 1).toByte, m) }, true)
     },

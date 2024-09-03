@@ -8,7 +8,6 @@ import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen.{choose, frequency}
 import org.scalacheck.util.Buildable
 import org.scalacheck.{Arbitrary, Gen}
-import sigma.data._
 import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.util.encode.{Base58, Base64}
 import scorex.util.{ModifierId, bytesToId}
@@ -27,6 +26,7 @@ import sigma.util.Extensions.EcpOps
 import sigma.validation.{ChangedRule, DisabledRule, EnabledRule, ReplacedRule, RuleStatus}
 import sigma.validation.ValidationRules.FirstRuleId
 import ErgoTree.ZeroHeader
+import sigma.data.{AvlTreeData, AvlTreeFlags, CAND, CBox, COR, CTHRESHOLD, Digest32Coll, ProveDHTuple, ProveDlog, RType, SigmaBoolean}
 import sigma.eval.Extensions.{EvalIterableOps, SigmaBooleanOps}
 import sigma.eval.SigmaDsl
 import sigma.interpreter.{ContextExtension, ProverResult}

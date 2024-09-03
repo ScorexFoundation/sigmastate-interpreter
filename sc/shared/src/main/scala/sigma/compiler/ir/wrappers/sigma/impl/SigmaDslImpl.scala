@@ -8,6 +8,8 @@ import sigma.compiler.ir.wrappers.sigma.impl.SigmaDslDefs
 import scala.collection.compat.immutable.ArraySeq
 
 package impl {
+  import sigma.Evaluation
+  import sigma.ast.SType.tT
   import sigma.compiler.ir.meta.ModuleInfo
   import sigma.compiler.ir.wrappers.sigma.SigmaDsl
   import sigma.compiler.ir.{Base, GraphIRReflection, IRContext}
@@ -620,10 +622,11 @@ object Box extends EntityObject("Box") {
     }
 
     override def getReg[T](i: Ref[Int])(implicit cT: Elem[T]): Ref[WOption[T]] = {
+      val st = Evaluation.rtypeToSType(cT.sourceType)
       asRep[WOption[T]](mkMethodCall(self,
         BoxClass.getMethod("getReg", classOf[Sym], classOf[Elem[_]]),
         Array[AnyRef](i, cT),
-        true, false, element[WOption[T]]))
+        true, false, element[WOption[T]], Map(tT -> st) ))
     }
 
     override def tokens: Ref[Coll[(Coll[Byte], Long)]] = {
@@ -695,10 +698,11 @@ object Box extends EntityObject("Box") {
     }
 
     def getReg[T](i: Ref[Int])(implicit cT: Elem[T]): Ref[WOption[T]] = {
+      val st = Evaluation.rtypeToSType(cT.sourceType)
       asRep[WOption[T]](mkMethodCall(source,
         BoxClass.getMethod("getReg", classOf[Sym], classOf[Elem[_]]),
         Array[AnyRef](i, cT),
-        true, true, element[WOption[T]]))
+        true, true, element[WOption[T]], Map(tT -> st)))
     }
 
     def tokens: Ref[Coll[(Coll[Byte], Long)]] = {
