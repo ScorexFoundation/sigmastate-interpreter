@@ -45,6 +45,7 @@ trait UnBinOps extends Base { self: IRContext =>
     def shouldPropagate(lhs: A, rhs: A) = true
   }
 
+  /** Base class for descriptors of binary operations where arguments are of different types. */
   abstract class BinDiffArgsOp[A, B](val opName: String)(implicit val eResult: Elem[A]) {
     override def toString = opName
 
@@ -91,13 +92,14 @@ trait UnBinOps extends Base { self: IRContext =>
     override def transform(t: Transformer): Def[R] = ApplyBinOpLazy[A,R](op, t(lhs), t(rhs))
   }
 
-  /** Graph node which represents application of the given binary operation to the given arguments. */
+  /** Graph node which represents application of the given binary operation to the given arguments of different types
+    * where the second argument is lazy. */
   case class ApplyBinOpDiffArgsLazy[A, B](op: BinDiffArgsOp[A, B], lhs: Ref[A], rhs: Ref[Thunk[B]]) extends BaseDef[A]()(op.eResult) {
     override def toString = s"$lhs $op { $rhs }"
     override def transform(t: Transformer): Def[A] = ApplyBinOpDiffArgsLazy[A, B](op, t(lhs), t(rhs))
   }
 
-  /** Graph node which represents application of the given binary operation to the given arguments. */
+  /** Graph node which represents application of the given binary operation to the given arguments of different types. */
   case class ApplyBinOpDiffArgs[A, B](op: BinDiffArgsOp[A, B], lhs: Ref[A], rhs: Ref[B]) extends BaseDef[A]()(op.eResult) {
     override def toString = s"$op($lhs, $rhs)"
     override def transform(t: Transformer): Def[A] = ApplyBinOpDiffArgs[A, B](op, t(lhs), t(rhs))

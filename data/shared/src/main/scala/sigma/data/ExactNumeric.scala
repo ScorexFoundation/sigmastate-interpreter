@@ -38,6 +38,9 @@ trait ExactNumeric[T] {
     */
   def toBigEndianBytes(x: T): Coll[Byte]
 
+  /**
+    * Returns a big-endian binary representation of this value as boolean array.
+    */
   def toBits(x: T): Coll[Boolean] = {
 
     def isBitSet(byte: Byte)(bit: Int): Boolean = ((byte >> bit) & 1) == 1
@@ -57,16 +60,36 @@ trait ExactNumeric[T] {
     Colls.fromArray(res)
   }
 
+  /**
+    * @return a numeric value which is inverse of `x` (every bit, including sign, is flipped)
+    */
   def bitwiseInverse(x: T): T
 
+  /**
+    * @return a numeric value which is `this | that`
+    */
   def bitwiseOr(x: T, y: T): T
 
+  /**
+    * @return a numeric value which is `this && that`
+    */
   def bitwiseAnd(x: T, y: T): T
 
+  /**
+    * @return a numeric value which is `this xor that`
+    */
   def bitwiseXor(x: T, y: T): T
 
+  /**
+    * @return a value which is (this << n). The shift distance, n, may be negative,
+    *         in which case this method performs a right shift. (Computes floor(this * 2n).)
+    */
   def shiftLeft(x: T, bits: Int): T
 
+  /**
+    * @return a value which is (this >> n). Sign extension is performed. The shift distance, n,
+    *         may be negative, in which case this method performs a left shift. (Computes floor(this / 2n).)
+    */
   def shiftRight(x: T, bits: Int): T
 
   /** A value of type T which corresponds to integer 0. */

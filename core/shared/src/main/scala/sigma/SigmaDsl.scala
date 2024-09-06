@@ -5,9 +5,7 @@ import java.math.BigInteger
 import sigma.data._
 
 /**
-  * All `modQ` operations assume that Q is a global constant (an order of the only one cryptographically strong group
-  * which is used for all cryptographic operations).
-  * So it is globally and implicitly used in all methods.
+  * Functions defined for 256-bit signed integers
   * */
 trait BigInt {
   /** Convert this BigInt value to Byte.
@@ -160,9 +158,17 @@ trait BigInt {
     */
   def xor(that: BigInt): BigInt
 
-  def shiftLeft(bits: Int): BigInt
+  /**
+    * @return a 256-bit signed integer whose value is (this << n). The shift distance, n, may be negative,
+    *         in which case this method performs a right shift. (Computes floor(this * 2n).)
+    */
+  def shiftLeft(n: Int): BigInt
 
-  def shiftRight(bits: Int): BigInt
+  /**
+    * @return a 256-bit signed integer whose value is (this >> n). Sign extension is performed. The shift distance, n,
+    *         may be negative, in which case this method performs a left shift. (Computes floor(this / 2n).)
+    */
+  def shiftRight(n: Int): BigInt
 }
 
 /** Base class for points on elliptic curves. */
