@@ -2,8 +2,11 @@ package sigmastate.utxo
 
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, R6, R8}
 import org.ergoplatform._
+import org.scalatest.Assertion
 import scorex.util.encode.Base16
+import org.scalatest.Assertion
 import sigma.Extensions.ArrayOps
+import sigma.VersionContext
 import sigma.GroupElement
 import sigma.VersionContext.V6SoftForkVersion
 import sigma.ast.SCollection.SByteArray
@@ -584,6 +587,380 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
+  property("Byte.toBits") {
+    def toBitsTest() = test("Byte.toBits", env, ext,
+      """{
+        | val b = 1.toByte
+        | b.toBits == Coll(false, false, false, false, false, false, false, true)
+        |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      toBitsTest()
+    } else {
+      an[Exception] shouldBe thrownBy(toBitsTest())
+    }
+  }
+
+  property("Long.toBits") {
+    def toBitsTest() = test("Long.toBits", env, ext,
+      """{
+        | val b = 1L
+        | val ba = b.toBits
+        |
+        | // only rightmost bit is set
+        | ba.size == 64 && ba(63) == true && ba.slice(0, 63).forall({ (b: Boolean ) => b == false })
+        |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      toBitsTest()
+    } else {
+      an[Exception] shouldBe thrownBy(toBitsTest())
+    }
+  }
+
+  property("BigInt.toBits") {
+    def toBitsTest() = test("BigInt.toBits", env, ext,
+      s"""{
+        | val b = bigInt("${CryptoConstants.groupOrder.divide(new BigInteger("2"))}")
+        | val ba = b.toBits
+        | ba.size == 256
+        |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      toBitsTest()
+    } else {
+      an[Exception] shouldBe thrownBy(toBitsTest())
+    }
+  }
+
+  property("BigInt.bitwiseInverse") {
+    def bitwiseInverseTest(): Assertion = test("BigInt.bitwiseInverse", env, ext,
+      s"""{
+         | val b = bigInt("${CryptoConstants.groupOrder.divide(new BigInteger("2"))}")
+         | val bi = b.bitwiseInverse
+         | bi.bitwiseInverse == b
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      bitwiseInverseTest()
+    } else {
+      an[Exception] shouldBe thrownBy(bitwiseInverseTest())
+    }
+  }
+
+  property("Byte.bitwiseInverse") {
+    def bitwiseInverseTest(): Assertion = test("Byte.bitwiseInverse", env, ext,
+      s"""{
+         | val b = (126 + 1).toByte  // max byte value
+         | b.bitwiseInverse == (-128).toByte
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      bitwiseInverseTest()
+    } else {
+      an[Exception] shouldBe thrownBy(bitwiseInverseTest())
+    }
+  }
+
+  property("Long.bitwiseInverse") {
+    def bitwiseInverseTest(): Assertion = test("Long.bitwiseInverse", env, ext,
+      s"""{
+         | val l = 9223372036854775807L
+         | val lb = l.bitwiseInverse
+         | lb.bitwiseInverse == l
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      bitwiseInverseTest()
+    } else {
+      an[Exception] shouldBe thrownBy(bitwiseInverseTest())
+    }
+  }
+
+  property("Byte.bitwiseOr") {
+    def bitwiseOrTest(): Assertion = test("Byte.bitwiseOrTest", env, ext,
+      s"""{
+         | val x = 127.toByte
+         | val y = (-128).toByte
+         | x.bitwiseOr(y) == -1
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      bitwiseOrTest()
+    } else {
+      an[Exception] shouldBe thrownBy(bitwiseOrTest())
+    }
+  }
+
+  property("BigInt.bitwiseOr") {
+    def bitwiseOrTest(): Assertion = test("BigInt.bitwiseOr", env, ext,
+      s"""{
+         | val x = bigInt("${CryptoConstants.groupOrder.divide(new BigInteger("2"))}")
+         | x.bitwiseOr(x) == x
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      bitwiseOrTest()
+    } else {
+      an[Exception] shouldBe thrownBy(bitwiseOrTest())
+    }
+  }
+
+  property("BigInt.bitwiseAnd") {
+    def bitwiseAndTest(): Assertion = test("BigInt.bitwiseAnd", env, ext,
+      s"""{
+         | val x = bigInt("${CryptoConstants.groupOrder.divide(new BigInteger("2"))}")
+         | val y = 0.toBigInt
+         | x.bitwiseAnd(y) == y
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      bitwiseAndTest()
+    } else {
+      an[Exception] shouldBe thrownBy(bitwiseAndTest())
+    }
+  }
+
+  property("Short.bitwiseAnd") {
+    def bitwiseAndTest(): Assertion = test("Short.bitwiseAnd", env, ext,
+      s"""{
+         | val x = (32767).toShort
+         | val y = (-32768).toShort
+         | x.bitwiseAnd(y) == 0
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      bitwiseAndTest()
+    } else {
+      an[Exception] shouldBe thrownBy(bitwiseAndTest())
+    }
+  }
+
+  property("Short.bitwiseXor") {
+    def bitwiseXorTest(): Assertion = test("Short.bitwiseXor", env, ext,
+      s"""{
+         | val x = (32767).toShort
+         | val y = (-32768).toShort
+         | x.bitwiseXor(y) == -1
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      bitwiseXorTest()
+    } else {
+      an[Exception] shouldBe thrownBy(bitwiseXorTest())
+    }
+  }
+
+  property("Byte.shiftLeft") {
+    def shiftLeftTest(): Assertion = test("Byte.shiftLeft", env, ext,
+      s"""{
+         | val x = 4.toByte
+         | val y = 2
+         | x.shiftLeft(y) == 16.toByte
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      shiftLeftTest()
+    } else {
+      an[Exception] shouldBe thrownBy(shiftLeftTest())
+    }
+  }
+
+  property("Byte.shiftLeft - over limit") {
+    def shiftLeftTest(): Assertion = test("Byte.shiftLeft2", env, ext,
+      s"""{
+         | val x = 4.toByte
+         | val y = 2222
+         | x.shiftLeft(y) == 0
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      shiftLeftTest()
+    } else {
+      an[Exception] shouldBe thrownBy(shiftLeftTest())
+    }
+  }
+
+  property("BigInt.shiftLeft") {
+    def shiftLeftTest(): Assertion = test("BigInt.shiftLeft", env, ext,
+      s"""{
+         | val x = bigInt("${CryptoConstants.groupOrder.divide(new BigInteger("8"))}")
+         | val y = bigInt("${CryptoConstants.groupOrder.divide(new BigInteger("2"))}")
+         | x.shiftLeft(2) == y
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      shiftLeftTest()
+    } else {
+      an[Exception] shouldBe thrownBy(shiftLeftTest())
+    }
+  }
+
+  property("BigInt.shiftLeft over limits") {
+    def shiftLeftTest(): Assertion = test("BigInt.shiftLeft", env, ext,
+      s"""{
+         | val x = bigInt("${CryptoConstants.groupOrder.divide(new BigInteger("2"))}")
+         | x.shiftLeft(1) > x
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      an[ArithmeticException] shouldBe thrownBy(shiftLeftTest())
+    } else {
+      an[Exception] shouldBe thrownBy(shiftLeftTest())
+    }
+  }
+
+  property("Byte.shiftRight") {
+    def shiftRightTest(): Assertion = test("Byte.shiftRight", env, ext,
+      s"""{
+         | val x = 8.toByte
+         | val y = 2
+         | x.shiftRight(y) == 2.toByte
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      shiftRightTest()
+    } else {
+      an[Exception] shouldBe thrownBy(shiftRightTest())
+    }
+  }
+
+  property("Byte.shiftRight - neg") {
+    def shiftRightTest(): Assertion = test("Byte.shiftRight", env, ext,
+      s"""{
+         | val x = (-8).toByte
+         | val y = 2
+         | x.shiftRight(y) == (-2).toByte
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      shiftRightTest()
+    } else {
+      an[Exception] shouldBe thrownBy(shiftRightTest())
+    }
+  }
+
+  property("Byte.shiftRight - neg - neg shift") {
+    def shiftRightTest(): Assertion = test("Byte.shiftRight", env, ext,
+      s"""{
+         | val x = (-8).toByte
+         | val y = -2
+         | x.shiftRight(y) == (-1).toByte
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      shiftRightTest()
+    } else {
+      an[Exception] shouldBe thrownBy(shiftRightTest())
+    }
+  }
+
+  property("Long.shiftRight - neg") {
+    def shiftRightTest(): Assertion = test("Long.shiftRight", env, ext,
+      s"""{
+         | val x = -32L
+         | val y = 2
+         | x.shiftRight(y) == -8L
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      shiftRightTest()
+    } else {
+      an[Exception] shouldBe thrownBy(shiftRightTest())
+    }
+  }
+
+  property("Long.shiftRight - neg - neg shift") {
+    def shiftRightTest(): Assertion = test("Long.shiftRight", env, ext,
+      s"""{
+         | val x = -32L
+         | val y = -2
+         | x.shiftRight(y) == -1L
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      shiftRightTest()
+    } else {
+      an[Exception] shouldBe thrownBy(shiftRightTest())
+    }
+  }
+
+  property("BigInt.shiftRight") {
+    def shiftRightTest(): Assertion = test("BigInt.shiftRight", env, ext,
+      s"""{
+         | val x = bigInt("${CryptoConstants.groupOrder.divide(new BigInteger("2"))}")
+         | val y = 2
+         | val z = bigInt("${CryptoConstants.groupOrder.divide(new BigInteger("8"))}")
+         | x.shiftRight(y) == z
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      shiftRightTest()
+    } else {
+      an[Exception] shouldBe thrownBy(shiftRightTest())
+    }
+  }
+
+  property("BigInt.shiftRight - neg shift") {
+    def shiftRightTest(): Assertion = test("BigInt.shiftRight", env, ext,
+      s"""{
+         | val x = bigInt("${CryptoConstants.groupOrder.divide(new BigInteger("2"))}")
+         | val y = -2
+         | val z = bigInt("${CryptoConstants.groupOrder.divide(new BigInteger("8"))}")
+         | z.shiftRight(y) == x
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      shiftRightTest()
+    } else {
+      an[Exception] shouldBe thrownBy(shiftRightTest())
+    }
+  }
+
   property("Unit register") {
     // TODO frontend: implement missing Unit support in compiler
     //  https://github.com/ScorexFoundation/sigmastate-interpreter/issues/820
@@ -604,6 +981,55 @@ class BasicOpsSpecification extends CompilerTestingCommons
         reg1 -> UnitConstant.instance
       ))
     )
+  }
+
+  property("Int.toBytes") {
+    def toBytesTest() = test("Int.toBytes", env, ext,
+      """{
+        |   val l = 1
+        |   l.toBytes == Coll(0.toByte, 0.toByte, 0.toByte, 1.toByte)
+        | }""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      toBytesTest()
+    } else {
+      an[Exception] shouldBe thrownBy(toBytesTest())
+    }
+  }
+
+  property("Byte.toBytes") {
+    def toBytesTest() = test("Byte.toBytes", env, ext,
+      """{
+        |   val l = 10.toByte
+        |   l.toBytes == Coll(10.toByte)
+        | }""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      toBytesTest()
+    } else {
+      an[Exception] shouldBe thrownBy(toBytesTest())
+    }
+  }
+
+
+  property("BigInt.toBytes") {
+    def toBytesTest() = test("BigInt.toBytes", env, ext,
+      s"""{
+        |   val l = bigInt("${CryptoConstants.groupOrder.divide(new BigInteger("2"))}")
+        |   l.toBytes.size == 32
+        | }""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      toBytesTest()
+    } else {
+      an[Exception] shouldBe thrownBy(toBytesTest())
+    }
   }
 
   property("Relation operations") {
@@ -901,6 +1327,32 @@ class BasicOpsSpecification extends CompilerTestingCommons
         true
       ),
       rootCause(_).isInstanceOf[NoSuchElementException])
+  }
+
+  property("higher order lambdas") {
+    def holTest() = test("HOL", env, ext,
+      """
+        | {
+        |   val c = Coll(Coll(1))
+        |   def fn(xs: Coll[Int]) = {
+        |     val inc = { (x: Int) => x + 1 }
+        |     def apply(in: (Int => Int, Int)) = in._1(in._2)
+        |     val ys = xs.map { (x: Int) => apply((inc, x)) }
+        |     ys.size == xs.size && ys != xs
+        |   }
+        |
+        |   c.exists(fn)
+        | }
+        |""".stripMargin,
+      null,
+      true
+    )
+
+    if(VersionContext.current.isV6SoftForkActivated) {
+      holTest()
+    } else {
+      an[Exception] shouldBe thrownBy(holTest())
+    }
   }
 
   property("OptionGetOrElse") {
@@ -1210,6 +1662,47 @@ class BasicOpsSpecification extends CompilerTestingCommons
         |""".stripMargin
 
     test("subst", env, ext, hostScript, null)
+  }
+
+  property("Box.getReg") {
+    def getRegTest(): Assertion = {
+      test("Box.getReg", env, ext,
+        """{
+          |   val x = SELF
+          |   x.getReg[Long](0).get == SELF.value &&
+          |   x.getReg[Coll[(Coll[Byte], Long)]](2).get == SELF.tokens &&
+          |   x.getReg[Int](9).isEmpty
+          |}""".stripMargin,
+        null
+      )
+    }
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      getRegTest()
+    } else {
+      an[Exception] should be thrownBy getRegTest()
+    }
+  }
+
+  property("Box.getReg - computable index") {
+    val ext: Seq[VarBinding] = Seq(
+      (intVar1, IntConstant(0))
+    )
+    def getRegTest(): Assertion = {
+      test("Box.getReg", env, ext,
+        """{
+          |   val x = SELF.getReg[Long](getVar[Int](1).get).get
+          |   x == SELF.value
+          |}""".stripMargin,
+        null
+      )
+    }
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      getRegTest()
+    } else {
+      an[Exception] should be thrownBy getRegTest()
+    }
   }
 
 }

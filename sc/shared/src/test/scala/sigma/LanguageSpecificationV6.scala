@@ -1,13 +1,21 @@
 package sigma
 
+import org.ergoplatform.ErgoHeader
+import scorex.util.encode.Base16
+import sigma.VersionContext.V6SoftForkVersion
+import org.ergoplatform.ErgoBox
+import org.ergoplatform.ErgoBox.Token
+import scorex.util.ModifierId
 import sigma.ast.ErgoTree.ZeroHeader
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.syntax.TrueSigmaProp
 import sigma.ast._
-import sigma.data.{CBigInt, ExactNumeric}
+import sigma.data.{CBigInt, CHeader, CBox, ExactNumeric}
 import sigma.eval.{CostDetails, SigmaDsl, TracedCost}
+import sigma.serialization.ValueCodes.OpCode
 import sigma.util.Extensions.{BooleanOps, ByteOps, IntOps, LongOps}
 import sigmastate.exceptions.MethodNotFound
+import sigmastate.utils.Extensions.ByteOpsForSigma
 import sigmastate.utils.Helpers
 
 import java.math.BigInteger
@@ -23,7 +31,7 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
 
   property("Boolean.toByte") {
     val toByte = newFeature((x: Boolean) => x.toByte, "{ (x: Boolean) => x.toByte }",
-      sinceVersion = VersionContext.V6SoftForkVersion
+      sinceVersion = V6SoftForkVersion
     )
 
     val cases = Seq(
@@ -49,22 +57,22 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
       // which is checked below
 
       lazy val toAbs = newFeature((x: Byte) => x.toAbs, "{ (x: Byte) => x.toAbs }",
-        sinceVersion = VersionContext.V6SoftForkVersion)
+        sinceVersion = V6SoftForkVersion)
 
       lazy val compareTo = newFeature(
         (x: (Byte, Byte)) => x._1.compareTo(x._2),
         "{ (x: (Byte, Byte)) => x._1.compareTo(x._2) }",
-        sinceVersion = VersionContext.V6SoftForkVersion)
+        sinceVersion = V6SoftForkVersion)
 
       lazy val bitOr = newFeature(
         { (x: (Byte, Byte)) => (x._1 | x._2).toByteExact },
         "{ (x: (Byte, Byte)) => (x._1 | x._2) }",
-        sinceVersion = VersionContext.V6SoftForkVersion)
+        sinceVersion = V6SoftForkVersion)
 
       lazy val bitAnd = newFeature(
         { (x: (Byte, Byte)) => (x._1 & x._2).toByteExact },
         "{ (x: (Byte, Byte)) => (x._1 & x._2) }",
-        sinceVersion = VersionContext.V6SoftForkVersion)
+        sinceVersion = V6SoftForkVersion)
 
       forAll { x: Byte =>
         Seq(toAbs).foreach(f => f.checkEquality(x))
@@ -83,21 +91,21 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
       // which is checked below
 
       lazy val toAbs = newFeature((x: Short) => x.toAbs, "{ (x: Short) => x.toAbs }",
-        sinceVersion = VersionContext.V6SoftForkVersion)
+        sinceVersion = V6SoftForkVersion)
 
       lazy val compareTo = newFeature((x: (Short, Short)) => x._1.compareTo(x._2),
         "{ (x: (Short, Short)) => x._1.compareTo(x._2) }",
-        sinceVersion = VersionContext.V6SoftForkVersion)
+        sinceVersion = V6SoftForkVersion)
 
       lazy val bitOr = newFeature(
       { (x: (Short, Short)) => (x._1 | x._2).toShortExact },
       "{ (x: (Short, Short)) => x._1 | x._2 }",
-      sinceVersion = VersionContext.V6SoftForkVersion)
+      sinceVersion = V6SoftForkVersion)
 
       lazy val bitAnd = newFeature(
       { (x: (Short, Short)) => (x._1 & x._2).toShortExact },
       "{ (x: (Short, Short)) => x._1 & x._2 }",
-      sinceVersion = VersionContext.V6SoftForkVersion)
+      sinceVersion = V6SoftForkVersion)
 
       forAll { x: Short =>
         Seq(toAbs).foreach(_.checkEquality(x))
@@ -113,18 +121,18 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
       // NOTE, for such versions the new features are not supported
       // which is checked below
       lazy val toAbs     = newFeature((x: Int) => x.toAbs, "{ (x: Int) => x.toAbs }",
-        sinceVersion = VersionContext.V6SoftForkVersion)
+        sinceVersion = V6SoftForkVersion)
       lazy val compareTo = newFeature((x: (Int, Int)) => x._1.compareTo(x._2),
         "{ (x: (Int, Int)) => x._1.compareTo(x._2) }",
-        sinceVersion = VersionContext.V6SoftForkVersion)
+        sinceVersion = V6SoftForkVersion)
       lazy val bitOr = newFeature(
       { (x: (Int, Int)) => x._1 | x._2 },
       "{ (x: (Int, Int)) => x._1 | x._2 }",
-      sinceVersion = VersionContext.V6SoftForkVersion)
+      sinceVersion = V6SoftForkVersion)
       lazy val bitAnd = newFeature(
       { (x: (Int, Int)) => x._1 & x._2 },
       "{ (x: (Int, Int)) => x._1 & x._2 }",
-      sinceVersion = VersionContext.V6SoftForkVersion)
+      sinceVersion = V6SoftForkVersion)
       forAll { x: Int =>
         Seq(toAbs).foreach(_.checkEquality(x))
       }
@@ -139,20 +147,20 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
       // NOTE, for such versions the new features are not supported
       // which is checked below
       lazy val toAbs = newFeature((x: Long) => x.toAbs, "{ (x: Long) => x.toAbs }",
-        sinceVersion = VersionContext.V6SoftForkVersion)
+        sinceVersion = V6SoftForkVersion)
       lazy val compareTo = newFeature((x: (Long, Long)) => x._1.compareTo(x._2),
         "{ (x: (Long, Long)) => x._1.compareTo(x._2) }",
-        sinceVersion = VersionContext.V6SoftForkVersion)
+        sinceVersion = V6SoftForkVersion)
 
       lazy val bitOr = newFeature(
         { (x: (Long, Long)) => x._1 | x._2 },
         "{ (x: (Long, Long)) => x._1 | x._2 }",
-        sinceVersion = VersionContext.V6SoftForkVersion)
+        sinceVersion = V6SoftForkVersion)
 
       lazy val bitAnd = newFeature(
         { (x: (Long, Long)) => x._1 & x._2 },
         "{ (x: (Long, Long)) => x._1 & x._2 }",
-        sinceVersion = VersionContext.V6SoftForkVersion)
+        sinceVersion = V6SoftForkVersion)
 
       forAll { x: Long =>
         Seq(toAbs).foreach(_.checkEquality(x))
@@ -192,30 +200,30 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
       val toByte = newFeature((x: BigInt) => x.toByte,
         "{ (x: BigInt) => x.toByte }",
         FuncValue(Vector((1, SBigInt)), Downcast(ValUse(1, SBigInt), SByte)),
-        sinceVersion = VersionContext.V6SoftForkVersion)
+        sinceVersion = V6SoftForkVersion)
       val toShort = newFeature((x: BigInt) => x.toShort,
         "{ (x: BigInt) => x.toShort }",
         FuncValue(Vector((1, SBigInt)), Downcast(ValUse(1, SBigInt), SShort)),
-        sinceVersion = VersionContext.V6SoftForkVersion)
+        sinceVersion = V6SoftForkVersion)
       val toInt = newFeature((x: BigInt) => x.toInt,
         "{ (x: BigInt) => x.toInt }",
         FuncValue(Vector((1, SBigInt)), Downcast(ValUse(1, SBigInt), SInt)),
-        sinceVersion = VersionContext.V6SoftForkVersion)
+        sinceVersion = V6SoftForkVersion)
       val toLong = newFeature((x: BigInt) => x.toLong,
         "{ (x: BigInt) => x.toLong }",
         FuncValue(Vector((1, SBigInt)), Downcast(ValUse(1, SBigInt), SLong)),
-        sinceVersion = VersionContext.V6SoftForkVersion)
+        sinceVersion = V6SoftForkVersion)
       lazy val toAbs   = newFeature((x: BigInt) => x.toAbs, "{ (x: BigInt) => x.toAbs }",
-        sinceVersion = VersionContext.V6SoftForkVersion)
+        sinceVersion = V6SoftForkVersion)
       lazy val compareTo = newFeature((x: (BigInt, BigInt)) => x._1.compareTo(x._2),
         "{ (x: (BigInt, BigInt)) => x._1.compareTo(x._2) }",
-        sinceVersion = VersionContext.V6SoftForkVersion)
+        sinceVersion = V6SoftForkVersion)
       lazy val bitOr = newFeature({ (x: (BigInt, BigInt)) => x._1 | x._2 },
         "{ (x: (BigInt, BigInt)) => x._1 | x._2 }",
-        sinceVersion = VersionContext.V6SoftForkVersion)
+        sinceVersion = V6SoftForkVersion)
       lazy val bitAnd = newFeature({ (x: (BigInt, BigInt)) => x._1 & x._2 },
         "{ (x: (BigInt, BigInt)) => x._1 & x._2 }",
-        sinceVersion = VersionContext.V6SoftForkVersion)
+        sinceVersion = V6SoftForkVersion)
 
       forAll { x: BigInt =>
         Seq(toByte, toShort, toInt, toLong, toAbs).foreach(_.checkEquality(x))
@@ -265,18 +273,32 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
   }
 
   property("Box properties equivalence (new features)") {
-    // TODO v6.0: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
-    val getReg = newFeature((x: Box) => x.getReg[Int](1).get,
-      "{ (x: Box) => x.getReg[Int](1).get }",
-      sinceVersion = VersionContext.V6SoftForkVersion)
+    // related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
+    def getReg = newFeature((x: Box) => x.getReg[Long](0).get,
+      "{ (x: Box) => x.getReg[Long](0).get }",
+      FuncValue(
+        Array((1, SBox)),
+        OptionGet(ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R0, SOption(SLong)))
+      ),
+      sinceVersion = V6SoftForkVersion)
 
-    if (activatedVersionInTests < VersionContext.V6SoftForkVersion) {
+    if (activatedVersionInTests < V6SoftForkVersion) {
       // NOTE, for such versions getReg is not supported
       // which is checked below
 
       forAll { box: Box =>
         Seq(getReg).foreach(_.checkEquality(box))
       }
+    } else {
+      val value = 10L
+      val box = CBox(new ErgoBox(value, TrueTree, Colls.emptyColl[Token], Map.empty,
+                                  ModifierId @@ Base16.encode(Array.fill(32)(0)), 0, 0))
+      verifyCases(
+        Seq(
+          box -> new Expected(ExpectedResult(Success(value), None))
+        ),
+        getReg
+      )
     }
   }
 
@@ -284,7 +306,7 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
   property("Coll find method equivalence") {
     val find = newFeature((x: Coll[Int]) => x.find({ (v: Int) => v > 0 }),
       "{ (x: Coll[Int]) => x.find({ (v: Int) => v > 0} ) }",
-      sinceVersion = VersionContext.V6SoftForkVersion)
+      sinceVersion = V6SoftForkVersion)
 
     if (activatedVersionInTests < VersionContext.V6SoftForkVersion) {
       // NOTE, for such versions getReg is not supported
@@ -303,7 +325,7 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
         if (x.size > 2) x.slice(0, x.size - 2) else Colls.emptyColl[Boolean]
       },
       "{ (x: Coll[Boolean]) => x >> 2 }",
-      sinceVersion = VersionContext.V6SoftForkVersion)
+      sinceVersion = V6SoftForkVersion)
 
     if (activatedVersionInTests < VersionContext.V6SoftForkVersion) {
       // NOTE, for such versions getReg is not supported
@@ -319,7 +341,7 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
   property("Coll diff methods equivalence") {
     val diff = newFeature((x: (Coll[Int], Coll[Int])) => x._1.diff(x._2),
       "{ (x: (Coll[Int], Coll[Int])) => x._1.diff(x._2) }",
-      sinceVersion = VersionContext.V6SoftForkVersion)
+      sinceVersion = V6SoftForkVersion)
 
     if (activatedVersionInTests < VersionContext.V6SoftForkVersion) {
       // NOTE, for such versions getReg is not supported
@@ -336,7 +358,7 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
     val n = ExactNumeric.LongIsExactNumeric
     val fold = newFeature({ (x: Option[Long]) => x.fold(5.toLong)( (v: Long) => n.plus(v, 1) ) },
       "{ (x: Option[Long]) => x.fold(5, { (v: Long) => v + 1 }) }",
-      sinceVersion = VersionContext.V6SoftForkVersion)
+      sinceVersion = V6SoftForkVersion)
 
     if (activatedVersionInTests < VersionContext.V6SoftForkVersion) {
       // NOTE, for such versions getReg is not supported
@@ -352,7 +374,7 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
   property("allZK equivalence") {
     lazy val allZK = newFeature((x: Coll[SigmaProp]) => SigmaDsl.allZK(x),
       "{ (x: Coll[SigmaProp]) => allZK(x) }",
-      sinceVersion = VersionContext.V6SoftForkVersion)
+      sinceVersion = V6SoftForkVersion)
 
     if (activatedVersionInTests < VersionContext.V6SoftForkVersion) {
       // NOTE, for such versions getReg is not supported
@@ -368,7 +390,7 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
   property("anyZK equivalence") {
     lazy val anyZK = newFeature((x: Coll[SigmaProp]) => SigmaDsl.anyZK(x),
       "{ (x: Coll[SigmaProp]) => anyZK(x) }",
-      sinceVersion = VersionContext.V6SoftForkVersion)
+      sinceVersion = V6SoftForkVersion)
 
     if (activatedVersionInTests < VersionContext.V6SoftForkVersion) {
       // NOTE, for such versions getReg is not supported
@@ -378,6 +400,28 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
         anyZK.checkEquality(x)
       }
     }
+  }
+
+  property("Numeric.toBytes methods equivalence") {
+    lazy val toBytes = newFeature(
+      { (x: Byte) => x.toBigEndianBytes },
+      "{ (x: Byte) => x.toBytes }",
+      FuncValue(
+        Array((1, SByte)),
+        MethodCall.typed[Value[SCollection[SByte.type]]](
+          ValUse(1, SByte),
+          SByteMethods.getMethodByName("toBytes"),
+          Vector(),
+          Map()
+        )
+      ),
+      sinceVersion = V6SoftForkVersion)
+    val cases = Seq(
+      (0.toByte, Success(Coll(0.toByte))),
+      (1.toByte, Success(Coll(1.toByte)))
+    )
+
+    testCases(cases, toBytes)
   }
 
   property("Fix substConstants in v6.0 for ErgoTree version > 0") {
@@ -407,7 +451,6 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
         ast.SeqCostItem(CompanionDesc(SubstConstants), PerItemCost(JitCost(100), JitCost(100), 1), nItems)
       )
     )
-
     val expectedTreeBytes_beforeV6 = Helpers.decodeBytes("1b0108d27300")
     val expectedTreeBytes_V6 = Helpers.decodeBytes("1b050108d27300")
 
@@ -461,6 +504,108 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
     tree.header shouldBe t2.header
     tree.constants.length shouldBe t2.constants.length
     tree.root shouldBe t2.root
+  }
+
+  property("Header new methods") {
+
+    def checkPoW = {
+      newFeature(
+        { (x: Header) => x.checkPow},
+        "{ (x: Header) => x.checkPow }",
+        FuncValue(
+          Array((1, SHeader)),
+          MethodCall.typed[Value[SBoolean.type]](
+            ValUse(1, SHeader),
+            SHeaderMethods.checkPowMethod,
+            IndexedSeq(),
+            Map()
+          )
+        ),
+        sinceVersion = VersionContext.V6SoftForkVersion
+      )
+    }
+
+    // bytes of real mainnet block header at height 614,440
+    val headerBytes = "02ac2101807f0000ca01ff0119db227f202201007f62000177a080005d440896d05d3f80dcff7f5e7f59007294c180808d0158d1ff6ba10000f901c7f0ef87dcfff17fffacb6ff7f7f1180d2ff7f1e24ffffe1ff937f807f0797b9ff6ebdae007e5c8c00b8403d3701557181c8df800001b6d5009e2201c6ff807d71808c00019780f087adb3fcdbc0b3441480887f80007f4b01cf7f013ff1ffff564a0000b9a54f00770e807f41ff88c00240000080c0250000000003bedaee069ff4829500b3c07c4d5fe6b3ea3d3bf76c5c28c1d4dcdb1bed0ade0c0000000000003105"
+    val header1 = new CHeader(ErgoHeader.sigmaSerializer.fromBytes(Base16.decode(headerBytes).get))
+
+    verifyCases(
+      Seq(
+        header1 -> new Expected(ExpectedResult(Success(true), None))
+      ),
+      checkPoW
+    )
+  }
+
+  property("higher order lambdas") {
+    val f = newFeature[Coll[Int], Coll[Int]](
+      { (xs: Coll[Int]) =>
+        val inc = { (x: Int) => x + 1 }
+
+        def apply(in: (Int => Int, Int)) = in._1(in._2)
+
+        xs.map { (x: Int) => apply((inc, x)) }
+      },
+      """{(xs: Coll[Int]) =>
+        |   val inc = { (x: Int) => x + 1 }
+        |   def apply(in: (Int => Int, Int)) = in._1(in._2)
+        |   xs.map { (x: Int) => apply((inc, x)) }
+        | }
+        |""".stripMargin,
+      FuncValue(
+        Array((1, SCollectionType(SInt))),
+        MapCollection(
+          ValUse(1, SCollectionType(SInt)),
+          FuncValue(
+            Array((3, SInt)),
+            Apply(
+              FuncValue(
+                Array((5, SPair(SFunc(Array(SInt), SInt, List()), SInt))),
+                Apply(
+                  SelectField.typed[Value[SFunc]](
+                    ValUse(5, SPair(SFunc(Array(SInt), SInt, List()), SInt)),
+                    1.toByte
+                  ),
+                  Array(
+                    SelectField.typed[Value[SInt.type]](
+                      ValUse(5, SPair(SFunc(Array(SInt), SInt, List()), SInt)),
+                      2.toByte
+                    )
+                  )
+                )
+              ),
+              Array(
+                Tuple(
+                  Vector(
+                    FuncValue(
+                      Array((5, SInt)),
+                      ArithOp(ValUse(5, SInt), IntConstant(1), OpCode @@ (-102.toByte))
+                    ),
+                    ValUse(3, SInt)
+                  )
+                )
+              )
+            )
+          )
+        )
+      ),
+    sinceVersion = VersionContext.V6SoftForkVersion
+    )
+
+    verifyCases(
+      Seq(
+        Coll(1, 2) -> Expected(
+          Success(Coll(2, 3)),
+          cost = 1793,
+          expectedDetails = CostDetails.ZeroCost
+        )
+      ),
+      f,
+      preGeneratedSamples = Some(Seq(
+        Coll(Int.MinValue, Int.MaxValue - 1),
+        Coll(0, 1, 2, 3, 100, 1000)
+      ))
+    )
   }
 
 }

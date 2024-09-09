@@ -113,27 +113,48 @@ object SType {
     * typeId this map contains a companion object which can be used to access the list of
     * corresponding methods.
     *
-    * NOTE: in the current implementation only monomorphic methods are supported (without
-    * type parameters)
+    * @note starting from v6.0 methods with type parameters are also supported.
     *
-    * NOTE2: in v3.x SNumericType.typeId is silently shadowed by SGlobal.typeId as part of
-    * `toMap` operation. As a result, the methods collected into SByte.methods cannot be
+    * @note on versioning:
+    * In v3.x-5.x SNumericType.typeId is silently shadowed by SGlobal.typeId as part of
+    * `toMap` operation. As a result, SNumericTypeMethods container cannot be resolved by
+    * typeId = 106, because SNumericType was being silently removed when `_types` map is
+    * constructed. See `property("SNumericType.typeId resolves to SGlobal")`.
+    * In addition, the methods associated with the concrete numeric types cannot be
     * resolved (using SMethod.fromIds()) for all numeric types (SByte, SShort, SInt,
-    * SLong, SBigInt). See the corresponding regression `property("MethodCall on numerics")`.
+    * SLong) because these types are not registered in the `_types` map.
+    * See the corresponding property("MethodCall on numerics")`.
     * However, this "shadowing" is not a problem since all casting methods are implemented
-    * via Downcast, Upcast opcodes and the remaining `toBytes`, `toBits` methods are not
-    * implemented at all.
-    * In order to allow MethodCalls on numeric types in future versions the SNumericType.typeId
-    * should be changed and SGlobal.typeId should be preserved. The regression tests in
-    * `property("MethodCall Codes")` should pass.
+    * via lowering to Downcast, Upcast opcodes and the remaining `toBytes`, `toBits`
+    * methods are not implemented at all.
+    *
+    * Starting from v6.0 the SNumericType.typeId is demoted as a receiver object of
+    * method calls and:
+    * 1) numeric type SByte, SShort, SInt, SLong are promoted as receivers and added to
+    * the _types map.
+    * 2) all methods from SNumericTypeMethods are copied to all the concrete numeric types
+    * (SByte, SShort, SInt, SLong, SBigInt) and the generic tNum type parameter is
+    * specialized accordingly.
+    *
+    * This difference in behaviour is tested by `property("MethodCall on numerics")`.
+    *
+    * The regression tests in `property("MethodCall Codes")` should pass.
     */
-  // TODO v6.0: should contain all numeric types (including also SNumericType)
-  //  to support method calls like 10.toByte which encoded as MethodCall with typeId = 4, methodId = 1
-  //  see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/667
-  lazy val types: Map[Byte, STypeCompanion] = Seq(
-    SBoolean, SNumericType, SString, STuple, SGroupElement, SSigmaProp, SContext, SGlobal, SHeader, SPreHeader,
+  private val v5Types = Seq(
+    SBoolean, SString, STuple, SGroupElement, SSigmaProp, SContext, SGlobal, SHeader, SPreHeader,
     SAvlTree, SBox, SOption, SCollection, SBigInt
-  ).map { t => (t.typeId, t) }.toMap
+  )
+  private val v6Types = v5Types ++ Seq(SByte, SShort, SInt, SLong)
+
+  private val v5TypesMap = v5Types.map { t => (t.typeId, t) }.toMap
+
+  private val v6TypesMap = v6Types.map { t => (t.typeId, t) }.toMap
+
+  def types: Map[Byte, STypeCompanion] = if (VersionContext.current.isV6SoftForkActivated) {
+    v6TypesMap
+  } else {
+    v5TypesMap
+  }
 
   /** Checks that the type of the value corresponds to the descriptor `tpe`.
     * If the value has complex structure only root type constructor is checked.
@@ -625,7 +646,7 @@ case class SFunc(tDom: IndexedSeq[SType],  tRange: SType, tpeParams: Seq[STypePa
 }
 
 object SFunc {
-  final val FuncTypeCode: TypeCode = TypeCodes.FirstFuncType
+  final val FuncTypeCode: TypeCode = TypeCodes.FuncType
   def apply(tDom: SType, tRange: SType): SFunc = SFunc(Array(tDom), tRange) // HOTSPOT:
   val identity = { x: Any => x }
 }
@@ -691,7 +712,6 @@ object SOption extends STypeCompanion {
 
   def apply[T <: SType](implicit elemType: T, ov: Overloaded1): SOption[T] = SOption(elemType)
 }
-
 
 /** Base class for descriptors of `Coll[T]` ErgoTree type for some elemType T. */
 trait SCollection[T <: SType] extends SProduct with SGenericType {

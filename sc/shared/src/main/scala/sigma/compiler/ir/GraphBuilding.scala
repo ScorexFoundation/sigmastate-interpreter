@@ -1,6 +1,8 @@
 package sigma.compiler.ir
 
 import org.ergoplatform._
+import sigma.Evaluation.stypeToRType
+import sigma.ast.SType.tT
 import sigma.ast.TypeCodes.LastConstantCode
 import sigma.ast.Value.Typed
 import sigma.ast.syntax.{SValue, ValueOps}
@@ -17,6 +19,9 @@ import sigma.data.UnsignedBigIntNumericOps.{UnsignedBigIntIsExactIntegral, Unsig
 import sigma.exceptions.GraphBuildingException
 import sigma.serialization.OpCodes
 import sigma.{SigmaException, ast}
+import sigma.util.Extensions.ByteOps
+import sigma.{SigmaException, VersionContext, ast}
+import sigmastate.interpreter.Interpreter.ScriptEnv
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -445,8 +450,8 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
       }
       Nullable(res)
     }}
-    def throwError =
-      error(s"Don't know how to buildNode($node)", node.sourceContext.toOption)
+    def throwError(clue: String = "") =
+      error((if (clue.nonEmpty) clue + ": " else "") + s"Don't know how to buildNode($node)", node.sourceContext.toOption)
 
     val res: Ref[Any] = node match {
       case Constant(v, tpe) => v match {
@@ -940,7 +945,7 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
         sigmaDslBuilder.decodePoint(bytes)
 
       // fallback rule for MethodCall, should be the last case in the list
-      case sigma.ast.MethodCall(obj, method, args, _) =>
+      case sigma.ast.MethodCall(obj, method, args, typeSubst) =>
         val objV = eval(obj)
         val argsV = args.map(eval)
         (objV, method.objType) match {
@@ -997,7 +1002,7 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
               val i = asRep[Int](argsV(0))
               val d = asRep[t](argsV(1))
               xs.getOrElse(i, d)
-            case _ => throwError
+            case _ => throwError()
           }
           case (opt: ROption[t]@unchecked, SOptionMethods) => method.name match {
             case SOptionMethods.GetMethod.name =>
@@ -1011,14 +1016,7 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
               opt.map(asRep[t => Any](argsV(0)))
             case SOptionMethods.FilterMethod.name =>
               opt.filter(asRep[t => Boolean](argsV(0)))
-            case _ => throwError
-          }
-          case (bi: Ref[BigInt]@unchecked, SBigIntMethods) => method.name match {
-            case SBigIntMethods.ToUnsigned.name =>
-              bi.toUnsigned()
-            case SBigIntMethods.ToUnsignedMod.name =>
-              val m = asRep[UnsignedBigInt](argsV(0))
-              bi.toUnsignedMod(m)
+            case _ => throwError()
           }
           case (ubi: Ref[UnsignedBigInt]@unchecked, SUnsignedBigIntMethods) => method.name match {
             case SUnsignedBigIntMethods.ModMethod.name =>
@@ -1056,12 +1054,16 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
             case SGroupElementMethods.ExponentiateUnsignedMethod.name =>
               val k = asRep[UnsignedBigInt](argsV(0))
               ge.expUnsigned(k)
-            case _ => throwError
+            case _ => throwError()
           }
           case (box: Ref[Box]@unchecked, SBoxMethods) => method.name match {
             case SBoxMethods.tokensMethod.name =>
               box.tokens
-            case _ => throwError
+            case SBoxMethods.getRegMethodV6.name if VersionContext.current.isV6SoftForkActivated =>
+              val c1 = asRep[Int](argsV(0))
+              val c2 = stypeToElem(typeSubst.apply(tT))
+              box.getReg(c1)(c2)
+            case _ => throwError()
           }
           case (ctx: Ref[Context]@unchecked, SContextMethods) => method.name match {
             case SContextMethods.dataInputsMethod.name =>
@@ -1084,7 +1086,7 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
               ctx.LastBlockUtxoRootHash
             case SContextMethods.minerPubKeyMethod.name =>
               ctx.minerPubKey
-            case _ => throwError
+            case _ => throwError()
           }
           case (tree: Ref[AvlTree]@unchecked, SAvlTreeMethods) => method.name match {
             case SAvlTreeMethods.digestMethod.name =>
@@ -1131,7 +1133,7 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
               val operations = asRep[Coll[(Coll[Byte], Coll[Byte])]](argsV(0))
               val proof = asRep[Coll[Byte]](argsV(1))
               tree.update(operations, proof)
-            case _ => throwError
+            case _ => throwError()
           }
           case (ph: Ref[PreHeader]@unchecked, SPreHeaderMethods) => method.name match {
             case SPreHeaderMethods.versionMethod.name =>
@@ -1148,7 +1150,7 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
               ph.minerPk
             case SPreHeaderMethods.votesMethod.name =>
               ph.votes
-            case _ => throwError
+            case _ => throwError()
           }
           case (h: Ref[Header]@unchecked, SHeaderMethods) => method.name match {
             case SHeaderMethods.idMethod.name =>
@@ -1181,7 +1183,9 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
               h.powDistance
             case SHeaderMethods.votesMethod.name =>
               h.votes
-            case _ => throwError
+            case SHeaderMethods.checkPowMethod.name if VersionContext.current.isV6SoftForkActivated =>
+              h.checkPow
+            case _ => throwError()
           }
           case (g: Ref[SigmaDslBuilder]@unchecked, SGlobalMethods) => method.name match {
             case SGlobalMethods.groupGeneratorMethod.name =>
@@ -1190,13 +1194,52 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
               val c1 = asRep[Coll[Byte]](argsV(0))
               val c2 = asRep[Coll[Byte]](argsV(1))
               g.xor(c1, c2)
-            case _ => throwError
+            case _ => throwError()
           }
-          case _ => throwError
+          case (x: Ref[tNum], _: SNumericTypeMethods) => method.name match {
+            case SNumericTypeMethods.ToBytesMethod.name =>
+              val op = NumericToBigEndianBytes(elemToExactNumeric(x.elem))
+              ApplyUnOp(op, x)
+            case SNumericTypeMethods.ToBitsMethod.name =>
+              val op = NumericToBits(elemToExactNumeric(x.elem))
+              ApplyUnOp(op, x)
+            case SNumericTypeMethods.BitwiseInverseMethod.name =>
+              val op = NumericBitwiseInverse(elemToExactNumeric(x.elem))(x.elem)
+              ApplyUnOp(op, x)
+            case SNumericTypeMethods.BitwiseOrMethod.name =>
+              val y = asRep[tNum](argsV(0))
+              val op = NumericBitwiseOr(elemToExactNumeric(x.elem))(x.elem)
+              ApplyBinOp(op, x, y)
+            case SNumericTypeMethods.BitwiseAndMethod.name =>
+              val y = asRep[tNum](argsV(0))
+              val op = NumericBitwiseAnd(elemToExactNumeric(x.elem))(x.elem)
+              ApplyBinOp(op, x, y)
+            case SNumericTypeMethods.BitwiseXorMethod.name =>
+              val y = asRep[tNum](argsV(0))
+              val op = NumericBitwiseXor(elemToExactNumeric(x.elem))(x.elem)
+              ApplyBinOp(op, x, y)
+            case SNumericTypeMethods.ShiftLeftMethod.name =>
+              val y = asRep[Int](argsV(0))
+              val op = NumericShiftLeft(elemToExactNumeric(x.elem))(x.elem)
+              ApplyBinOpDiffArgs(op, x, y)
+            case SNumericTypeMethods.ShiftRightMethod.name =>
+              val y = asRep[Int](argsV(0))
+              val op = NumericShiftRight(elemToExactNumeric(x.elem))(x.elem)
+              ApplyBinOpDiffArgs(op, x, y)
+            case SBigIntMethods.ToUnsigned.name =>  // only bigint has toUnsigned method
+              val bi = asRep[BigInt](x)
+              bi.toUnsigned()
+            case SBigIntMethods.ToUnsignedMod.name => // only bigint has toUnsignedMod method
+              val bi = asRep[BigInt](x)
+              val m = asRep[UnsignedBigInt](argsV(0))
+              bi.toUnsignedMod(m)
+            case _ => throwError()
+          }
+          case _ => throwError(s"Type ${stypeToRType(obj.tpe).name} doesn't have methods")
         }
 
       case _ =>
-        throwError
+        throwError()
     }
     val resC = asRep[T#WrappedType](res)
     resC

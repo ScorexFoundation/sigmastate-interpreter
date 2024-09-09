@@ -153,6 +153,23 @@ trait BigInt {
   def or(that: BigInt): BigInt
   def |(that: BigInt): BigInt = or(that)
 
+  /**
+    * @return a big integer whose value is `this xor that`
+    */
+  def xor(that: BigInt): BigInt
+
+  /**
+    * @return a 256-bit signed integer whose value is (this << n). The shift distance, n, may be negative,
+    *         in which case this method performs a right shift. (Computes floor(this * 2n).)
+    */
+  def shiftLeft(n: Int): BigInt
+
+  /**
+    * @return a 256-bit signed integer whose value is (this >> n). Sign extension is performed. The shift distance, n,
+    *         may be negative, in which case this method performs a left shift. (Computes floor(this / 2n).)
+    */
+  def shiftRight(n: Int): BigInt
+
   def toUnsigned: UnsignedBigInt
 
   def toUnsignedMod(m: UnsignedBigInt): UnsignedBigInt
@@ -590,6 +607,23 @@ trait Header {
 
   /** Miner votes for changing system parameters. */
   def votes: Coll[Byte] //3 bytes
+
+  /** Bytes which are coming from future versions of the protocol, so
+    * their meaning is not known to current version of Sigma, but they
+    * are stored to get the same id as future version users.
+    */
+  def unparsedBytes: Coll[Byte]
+
+  /**
+    * @return header bytes without proof of work, a PoW is generated over them
+    */
+  def serializeWithoutPoW: Coll[Byte]
+
+  /**
+    * @return result of header's proof-of-work validation
+    */
+  def checkPow: Boolean
+
 }
 
 /** Runtime representation of Context ErgoTree type.

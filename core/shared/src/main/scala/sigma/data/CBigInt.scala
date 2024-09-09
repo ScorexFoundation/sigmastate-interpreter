@@ -50,6 +50,12 @@ case class CBigInt(override val wrappedValue: BigInteger) extends BigInt with Wr
 
   override def or(that: BigInt): BigInt = CBigInt(wrappedValue.or(that.asInstanceOf[CBigInt].wrappedValue))
 
+  override def xor(that: BigInt): BigInt = CBigInt(wrappedValue.xor(that.asInstanceOf[CBigInt].wrappedValue))
+
+  override def shiftLeft(n: Int): BigInt = CBigInt(wrappedValue.shiftLeft(n).to256BitValueExact)
+
+  override def shiftRight(n: Int): BigInt = CBigInt(wrappedValue.shiftRight(n).to256BitValueExact)
+
   def toUnsigned: UnsignedBigInt = {
     if(this.wrappedValue.compareTo(BigInteger.ZERO) < 0){
       throw new ArithmeticException("BigInteger argument for .toUnsigned is negative in");

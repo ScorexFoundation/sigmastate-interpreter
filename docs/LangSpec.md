@@ -249,6 +249,10 @@ class Context {
 
 /** Represents data of the block headers available in scripts. */
 class Header {  
+
+  /** Validate header's proof-of-work */  
+  def checkPow: Boolean
+  
   /** Bytes representation of ModifierId of this Header */
   def id: Coll[Byte]
 

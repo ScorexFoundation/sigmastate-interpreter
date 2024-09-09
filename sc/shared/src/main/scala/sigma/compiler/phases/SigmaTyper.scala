@@ -136,7 +136,7 @@ class SigmaTyper(val builder: SigmaBuilder,
     case Apply(ApplyTypes(sel @ Select(obj, n, _), Seq(rangeTpe)), args) =>
       val newObj = assignType(env, obj)
       val newArgs = args.map(assignType(env, _))
-      obj.tpe match {
+      newObj.tpe match {
         case p: SProduct =>
           MethodsContainer.getMethod(p, n) match {
             case Some(method: SMethod) =>
@@ -160,10 +160,10 @@ class SigmaTyper(val builder: SigmaBuilder,
             case Some(method) =>
               error(s"Don't know how to handle method $method in obj $p", sel.sourceContext)
             case None =>
-              throw new MethodNotFound(s"Cannot find method '$n' in in the object $obj of Product type $p", obj.sourceContext.toOption)
+              throw new MethodNotFound(s"Cannot find method '$n' in in the object $newObj of Product type $p", newObj.sourceContext.toOption)
           }
         case _ =>
-          error(s"Cannot get field '$n' in in the object $obj of non-product type ${obj.tpe}", sel.sourceContext)
+          error(s"Cannot get field '$n' in in the object $newObj of non-product type ${newObj.tpe}", sel.sourceContext)
       }
 
     case app @ Apply(selOriginal @ Select(obj, nOriginal, resType), args) =>
