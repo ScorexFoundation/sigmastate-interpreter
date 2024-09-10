@@ -6,11 +6,11 @@ import sigma.VersionContext.V6SoftForkVersion
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.Token
 import scorex.util.ModifierId
-import scorex.utils.Shorts
+import scorex.utils.{Ints, Shorts}
 import sigma.ast.ErgoTree.ZeroHeader
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.syntax.TrueSigmaProp
-import sigma.ast._
+import sigma.ast.{SInt, _}
 import sigma.data.{CBigInt, CBox, CHeader, ExactNumeric}
 import sigma.eval.{CostDetails, SigmaDsl, TracedCost}
 import sigma.serialization.ValueCodes.OpCode
@@ -420,30 +420,201 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
     )
   }
 
-  property("Int methods equivalence (new features)") {
-    if (activatedVersionInTests < VersionContext.V6SoftForkVersion) {
-      // NOTE, for such versions the new features are not supported
-      // which is checked below
-      lazy val toAbs     = newFeature((x: Int) => x.toAbs, "{ (x: Int) => x.toAbs }",
-        sinceVersion = V6SoftForkVersion)
-      lazy val compareTo = newFeature((x: (Int, Int)) => x._1.compareTo(x._2),
-        "{ (x: (Int, Int)) => x._1.compareTo(x._2) }",
-        sinceVersion = V6SoftForkVersion)
-      lazy val bitOr = newFeature(
-      { (x: (Int, Int)) => x._1 | x._2 },
-      "{ (x: (Int, Int)) => x._1 | x._2 }",
+  property("Int - 6.0 methods") {
+
+    lazy val bitOr = newFeature(
+      { (x: (Int, Int)) => (x._1 | x._2)},
+      "{ (x: (Int, Int)) => x._1.bitwiseOr(x._2) }",
+      FuncValue(
+        Array((1, SPair(SInt, SInt))),
+        MethodCall.typed[Value[SInt.type]](
+          SelectField.typed[Value[SInt.type]](ValUse(1,SPair(SInt, SInt)), 1.toByte),
+          SIntMethods.v6Methods.find(_.name == "bitwiseOr").get,
+          Vector(SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)),2.toByte)),
+          Map()
+        )
+      ),
       sinceVersion = V6SoftForkVersion)
-      lazy val bitAnd = newFeature(
+
+    verifyCases(
+      Seq(
+        (1, 2) -> new Expected(ExpectedResult(Success(3), None)),
+        (1001, 2002) -> new Expected(ExpectedResult(Success(2043), None)),
+        (100001, 20002) -> new Expected(ExpectedResult(Success(118435), None))
+      ),
+      bitOr
+    )
+
+    lazy val bitNot = newFeature(
+      { (x: Int) => ~x },
+      "{ (x: Int) => x.bitwiseInverse }",
+      FuncValue(
+        Array((1, SInt)),
+        MethodCall.typed[Value[SInt.type]](
+          ValUse(1, SInt),
+          SIntMethods.v6Methods.find(_.name == "bitwiseInverse").get,
+          Vector(),
+          Map()
+        )
+      ),
+      sinceVersion = V6SoftForkVersion)
+
+    verifyCases(
+      Seq(
+        1 -> new Expected(ExpectedResult(Success(-2), None)),
+        10001 -> new Expected(ExpectedResult(Success(-10002), None)),
+        Int.MinValue -> new Expected(ExpectedResult(Success(Int.MaxValue), None))
+      ),
+      bitNot
+    )
+
+    lazy val bitAnd = newFeature(
       { (x: (Int, Int)) => x._1 & x._2 },
-      "{ (x: (Int, Int)) => x._1 & x._2 }",
+      "{ (x: (Int, Int)) => x._1.bitwiseAnd(x._2) }",
+      FuncValue(
+        Array((1, SPair(SInt, SInt))),
+        MethodCall.typed[Value[SInt.type]](
+          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 1.toByte),
+          SIntMethods.v6Methods.find(_.name == "bitwiseAnd").get,
+          Vector(SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)),2.toByte)),
+          Map()
+        )
+      ),
       sinceVersion = V6SoftForkVersion)
-      forAll { x: Int =>
-        Seq(toAbs).foreach(_.checkEquality(x))
-      }
-      forAll { x: (Int, Int) =>
-        Seq(compareTo, bitOr, bitAnd).foreach(_.checkEquality(x))
-      }
-    }
+
+    verifyCases(
+      Seq(
+        (3, 5) -> new Expected(ExpectedResult(Success(1), None)),
+        (10001, 2202) -> new Expected(ExpectedResult(Success(16), None)),
+        (-10001, 200202) -> new Expected(ExpectedResult(Success(198666), None))
+      ),
+      bitAnd
+    )
+
+    lazy val bitXor = newFeature(
+      { (x: (Int, Int)) => (x._1 ^ x._2) },
+      "{ (x: (Int, Int)) => x._1.bitwiseXor(x._2) }",
+      FuncValue(
+        Array((1, SPair(SInt, SInt))),
+        MethodCall.typed[Value[SInt.type]](
+          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 1.toByte),
+          SIntMethods.v6Methods.find(_.name == "bitwiseXor").get,
+          Vector(SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)),2.toByte)),
+          Map()
+        )
+      ),
+      sinceVersion = V6SoftForkVersion)
+
+    verifyCases(
+      Seq(
+        (3, 5) -> new Expected(ExpectedResult(Success(6), None)),
+        (10001, 2202) -> new Expected(ExpectedResult(Success(12171), None)),
+        (-10001, 200202) -> new Expected(ExpectedResult(Success(-207131), None))
+      ),
+      bitXor
+    )
+
+    lazy val toBigEndianBytes = newFeature[Int, Coll[Byte]](
+      { x: Int => Colls.fromArray(Ints.toByteArray(x)) },
+      "{ (x: Int) => x.toBytes }",
+      FuncValue(
+        Array((1, SInt)),
+        MethodCall.typed[Value[SCollection[SInt.type]]](
+          ValUse(1, SInt),
+          SIntMethods.getMethodByName("toBytes"),
+          Vector(),
+          Map()
+        )
+      ),
+      sinceVersion = V6SoftForkVersion)
+
+    verifyCases(
+      Seq(
+        127 -> new Expected(ExpectedResult(Success(Coll(0.toByte, 0.toByte, 0.toByte, 127.toByte)), None)),
+        Short.MaxValue.toInt -> new Expected(ExpectedResult(Success(Coll(0.toByte, 0.toByte, 127.toByte, (-1).toByte)), None)),
+        Short.MinValue.toInt -> new Expected(ExpectedResult(Success(Coll((-1).toByte, (-1).toByte, (-128).toByte, 0.toByte)), None)),
+        Int.MaxValue.toInt -> new Expected(ExpectedResult(Success(Coll(127.toByte, (-1).toByte, (-1).toByte, (-1).toByte)), None))
+      ),
+      toBigEndianBytes
+    )
+
+    def byte2Bools(b: Byte): Seq[Boolean] =
+      (0 to 7 map isBitSet(b)).reverse
+
+    def isBitSet(byte: Byte)(bit: Int): Boolean =
+      ((byte >> bit) & 1) == 1
+
+    lazy val toBits = newFeature[Int, Coll[Boolean]](
+      { x: Int => Colls.fromArray(Ints.toByteArray(x).flatMap(b => byte2Bools(b).toArray)) },
+      "{ (x: Int) => x.toBits }",
+      FuncValue(
+        Array((1, SInt)),
+        MethodCall.typed[Value[SCollection[SInt.type]]](
+          ValUse(1, SInt),
+          SIntMethods.getMethodByName("toBits"),
+          Vector(),
+          Map()
+        )
+      ),
+      sinceVersion = V6SoftForkVersion)
+
+    verifyCases(
+      Seq(
+        83 -> new Expected(ExpectedResult(Success(Coll(false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, true, false, true, false, false, true, true)), None)),
+        -55 -> new Expected(ExpectedResult(Success(Coll(true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, false, true, false, false, true)), None)),
+        -1 -> new Expected(ExpectedResult(Success(Coll(true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true)), None)),
+        -10001 -> new Expected(ExpectedResult(Success(Coll(true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, true, true, false, false, false, true, true, true, false, true, true, true, true)), None))
+      ),
+      toBits
+    )
+
+    lazy val shiftLeft = newFeature(
+      { (x: (Int, Int)) => (x._1 << x._2) },
+      "{ (x: (Int, Int)) => x._1.shiftLeft(x._2) }",
+      FuncValue(
+        Array((1, SPair(SInt, SInt))),
+        MethodCall.typed[Value[SInt.type]](
+          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 1.toByte),
+          SIntMethods.v6Methods.find(_.name == "shiftLeft").get,
+          Vector(SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 2.toByte)),
+          Map()
+        )
+      ),
+      sinceVersion = V6SoftForkVersion)
+
+    verifyCases(
+      Seq(
+        (3, 3) -> new Expected(ExpectedResult(Success(24), None)),
+        (3, 8) -> new Expected(ExpectedResult(Success(768), None)),
+        (-2, 10) -> new Expected(ExpectedResult(Success(-2048), None)),
+        (-222, 10) -> new Expected(ExpectedResult(Success(-227328), None))
+      ),
+      shiftLeft
+    )
+
+    lazy val shiftRight = newFeature(
+      { (x: (Int, Int)) => (x._1 >> x._2) },
+      "{ (x: (Int, Int)) => x._1.shiftRight(x._2) }",
+      FuncValue(
+        Array((1, SPair(SInt, SInt))),
+        MethodCall.typed[Value[SInt.type]](
+          SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 1.toByte),
+          SIntMethods.v6Methods.find(_.name == "shiftRight").get,
+          Vector(SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SInt, SInt)), 2.toByte)),
+          Map()
+        )
+      ),
+      sinceVersion = V6SoftForkVersion)
+
+    verifyCases(
+      Seq(
+        (24, 3) -> new Expected(ExpectedResult(Success(3), None)),
+        (1600, 8) -> new Expected(ExpectedResult(Success(6), None)),
+        (-3200, 8) -> new Expected(ExpectedResult(Success(-13), None)),
+        (-320019, 18) -> new Expected(ExpectedResult(Success(-2), None))
+      ),
+      shiftRight
+    )
   }
 
   property("Long methods equivalence (new features)") {
