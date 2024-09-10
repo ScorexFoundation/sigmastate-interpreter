@@ -360,6 +360,23 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
+  property("Byte.shiftLeft - over limit 2") {
+    def shiftLeftTest(): Assertion = test("Byte.shiftLeft2", env, ext,
+      s"""{
+         | val x = (-128).toByte
+         | val y = 1
+         | x.shiftLeft(y) == 0
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      shiftLeftTest()
+    } else {
+      an[Exception] shouldBe thrownBy(shiftLeftTest())
+    }
+  }
+
   property("BigInt.shiftLeft") {
     def shiftLeftTest(): Assertion = test("BigInt.shiftLeft", env, ext,
       s"""{

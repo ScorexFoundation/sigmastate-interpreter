@@ -161,13 +161,13 @@ trait SNumericTypeMethods extends MonoTypeMethods {
 
   private val subst = Map(tNum -> this.ownerType)
 
-  private val v5Methods = {
+  val v5Methods = {
     SNumericTypeMethods.v5Methods.map { m =>
       m.copy(stype = applySubst(m.stype, subst).asFunc)
     }
   }
 
-  private val v6Methods = {
+  val v6Methods = {
     SNumericTypeMethods.v6Methods.map { m =>
       m.copy(
         objType = this, // associate the method with the concrete numeric type
@@ -306,7 +306,7 @@ object SNumericTypeMethods extends MethodsContainer {
         case SBigIntMethods => BigIntIsExactIntegral.bitwiseOr(obj.asInstanceOf[BigInt], other.head.asInstanceOf[BigInt])
       }
     })
-    .withInfo(PropertyCall,
+    .withInfo(MethodCall,
       """ Returns a big-endian representation of this numeric in a collection of Booleans.
         |  Each boolean corresponds to one bit.
           """.stripMargin)
@@ -323,7 +323,7 @@ object SNumericTypeMethods extends MethodsContainer {
         case SBigIntMethods => BigIntIsExactIntegral.bitwiseAnd(obj.asInstanceOf[BigInt], other.head.asInstanceOf[BigInt])
       }
     })
-    .withInfo(PropertyCall,
+    .withInfo(MethodCall,
       """ Returns a big-endian representation of this numeric in a collection of Booleans.
         |  Each boolean corresponds to one bit.
           """.stripMargin)
@@ -340,7 +340,7 @@ object SNumericTypeMethods extends MethodsContainer {
         case SBigIntMethods => BigIntIsExactIntegral.bitwiseXor(obj.asInstanceOf[BigInt], other.head.asInstanceOf[BigInt])
       }
     })
-    .withInfo(PropertyCall,
+    .withInfo(MethodCall,
       """ Returns a big-endian representation of this numeric in a collection of Booleans.
         |  Each boolean corresponds to one bit.
           """.stripMargin)
@@ -357,7 +357,7 @@ object SNumericTypeMethods extends MethodsContainer {
         case SBigIntMethods => BigIntIsExactIntegral.shiftLeft(obj.asInstanceOf[BigInt], other.head.asInstanceOf[Int])
       }
     })
-    .withInfo(PropertyCall,
+    .withInfo(MethodCall,
       """ Returns a big-endian representation of this numeric in a collection of Booleans.
         |  Each boolean corresponds to one bit.
           """.stripMargin)
@@ -374,7 +374,7 @@ object SNumericTypeMethods extends MethodsContainer {
         case SBigIntMethods => BigIntIsExactIntegral.shiftRight(obj.asInstanceOf[BigInt], other.head.asInstanceOf[Int])
       }
     })
-    .withInfo(PropertyCall,
+    .withInfo(MethodCall,
       """ Returns a big-endian representation of this numeric in a collection of Booleans.
         |  Each boolean corresponds to one bit.
           """.stripMargin)

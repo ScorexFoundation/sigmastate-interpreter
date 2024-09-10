@@ -105,7 +105,7 @@ trait NumericOps extends Base { self: IRContext =>
     }
   }
 
-  /** Descriptor of unary `ToBits` conversion operation. */
+  /** Descriptor of unary `BitwiseInverse` conversion operation. */
   case class NumericBitwiseInverse[T: Elem](n: ExactNumeric[T]) extends UnOp[T, T]("~") {
     override def applySeq(x: T): T = n.bitwiseInverse(x)
   }
