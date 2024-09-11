@@ -360,7 +360,7 @@ object SNumericTypeMethods extends MethodsContainer {
     .withInfo(MethodCall,
       """ Returns a big-endian representation of this numeric in a collection of Booleans.
         |  Each boolean corresponds to one bit.
-          """.stripMargin)
+          """.stripMargin) // todo: describe shift arg and its limits
 
   val ShiftRightMethod: SMethod = SMethod(
     this, "shiftRight", SFunc(Array(tNum, SInt), tNum), 13, BitwiseInverse_CostKind)
@@ -377,7 +377,7 @@ object SNumericTypeMethods extends MethodsContainer {
     .withInfo(MethodCall,
       """ Returns a big-endian representation of this numeric in a collection of Booleans.
         |  Each boolean corresponds to one bit.
-          """.stripMargin)
+          """.stripMargin) // todo: describe shift arg and its limits
 
   lazy val v5Methods = Array(
     ToByteMethod, // see Downcast

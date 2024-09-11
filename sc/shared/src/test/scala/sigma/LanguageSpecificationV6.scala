@@ -205,7 +205,8 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
       Seq(
         (3.toByte, 3) -> new Expected(ExpectedResult(Success(24.toByte), None))
       ),
-      shiftLeft
+      shiftLeft,
+      preGeneratedSamples = Some(Seq())
     )
 
     lazy val shiftRight = newFeature(
@@ -394,7 +395,8 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
         (3.toShort, 8) -> new Expected(ExpectedResult(Success(768.toShort), None)),
         ((-2).toShort, 10) -> new Expected(ExpectedResult(Success((-2048).toShort), None)),
       ),
-      shiftLeft
+      shiftLeft,
+      preGeneratedSamples = Some(Seq())
     )
 
     lazy val shiftRight = newFeature(
@@ -591,7 +593,8 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
         (-2, 10) -> new Expected(ExpectedResult(Success(-2048), None)),
         (-222, 10) -> new Expected(ExpectedResult(Success(-227328), None))
       ),
-      shiftLeft
+      shiftLeft,
+      preGeneratedSamples = Some(Seq())
     )
 
     lazy val shiftRight = newFeature(
@@ -643,8 +646,7 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
         (100001L, 20002L) -> new Expected(ExpectedResult(Success(118435L), None)),
         (1000010111L, -22L) -> new Expected(ExpectedResult(Success(-1L), None))
       ),
-      bitOr,
-      failOnTestVectors = false
+      bitOr
     )
 
     lazy val bitNot = newFeature(
@@ -795,7 +797,8 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
         (-2L, 10) -> new Expected(ExpectedResult(Success(-2048L), None)),
         (-222L, 10) -> new Expected(ExpectedResult(Success(-227328L), None))
       ),
-      shiftLeft
+      shiftLeft,
+      preGeneratedSamples = Some(Seq())
     )
 
     lazy val shiftRight = newFeature(
@@ -826,7 +829,9 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
     )
   }
 
-  property("BigInt methods equivalence (new features)") {
+  property("BigInt - 6.0 features") {
+    import sigma.data.OrderingOps.BigIntOrdering
+
     if (activatedVersionInTests < VersionContext.V6SoftForkVersion) {
       // The `Upcast(bigInt, SBigInt)` node is never produced by ErgoScript compiler, but is still valid ErgoTree.
       // Fixed in 6.0
@@ -841,50 +846,6 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
         SBigInt.downcast(CBigInt(new BigInteger("0", 16)).asInstanceOf[AnyVal]),
         _.getMessage.contains("Cannot downcast value")
       )
-    } else {
-      forAll { x: BigInteger =>
-        SBigInt.upcast(CBigInt(x).asInstanceOf[AnyVal]) shouldBe CBigInt(x)
-        SBigInt.downcast(CBigInt(x).asInstanceOf[AnyVal]) shouldBe CBigInt(x)
-      }
-    }
-
-    if (activatedVersionInTests < VersionContext.V6SoftForkVersion) {
-      // NOTE, for such versions the new features are not supported
-      // which is checked below
-      val toByte = newFeature((x: BigInt) => x.toByte,
-        "{ (x: BigInt) => x.toByte }",
-        FuncValue(Vector((1, SBigInt)), Downcast(ValUse(1, SBigInt), SByte)),
-        sinceVersion = V6SoftForkVersion)
-      val toShort = newFeature((x: BigInt) => x.toShort,
-        "{ (x: BigInt) => x.toShort }",
-        FuncValue(Vector((1, SBigInt)), Downcast(ValUse(1, SBigInt), SShort)),
-        sinceVersion = V6SoftForkVersion)
-      val toInt = newFeature((x: BigInt) => x.toInt,
-        "{ (x: BigInt) => x.toInt }",
-        FuncValue(Vector((1, SBigInt)), Downcast(ValUse(1, SBigInt), SInt)),
-        sinceVersion = V6SoftForkVersion)
-      val toLong = newFeature((x: BigInt) => x.toLong,
-        "{ (x: BigInt) => x.toLong }",
-        FuncValue(Vector((1, SBigInt)), Downcast(ValUse(1, SBigInt), SLong)),
-        sinceVersion = V6SoftForkVersion)
-      lazy val toAbs   = newFeature((x: BigInt) => x.toAbs, "{ (x: BigInt) => x.toAbs }",
-        sinceVersion = V6SoftForkVersion)
-      lazy val compareTo = newFeature((x: (BigInt, BigInt)) => x._1.compareTo(x._2),
-        "{ (x: (BigInt, BigInt)) => x._1.compareTo(x._2) }",
-        sinceVersion = V6SoftForkVersion)
-      lazy val bitOr = newFeature({ (x: (BigInt, BigInt)) => x._1 | x._2 },
-        "{ (x: (BigInt, BigInt)) => x._1 | x._2 }",
-        sinceVersion = V6SoftForkVersion)
-      lazy val bitAnd = newFeature({ (x: (BigInt, BigInt)) => x._1 & x._2 },
-        "{ (x: (BigInt, BigInt)) => x._1 & x._2 }",
-        sinceVersion = V6SoftForkVersion)
-
-      forAll { x: BigInt =>
-        Seq(toByte, toShort, toInt, toLong, toAbs).foreach(_.checkEquality(x))
-      }
-      forAll { x: (BigInt, BigInt) =>
-        Seq(compareTo, bitOr, bitAnd).foreach(_.checkEquality(x))
-      }
 
       forAll { x: Long =>
         assertExceptionThrown(
@@ -911,6 +872,10 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
         )
       }
     } else {
+      forAll { x: BigInteger =>
+        SBigInt.upcast(CBigInt(x).asInstanceOf[AnyVal]) shouldBe CBigInt(x)
+        SBigInt.downcast(CBigInt(x).asInstanceOf[AnyVal]) shouldBe CBigInt(x)
+      }
       forAll { x: Long =>
           SLong.downcast(CBigInt(new BigInteger(x.toString)).asInstanceOf[AnyVal]) shouldBe x
       }
@@ -924,6 +889,209 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
         SShort.downcast(CBigInt(new BigInteger(x.toString)).asInstanceOf[AnyVal]) shouldBe x
       }
     }
+
+    lazy val bitOr = newFeature[(BigInt, BigInt), BigInt](
+      { (x: (BigInt, BigInt)) => (x._1 | x._2)},
+      "{ (x: (BigInt, BigInt)) => x._1.bitwiseOr(x._2) }",
+      FuncValue(
+        Array((1, SPair(SBigInt, SBigInt))),
+        MethodCall.typed[Value[SBigInt.type]](
+          SelectField.typed[Value[SBigInt.type]](ValUse(1,SPair(SBigInt, SBigInt)), 1.toByte),
+          SBigIntMethods.v6Methods.find(_.name == "bitwiseOr").get,
+          Vector(SelectField.typed[Value[SBigInt.type]](ValUse(1, SPair(SBigInt, SBigInt)),2.toByte)),
+          Map()
+        )
+      ),
+      sinceVersion = V6SoftForkVersion)
+
+    verifyCases(
+      Seq(
+        (CBigInt(BigInteger.valueOf(1)), CBigInt(BigInteger.valueOf(2))) -> new Expected(ExpectedResult(Success(CBigInt(BigInteger.valueOf(3))), None)),
+        (CBigInt(BigInteger.valueOf(1001)), CBigInt(BigInteger.valueOf(2002))) -> new Expected(ExpectedResult(Success(CBigInt(BigInteger.valueOf(2043))), None)),
+        (CBigInt(BigInteger.valueOf(100001)), CBigInt(BigInteger.valueOf(20002))) -> new Expected(ExpectedResult(Success(CBigInt(BigInteger.valueOf(118435))), None)),
+        (CBigInt(BigInteger.valueOf(1000010111)), CBigInt(BigInteger.valueOf(-22))) -> new Expected(ExpectedResult(Success(CBigInt(BigInteger.valueOf(-1))), None))
+      ),
+      bitOr
+    )
+
+    lazy val bitNot = newFeature[BigInt, BigInt](
+      { (x: BigInt) => CBigInt(x.asInstanceOf[CBigInt].wrappedValue.not()) },
+      "{ (x: BigInt) => x.bitwiseInverse }",
+      FuncValue(
+        Array((1, SBigInt)),
+        MethodCall.typed[Value[SBigInt.type]](
+          ValUse(1, SBigInt),
+          SBigIntMethods.v6Methods.find(_.name == "bitwiseInverse").get,
+          Vector(),
+          Map()
+        )
+      ),
+      sinceVersion = V6SoftForkVersion)
+
+    verifyCases(
+      Seq(
+        CBigInt(BigInteger.valueOf(1)) -> new Expected(ExpectedResult(Success(CBigInt(BigInteger.valueOf(-2))), None)),
+        CBigInt(BigInteger.valueOf(10001)) -> new Expected(ExpectedResult(Success(CBigInt(BigInteger.valueOf(-10002))), None)),
+        CBigInt(BigInteger.valueOf(Int.MinValue)) -> new Expected(ExpectedResult(Success(CBigInt(BigInteger.valueOf(Int.MaxValue))), None)),
+        CBigInt(BigInteger.valueOf(Long.MinValue)) -> new Expected(ExpectedResult(Success(CBigInt(BigInteger.valueOf(Long.MaxValue))), None)),
+        CBigInt(BigInteger.valueOf(Long.MaxValue)) -> new Expected(ExpectedResult(Success(CBigInt(BigInteger.valueOf(Long.MinValue))), None))
+      ),
+      bitNot
+    )
+
+    lazy val bitAnd = newFeature(
+      { (x: (BigInt, BigInt)) => x._1.asInstanceOf[CBigInt].and(x._2.asInstanceOf[CBigInt]) },
+      "{ (x: (BigInt, BigInt)) => x._1.bitwiseAnd(x._2) }",
+      FuncValue(
+        Array((1, SPair(SBigInt, SBigInt))),
+        MethodCall.typed[Value[SBigInt.type]](
+          SelectField.typed[Value[SBigInt.type]](ValUse(1, SPair(SBigInt, SBigInt)), 1.toByte),
+          SBigIntMethods.v6Methods.find(_.name == "bitwiseAnd").get,
+          Vector(SelectField.typed[Value[SBigInt.type]](ValUse(1, SPair(SBigInt, SBigInt)), 2.toByte)),
+          Map()
+        )
+      ),
+      sinceVersion = V6SoftForkVersion)
+
+    verifyCases(
+      Seq(
+        (CBigInt(BigInteger.valueOf(3)), CBigInt(BigInteger.valueOf(5))) -> new Expected(ExpectedResult(Success(CBigInt(BigInteger.valueOf(1))), None)),
+        (CBigInt(BigInteger.valueOf(10001)), CBigInt(BigInteger.valueOf(2202))) -> new Expected(ExpectedResult(Success(CBigInt(BigInteger.valueOf(16))), None)),
+        (CBigInt(BigInteger.valueOf(-10001)), CBigInt(BigInteger.valueOf(200202))) -> new Expected(ExpectedResult(Success(CBigInt(BigInteger.valueOf(198666))), None)),
+        (CBigInt(BigInteger.valueOf(1000010111)), CBigInt(BigInteger.valueOf(-22))) -> new Expected(ExpectedResult(Success(CBigInt(BigInteger.valueOf(1000010090))), None))
+      ),
+      bitAnd
+    )
+
+    lazy val bitXor = newFeature(
+      { (x: (BigInt, BigInt)) => x._1.asInstanceOf[CBigInt].xor(x._2.asInstanceOf[CBigInt]) },
+      "{ (x: (BigInt, BigInt)) => x._1.bitwiseXor(x._2) }",
+      FuncValue(
+        Array((1, SPair(SBigInt, SBigInt))),
+        MethodCall.typed[Value[SBigInt.type]](
+          SelectField.typed[Value[SBigInt.type]](ValUse(1, SPair(SBigInt, SBigInt)), 1.toByte),
+          SBigIntMethods.v6Methods.find(_.name == "bitwiseXor").get,
+          Vector(SelectField.typed[Value[SBigInt.type]](ValUse(1, SPair(SBigInt, SBigInt)),2.toByte)),
+          Map()
+        )
+      ),
+      sinceVersion = V6SoftForkVersion)
+
+    verifyCases(
+      Seq(
+        (CBigInt(BigInteger.valueOf(3)), CBigInt(BigInteger.valueOf(5))) -> new Expected(ExpectedResult(Success(CBigInt(BigInteger.valueOf(6))), None)),
+        (CBigInt(BigInteger.valueOf(10001)), CBigInt(BigInteger.valueOf(2202))) -> new Expected(ExpectedResult(Success(CBigInt(BigInteger.valueOf(12171))), None)),
+        (CBigInt(BigInteger.valueOf(-10001)), CBigInt(BigInteger.valueOf(200202))) -> new Expected(ExpectedResult(Success(CBigInt(BigInteger.valueOf(-207131))), None)),
+        (CBigInt(BigInteger.valueOf(1000010111)), CBigInt(BigInteger.valueOf(-22))) -> new Expected(ExpectedResult(Success(CBigInt(BigInteger.valueOf(-1000010091))), None))
+      ),
+      bitXor
+    )
+
+    lazy val toBigEndianBytes = newFeature[BigInt, Coll[Byte]](
+      { x: BigInt => x.toBytes },
+      "{ (x: BigInt) => x.toBytes }",
+      FuncValue(
+        Array((1, SBigInt)),
+        MethodCall.typed[Value[SCollection[SBigInt.type]]](
+          ValUse(1, SBigInt),
+          SBigIntMethods.getMethodByName("toBytes"),
+          Vector(),
+          Map()
+        )
+      ),
+      sinceVersion = V6SoftForkVersion)
+
+    verifyCases(
+      Seq(
+        CBigInt(BigInteger.valueOf(127)) -> new Expected(ExpectedResult(Success(Coll(127.toByte)), None)),
+        CBigInt(BigInteger.valueOf(Short.MaxValue)) -> new Expected(ExpectedResult(Success(Coll(127.toByte, (-1).toByte)), None)),
+        CBigInt(BigInteger.valueOf(Short.MinValue)) -> new Expected(ExpectedResult(Success(Coll((-128).toByte, 0.toByte)), None)),
+        CBigInt(BigInteger.valueOf(Int.MaxValue)) -> new Expected(ExpectedResult(Success(Coll(127.toByte, (-1).toByte, (-1).toByte, (-1).toByte)), None))
+      ),
+      toBigEndianBytes
+    )
+
+    def byte2Bools(b: Byte): Seq[Boolean] =
+      (0 to 7 map isBitSet(b)).reverse
+
+    def isBitSet(byte: Byte)(bit: Int): Boolean =
+      ((byte >> bit) & 1) == 1
+
+    lazy val toBits = newFeature[BigInt, Coll[Boolean]](
+      { x: BigInt => Colls.fromArray(x.toBytes.toArray.flatMap(b => byte2Bools(b).toArray)) },
+      "{ (x: BigInt) => x.toBits }",
+      FuncValue(
+        Array((1, SBigInt)),
+        MethodCall.typed[Value[SCollection[SBigInt.type]]](
+          ValUse(1, SBigInt),
+          SBigIntMethods.getMethodByName("toBits"),
+          Vector(),
+          Map()
+        )
+      ),
+      sinceVersion = V6SoftForkVersion)
+
+    verifyCases(
+      Seq(
+        CBigInt(BigInteger.valueOf(83)) -> new Expected(ExpectedResult(Success(Coll(false, true, false, true, false, false, true, true)), None)),
+        CBigInt(BigInteger.valueOf(-55)) -> new Expected(ExpectedResult(Success(Coll(true, true, false, false, true, false, false, true)), None)),
+        CBigInt(BigInteger.valueOf(-1L)) -> new Expected(ExpectedResult(Success(Colls.fromArray(Array.fill(8)(true))), None)),
+        CBigInt(BigInteger.valueOf(-10001L)) -> new Expected(ExpectedResult(Success(Coll(true,true,false,true,true,false,false,false,true,true,true,false,true,true,true,true)), None))
+      ),
+      toBits
+    )
+
+    lazy val shiftLeft = newFeature(
+      { (x: (BigInt, Int)) => (x._1.asInstanceOf[BigInt].shiftLeft(x._2)) },
+      "{ (x: (BigInt, Int)) => x._1.shiftLeft(x._2) }",
+      FuncValue(
+        Array((1, SPair(SBigInt, SInt))),
+        MethodCall.typed[Value[SBigInt.type]](
+          SelectField.typed[Value[SBigInt.type]](ValUse(1, SPair(SBigInt, SInt)), 1.toByte),
+          SBigIntMethods.v6Methods.find(_.name == "shiftLeft").get,
+          Vector(SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SBigInt, SInt)), 2.toByte)),
+          Map()
+        )
+      ),
+      sinceVersion = V6SoftForkVersion)
+
+    verifyCases(
+      Seq(
+        (CBigInt(BigInteger.valueOf(3)), 3) -> new Expected(ExpectedResult(Success(CBigInt(BigInteger.valueOf(24))), None)),
+        (CBigInt(BigInteger.valueOf(3)), 8) -> new Expected(ExpectedResult(Success(CBigInt(BigInteger.valueOf(768))), None)),
+        (CBigInt(BigInteger.valueOf(-2)), 10) -> new Expected(ExpectedResult(Success(CBigInt(BigInteger.valueOf(-2048))), None)),
+        (CBigInt(BigInteger.valueOf(-222)), 10) -> new Expected(ExpectedResult(Success(CBigInt(BigInteger.valueOf(-227328L))), None))
+      ),
+      shiftLeft,
+      preGeneratedSamples = Some(Seq())
+    )
+
+    lazy val shiftRight = newFeature(
+      { (x: (BigInt, Int)) => if(x._2 < 0 || x._2 >= 256) throw new IllegalArgumentException() else (x._1.asInstanceOf[BigInt].shiftRight(x._2)) },
+      "{ (x: (BigInt, Int)) => x._1.shiftRight(x._2) }",
+      FuncValue(
+        Array((1, SPair(SBigInt, SInt))),
+        MethodCall.typed[Value[SBigInt.type]](
+          SelectField.typed[Value[SBigInt.type]](ValUse(1, SPair(SBigInt, SInt)), 1.toByte),
+          SBigIntMethods.v6Methods.find(_.name == "shiftRight").get,
+          Vector(SelectField.typed[Value[SInt.type]](ValUse(1, SPair(SBigInt, SInt)), 2.toByte)),
+          Map()
+        )
+      ),
+      sinceVersion = V6SoftForkVersion)
+
+    verifyCases(
+      Seq(
+        (CBigInt(BigInteger.valueOf(24)), 3) -> new Expected(ExpectedResult(Success(CBigInt(BigInteger.valueOf(3))), None)),
+        (CBigInt(BigInteger.valueOf(1600)), 8) -> new Expected(ExpectedResult(Success(CBigInt(BigInteger.valueOf(6))), None)),
+        (CBigInt(BigInteger.valueOf(-3200)), 8) -> new Expected(ExpectedResult(Success(CBigInt(BigInteger.valueOf(-13))), None)),
+        (CBigInt(BigInteger.valueOf(-320019)), 18) -> new Expected(ExpectedResult(Success(CBigInt(BigInteger.valueOf(-2))), None)),
+        (CBigInt(BigInteger.valueOf(-320019)), 63) -> new Expected(ExpectedResult(Success(CBigInt(BigInteger.valueOf(-1))), None)),
+        (CBigInt(BigInteger.valueOf(24)), -1) -> new Expected(ExpectedResult(Failure(new IllegalArgumentException()), None))
+      ),
+      shiftRight,
+      preGeneratedSamples = Some(Seq())
+    )
   }
 
   property("Box properties equivalence (new features)") {
