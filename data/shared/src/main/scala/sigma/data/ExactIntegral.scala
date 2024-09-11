@@ -44,7 +44,13 @@ object ExactIntegral {
     override def bitwiseAnd(x: Byte, y: Byte): Byte = (x & y).toByte
     override def bitwiseXor(x: Byte, y: Byte): Byte = (x ^ y).toByte
     override def shiftLeft(x: Byte, bits: Int): Byte = (x << bits).toByte
-    override def shiftRight(x: Byte, bits: Int): Byte = (x >> bits).toByte
+    override def shiftRight(x: Byte, bits: Int): Byte = {
+      if (bits < 0 || bits >= 8){
+        throw new IllegalArgumentException(s"Wrong argument in Byte.shiftRight: bits < 0 || bits >= 8 ($bits)")
+      } else {
+        (x >> bits).toByte
+      }
+    }
   }
 
   implicit object ShortIsExactIntegral extends ExactIntegral[Short] {
@@ -59,7 +65,13 @@ object ExactIntegral {
     override def bitwiseAnd(x: Short, y: Short): Short = (x & y).toShort
     override def bitwiseXor(x: Short, y: Short): Short = (x ^ y).toShort
     override def shiftLeft(x: Short, y: Int): Short = (x << y).toShort
-    override def shiftRight(x: Short, bits: Int): Short = (x >> bits).toShort
+    override def shiftRight(x: Short, bits: Int): Short = {
+      if (bits < 0 || bits >= 16){
+        throw new IllegalArgumentException(s"Wrong argument in Short.shiftRight: bits < 0 || bits >= 16 ($bits)")
+      } else {
+        (x >> bits).toShort
+      }
+    }
   }
 
   implicit object IntIsExactIntegral extends ExactIntegral[Int] {
@@ -74,7 +86,13 @@ object ExactIntegral {
     override def bitwiseAnd(x: Int, y: Int): Int = x & y
     override def bitwiseXor(x: Int, y: Int): Int = x ^ y
     override def shiftLeft(x: Int, y: Int): Int = x << y
-    override def shiftRight(x: Int, bits: Int): Int = x >> bits
+    override def shiftRight(x: Int, bits: Int): Int = {
+      if (bits < 0 || bits >= 32){
+        throw new IllegalArgumentException(s"Wrong argument in Int.shiftRight: bits < 0 || bits >= 32 ($bits)")
+      } else {
+        x >> bits
+      }
+    }
   }
 
   implicit object LongIsExactIntegral extends ExactIntegral[Long] {
@@ -89,6 +107,12 @@ object ExactIntegral {
     override def bitwiseAnd(x: Long, y: Long): Long = x & y
     override def bitwiseXor(x: Long, y: Long): Long = x ^ y
     override def shiftLeft(x: Long, y: Int): Long = x << y
-    override def shiftRight(x: Long, bits: Int): Long = x >> bits
+    override def shiftRight(x: Long, bits: Int): Long = {
+      if (bits < 0 || bits >= 64){
+        throw new IllegalArgumentException(s"Wrong argument in Long.shiftRight: bits < 0 || bits >= 64 ($bits)")
+      } else {
+        x >> bits
+      }
+    }
   }
 }
