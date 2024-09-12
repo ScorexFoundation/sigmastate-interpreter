@@ -940,7 +940,12 @@ class SigmaDslTesting extends AnyPropSpec
         funcRes.isFailure shouldBe true
       }
       if(isSupportedIn(VersionContext.current)) {
-        Try(scalaFunc(input)) shouldBe expected.value
+        val res = Try(scalaFunc(input))
+        if(expected.value.isSuccess) {
+          res shouldBe expected.value
+        } else {
+          res.isFailure shouldBe true
+        }
       } else {
         Try(scalaFunc(input)).isFailure shouldBe true
       }

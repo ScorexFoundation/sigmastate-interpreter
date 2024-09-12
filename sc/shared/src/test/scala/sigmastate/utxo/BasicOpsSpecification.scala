@@ -801,6 +801,23 @@ class BasicOpsSpecification extends CompilerTestingCommons
     )
 
     if (VersionContext.current.isV6SoftForkActivated) {
+      an[IllegalArgumentException] shouldBe thrownBy(shiftLeftTest())
+    } else {
+      an[Exception] shouldBe thrownBy(shiftLeftTest())
+    }
+  }
+
+  property("Byte.shiftLeft - over limit 2") {
+    def shiftLeftTest(): Assertion = test("Byte.shiftLeft2", env, ext,
+      s"""{
+         | val x = (-128).toByte
+         | val y = 1
+         | x.shiftLeft(y) == 0
+         |}""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
       shiftLeftTest()
     } else {
       an[Exception] shouldBe thrownBy(shiftLeftTest())
@@ -885,7 +902,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
     )
 
     if (VersionContext.current.isV6SoftForkActivated) {
-      shiftRightTest()
+      an[IllegalArgumentException] shouldBe thrownBy(shiftRightTest())
     } else {
       an[Exception] shouldBe thrownBy(shiftRightTest())
     }
@@ -919,7 +936,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
     )
 
     if (VersionContext.current.isV6SoftForkActivated) {
-      shiftRightTest()
+      an[IllegalArgumentException] shouldBe thrownBy(shiftRightTest())
     } else {
       an[Exception] shouldBe thrownBy(shiftRightTest())
     }
@@ -955,7 +972,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
     )
 
     if (VersionContext.current.isV6SoftForkActivated) {
-      shiftRightTest()
+      an[IllegalArgumentException] shouldBe thrownBy(shiftRightTest())
     } else {
       an[Exception] shouldBe thrownBy(shiftRightTest())
     }

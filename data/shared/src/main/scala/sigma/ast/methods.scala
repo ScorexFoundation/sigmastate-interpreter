@@ -184,13 +184,13 @@ trait SNumericTypeMethods extends MonoTypeMethods {
 
   private val subst = Map(tNum -> this.ownerType)
 
-  private val v5Methods = {
+  val v5Methods = {
     SNumericTypeMethods.v5Methods.map { m =>
       m.copy(stype = applySubst(m.stype, subst).asFunc)
     }
   }
 
-  private val v6Methods = {
+  val v6Methods = {
     SNumericTypeMethods.v6Methods.map { m =>
       m.copy(
         objType = this, // associate the method with the concrete numeric type
@@ -314,10 +314,7 @@ object SNumericTypeMethods extends MethodsContainer {
         case SBigIntMethods => BigIntIsExactIntegral.bitwiseInverse(obj.asInstanceOf[BigInt])
       }
     })
-    .withInfo(PropertyCall,
-      """ Returns a big-endian representation of this numeric in a collection of Booleans.
-        |  Each boolean corresponds to one bit.
-          """.stripMargin)
+    .withInfo(PropertyCall, desc = "Returns bitwise inverse of this numeric. ")
 
   val BitwiseOrMethod: SMethod = SMethod(
     this, "bitwiseOr", SFunc(Array(tNum, tNum), tNum), 9, BitwiseInverse_CostKind)
@@ -331,10 +328,9 @@ object SNumericTypeMethods extends MethodsContainer {
         case SBigIntMethods => BigIntIsExactIntegral.bitwiseOr(obj.asInstanceOf[BigInt], other.head.asInstanceOf[BigInt])
       }
     })
-    .withInfo(PropertyCall,
-      """ Returns a big-endian representation of this numeric in a collection of Booleans.
-        |  Each boolean corresponds to one bit.
-          """.stripMargin)
+    .withInfo(MethodCall,
+      """ Returns bitwise or of this numeric and provided one. """.stripMargin,
+      ArgInfo("that", "A numeric value to calculate or with."))
 
   val BitwiseAndMethod: SMethod = SMethod(
     this, "bitwiseAnd", SFunc(Array(tNum, tNum), tNum), 10, BitwiseInverse_CostKind)
@@ -348,10 +344,9 @@ object SNumericTypeMethods extends MethodsContainer {
         case SBigIntMethods => BigIntIsExactIntegral.bitwiseAnd(obj.asInstanceOf[BigInt], other.head.asInstanceOf[BigInt])
       }
     })
-    .withInfo(PropertyCall,
-      """ Returns a big-endian representation of this numeric in a collection of Booleans.
-        |  Each boolean corresponds to one bit.
-          """.stripMargin)
+    .withInfo(MethodCall,
+      """ Returns bitwise and of this numeric and provided one. """.stripMargin,
+      ArgInfo("that", "A numeric value to calculate and with."))
 
   val BitwiseXorMethod: SMethod = SMethod(
     this, "bitwiseXor", SFunc(Array(tNum, tNum), tNum), 11, BitwiseInverse_CostKind)
@@ -365,10 +360,9 @@ object SNumericTypeMethods extends MethodsContainer {
         case SBigIntMethods => BigIntIsExactIntegral.bitwiseXor(obj.asInstanceOf[BigInt], other.head.asInstanceOf[BigInt])
       }
     })
-    .withInfo(PropertyCall,
-      """ Returns a big-endian representation of this numeric in a collection of Booleans.
-        |  Each boolean corresponds to one bit.
-          """.stripMargin)
+    .withInfo(MethodCall,
+      """ Returns bitwise xor of this numeric and provided one. """.stripMargin,
+      ArgInfo("that", "A numeric value to calculate xor with."))
 
   val ShiftLeftMethod: SMethod = SMethod(
     this, "shiftLeft", SFunc(Array(tNum, SInt), tNum), 12, BitwiseInverse_CostKind)
@@ -382,10 +376,12 @@ object SNumericTypeMethods extends MethodsContainer {
         case SBigIntMethods => BigIntIsExactIntegral.shiftLeft(obj.asInstanceOf[BigInt], other.head.asInstanceOf[Int])
       }
     })
-    .withInfo(PropertyCall,
+    .withInfo(MethodCall,
       """ Returns a big-endian representation of this numeric in a collection of Booleans.
         |  Each boolean corresponds to one bit.
-          """.stripMargin)
+          """.stripMargin,
+      ArgInfo("bits", "Number of bit to shift to the left. Note, that bits value must be non-negative and less than " +
+                      "the size of the number in bits (e.g. 64 for Long, 256 for BigInt)"))
 
   val ShiftRightMethod: SMethod = SMethod(
     this, "shiftRight", SFunc(Array(tNum, SInt), tNum), 13, BitwiseInverse_CostKind)
@@ -399,10 +395,12 @@ object SNumericTypeMethods extends MethodsContainer {
         case SBigIntMethods => BigIntIsExactIntegral.shiftRight(obj.asInstanceOf[BigInt], other.head.asInstanceOf[Int])
       }
     })
-    .withInfo(PropertyCall,
+    .withInfo(MethodCall,
       """ Returns a big-endian representation of this numeric in a collection of Booleans.
         |  Each boolean corresponds to one bit.
-          """.stripMargin)
+          """.stripMargin,
+      ArgInfo("bits", "Number of bit to shift to the right. Note, that bits value must be non-negative and less than " +
+        "the size of the number in bits (e.g. 64 for Long, 256 for BigInt)"))
 
   lazy val v5Methods = Array(
     ToByteMethod, // see Downcast
