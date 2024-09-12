@@ -354,7 +354,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
     )
 
     if (VersionContext.current.isV6SoftForkActivated) {
-      shiftLeftTest()
+      an[IllegalArgumentException] shouldBe thrownBy(shiftLeftTest())
     } else {
       an[Exception] shouldBe thrownBy(shiftLeftTest())
     }
@@ -455,7 +455,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
     )
 
     if (VersionContext.current.isV6SoftForkActivated) {
-      shiftRightTest()
+      an[IllegalArgumentException] shouldBe thrownBy(shiftRightTest())
     } else {
       an[Exception] shouldBe thrownBy(shiftRightTest())
     }
@@ -489,7 +489,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
     )
 
     if (VersionContext.current.isV6SoftForkActivated) {
-      shiftRightTest()
+      an[IllegalArgumentException] shouldBe thrownBy(shiftRightTest())
     } else {
       an[Exception] shouldBe thrownBy(shiftRightTest())
     }
@@ -525,7 +525,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
     )
 
     if (VersionContext.current.isV6SoftForkActivated) {
-      shiftRightTest()
+      an[IllegalArgumentException] shouldBe thrownBy(shiftRightTest())
     } else {
       an[Exception] shouldBe thrownBy(shiftRightTest())
     }

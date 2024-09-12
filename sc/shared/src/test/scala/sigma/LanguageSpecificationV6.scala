@@ -352,7 +352,7 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
       ((byte >> bit) & 1) == 1
 
     lazy val toBits = newFeature[Short, Coll[Boolean]](
-      { x: Short => Colls.fromArray(Shorts.toByteArray(x).flatMap(b => byte2Bools(b).toArray)) },
+      { x: Short => Colls.fromArray(Shorts.toByteArray(x)).flatMap(b => Colls.fromArray(byte2Bools(b).toArray)) },
       "{ (x: Short) => x.toBits }",
       FuncValue(
         Array((1, SShort)),
@@ -393,7 +393,7 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
       Seq(
         (3.toShort, 3) -> new Expected(ExpectedResult(Success(24.toShort), None)),
         (3.toShort, 8) -> new Expected(ExpectedResult(Success(768.toShort), None)),
-        ((-2).toShort, 10) -> new Expected(ExpectedResult(Success((-2048).toShort), None)),
+        ((-2).toShort, 10) -> new Expected(ExpectedResult(Success((-2048).toShort), None))
       ),
       shiftLeft,
       preGeneratedSamples = Some(Seq())
@@ -549,7 +549,7 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
       ((byte >> bit) & 1) == 1
 
     lazy val toBits = newFeature[Int, Coll[Boolean]](
-      { x: Int => Colls.fromArray(Ints.toByteArray(x).flatMap(b => byte2Bools(b).toArray)) },
+      { x: Int => Colls.fromArray(Ints.toByteArray(x)).flatMap(b => Colls.fromArray(byte2Bools(b).toArray))  },
       "{ (x: Int) => x.toBits }",
       FuncValue(
         Array((1, SInt)),
@@ -753,7 +753,7 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
       ((byte >> bit) & 1) == 1
 
     lazy val toBits = newFeature[Long, Coll[Boolean]](
-      { x: Long => Colls.fromArray(Longs.toByteArray(x).flatMap(b => byte2Bools(b).toArray)) },
+      { x: Long => Colls.fromArray(Longs.toByteArray(x)).flatMap(b => Colls.fromArray(byte2Bools(b).toArray)) },
       "{ (x: Long) => x.toBits }",
       FuncValue(
         Array((1, SLong)),
@@ -1018,7 +1018,7 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
       ((byte >> bit) & 1) == 1
 
     lazy val toBits = newFeature[BigInt, Coll[Boolean]](
-      { x: BigInt => Colls.fromArray(x.toBytes.toArray.flatMap(b => byte2Bools(b).toArray)) },
+      { x: BigInt => x.toBytes.flatMap(b => Colls.fromArray(byte2Bools(b).toArray))  },
       "{ (x: BigInt) => x.toBits }",
       FuncValue(
         Array((1, SBigInt)),
