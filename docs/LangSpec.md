@@ -249,6 +249,10 @@ class Context {
 
 /** Represents data of the block headers available in scripts. */
 class Header {  
+
+  /** Validate header's proof-of-work */  
+  def checkPow: Boolean
+  
   /** Bytes representation of ModifierId of this Header */
   def id: Coll[Byte]
 
@@ -1041,11 +1045,6 @@ def deserialize[T](string: String): T
   *         replaced and all other bytes remain exactly the same
   */
 def substConstants[T](scriptBytes: Coll[Byte], positions: Coll[Int], newValues: Coll[T]): Coll[Byte]
-
-/** Serializes an instance of type T using default serialization format. 
-  * See https://github.com/ScorexFoundation/sigmastate-interpreter/issues/988 for more details 
-  */
-def serialize[T](value: T): Coll[Byte]
 ```
 
 ## Examples

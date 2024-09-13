@@ -4292,7 +4292,7 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
   property("Header properties equivalence") {
     verifyCases(
       Seq((h1, Expected(Success(
-        Helpers.decodeBytes("957f008001808080ffe4ffffc8f3802401df40006aa05e017fa8d3f6004c804a")),
+        Helpers.decodeBytes("cea31f0e0a794b103f65f8296a22ac8ff214e1bc75442186b90df4844c978e81")),
         cost = 1766, methodCostDetails(SHeaderMethods.idMethod, 10), 1766, Seq.fill(4)(2002)))),
       existingPropTest("id", { (x: Header) => x.id }))
 
@@ -4430,18 +4430,10 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
     )
 
     val header = CHeader(
-      Helpers.decodeBytes("1c597f88969600d2fffffdc47f00d8ffc555a9e85001000001c505ff80ff8f7f"),
       0.toByte,
       Helpers.decodeBytes("7a7fe5347f09017818010062000001807f86808000ff7f66ffb07f7ad27f3362"),
       Helpers.decodeBytes("c1d70ad9b1ffc1fb9a715fff19807f2401017fcd8b73db017f1cff77727fff08"),
-      CAvlTree(
-        AvlTreeData(
-          ErgoAlgos.decodeUnsafe("54d23dd080006bdb56800100356080935a80ffb77e90b800057f00661601807f17").toColl,
-          AvlTreeFlags(true, true, false),
-          2147483647,
-          None
-        )
-      ),
+      Helpers.decodeBytes("54d23dd080006bdb56800100356080935a80ffb77e90b800057f00661601807f17"),
       Helpers.decodeBytes("5e7f1164ccd0990080c501fc0e0181cb387fc17f00ff00c7d5ff767f91ff5e68"),
       -7421721754642387858L,
       -4826493284887861030L,
@@ -4451,7 +4443,8 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
       Helpers.decodeGroupElement("034e2d3b5f9e409e3ae8a2e768340760362ca33764eda5855f7a43487f14883300"),
       Helpers.decodeBytes("974651c9efff7f00"),
       CBigInt(new BigInteger("478e827dfa1e4b57", 16)),
-      Helpers.decodeBytes("01ff13")
+      Helpers.decodeBytes("01ff13"),
+      Colls.emptyColl
     )
 
     val ctx = CContext(
@@ -4459,7 +4452,7 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
       headers = Coll[Header](header),
       preHeader = CPreHeader(
         0.toByte,
-        Helpers.decodeBytes("1c597f88969600d2fffffdc47f00d8ffc555a9e85001000001c505ff80ff8f7f"),
+        header.id,
         -755484979487531112L,
         9223372036854775807L,
         11,
@@ -9825,30 +9818,6 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
         )
       )
     }
-  }
-
-  property("higher order lambdas") {
-    val f = existingFeature(
-      { (xs: Coll[Int]) =>
-        val inc = { (x: Int) => x + 1 }
-
-        def apply(in: (Int => Int, Int)) = in._1(in._2)
-
-        xs.map { (x: Int) => apply((inc, x)) }
-      },
-      """{(xs: Coll[Int]) =>
-       |   val inc = { (x: Int) => x + 1 }
-       |   def apply(in: (Int => Int, Int)) = in._1(in._2)
-       |   xs.map { (x: Int) => apply((inc, x)) }
-       | }
-       |""".stripMargin
-    )
-
-    // TODO v6.0: Add support of SFunc in TypeSerializer (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/847)
-    assertExceptionThrown(
-      f.verifyCase(Coll[Int](), Expected(Success(Coll[Int]()), 0)),
-      exceptionLike[MatchError]("(SInt$) => SInt$ (of class sigma.ast.SFunc)")
-    )
   }
 
   override protected def afterAll(): Unit = {

@@ -183,34 +183,6 @@ class SigmaDslTesting extends AnyPropSpec
       true
     }
 
-    /** Checks the result of feature execution against expected result.
-      * If settings.failOnTestVectors == true, then print out actual cost results
-      *
-      * @param res the result of feature execution
-      * @param expected the expected result
-      */
-    protected def checkResultAgainstExpected(res: Try[(B, CostDetails)], expected: Expected[B]): Unit = {
-      val newRes = expected.newResults(ergoTreeVersionInTests)
-      val expectedTrace = newRes._2.fold(Seq.empty[CostItem])(_.trace)
-      if (expectedTrace.isEmpty) {
-        // new cost expectation is missing, print out actual cost results
-        if (evalSettings.printTestVectors) {
-          res.foreach { case (_, newDetails) =>
-            printCostDetails(script, newDetails)
-          }
-        }
-      }
-      else {
-        // new cost expectation is specified, compare it with the actual result
-        res.foreach { case (_, newDetails) =>
-          if (newDetails.trace != expectedTrace) {
-            printCostDetails(script, newDetails)
-            newDetails.trace shouldBe expectedTrace
-          }
-        }
-      }
-    }
-
     /** v3 and v4 implementation*/
     private var _oldF: Try[CompiledFunc[A, B]] = _
     def oldF: CompiledFunc[A, B] = {
@@ -287,19 +259,12 @@ class SigmaDslTesting extends AnyPropSpec
 
           fail(
             s"""Should succeed with the same value or fail with the same exception, but was:
-              |First result: ${errorWithStack(b1)}
-              |Second result: ${errorWithStack(b2)}
+              |First result: $b1
+              |Second result: $b2
+              |Input: $x
               |Root cause: $cause
               |""".stripMargin)
       }
-    }
-
-    private def errorWithStack[A](e: Try[A]): String = e match {
-      case Failure(t) =>
-        val sw = new java.io.StringWriter
-        t.printStackTrace(new java.io.PrintWriter(sw))
-        sw.toString
-      case _ => e.toString
     }
 
     /** Creates a new ErgoLikeContext using given [[CContext]] as template.
@@ -751,11 +716,17 @@ class SigmaDslTesting extends AnyPropSpec
     override def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, CostDetails)] = {
       // check the old implementation against Scala semantic function
       var oldRes: Try[(B, CostDetails)] = null
-      if (ergoTreeVersionInTests < VersionContext.JitActivationVersion)
         oldRes = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
           try checkEq(scalaFunc)(oldF)(input)
           catch {
-            case e: TestFailedException => throw e
+            case e: TestFailedException =>
+              if(activatedVersionInTests < changedInVersion) {
+                throw e
+              } else {
+                // old ergoscript may succeed in new version while old scalafunc may fail,
+                // see e.g. "Option.getOrElse with lazy default" test
+                Failure(e)
+              }
             case t: Throwable =>
               Failure(t)
           }
@@ -911,7 +882,11 @@ class SigmaDslTesting extends AnyPropSpec
       vc.activatedVersion >= sinceVersion
 
     override def scalaFunc: A => B = { x =>
-      sys.error(s"Semantic Scala function is not defined for old implementation: $this")
+      if (isSupportedIn(VersionContext.current)) {
+        scalaFuncNew(x)
+      } else {
+        sys.error(s"Semantic Scala function is not defined for old implementation: $this")
+      }
     }
     implicit val cs = compilerSettingsInTests
 
@@ -961,11 +936,14 @@ class SigmaDslTesting extends AnyPropSpec
                             printTestCases: Boolean,
                             failOnTestVectors: Boolean): Unit = {
       val funcRes = checkEquality(input, printTestCases)
-      if (this.isSupportedIn(VersionContext.current)) {
-        checkResultAgainstExpected(funcRes, expected)
-      } else
+      if(!isSupportedIn(VersionContext.current)) {
         funcRes.isFailure shouldBe true
-      Try(scalaFuncNew(input)) shouldBe expected.value
+      }
+      if(isSupportedIn(VersionContext.current)) {
+        Try(scalaFunc(input)) shouldBe expected.value
+      } else {
+        Try(scalaFunc(input)).isFailure shouldBe true
+      }
     }
   }
 

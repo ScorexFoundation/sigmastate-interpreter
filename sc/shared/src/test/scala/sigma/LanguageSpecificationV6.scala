@@ -1,11 +1,18 @@
 package sigma
 
+import org.ergoplatform.ErgoHeader
+import scorex.util.encode.Base16
+import org.ergoplatform.ErgoBox
+import org.ergoplatform.ErgoBox.Token
+import scorex.util.ModifierId
 import sigma.ast.ErgoTree.ZeroHeader
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.syntax.TrueSigmaProp
 import sigma.ast._
-import sigma.data.{CBigInt, ExactNumeric, RType}
+import sigma.data.{CBigInt, CHeader, CBox, ExactNumeric}
 import sigma.eval.{CostDetails, SigmaDsl, TracedCost}
+import sigma.serialization.ValueCodes.OpCode
+import sigma.data.{RType}
 import sigma.util.Extensions.{BooleanOps, ByteOps, IntOps, LongOps}
 import sigmastate.exceptions.MethodNotFound
 import sigmastate.utils.Helpers
@@ -338,9 +345,13 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
   }
 
   property("Box properties equivalence (new features)") {
-    // TODO v6.0: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
-    val getReg = newFeature((x: Box) => x.getReg[Int](1).get,
-      "{ (x: Box) => x.getReg[Int](1).get }",
+    // related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
+    def getReg = newFeature((x: Box) => x.getReg[Long](0).get,
+      "{ (x: Box) => x.getReg[Long](0).get }",
+      FuncValue(
+        Array((1, SBox)),
+        OptionGet(ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R0, SOption(SLong)))
+      ),
       sinceVersion = VersionContext.V6SoftForkVersion)
 
     if (activatedVersionInTests < VersionContext.V6SoftForkVersion) {
@@ -350,6 +361,16 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
       forAll { box: Box =>
         Seq(getReg).foreach(_.checkEquality(box))
       }
+    } else {
+      val value = 10L
+      val box = CBox(new ErgoBox(value, TrueTree, Colls.emptyColl[Token], Map.empty,
+                                  ModifierId @@ Base16.encode(Array.fill(32)(0)), 0, 0))
+      verifyCases(
+        Seq(
+          box -> new Expected(ExpectedResult(Success(value), None))
+        ),
+        getReg
+      )
     }
   }
 
@@ -534,6 +555,108 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
     tree.header shouldBe t2.header
     tree.constants.length shouldBe t2.constants.length
     tree.root shouldBe t2.root
+  }
+
+  property("Header new methods") {
+
+    def checkPoW = {
+      newFeature(
+        { (x: Header) => x.checkPow},
+        "{ (x: Header) => x.checkPow }",
+        FuncValue(
+          Array((1, SHeader)),
+          MethodCall.typed[Value[SBoolean.type]](
+            ValUse(1, SHeader),
+            SHeaderMethods.checkPowMethod,
+            IndexedSeq(),
+            Map()
+          )
+        ),
+        sinceVersion = VersionContext.V6SoftForkVersion
+      )
+    }
+
+    // bytes of real mainnet block header at height 614,440
+    val headerBytes = "02ac2101807f0000ca01ff0119db227f202201007f62000177a080005d440896d05d3f80dcff7f5e7f59007294c180808d0158d1ff6ba10000f901c7f0ef87dcfff17fffacb6ff7f7f1180d2ff7f1e24ffffe1ff937f807f0797b9ff6ebdae007e5c8c00b8403d3701557181c8df800001b6d5009e2201c6ff807d71808c00019780f087adb3fcdbc0b3441480887f80007f4b01cf7f013ff1ffff564a0000b9a54f00770e807f41ff88c00240000080c0250000000003bedaee069ff4829500b3c07c4d5fe6b3ea3d3bf76c5c28c1d4dcdb1bed0ade0c0000000000003105"
+    val header1 = new CHeader(ErgoHeader.sigmaSerializer.fromBytes(Base16.decode(headerBytes).get))
+
+    verifyCases(
+      Seq(
+        header1 -> new Expected(ExpectedResult(Success(true), None))
+      ),
+      checkPoW
+    )
+  }
+
+  property("higher order lambdas") {
+    val f = newFeature[Coll[Int], Coll[Int]](
+      { (xs: Coll[Int]) =>
+        val inc = { (x: Int) => x + 1 }
+
+        def apply(in: (Int => Int, Int)) = in._1(in._2)
+
+        xs.map { (x: Int) => apply((inc, x)) }
+      },
+      """{(xs: Coll[Int]) =>
+        |   val inc = { (x: Int) => x + 1 }
+        |   def apply(in: (Int => Int, Int)) = in._1(in._2)
+        |   xs.map { (x: Int) => apply((inc, x)) }
+        | }
+        |""".stripMargin,
+      FuncValue(
+        Array((1, SCollectionType(SInt))),
+        MapCollection(
+          ValUse(1, SCollectionType(SInt)),
+          FuncValue(
+            Array((3, SInt)),
+            Apply(
+              FuncValue(
+                Array((5, SPair(SFunc(Array(SInt), SInt, List()), SInt))),
+                Apply(
+                  SelectField.typed[Value[SFunc]](
+                    ValUse(5, SPair(SFunc(Array(SInt), SInt, List()), SInt)),
+                    1.toByte
+                  ),
+                  Array(
+                    SelectField.typed[Value[SInt.type]](
+                      ValUse(5, SPair(SFunc(Array(SInt), SInt, List()), SInt)),
+                      2.toByte
+                    )
+                  )
+                )
+              ),
+              Array(
+                Tuple(
+                  Vector(
+                    FuncValue(
+                      Array((5, SInt)),
+                      ArithOp(ValUse(5, SInt), IntConstant(1), OpCode @@ (-102.toByte))
+                    ),
+                    ValUse(3, SInt)
+                  )
+                )
+              )
+            )
+          )
+        )
+      ),
+    sinceVersion = VersionContext.V6SoftForkVersion
+    )
+
+    verifyCases(
+      Seq(
+        Coll(1, 2) -> Expected(
+          Success(Coll(2, 3)),
+          cost = 1793,
+          expectedDetails = CostDetails.ZeroCost
+        )
+      ),
+      f,
+      preGeneratedSamples = Some(Seq(
+        Coll(Int.MinValue, Int.MaxValue - 1),
+        Coll(0, 1, 2, 3, 100, 1000)
+      ))
+    )
   }
 
 }

@@ -587,7 +587,7 @@ case class SFunc(tDom: IndexedSeq[SType],  tRange: SType, tpeParams: Seq[STypePa
 }
 
 object SFunc {
-  final val FuncTypeCode: TypeCode = TypeCodes.FirstFuncType
+  final val FuncTypeCode: TypeCode = TypeCodes.FuncType
   def apply(tDom: SType, tRange: SType): SFunc = SFunc(Array(tDom), tRange) // HOTSPOT:
   val identity = { x: Any => x }
 }
@@ -653,7 +653,6 @@ object SOption extends STypeCompanion {
 
   def apply[T <: SType](implicit elemType: T, ov: Overloaded1): SOption[T] = SOption(elemType)
 }
-
 
 /** Base class for descriptors of `Coll[T]` ErgoTree type for some elemType T. */
 trait SCollection[T <: SType] extends SProduct with SGenericType {
