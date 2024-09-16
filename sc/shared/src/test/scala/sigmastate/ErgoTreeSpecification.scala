@@ -326,13 +326,19 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit with C
     (SInt.typeId,     Seq.empty[MInfo], false),
     (SLong.typeId,    Seq.empty[MInfo], false),
 
-    { // SNumericType.typeId is erroneously shadowed by SGlobal.typeId
-      // this should be preserved in v3.x and fixed in v4.0
-      (SNumericType.typeId,  Seq(
-        MInfo(methodId = 1, SGlobalMethods.groupGeneratorMethod),
-        MInfo(2, SGlobalMethods.xorMethod)
-      ), true)
-    },
+    (if(!isV6Activated) {
+      { // SNumericType.typeId is erroneously shadowed by SGlobal.typeId
+        // this should be preserved in v3.x and fixed in v4.0
+        (SNumericType.typeId, Seq(
+          MInfo(methodId = 1, SGlobalMethods.groupGeneratorMethod),
+          MInfo(2, SGlobalMethods.xorMethod)
+        ), true)
+      }
+    } else {
+      // rechecking boolean again, after merging w. https://github.com/ScorexFoundation/sigmastate-interpreter/pull/1017
+      // there will be check against numerics in 6.0 here
+      (SBoolean.typeId, Seq.empty[MInfo], true)
+    }),
 
     { // SBigInt inherit methods from SNumericType.methods
       // however they are not resolvable via SBigInt.typeId
@@ -370,7 +376,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit with C
         MInfo(5, IdMethod),
         MInfo(6, creationInfoMethod),
         MInfo(8, tokensMethod)
-      ) ++ (if (VersionContext.current.isV6SoftForkActivated) {
+      ) ++ (if (isV6Activated) {
         Seq(MInfo(7, getRegMethodV6))
       } else {
         Seq(MInfo(7, getRegMethodV5))
@@ -404,8 +410,8 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit with C
         MInfo(7, timestampMethod), MInfo(8, nBitsMethod), MInfo(9, heightMethod),
         MInfo(10, extensionRootMethod), MInfo(11, minerPkMethod), MInfo(12, powOnetimePkMethod),
         MInfo(13, powNonceMethod), MInfo(14, powDistanceMethod), MInfo(15, votesMethod)
-      ) ++ (if (VersionContext.current.isV6SoftForkActivated) {
-        Seq(MInfo(16, checkPowMethod))
+      ) ++ (if (isV6Activated) {
+        Seq(MInfo(16, checkPowMethod)) // methods added in v6.0
       } else {
         Seq.empty[MInfo]
       }), true)
@@ -428,10 +434,11 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit with C
     { import SGlobalMethods._
       (SGlobal.typeId, Seq(
         MInfo(1, groupGeneratorMethod), MInfo(2, xorMethod)
-      ) ++ (if (isV6Activated) Seq(
-        // methods added in v6.0
-        MInfo(3, serializeMethod)
-      ) else Seq.empty), true)
+      ) ++ (if (isV6Activated) {
+        Seq(MInfo(3, serializeMethod)) // methods added in v6.0
+      } else {
+        Seq.empty[MInfo]
+      }), true)
     },
     { import SCollectionMethods._
       (SCollection.typeId, Seq(
@@ -496,6 +503,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit with C
           assert(canHaveMethods, s"Type $tyDesc should NOT have methods")
 
           val mc = MethodsContainer(tyDesc.typeId)
+
           mc.methods.length shouldBe methods.length
           for (expectedMethod <- methods) {
             if (expectedMethod.isResolvableFromIds) {
