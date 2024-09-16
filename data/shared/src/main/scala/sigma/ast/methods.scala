@@ -397,8 +397,7 @@ object SNumericTypeMethods extends MethodsContainer {
   )
 
   protected override def getMethods(): Seq[SMethod] = {
-    // this .getMethods shouldn't ever be called
-    ???
+    throw new Exception("SNumericTypeMethods.getMethods shouldn't ever be called")
   }
 
   /** Collection of names of numeric casting methods (like `toByte`, `toInt`, etc). */

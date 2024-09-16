@@ -188,7 +188,7 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
     )
 
     lazy val shiftLeft = newFeature(
-      { (x: (Byte, Int)) => (x._1 << x._2).toByte },
+      { (x: (Byte, Int)) => if(x._2 < 0 || x._2 >= 8) throw new IllegalArgumentException() else (x._1 << x._2).toByte },
       "{ (x: (Byte, Int)) => x._1.shiftLeft(x._2) }",
       FuncValue(
         Array((1, SPair(SByte, SInt))),
@@ -203,14 +203,17 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
 
     verifyCases(
       Seq(
-        (3.toByte, 3) -> new Expected(ExpectedResult(Success(24.toByte), None))
+        (3.toByte, 3) -> new Expected(ExpectedResult(Success(24.toByte), None)),
+        (3.toByte, 0) -> new Expected(ExpectedResult(Success(3.toByte), None)),
+        (3.toByte, -1) -> new Expected(ExpectedResult(Failure(new IllegalArgumentException()), None)),
+        (3.toByte, 8) -> new Expected(ExpectedResult(Failure(new IllegalArgumentException()), None))
       ),
       shiftLeft,
       preGeneratedSamples = Some(Seq())
     )
 
     lazy val shiftRight = newFeature(
-      { (x: (Byte, Int)) => (x._1 >> x._2).toByte },
+      { (x: (Byte, Int)) => if(x._2 < 0 || x._2 >= 8) throw new IllegalArgumentException() else (x._1 >> x._2).toByte },
       "{ (x: (Byte, Int)) => x._1.shiftRight(x._2) }",
       FuncValue(
         Array((1, SPair(SByte, SInt))),
@@ -225,7 +228,10 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
 
     verifyCases(
       Seq(
-        (24.toByte, 3) -> new Expected(ExpectedResult(Success(3.toByte), None))
+        (24.toByte, 3) -> new Expected(ExpectedResult(Success(3.toByte), None)),
+        (24.toByte, 0) -> new Expected(ExpectedResult(Success(24.toByte), None)),
+        (24.toByte, -1) -> new Expected(ExpectedResult(Failure(new IllegalArgumentException()), None)),
+        (24.toByte, 8) -> new Expected(ExpectedResult(Failure(new IllegalArgumentException()), None))
       ),
       shiftRight,
       preGeneratedSamples = Some(Seq())
@@ -376,7 +382,7 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
     )
 
     lazy val shiftLeft = newFeature(
-      { (x: (Short, Int)) => (x._1 << x._2).toShort },
+      { (x: (Short, Int)) => if(x._2 < 0 || x._2 >= 16) throw new IllegalArgumentException() else (x._1 << x._2).toShort },
       "{ (x: (Short, Int)) => x._1.shiftLeft(x._2) }",
       FuncValue(
         Array((1, SPair(SShort, SInt))),
@@ -393,14 +399,16 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
       Seq(
         (3.toShort, 3) -> new Expected(ExpectedResult(Success(24.toShort), None)),
         (3.toShort, 8) -> new Expected(ExpectedResult(Success(768.toShort), None)),
-        ((-2).toShort, 10) -> new Expected(ExpectedResult(Success((-2048).toShort), None))
+        ((-2).toShort, 10) -> new Expected(ExpectedResult(Success((-2048).toShort), None)),
+        ((-2).toShort, 20) -> new Expected(ExpectedResult(Failure(new IllegalArgumentException()), None)),
+        (3.toShort, -1) -> new Expected(ExpectedResult(Failure(new IllegalArgumentException()), None))
       ),
       shiftLeft,
       preGeneratedSamples = Some(Seq())
     )
 
     lazy val shiftRight = newFeature(
-      { (x: (Short, Int)) => (x._1 >> x._2).toShort },
+      { (x: (Short, Int)) => if(x._2 < 0 || x._2 >= 16) throw new IllegalArgumentException() else (x._1 >> x._2).toShort },
       "{ (x: (Short, Int)) => x._1.shiftRight(x._2) }",
       FuncValue(
         Array((1, SPair(SShort, SInt))),
@@ -417,7 +425,9 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
       Seq(
         (24.toShort, 3) -> new Expected(ExpectedResult(Success(3.toShort), None)),
         (1600.toShort, 8) -> new Expected(ExpectedResult(Success(6.toShort), None)),
-        ((-3200).toShort, 8) -> new Expected(ExpectedResult(Success((-13).toShort), None))
+        ((-3200).toShort, 8) -> new Expected(ExpectedResult(Success((-13).toShort), None)),
+        (3.toShort, -1) -> new Expected(ExpectedResult(Failure(new IllegalArgumentException()), None)),
+        (3.toShort, 16) -> new Expected(ExpectedResult(Failure(new IllegalArgumentException()), None))
       ),
       shiftRight,
       preGeneratedSamples = Some(Seq())
@@ -573,7 +583,7 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
     )
 
     lazy val shiftLeft = newFeature(
-      { (x: (Int, Int)) => (x._1 << x._2) },
+      { (x: (Int, Int)) => if(x._2 < 0 || x._2 >= 32) throw new IllegalArgumentException() else (x._1 << x._2) },
       "{ (x: (Int, Int)) => x._1.shiftLeft(x._2) }",
       FuncValue(
         Array((1, SPair(SInt, SInt))),
@@ -591,14 +601,16 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
         (3, 3) -> new Expected(ExpectedResult(Success(24), None)),
         (3, 8) -> new Expected(ExpectedResult(Success(768), None)),
         (-2, 10) -> new Expected(ExpectedResult(Success(-2048), None)),
-        (-222, 10) -> new Expected(ExpectedResult(Success(-227328), None))
+        (-222, 10) -> new Expected(ExpectedResult(Success(-227328), None)),
+        (-222, 32) -> new Expected(ExpectedResult(Failure(new IllegalArgumentException()), None)),
+        (-222, -1) -> new Expected(ExpectedResult(Failure(new IllegalArgumentException()), None))
       ),
       shiftLeft,
       preGeneratedSamples = Some(Seq())
     )
 
     lazy val shiftRight = newFeature(
-      { (x: (Int, Int)) => (x._1 >> x._2) },
+      { (x: (Int, Int)) => if(x._2 < 0 || x._2 >= 32) throw new IllegalArgumentException() else (x._1 >> x._2) },
       "{ (x: (Int, Int)) => x._1.shiftRight(x._2) }",
       FuncValue(
         Array((1, SPair(SInt, SInt))),
@@ -616,7 +628,9 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
         (24, 3) -> new Expected(ExpectedResult(Success(3), None)),
         (1600, 8) -> new Expected(ExpectedResult(Success(6), None)),
         (-3200, 8) -> new Expected(ExpectedResult(Success(-13), None)),
-        (-320019, 18) -> new Expected(ExpectedResult(Success(-2), None))
+        (-320019, 18) -> new Expected(ExpectedResult(Success(-2), None)),
+        (-320019, 32) -> new Expected(ExpectedResult(Failure(new IllegalArgumentException()), None)),
+        (-320019, -1) -> new Expected(ExpectedResult(Failure(new IllegalArgumentException()), None))
       ),
       shiftRight,
       preGeneratedSamples = Some(Seq())
@@ -777,7 +791,7 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
     )
 
     lazy val shiftLeft = newFeature(
-      { (x: (Long, Int)) => (x._1 << x._2) },
+      { (x: (Long, Int)) => if(x._2 < 0 || x._2 >= 32) throw new IllegalArgumentException() else (x._1 << x._2) },
       "{ (x: (Long, Int)) => x._1.shiftLeft(x._2) }",
       FuncValue(
         Array((1, SPair(SLong, SInt))),
@@ -795,7 +809,9 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
         (3L, 3) -> new Expected(ExpectedResult(Success(24L), None)),
         (3L, 8) -> new Expected(ExpectedResult(Success(768L), None)),
         (-2L, 10) -> new Expected(ExpectedResult(Success(-2048L), None)),
-        (-222L, 10) -> new Expected(ExpectedResult(Success(-227328L), None))
+        (-222L, 10) -> new Expected(ExpectedResult(Success(-227328L), None)),
+        (-222L, -1) -> new Expected(ExpectedResult(Failure(new IllegalArgumentException()), None)),
+        (-222L, 64) -> new Expected(ExpectedResult(Failure(new IllegalArgumentException()), None))
       ),
       shiftLeft,
       preGeneratedSamples = Some(Seq())
@@ -1042,7 +1058,7 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
     )
 
     lazy val shiftLeft = newFeature(
-      { (x: (BigInt, Int)) => (x._1.asInstanceOf[BigInt].shiftLeft(x._2)) },
+      { (x: (BigInt, Int)) => if(x._2 < 0 || x._2 >= 256) throw new IllegalArgumentException() else (x._1.asInstanceOf[BigInt].shiftLeft(x._2)) },
       "{ (x: (BigInt, Int)) => x._1.shiftLeft(x._2) }",
       FuncValue(
         Array((1, SPair(SBigInt, SInt))),
@@ -1060,7 +1076,9 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
         (CBigInt(BigInteger.valueOf(3)), 3) -> new Expected(ExpectedResult(Success(CBigInt(BigInteger.valueOf(24))), None)),
         (CBigInt(BigInteger.valueOf(3)), 8) -> new Expected(ExpectedResult(Success(CBigInt(BigInteger.valueOf(768))), None)),
         (CBigInt(BigInteger.valueOf(-2)), 10) -> new Expected(ExpectedResult(Success(CBigInt(BigInteger.valueOf(-2048))), None)),
-        (CBigInt(BigInteger.valueOf(-222)), 10) -> new Expected(ExpectedResult(Success(CBigInt(BigInteger.valueOf(-227328L))), None))
+        (CBigInt(BigInteger.valueOf(-222)), 10) -> new Expected(ExpectedResult(Success(CBigInt(BigInteger.valueOf(-227328L))), None)),
+        (CBigInt(BigInteger.valueOf(-222)), -1) -> new Expected(ExpectedResult(Failure(new IllegalArgumentException()), None)),
+        (CBigInt(BigInteger.valueOf(-222)), 256) -> new Expected(ExpectedResult(Failure(new IllegalArgumentException()), None))
       ),
       shiftLeft,
       preGeneratedSamples = Some(Seq())
@@ -1087,7 +1105,8 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
         (CBigInt(BigInteger.valueOf(-3200)), 8) -> new Expected(ExpectedResult(Success(CBigInt(BigInteger.valueOf(-13))), None)),
         (CBigInt(BigInteger.valueOf(-320019)), 18) -> new Expected(ExpectedResult(Success(CBigInt(BigInteger.valueOf(-2))), None)),
         (CBigInt(BigInteger.valueOf(-320019)), 63) -> new Expected(ExpectedResult(Success(CBigInt(BigInteger.valueOf(-1))), None)),
-        (CBigInt(BigInteger.valueOf(24)), -1) -> new Expected(ExpectedResult(Failure(new IllegalArgumentException()), None))
+        (CBigInt(BigInteger.valueOf(24)), -1) -> new Expected(ExpectedResult(Failure(new IllegalArgumentException()), None)),
+        (CBigInt(BigInteger.valueOf(24)), 256) -> new Expected(ExpectedResult(Failure(new IllegalArgumentException()), None))
       ),
       shiftRight,
       preGeneratedSamples = Some(Seq())

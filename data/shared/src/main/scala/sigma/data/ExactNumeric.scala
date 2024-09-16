@@ -45,17 +45,14 @@ trait ExactNumeric[T] {
 
     def isBitSet(byte: Byte)(bit: Int): Boolean = ((byte >> bit) & 1) == 1
 
-    def byte2Bools(b: Byte): Array[Boolean] =  (0 to 7).toArray.reverse.map(isBitSet(b))
-
     val bytes = toBigEndianBytes(x)
     val l = bytes.length
     val res = new Array[Boolean](l * 8)
-    var offset = 0
     cfor(0)(_ < l, _ + 1) { i =>
       val b = bytes(i)
-      val bits = byte2Bools(b)
-      Array.copy(bits, 0, res, offset, 8)
-      offset += 8
+      cfor(0)(_ < 8, _ + 1) { bitIdx =>
+        res(i * 8 + (7 - bitIdx)) = isBitSet(b)(bitIdx)
+      }
     }
     Colls.fromArray(res)
   }
