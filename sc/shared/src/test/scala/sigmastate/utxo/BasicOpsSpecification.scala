@@ -213,8 +213,8 @@ class BasicOpsSpecification extends CompilerTestingCommons
       deserTest()
     }
   }
-
-  property("serialize(long)  is producing different result from longToByteArray()") {
+  
+  property("serialize(long) is producing different result from longToByteArray()") {
     def deserTest() = test("serialize", env, ext,
       s"""{
             val l = -1000L
