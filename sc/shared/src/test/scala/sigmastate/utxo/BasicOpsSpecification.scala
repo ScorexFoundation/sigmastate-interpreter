@@ -10,6 +10,7 @@ import scorex.util.encode.Base16
 import scorex.util.serialization.VLQByteBufferWriter
 import scorex.utils.Longs
 import sigma.{Colls, SigmaTestingData}
+import org.scalatest.Assertion
 import sigma.Extensions.ArrayOps
 import sigma.VersionContext.V6SoftForkVersion
 import sigma.VersionContext
@@ -1035,6 +1036,32 @@ class BasicOpsSpecification extends CompilerTestingCommons
       rootCause(_).isInstanceOf[NoSuchElementException])
   }
 
+  property("higher order lambdas") {
+    def holTest() = test("HOL", env, ext,
+      """
+        | {
+        |   val c = Coll(Coll(1))
+        |   def fn(xs: Coll[Int]) = {
+        |     val inc = { (x: Int) => x + 1 }
+        |     def apply(in: (Int => Int, Int)) = in._1(in._2)
+        |     val ys = xs.map { (x: Int) => apply((inc, x)) }
+        |     ys.size == xs.size && ys != xs
+        |   }
+        |
+        |   c.exists(fn)
+        | }
+        |""".stripMargin,
+      null,
+      true
+    )
+
+    if(VersionContext.current.isV6SoftForkActivated) {
+      holTest()
+    } else {
+      an[Exception] shouldBe thrownBy(holTest())
+    }
+  }
+
   property("OptionGetOrElse") {
     test("OptGet1", env, ext,
       "{ SELF.R5[Int].getOrElse(3) == 1 }",
@@ -1342,6 +1369,47 @@ class BasicOpsSpecification extends CompilerTestingCommons
         |""".stripMargin
 
     test("subst", env, ext, hostScript, null)
+  }
+
+  property("Box.getReg") {
+    def getRegTest(): Assertion = {
+      test("Box.getReg", env, ext,
+        """{
+          |   val x = SELF
+          |   x.getReg[Long](0).get == SELF.value &&
+          |   x.getReg[Coll[(Coll[Byte], Long)]](2).get == SELF.tokens &&
+          |   x.getReg[Int](9).isEmpty
+          |}""".stripMargin,
+        null
+      )
+    }
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      getRegTest()
+    } else {
+      an[Exception] should be thrownBy getRegTest()
+    }
+  }
+
+  property("Box.getReg - computable index") {
+    val ext: Seq[VarBinding] = Seq(
+      (intVar1, IntConstant(0))
+    )
+    def getRegTest(): Assertion = {
+      test("Box.getReg", env, ext,
+        """{
+          |   val x = SELF.getReg[Long](getVar[Int](1).get).get
+          |   x == SELF.value
+          |}""".stripMargin,
+        null
+      )
+    }
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      getRegTest()
+    } else {
+      an[Exception] should be thrownBy getRegTest()
+    }
   }
 
 }

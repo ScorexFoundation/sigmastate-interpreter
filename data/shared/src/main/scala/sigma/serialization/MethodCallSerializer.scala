@@ -89,6 +89,6 @@ case class MethodCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value[S
         types
       }
 
-    methodTemplate.specializeFor(obj.tpe, argTypes)
+    method.specializeFor(obj.tpe, argTypes)
   }
 }

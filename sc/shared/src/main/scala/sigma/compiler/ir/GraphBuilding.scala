@@ -3,6 +3,7 @@ package sigma.compiler.ir
 import org.ergoplatform._
 import sigma.ast.SCollection.SByteArray
 import sigma.{SigmaException, VersionContext, ast}
+import sigma.ast.SType.tT
 import sigma.ast.TypeCodes.LastConstantCode
 import sigma.ast.Value.Typed
 import sigma.ast.syntax.{SValue, ValueOps}
@@ -1041,6 +1042,10 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
           case (box: Ref[Box]@unchecked, SBoxMethods) => method.name match {
             case SBoxMethods.tokensMethod.name =>
               box.tokens
+            case SBoxMethods.getRegMethodV6.name if VersionContext.current.isV6SoftForkActivated =>
+              val c1 = asRep[Int](argsV(0))
+              val c2 = stypeToElem(typeSubst.apply(tT))
+              box.getReg(c1)(c2)
             case _ => throwError
           }
           case (ctx: Ref[Context]@unchecked, SContextMethods) => method.name match {

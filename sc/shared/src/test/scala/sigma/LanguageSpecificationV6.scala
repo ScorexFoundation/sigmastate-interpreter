@@ -2,11 +2,14 @@ package sigma
 
 import org.ergoplatform.ErgoHeader
 import scorex.util.encode.Base16
+import org.ergoplatform.ErgoBox
+import org.ergoplatform.ErgoBox.Token
+import scorex.util.ModifierId
 import sigma.ast.ErgoTree.ZeroHeader
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.syntax.TrueSigmaProp
 import sigma.ast._
-import sigma.data.{CBigInt, CHeader, ExactNumeric, RType}
+import sigma.data.{CBigInt, CHeader, CBox, ExactNumeric, RType}
 import sigma.eval.{CostDetails, SigmaDsl, TracedCost}
 import sigma.serialization.ValueCodes.OpCode
 import sigma.util.Extensions.{BooleanOps, ByteOps, IntOps, LongOps}
@@ -340,9 +343,13 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
   }
 
   property("Box properties equivalence (new features)") {
-    // TODO v6.0: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
-    val getReg = newFeature((x: Box) => x.getReg[Int](1).get,
-      "{ (x: Box) => x.getReg[Int](1).get }",
+    // related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
+    def getReg = newFeature((x: Box) => x.getReg[Long](0).get,
+      "{ (x: Box) => x.getReg[Long](0).get }",
+      FuncValue(
+        Array((1, SBox)),
+        OptionGet(ExtractRegisterAs(ValUse(1, SBox), ErgoBox.R0, SOption(SLong)))
+      ),
       sinceVersion = VersionContext.V6SoftForkVersion)
 
     if (activatedVersionInTests < VersionContext.V6SoftForkVersion) {
@@ -352,6 +359,16 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
       forAll { box: Box =>
         Seq(getReg).foreach(_.checkEquality(box))
       }
+    } else {
+      val value = 10L
+      val box = CBox(new ErgoBox(value, TrueTree, Colls.emptyColl[Token], Map.empty,
+                                  ModifierId @@ Base16.encode(Array.fill(32)(0)), 0, 0))
+      verifyCases(
+        Seq(
+          box -> new Expected(ExpectedResult(Success(value), None))
+        ),
+        getReg
+      )
     }
   }
 
@@ -658,6 +675,77 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
         header1 -> new Expected(ExpectedResult(Success(true), None))
       ),
       checkPoW
+    )
+  }
+
+  property("higher order lambdas") {
+    val f = newFeature[Coll[Int], Coll[Int]](
+      { (xs: Coll[Int]) =>
+        val inc = { (x: Int) => x + 1 }
+
+        def apply(in: (Int => Int, Int)) = in._1(in._2)
+
+        xs.map { (x: Int) => apply((inc, x)) }
+      },
+      """{(xs: Coll[Int]) =>
+        |   val inc = { (x: Int) => x + 1 }
+        |   def apply(in: (Int => Int, Int)) = in._1(in._2)
+        |   xs.map { (x: Int) => apply((inc, x)) }
+        | }
+        |""".stripMargin,
+      FuncValue(
+        Array((1, SCollectionType(SInt))),
+        MapCollection(
+          ValUse(1, SCollectionType(SInt)),
+          FuncValue(
+            Array((3, SInt)),
+            Apply(
+              FuncValue(
+                Array((5, SPair(SFunc(Array(SInt), SInt, List()), SInt))),
+                Apply(
+                  SelectField.typed[Value[SFunc]](
+                    ValUse(5, SPair(SFunc(Array(SInt), SInt, List()), SInt)),
+                    1.toByte
+                  ),
+                  Array(
+                    SelectField.typed[Value[SInt.type]](
+                      ValUse(5, SPair(SFunc(Array(SInt), SInt, List()), SInt)),
+                      2.toByte
+                    )
+                  )
+                )
+              ),
+              Array(
+                Tuple(
+                  Vector(
+                    FuncValue(
+                      Array((5, SInt)),
+                      ArithOp(ValUse(5, SInt), IntConstant(1), OpCode @@ (-102.toByte))
+                    ),
+                    ValUse(3, SInt)
+                  )
+                )
+              )
+            )
+          )
+        )
+      ),
+    sinceVersion = VersionContext.V6SoftForkVersion
+    )
+
+    verifyCases(
+      Seq(
+        Coll(1, 2) -> Expected(
+          Success(Coll(2, 3)),
+          cost = 1793,
+          expectedDetails = CostDetails.ZeroCost
+        )
+      ),
+      f,
+      preGeneratedSamples = Some(Seq(
+        Coll(Int.MinValue, Int.MaxValue - 1),
+        Coll(0, 1, 2, 3, 100, 1000)
+      ))
     )
   }
 

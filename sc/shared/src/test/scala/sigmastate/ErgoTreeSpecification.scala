@@ -369,9 +369,12 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit with C
         MInfo(4, BytesWithoutRefMethod),
         MInfo(5, IdMethod),
         MInfo(6, creationInfoMethod),
-        MInfo(7, getRegMethod),
         MInfo(8, tokensMethod)
-      ) ++ registers(idOfs = 8)
+      ) ++ (if (VersionContext.current.isV6SoftForkActivated) {
+        Seq(MInfo(7, getRegMethodV6))
+      } else {
+        Seq(MInfo(7, getRegMethodV5))
+      }) ++ registers(idOfs = 8)
         .zipWithIndex
         .map { case (m,i) => MInfo((8 + i + 1).toByte, m) }, true)
     },
@@ -401,7 +404,11 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit with C
         MInfo(7, timestampMethod), MInfo(8, nBitsMethod), MInfo(9, heightMethod),
         MInfo(10, extensionRootMethod), MInfo(11, minerPkMethod), MInfo(12, powOnetimePkMethod),
         MInfo(13, powNonceMethod), MInfo(14, powDistanceMethod), MInfo(15, votesMethod)
-      ), true)
+      ) ++ (if (VersionContext.current.isV6SoftForkActivated) {
+        Seq(MInfo(16, checkPowMethod))
+      } else {
+        Seq.empty[MInfo]
+      }), true)
     },
     { import SPreHeaderMethods._
       (SPreHeader.typeId,  Seq(
