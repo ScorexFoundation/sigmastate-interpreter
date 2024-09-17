@@ -163,7 +163,11 @@ class BasicOpsSpecification extends CompilerTestingCommons
       true
     )}
 
-    deserTest() // todo: should fail < 6.0
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[Exception] should be thrownBy deserTest()
+    } else {
+      deserTest()
+    }
   }
 
   property("signed -> unsigned bigint conversion - positive bigint") {
@@ -221,6 +225,44 @@ class BasicOpsSpecification extends CompilerTestingCommons
       an[Exception] should be thrownBy conversionTest()
     } else {
       conversionTest()
+    }
+  }
+
+  property("unsigned bigint - add") {
+    def conversionTest() = {test("add", env, ext,
+      s"""{
+         |  val a = unsignedBigInt("5")
+         |  val b = unsignedBigInt("10")
+         |  val res = a + b
+         |  res == 15
+         | } """.stripMargin,
+      null,
+      true
+    )}
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[Exception] should be thrownBy conversionTest()
+    } else {
+      conversionTest()
+    }
+  }
+
+  property("unsigned bigint - subtract with neg result") {
+    def conversionTest() = {test("subtract", env, ext,
+      s"""{
+         |  val a = unsignedBigInt("5")
+         |  val b = unsignedBigInt("10")
+         |  val res = a - b
+         |  res >= 0
+         | } """.stripMargin,
+      null,
+      true
+    )}
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[Exception] should be thrownBy conversionTest()
+    } else {
+      an[Exception] should be thrownBy conversionTest()
     }
   }
 

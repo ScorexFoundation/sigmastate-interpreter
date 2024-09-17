@@ -102,12 +102,23 @@ object SType {
   /** Immutable empty IndexedSeq, can be used to avoid repeated allocations. */
   val EmptySeq: IndexedSeq[SType] = EmptyArray
 
+  private val v5PredefTypes = Array[SType](
+      SBoolean, SByte, SShort, SInt, SLong, SBigInt, SContext,
+      SGlobal, SHeader, SPreHeader, SAvlTree, SGroupElement, SSigmaProp, SString, SBox,
+      SUnit, SAny)
+
+  private val v6PredefTypes = v5PredefTypes ++ Array(SUnsignedBigInt)
+
+
   /** All pre-defined types should be listed here. Note, NoType is not listed.
     * Should be in sync with sigmastate.lang.Types.predefTypes. */
-  val allPredefTypes: Seq[SType] = Array[SType](
-    SBoolean, SByte, SShort, SInt, SLong, SBigInt, SUnsignedBigInt, SContext,
-    SGlobal, SHeader, SPreHeader, SAvlTree, SGroupElement, SSigmaProp, SString, SBox,
-    SUnit, SAny)
+  def allPredefTypes: Seq[SType] = {
+    if(VersionContext.current.isV6SoftForkActivated) {
+      v6PredefTypes
+    } else {
+      v5PredefTypes
+    }
+  }
 
   /** A mapping of object types supporting MethodCall operations. For each serialized
     * typeId this map contains a companion object which can be used to access the list of
@@ -177,7 +188,7 @@ object SType {
     case SInt => x.isInstanceOf[Int]
     case SLong => x.isInstanceOf[Long]
     case SBigInt => x.isInstanceOf[BigInt]
-    case SUnsignedBigInt => x.isInstanceOf[UnsignedBigInt]
+    case SUnsignedBigInt if VersionContext.current.isV6SoftForkActivated => x.isInstanceOf[UnsignedBigInt]
     case SGroupElement => x.isInstanceOf[GroupElement]
     case SSigmaProp => x.isInstanceOf[SigmaProp]
     case SBox => x.isInstanceOf[Box]
@@ -360,8 +371,6 @@ trait SNumericType extends SProduct with STypeCompanion {
 }
 
 object SNumericType extends STypeCompanion {
-  /** Array of all numeric types ordered by number of bytes in the representation. */
-  final val allNumericTypes = Array(SByte, SShort, SInt, SLong, SBigInt, SUnsignedBigInt)
 
   // TODO v6.0: this typeId is now shadowed by SGlobal.typeId
   //  see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/667
@@ -537,6 +546,7 @@ case object SUnsignedBigInt extends SPrimType with SEmbeddable with SNumericType
       case x: Short => BigInteger.valueOf(x.toLong)
       case x: Int => BigInteger.valueOf(x.toLong)
       case x: Long => BigInteger.valueOf(x)
+      case x: UnsignedBigInt => x.asInstanceOf[CUnsignedBigInt].wrappedValue
       case _ => sys.error(s"Cannot upcast value $v to the type $this")
     }
     CUnsignedBigInt(bi)
@@ -547,6 +557,7 @@ case object SUnsignedBigInt extends SPrimType with SEmbeddable with SNumericType
       case x: Short => BigInteger.valueOf(x.toLong)
       case x: Int => BigInteger.valueOf(x.toLong)
       case x: Long => BigInteger.valueOf(x)
+      case x: UnsignedBigInt => x.asInstanceOf[CUnsignedBigInt].wrappedValue
       case _ => sys.error(s"Cannot downcast value $v to the type $this")
     }
     CUnsignedBigInt(bi)
