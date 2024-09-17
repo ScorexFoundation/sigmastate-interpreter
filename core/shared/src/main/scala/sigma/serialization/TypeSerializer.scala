@@ -4,7 +4,6 @@ import debox.cfor
 import sigma.VersionContext
 import sigma.ast.SCollectionType.{CollectionTypeCode, NestedCollectionTypeCode}
 import sigma.ast._
-import sigma.serialization.{CoreByteReader, CoreByteWriter, InvalidTypePrefix}
 import sigma.util.safeNewArray
 import sigma.validation.ValidationRules.{CheckPrimitiveTypeCode, CheckTypeCode}
 
@@ -215,7 +214,6 @@ class TypeSerializer {
             STypeParam(ident.asInstanceOf[STypeVar])
           }
           SFunc(tDom, tRange, tpeParams)
-        // todo: serialize tParams
         case _ =>
           // todo: 6.0: replace 1008 check with identical behavior but other opcode, to activate
           //  ReplacedRule(1008 -> new opcode) during 6.0 activation
@@ -244,6 +242,7 @@ class TypeSerializer {
 object TypeSerializer extends TypeSerializer {
   /** The list of embeddable types, i.e. types that can be combined with type constructor for optimized encoding.
     * For each embeddable type `T`, and type constructor `C`, the type `C[T]` can be represented by single byte. */
-  val embeddableIdToType = Array[SType](null, SBoolean, SByte, SShort, SInt, SLong, SBigInt, SGroupElement, SSigmaProp)
+    //todo: versioning
+  val embeddableIdToType = Array[SType](null, SBoolean, SByte, SShort, SInt, SLong, SBigInt, SGroupElement, SSigmaProp, SUnsignedBigInt)
 
 }

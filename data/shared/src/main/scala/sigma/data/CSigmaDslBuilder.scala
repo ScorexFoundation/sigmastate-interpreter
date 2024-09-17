@@ -24,11 +24,12 @@ import java.nio.ByteBuffer
   * @see [[SigmaDslBuilder]] for detailed descriptions
   */
 class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
-  implicit val validationSettings: SigmaValidationSettings = ValidationRules.currentSettings
 
   override val Colls: CollBuilder = sigma.Colls
 
   override def BigInt(n: BigInteger): BigInt = CBigInt(n)
+
+  override def UnsignedBigInt(n: BigInteger): UnsignedBigInt = CUnsignedBigInt(n)
 
   override def toBigInteger(n: BigInt): BigInteger = n.asInstanceOf[CBigInt].wrappedValue
 
@@ -153,7 +154,7 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
   }
 
   override def byteArrayToBigInt(bytes: Coll[Byte]): BigInt = {
-    val bi = new BigInteger(bytes.toArray).to256BitValueExact
+    val bi = new BigInteger(bytes.toArray).toSignedBigIntValueExact
     this.BigInt(bi)
   }
 
@@ -203,7 +204,7 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
       case e: Throwable =>
         throw new RuntimeException(s"Cannot evaluate substConstants($scriptBytes, $positions, $newValues)", e)
     }
-    val (res, _)  = SubstConstants.eval(scriptBytes.toArray, positions.toArray, constants)(validationSettings)
+    val (res, _)  = SubstConstants.eval(scriptBytes.toArray, positions.toArray, constants)
     Colls.fromArray(res)
   }
 

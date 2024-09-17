@@ -11,6 +11,7 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ModifierId
 import sigma.Extensions.{ArrayOps, CollOps}
 import sigma.VersionContext.V6SoftForkVersion
+import sigma.VersionContext.JitActivationVersion
 import sigma.ast.ErgoTree.{HeaderType, ZeroHeader}
 import sigma.ast.SCollection._
 import sigma.ast.syntax._
@@ -956,6 +957,7 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
       swapArgs(LE_cases, cost = 1768, newCostDetails = binaryRelationCostDetails(GE, SByte), expectedV3Costs = Seq.fill(4)(2012)),
       ">=", GE.apply)(_ >= _)
   }
+
   property("Short methods equivalence") {
     SShort.upcast(0.toShort) shouldBe 0.toShort  // boundary test case
     SShort.downcast(0.toShort) shouldBe 0.toShort  // boundary test case

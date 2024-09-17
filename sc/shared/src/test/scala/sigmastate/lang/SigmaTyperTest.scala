@@ -519,6 +519,48 @@ class SigmaTyperTest extends AnyPropSpec
     typefail(env, "1.toSuperBigInteger", 1, 1)
   }
 
+  property("toBytes method for numeric types") {
+    typecheck(env, "1.toByte.toBytes",
+      expected = MethodCall.typed[Value[SCollection[SByte.type]]](
+        Select(IntConstant(1), "toByte", Some(SByte)),
+        SNumericTypeMethods.ToBytesMethod.withConcreteTypes(Map(STypeVar("TNum") -> SByte)),
+        Vector(),
+        Map()
+      )) shouldBe SByteArray
+
+    typecheck(env, "1.toShort.toBytes",
+      expected = MethodCall.typed[Value[SCollection[SByte.type]]](
+        Select(IntConstant(1), "toShort", Some(SShort)),
+        SNumericTypeMethods.ToBytesMethod.withConcreteTypes(Map(STypeVar("TNum") -> SShort)),
+        Vector(),
+        Map()
+      )) shouldBe SByteArray
+
+    typecheck(env, "1.toBytes",
+      expected = MethodCall.typed[Value[SCollection[SByte.type]]](
+        IntConstant(1),
+        SNumericTypeMethods.ToBytesMethod.withConcreteTypes(Map(STypeVar("TNum") -> SInt)),
+        Vector(),
+        Map()
+      )) shouldBe SByteArray
+
+    typecheck(env, "1.toLong.toBytes",
+      expected = MethodCall.typed[Value[SCollection[SByte.type]]](
+        Select(IntConstant(1), "toLong", Some(SLong)),
+        SNumericTypeMethods.ToBytesMethod.withConcreteTypes(Map(STypeVar("TNum") -> SLong)),
+        Vector(),
+        Map()
+      )) shouldBe SByteArray
+
+    typecheck(env, "1.toBigInt.toBytes",
+      expected = MethodCall.typed[Value[SCollection[SByte.type]]](
+        Select(IntConstant(1), "toBigInt", Some(SBigInt)),
+        SNumericTypeMethods.ToBytesMethod.withConcreteTypes(Map(STypeVar("TNum") -> SBigInt)),
+        Vector(),
+        Map()
+      )) shouldBe SByteArray
+  }
+
   property("string concat") {
     typecheck(env, """ "a" + "b" """) shouldBe SString
   }
@@ -702,5 +744,6 @@ class SigmaTyperTest extends AnyPropSpec
         )) shouldBe SByteArray
     }
   }
+
 
 }
