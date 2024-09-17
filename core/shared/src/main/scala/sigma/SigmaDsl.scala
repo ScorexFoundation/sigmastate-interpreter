@@ -170,8 +170,15 @@ trait BigInt {
     */
   def shiftRight(n: Int): BigInt
 
+  /**
+    * @return unsigned representation of this BigInt, or exception if its value is negative
+    */
   def toUnsigned: UnsignedBigInt
 
+  /**
+    * @return unsigned representation of this BigInt modulo `m`. Cryptographic mod operation is done, ie result is
+    *         non-negative always
+    */
   def toUnsignedMod(m: UnsignedBigInt): UnsignedBigInt
 }
 
@@ -296,6 +303,23 @@ trait UnsignedBigInt {
   def plusMod(that: UnsignedBigInt, m: UnsignedBigInt): UnsignedBigInt
   def subtractMod(that: UnsignedBigInt, m: UnsignedBigInt): UnsignedBigInt
   def multiplyMod(that: UnsignedBigInt, m: UnsignedBigInt): UnsignedBigInt
+
+  /**
+    * @return a big integer whose value is `this xor that`
+    */
+  def xor(that: UnsignedBigInt): UnsignedBigInt
+
+  /**
+    * @return a 256-bit signed integer whose value is (this << n). The shift distance, n, may be negative,
+    *         in which case this method performs a right shift. (Computes floor(this * 2n).)
+    */
+  def shiftLeft(n: Int): UnsignedBigInt
+
+  /**
+    * @return a 256-bit signed integer whose value is (this >> n). Sign extension is performed. The shift distance, n,
+    *         may be negative, in which case this method performs a left shift. (Computes floor(this / 2n).)
+    */
+  def shiftRight(n: Int): UnsignedBigInt
 
   def toSigned(): BigInt
 }

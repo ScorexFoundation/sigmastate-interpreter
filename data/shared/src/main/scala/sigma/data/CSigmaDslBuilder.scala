@@ -150,7 +150,7 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
   }
 
   override def byteArrayToBigInt(bytes: Coll[Byte]): BigInt = {
-    val bi = new BigInteger(bytes.toArray).to256BitValueExact
+    val bi = new BigInteger(bytes.toArray).toSignedBigIntValueExact
     this.BigInt(bi)
   }
 

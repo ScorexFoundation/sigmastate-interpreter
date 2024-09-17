@@ -28,11 +28,11 @@ case class CBigInt(override val wrappedValue: BigInteger) extends BigInt with Wr
 
   override def signum: Int = wrappedValue.signum()
 
-  override def add(that: BigInt): BigInt = CBigInt(wrappedValue.add(that.asInstanceOf[CBigInt].wrappedValue).to256BitValueExact)
+  override def add(that: BigInt): BigInt = CBigInt(wrappedValue.add(that.asInstanceOf[CBigInt].wrappedValue).toSignedBigIntValueExact)
 
-  override def subtract(that: BigInt): BigInt = CBigInt(wrappedValue.subtract(that.asInstanceOf[CBigInt].wrappedValue).to256BitValueExact)
+  override def subtract(that: BigInt): BigInt = CBigInt(wrappedValue.subtract(that.asInstanceOf[CBigInt].wrappedValue).toSignedBigIntValueExact)
 
-  override def multiply(that: BigInt): BigInt = CBigInt(wrappedValue.multiply(that.asInstanceOf[CBigInt].wrappedValue).to256BitValueExact)
+  override def multiply(that: BigInt): BigInt = CBigInt(wrappedValue.multiply(that.asInstanceOf[CBigInt].wrappedValue).toSignedBigIntValueExact)
 
   override def divide(that: BigInt): BigInt = CBigInt(wrappedValue.divide(that.asInstanceOf[CBigInt].wrappedValue))
 
@@ -44,7 +44,7 @@ case class CBigInt(override val wrappedValue: BigInteger) extends BigInt with Wr
 
   override def max(that: BigInt): BigInt = CBigInt(wrappedValue.max(that.asInstanceOf[CBigInt].wrappedValue))
 
-  override def negate(): BigInt = CBigInt(wrappedValue.negate().to256BitValueExact)
+  override def negate(): BigInt = CBigInt(wrappedValue.negate().toSignedBigIntValueExact)
 
   override def and(that: BigInt): BigInt = CBigInt(wrappedValue.and(that.asInstanceOf[CBigInt].wrappedValue))
 
@@ -52,9 +52,9 @@ case class CBigInt(override val wrappedValue: BigInteger) extends BigInt with Wr
 
   override def xor(that: BigInt): BigInt = CBigInt(wrappedValue.xor(that.asInstanceOf[CBigInt].wrappedValue))
 
-  override def shiftLeft(n: Int): BigInt = CBigInt(wrappedValue.shiftLeft(n).to256BitValueExact)
+  override def shiftLeft(n: Int): BigInt = CBigInt(wrappedValue.shiftLeft(n).toSignedBigIntValueExact)
 
-  override def shiftRight(n: Int): BigInt = CBigInt(wrappedValue.shiftRight(n).to256BitValueExact)
+  override def shiftRight(n: Int): BigInt = CBigInt(wrappedValue.shiftRight(n).toSignedBigIntValueExact)
 
   def toUnsigned: UnsignedBigInt = {
     if(this.wrappedValue.compareTo(BigInteger.ZERO) < 0){
@@ -88,12 +88,13 @@ case class CUnsignedBigInt(override val wrappedValue: BigInteger) extends Unsign
   override def compareTo(that: UnsignedBigInt): Int =
     wrappedValue.compareTo(that.asInstanceOf[CUnsignedBigInt].wrappedValue)
 
-  //todo: consider result's bits limit
-  override def add(that: UnsignedBigInt): UnsignedBigInt = CUnsignedBigInt(wrappedValue.add(that.asInstanceOf[CUnsignedBigInt].wrappedValue).to256BitValueExact)
+  override def add(that: UnsignedBigInt): UnsignedBigInt = CUnsignedBigInt(wrappedValue.add(that.asInstanceOf[CUnsignedBigInt].wrappedValue).toUnsignedBigIntValueExact)
 
-  override def subtract(that: UnsignedBigInt): UnsignedBigInt = CUnsignedBigInt(wrappedValue.subtract(that.asInstanceOf[CUnsignedBigInt].wrappedValue).to256BitValueExact)
+  override def subtract(that: UnsignedBigInt): UnsignedBigInt = {
+    CUnsignedBigInt(wrappedValue.subtract(that.asInstanceOf[CUnsignedBigInt].wrappedValue).toUnsignedBigIntValueExact)
+  }
 
-  override def multiply(that: UnsignedBigInt): UnsignedBigInt = CUnsignedBigInt(wrappedValue.multiply(that.asInstanceOf[CUnsignedBigInt].wrappedValue).to256BitValueExact)
+  override def multiply(that: UnsignedBigInt): UnsignedBigInt = CUnsignedBigInt(wrappedValue.multiply(that.asInstanceOf[CUnsignedBigInt].wrappedValue).toUnsignedBigIntValueExact)
 
   override def divide(that: UnsignedBigInt): UnsignedBigInt = CUnsignedBigInt(wrappedValue.divide(that.asInstanceOf[CUnsignedBigInt].wrappedValue))
 
@@ -129,7 +130,18 @@ case class CUnsignedBigInt(override val wrappedValue: BigInteger) extends Unsign
     CUnsignedBigInt(wrappedValue.multiply(thatBi).mod(mBi))
   }
 
+  /**
+    * @return a big integer whose value is `this xor that`
+    */
+  def xor(that: UnsignedBigInt): UnsignedBigInt = {
+    CUnsignedBigInt(wrappedValue.xor(that.asInstanceOf[CUnsignedBigInt].wrappedValue))
+  }
+
+  override def shiftLeft(n: Int): UnsignedBigInt = CUnsignedBigInt(wrappedValue.shiftLeft(n).toUnsignedBigIntValueExact)
+
+  override def shiftRight(n: Int): UnsignedBigInt = CUnsignedBigInt(wrappedValue.shiftRight(n).toUnsignedBigIntValueExact)
+
   override def toSigned(): BigInt = {
-    CBigInt(wrappedValue.to256BitValueExact)
+    CBigInt(wrappedValue.toSignedBigIntValueExact)
   }
 }

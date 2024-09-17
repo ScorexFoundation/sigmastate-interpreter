@@ -144,7 +144,7 @@ object SType {
     SBoolean, SString, STuple, SGroupElement, SSigmaProp, SContext, SGlobal, SHeader, SPreHeader,
     SAvlTree, SBox, SOption, SCollection, SBigInt
   )
-  private val v6Types = v5Types ++ Seq(SByte, SShort, SInt, SLong)
+  private val v6Types = v5Types ++ Seq(SByte, SShort, SInt, SLong, SUnsignedBigInt)
 
   private val v5TypesMap = v5Types.map { t => (t.typeId, t) }.toMap
 
@@ -398,6 +398,7 @@ case object SByte extends SPrimType with SEmbeddable with SNumericType with SMon
     case i: Int => i.toByteExact
     case l: Long => l.toByteExact
     case bi: BigInt if VersionContext.current.isV6SoftForkActivated => bi.toByte // toByteExact from int is called under the hood
+    case ubi: UnsignedBigInt if VersionContext.current.isV6SoftForkActivated => ubi.toByte // toByteExact from int is called under the hood
     case _ => sys.error(s"Cannot downcast value $v to the type $this")
   }
 }
@@ -420,6 +421,7 @@ case object SShort extends SPrimType with SEmbeddable with SNumericType with SMo
     case i: Int => i.toShortExact
     case l: Long => l.toShortExact
     case bi: BigInt if VersionContext.current.isV6SoftForkActivated => bi.toShort // toShortExact from int is called under the hood
+    case ubi: UnsignedBigInt if VersionContext.current.isV6SoftForkActivated => ubi.toShort // toShortExact from int is called under the hood
     case _ => sys.error(s"Cannot downcast value $v to the type $this")
   }
 }
@@ -444,6 +446,7 @@ case object SInt extends SPrimType with SEmbeddable with SNumericType with SMono
     case i: Int => i
     case l: Long => l.toIntExact
     case bi: BigInt if VersionContext.current.isV6SoftForkActivated => bi.toInt
+    case ubi: UnsignedBigInt if VersionContext.current.isV6SoftForkActivated => ubi.toInt
     case _ => sys.error(s"Cannot downcast value $v to the type $this")
   }
 }
@@ -470,6 +473,7 @@ case object SLong extends SPrimType with SEmbeddable with SNumericType with SMon
     case i: Int => i.toLong
     case l: Long => l
     case bi: BigInt if VersionContext.current.isV6SoftForkActivated => bi.toLong
+    case ubi: UnsignedBigInt if VersionContext.current.isV6SoftForkActivated => ubi.toLong
     case _ => sys.error(s"Cannot downcast value $v to the type $this")
   }
 }
@@ -687,15 +691,16 @@ object SOption extends STypeCompanion {
 
   override val reprClass: RClass[_] = RClass(classOf[Option[_]])
 
-  type SBooleanOption      = SOption[SBoolean.type]
-  type SByteOption         = SOption[SByte.type]
-  type SShortOption        = SOption[SShort.type]
-  type SIntOption          = SOption[SInt.type]
-  type SLongOption         = SOption[SLong.type]
-  type SBigIntOption       = SOption[SBigInt.type]
-  type SGroupElementOption = SOption[SGroupElement.type]
-  type SBoxOption          = SOption[SBox.type]
-  type SAvlTreeOption      = SOption[SAvlTree.type]
+  type SBooleanOption        = SOption[SBoolean.type]
+  type SByteOption           = SOption[SByte.type]
+  type SShortOption          = SOption[SShort.type]
+  type SIntOption            = SOption[SInt.type]
+  type SLongOption           = SOption[SLong.type]
+  type SBigIntOption         = SOption[SBigInt.type]
+  type SUnsignedBigIntOption = SOption[SUnsignedBigInt.type]
+  type SGroupElementOption   = SOption[SGroupElement.type]
+  type SBoxOption            = SOption[SBox.type]
+  type SAvlTreeOption        = SOption[SAvlTree.type]
 
   /** This descriptors are instantiated once here and then reused. */
   implicit val SByteOption = SOption(SByte)
@@ -704,6 +709,7 @@ object SOption extends STypeCompanion {
   implicit val SIntOption = SOption(SInt)
   implicit val SLongOption = SOption(SLong)
   implicit val SBigIntOption = SOption(SBigInt)
+  implicit val SUnsignedBigIntOption = SOption(SUnsignedBigInt)
   implicit val SBooleanOption = SOption(SBoolean)
   implicit val SAvlTreeOption = SOption(SAvlTree)
   implicit val SGroupElementOption = SOption(SGroupElement)
@@ -764,29 +770,31 @@ object SCollection extends STypeCompanion {
   def apply[T <: SType](elemType: T): SCollection[T] = SCollectionType(elemType)
   def apply[T <: SType](implicit elemType: T, ov: Overloaded1): SCollection[T] = SCollectionType(elemType)
 
-  type SBooleanArray      = SCollection[SBoolean.type]
-  type SByteArray         = SCollection[SByte.type]
-  type SShortArray        = SCollection[SShort.type]
-  type SIntArray          = SCollection[SInt.type]
-  type SLongArray         = SCollection[SLong.type]
-  type SBigIntArray       = SCollection[SBigInt.type]
-  type SGroupElementArray = SCollection[SGroupElement.type]
-  type SBoxArray          = SCollection[SBox.type]
-  type SAvlTreeArray      = SCollection[SAvlTree.type]
+  type SBooleanArray        = SCollection[SBoolean.type]
+  type SByteArray           = SCollection[SByte.type]
+  type SShortArray          = SCollection[SShort.type]
+  type SIntArray            = SCollection[SInt.type]
+  type SLongArray           = SCollection[SLong.type]
+  type SBigIntArray         = SCollection[SBigInt.type]
+  type SUnsignedBigIntArray = SCollection[SUnsignedBigInt.type]
+  type SGroupElementArray   = SCollection[SGroupElement.type]
+  type SBoxArray            = SCollection[SBox.type]
+  type SAvlTreeArray        = SCollection[SAvlTree.type]
 
   /** This descriptors are instantiated once here and then reused. */
-  val SBooleanArray      = SCollection(SBoolean)
-  val SByteArray         = SCollection(SByte)
-  val SByteArray2        = SCollection(SCollection(SByte))
-  val SShortArray        = SCollection(SShort)
-  val SIntArray          = SCollection(SInt)
-  val SLongArray         = SCollection(SLong)
-  val SBigIntArray       = SCollection(SBigInt)
-  val SGroupElementArray = SCollection(SGroupElement)
-  val SSigmaPropArray    = SCollection(SSigmaProp)
-  val SBoxArray          = SCollection(SBox)
-  val SAvlTreeArray      = SCollection(SAvlTree)
-  val SHeaderArray       = SCollection(SHeader)
+  val SBooleanArray        = SCollection(SBoolean)
+  val SByteArray           = SCollection(SByte)
+  val SByteArray2          = SCollection(SCollection(SByte))
+  val SShortArray          = SCollection(SShort)
+  val SIntArray            = SCollection(SInt)
+  val SLongArray           = SCollection(SLong)
+  val SBigIntArray         = SCollection(SBigInt)
+  val SUnsignedBigIntArray = SCollection(SUnsignedBigInt)
+  val SGroupElementArray   = SCollection(SGroupElement)
+  val SSigmaPropArray      = SCollection(SSigmaProp)
+  val SBoxArray            = SCollection(SBox)
+  val SAvlTreeArray        = SCollection(SAvlTree)
+  val SHeaderArray         = SCollection(SHeader)
 }
 
 /** Type descriptor of tuple type. */
