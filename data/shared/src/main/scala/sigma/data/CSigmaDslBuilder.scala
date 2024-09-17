@@ -14,7 +14,7 @@ import sigma.serialization.{DataSerializer, GroupElementSerializer, SigmaSeriali
 import sigma.util.Extensions.BigIntegerOps
 import sigma.util.NBitsUtils
 import sigma.validation.SigmaValidationSettings
-import sigma.{AvlTree, BigInt, Box, Coll, CollBuilder, Evaluation, GroupElement, SigmaDslBuilder, SigmaProp, VersionContext}
+import sigma.{AvlTree, BigInt, Box, Coll, CollBuilder, Evaluation, GroupElement, SigmaDslBuilder, SigmaProp, UnsignedBigInt, VersionContext}
 
 import java.math.BigInteger
 import java.nio.ByteBuffer
