@@ -1016,6 +1016,20 @@ class SigmaDslTesting extends AnyPropSpec
         }
       }
 
+    /** Used when the old and new value are the same for all versions
+      * and the expected costs are not specified.
+      *
+      * @param value           expected result of tested function
+      * @param expectedDetails expected cost details for all versions
+      */
+    def apply[A](value: Try[A], expectedDetails: CostDetails): Expected[A] =
+      new Expected(ExpectedResult(value, None)) {
+        override val newResults = defaultNewResults.map {
+          case (ExpectedResult(v, _), _) =>
+            (ExpectedResult(v, None), Some(expectedDetails))
+        }
+      }
+
     /** Used when the old and new value and costs are the same for all versions.
       *
       * @param value           expected result of tested function

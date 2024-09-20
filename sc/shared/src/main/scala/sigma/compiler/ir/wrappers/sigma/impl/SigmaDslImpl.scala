@@ -1963,6 +1963,14 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         Array[AnyRef](l, r),
         true, false, element[Coll[Byte]]))
     }
+
+    def serialize[T](value: Ref[T]): Ref[Coll[Byte]] = {
+      asRep[Coll[Byte]](mkMethodCall(self,
+        SigmaDslBuilderClass.getMethod("serialize", classOf[Sym]),
+        Array[AnyRef](value),
+        true, false, element[Coll[Byte]]))
+    }
+
   }
 
   implicit object LiftableSigmaDslBuilder
@@ -2120,6 +2128,13 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
       asRep[Coll[Byte]](mkMethodCall(source,
         SigmaDslBuilderClass.getMethod("xor", classOf[Sym], classOf[Sym]),
         Array[AnyRef](l, r),
+        true, true, element[Coll[Byte]]))
+    }
+
+    def serialize[T](value: Ref[T]): Ref[Coll[Byte]] = {
+      asRep[Coll[Byte]](mkMethodCall(source,
+        SigmaDslBuilderClass.getMethod("serialize", classOf[Sym]),
+        Array[AnyRef](value),
         true, true, element[Coll[Byte]]))
     }
   }
