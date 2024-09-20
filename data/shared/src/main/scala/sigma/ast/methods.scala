@@ -7,6 +7,8 @@ import sigma.ast.SCollection.{SBooleanArray, SBoxArray, SByteArray, SByteArray2,
 import sigma.ast.SMethod.{MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
 import sigma.ast.SType.{TypeCode, paramT, tT}
 import sigma.ast.syntax.{SValue, ValueOps}
+import sigma.data.ExactIntegral.{ByteIsExactIntegral, IntIsExactIntegral, LongIsExactIntegral, ShortIsExactIntegral}
+import sigma.data.NumericOps.BigIntIsExactIntegral
 import sigma.data.OverloadHack.Overloaded1
 import sigma.data.{DataValueComparer, KeyValueColl, Nullable, RType, SigmaConstants}
 import sigma.eval.{CostDetails, ErgoTreeEvaluator, TracedCost}
@@ -157,14 +159,34 @@ trait MonoTypeMethods extends MethodsContainer {
 
 trait SNumericTypeMethods extends MonoTypeMethods {
   import SNumericTypeMethods.tNum
+
+  private val subst = Map(tNum -> this.ownerType)
+
+  val v5Methods = {
+    SNumericTypeMethods.v5Methods.map { m =>
+      m.copy(stype = applySubst(m.stype, subst).asFunc)
+    }
+  }
+
+  val v6Methods = {
+    SNumericTypeMethods.v6Methods.map { m =>
+      m.copy(
+        objType = this, // associate the method with the concrete numeric type
+        stype = applySubst(m.stype, subst).asFunc
+      )}
+  }
+
   protected override def getMethods(): Seq[SMethod] = {
-    super.getMethods() ++ SNumericTypeMethods.methods.map {
-      m => m.copy(stype = applySubst(m.stype, Map(tNum -> this.ownerType)).asFunc)
+    if (VersionContext.current.isV6SoftForkActivated) {
+      super.getMethods() ++ v6Methods
+    } else {
+      super.getMethods() ++ v5Methods
     }
   }
 }
 
 object SNumericTypeMethods extends MethodsContainer {
+
   /** Type for which this container defines methods. */
   override def ownerType: STypeCompanion = SNumericType
 
@@ -217,6 +239,15 @@ object SNumericTypeMethods extends MethodsContainer {
   val ToBytesMethod: SMethod = SMethod(
     this, "toBytes", SFunc(tNum, SByteArray), 6, ToBytes_CostKind)
       .withIRInfo(MethodCallIrBuilder)
+      .withUserDefinedInvoke({ (m: SMethod, obj: Any, _: Array[Any]) =>
+        m.objType match {
+          case SByteMethods => ByteIsExactIntegral.toBigEndianBytes(obj.asInstanceOf[Byte])
+          case SShortMethods => ShortIsExactIntegral.toBigEndianBytes(obj.asInstanceOf[Short])
+          case SIntMethods => IntIsExactIntegral.toBigEndianBytes(obj.asInstanceOf[Int])
+          case SLongMethods => LongIsExactIntegral.toBigEndianBytes(obj.asInstanceOf[Long])
+          case SBigIntMethods => obj.asInstanceOf[BigInt].toBytes
+        }
+      })
       .withInfo(PropertyCall,
         """ Returns a big-endian representation of this numeric value in a collection of bytes.
          | For example, the \lst{Int} value \lst{0x12131415} would yield the
@@ -230,12 +261,124 @@ object SNumericTypeMethods extends MethodsContainer {
   val ToBitsMethod: SMethod = SMethod(
     this, "toBits", SFunc(tNum, SBooleanArray), 7, ToBits_CostKind)
       .withIRInfo(MethodCallIrBuilder)
+      .withUserDefinedInvoke({ (m: SMethod, obj: Any, _: Array[Any]) =>
+        m.objType match {
+          case SByteMethods => ByteIsExactIntegral.toBits(obj.asInstanceOf[Byte])
+          case SShortMethods => ShortIsExactIntegral.toBits(obj.asInstanceOf[Short])
+          case SIntMethods => IntIsExactIntegral.toBits(obj.asInstanceOf[Int])
+          case SLongMethods => LongIsExactIntegral.toBits(obj.asInstanceOf[Long])
+          case SBigIntMethods => BigIntIsExactIntegral.toBits(obj.asInstanceOf[BigInt])
+        }
+      })
       .withInfo(PropertyCall,
         """ Returns a big-endian representation of this numeric in a collection of Booleans.
          |  Each boolean corresponds to one bit.
           """.stripMargin)
 
-  protected override def getMethods(): Seq[SMethod] = Array(
+  /** Cost of inverting bits of a number. */
+  val BitwiseOp_CostKind = FixedCost(JitCost(5))
+
+  val BitwiseInverseMethod: SMethod = SMethod(
+    this, "bitwiseInverse", SFunc(tNum, tNum), 8, BitwiseOp_CostKind)
+    .withIRInfo(MethodCallIrBuilder)
+    .withUserDefinedInvoke({ (m: SMethod, obj: Any, _: Array[Any]) =>
+      m.objType match {
+        case SByteMethods => ByteIsExactIntegral.bitwiseInverse(obj.asInstanceOf[Byte])
+        case SShortMethods => ShortIsExactIntegral.bitwiseInverse(obj.asInstanceOf[Short])
+        case SIntMethods => IntIsExactIntegral.bitwiseInverse(obj.asInstanceOf[Int])
+        case SLongMethods => LongIsExactIntegral.bitwiseInverse(obj.asInstanceOf[Long])
+        case SBigIntMethods => BigIntIsExactIntegral.bitwiseInverse(obj.asInstanceOf[BigInt])
+      }
+    })
+    .withInfo(PropertyCall, desc = "Returns bitwise inverse of this numeric. ")
+
+  val BitwiseOrMethod: SMethod = SMethod(
+    this, "bitwiseOr", SFunc(Array(tNum, tNum), tNum), 9, BitwiseOp_CostKind)
+    .withIRInfo(MethodCallIrBuilder)
+    .withUserDefinedInvoke({ (m: SMethod, obj: Any, other: Array[Any]) =>
+      m.objType match {
+        case SByteMethods => ByteIsExactIntegral.bitwiseOr(obj.asInstanceOf[Byte], other.head.asInstanceOf[Byte])
+        case SShortMethods => ShortIsExactIntegral.bitwiseOr(obj.asInstanceOf[Short], other.head.asInstanceOf[Short])
+        case SIntMethods => IntIsExactIntegral.bitwiseOr(obj.asInstanceOf[Int], other.head.asInstanceOf[Int])
+        case SLongMethods => LongIsExactIntegral.bitwiseOr(obj.asInstanceOf[Long], other.head.asInstanceOf[Long])
+        case SBigIntMethods => BigIntIsExactIntegral.bitwiseOr(obj.asInstanceOf[BigInt], other.head.asInstanceOf[BigInt])
+      }
+    })
+    .withInfo(MethodCall,
+      """ Returns bitwise or of this numeric and provided one. """.stripMargin,
+      ArgInfo("that", "A numeric value to calculate or with."))
+
+  val BitwiseAndMethod: SMethod = SMethod(
+    this, "bitwiseAnd", SFunc(Array(tNum, tNum), tNum), 10, BitwiseOp_CostKind)
+    .withIRInfo(MethodCallIrBuilder)
+    .withUserDefinedInvoke({ (m: SMethod, obj: Any, other: Array[Any]) =>
+      m.objType match {
+        case SByteMethods => ByteIsExactIntegral.bitwiseAnd(obj.asInstanceOf[Byte], other.head.asInstanceOf[Byte])
+        case SShortMethods => ShortIsExactIntegral.bitwiseAnd(obj.asInstanceOf[Short], other.head.asInstanceOf[Short])
+        case SIntMethods => IntIsExactIntegral.bitwiseAnd(obj.asInstanceOf[Int], other.head.asInstanceOf[Int])
+        case SLongMethods => LongIsExactIntegral.bitwiseAnd(obj.asInstanceOf[Long], other.head.asInstanceOf[Long])
+        case SBigIntMethods => BigIntIsExactIntegral.bitwiseAnd(obj.asInstanceOf[BigInt], other.head.asInstanceOf[BigInt])
+      }
+    })
+    .withInfo(MethodCall,
+      """ Returns bitwise and of this numeric and provided one. """.stripMargin,
+      ArgInfo("that", "A numeric value to calculate and with."))
+
+  val BitwiseXorMethod: SMethod = SMethod(
+    this, "bitwiseXor", SFunc(Array(tNum, tNum), tNum), 11, BitwiseOp_CostKind)
+    .withIRInfo(MethodCallIrBuilder)
+    .withUserDefinedInvoke({ (m: SMethod, obj: Any, other: Array[Any]) =>
+      m.objType match {
+        case SByteMethods => ByteIsExactIntegral.bitwiseXor(obj.asInstanceOf[Byte], other.head.asInstanceOf[Byte])
+        case SShortMethods => ShortIsExactIntegral.bitwiseXor(obj.asInstanceOf[Short], other.head.asInstanceOf[Short])
+        case SIntMethods => IntIsExactIntegral.bitwiseXor(obj.asInstanceOf[Int], other.head.asInstanceOf[Int])
+        case SLongMethods => LongIsExactIntegral.bitwiseXor(obj.asInstanceOf[Long], other.head.asInstanceOf[Long])
+        case SBigIntMethods => BigIntIsExactIntegral.bitwiseXor(obj.asInstanceOf[BigInt], other.head.asInstanceOf[BigInt])
+      }
+    })
+    .withInfo(MethodCall,
+      """ Returns bitwise xor of this numeric and provided one. """.stripMargin,
+      ArgInfo("that", "A numeric value to calculate xor with."))
+
+  val ShiftLeftMethod: SMethod = SMethod(
+    this, "shiftLeft", SFunc(Array(tNum, SInt), tNum), 12, BitwiseOp_CostKind)
+    .withIRInfo(MethodCallIrBuilder)
+    .withUserDefinedInvoke({ (m: SMethod, obj: Any, other: Array[Any]) =>
+      m.objType match {
+        case SByteMethods => ByteIsExactIntegral.shiftLeft(obj.asInstanceOf[Byte], other.head.asInstanceOf[Int])
+        case SShortMethods => ShortIsExactIntegral.shiftLeft(obj.asInstanceOf[Short], other.head.asInstanceOf[Int])
+        case SIntMethods => IntIsExactIntegral.shiftLeft(obj.asInstanceOf[Int], other.head.asInstanceOf[Int])
+        case SLongMethods => LongIsExactIntegral.shiftLeft(obj.asInstanceOf[Long], other.head.asInstanceOf[Int])
+        case SBigIntMethods => BigIntIsExactIntegral.shiftLeft(obj.asInstanceOf[BigInt], other.head.asInstanceOf[Int])
+      }
+    })
+    .withInfo(MethodCall,
+      """ Returns a big-endian representation of this numeric in a collection of Booleans.
+        |  Each boolean corresponds to one bit.
+          """.stripMargin,
+      ArgInfo("bits", "Number of bit to shift to the left. Note, that bits value must be non-negative and less than " +
+                      "the size of the number in bits (e.g. 64 for Long, 256 for BigInt)"))
+
+  val ShiftRightMethod: SMethod = SMethod(
+    this, "shiftRight", SFunc(Array(tNum, SInt), tNum), 13, BitwiseOp_CostKind)
+    .withIRInfo(MethodCallIrBuilder)
+    .withUserDefinedInvoke({ (m: SMethod, obj: Any, other: Array[Any]) =>
+      m.objType match {
+        case SByteMethods => ByteIsExactIntegral.shiftRight(obj.asInstanceOf[Byte], other.head.asInstanceOf[Int])
+        case SShortMethods => ShortIsExactIntegral.shiftRight(obj.asInstanceOf[Short], other.head.asInstanceOf[Int])
+        case SIntMethods => IntIsExactIntegral.shiftRight(obj.asInstanceOf[Int], other.head.asInstanceOf[Int])
+        case SLongMethods => LongIsExactIntegral.shiftRight(obj.asInstanceOf[Long], other.head.asInstanceOf[Int])
+        case SBigIntMethods => BigIntIsExactIntegral.shiftRight(obj.asInstanceOf[BigInt], other.head.asInstanceOf[Int])
+      }
+    })
+    .withInfo(MethodCall,
+      """ Returns a big-endian representation of this numeric in a collection of Booleans.
+        |  Each boolean corresponds to one bit.
+          """.stripMargin,
+      ArgInfo("bits", "Number of bit to shift to the right. Note, that bits value must be non-negative and less than " +
+        "the size of the number in bits (e.g. 64 for Long, 256 for BigInt)"))
+
+  lazy val v5Methods = Array(
     ToByteMethod, // see Downcast
     ToShortMethod, // see Downcast
     ToIntMethod, // see Downcast
@@ -245,7 +388,21 @@ object SNumericTypeMethods extends MethodsContainer {
     ToBitsMethod
   )
 
+  lazy val v6Methods = v5Methods ++ Array(
+    BitwiseInverseMethod,
+    BitwiseOrMethod,
+    BitwiseAndMethod,
+    BitwiseXorMethod,
+    ShiftLeftMethod,
+    ShiftRightMethod
+  )
+
+  protected override def getMethods(): Seq[SMethod] = {
+    throw new Exception("SNumericTypeMethods.getMethods shouldn't ever be called")
+  }
+
   /** Collection of names of numeric casting methods (like `toByte`, `toInt`, etc). */
+  // todo: add unsigned big int
   val castMethods: Array[String] =
     Array(ToByteMethod, ToShortMethod, ToIntMethod, ToLongMethod, ToBigIntMethod)
         .map(_.name)
@@ -310,21 +467,6 @@ case object SBigIntMethods extends SNumericTypeMethods {
   /** Type for which this container defines methods. */
   override def ownerType: SMonoType = SBigInt
 
-  /** The following `modQ` methods are not fully implemented in v4.x and this descriptors.
-    * This descritors are remain here in the code and are waiting for full implementation
-    * is upcoming soft-forks at which point the cost parameters should be calculated and
-    * changed.
-    */
-  val ModQMethod = SMethod(this, "modQ", SFunc(this.ownerType, SBigInt), 1, FixedCost(JitCost(1)))
-      .withInfo(ModQ, "Returns this \\lst{mod} Q, i.e. remainder of division by Q, where Q is an order of the cryprographic group.")
-  val PlusModQMethod = SMethod(this, "plusModQ", SFunc(IndexedSeq(this.ownerType, SBigInt), SBigInt), 2, FixedCost(JitCost(1)))
-      .withInfo(ModQArithOp.PlusModQ, "Adds this number with \\lst{other} by module Q.", ArgInfo("other", "Number to add to this."))
-  val MinusModQMethod = SMethod(this, "minusModQ", SFunc(IndexedSeq(this.ownerType, SBigInt), SBigInt), 3, FixedCost(JitCost(1)))
-      .withInfo(ModQArithOp.MinusModQ, "Subtracts \\lst{other} number from this by module Q.", ArgInfo("other", "Number to subtract from this."))
-  val MultModQMethod = SMethod(this, "multModQ", SFunc(IndexedSeq(this.ownerType, SBigInt), SBigInt), 4, FixedCost(JitCost(1)))
-      .withIRInfo(MethodCallIrBuilder)
-      .withInfo(MethodCall, "Multiply this number with \\lst{other} by module Q.", ArgInfo("other", "Number to multiply with this."))
-
   protected override def getMethods(): Seq[SMethod]  = {
     if (VersionContext.current.isV6SoftForkActivated) {
       super.getMethods()
@@ -338,12 +480,6 @@ case object SBigIntMethods extends SNumericTypeMethods {
     }
   }
 
-  /**
-    *
-    */
-  def nbits_eval(mc: MethodCall, bi: sigma.BigInt)(implicit E: ErgoTreeEvaluator): Long = {
-    ???
-  }
 
 }
 
