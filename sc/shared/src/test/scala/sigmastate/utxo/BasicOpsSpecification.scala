@@ -569,6 +569,22 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
+  property("Int.toBits") {
+    def toBytesTest() = test("Int.toBytes", env, ext,
+      """{
+        |   val l = 1477959696
+        |   l.toBits == Coll(false, true, false, true, true, false, false, false, false, false, false, true, false, true, true ,true, true, true, true, false, false, false, false, false, false, false, false, true, false, false, false, false)
+        | }""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      toBytesTest()
+    } else {
+      an[Exception] shouldBe thrownBy(toBytesTest())
+    }
+  }
+
   property("Byte.toBytes") {
     def toBytesTest() = test("Byte.toBytes", env, ext,
       """{

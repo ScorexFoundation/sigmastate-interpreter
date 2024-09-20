@@ -275,10 +275,10 @@ object SNumericTypeMethods extends MethodsContainer {
           """.stripMargin)
 
   /** Cost of inverting bits of a number. */
-  val BitwiseInverse_CostKind = FixedCost(JitCost(5))
+  val BitwiseOp_CostKind = FixedCost(JitCost(5))
 
   val BitwiseInverseMethod: SMethod = SMethod(
-    this, "bitwiseInverse", SFunc(tNum, tNum), 8, BitwiseInverse_CostKind)
+    this, "bitwiseInverse", SFunc(tNum, tNum), 8, BitwiseOp_CostKind)
     .withIRInfo(MethodCallIrBuilder)
     .withUserDefinedInvoke({ (m: SMethod, obj: Any, _: Array[Any]) =>
       m.objType match {
@@ -292,7 +292,7 @@ object SNumericTypeMethods extends MethodsContainer {
     .withInfo(PropertyCall, desc = "Returns bitwise inverse of this numeric. ")
 
   val BitwiseOrMethod: SMethod = SMethod(
-    this, "bitwiseOr", SFunc(Array(tNum, tNum), tNum), 9, BitwiseInverse_CostKind)
+    this, "bitwiseOr", SFunc(Array(tNum, tNum), tNum), 9, BitwiseOp_CostKind)
     .withIRInfo(MethodCallIrBuilder)
     .withUserDefinedInvoke({ (m: SMethod, obj: Any, other: Array[Any]) =>
       m.objType match {
@@ -308,7 +308,7 @@ object SNumericTypeMethods extends MethodsContainer {
       ArgInfo("that", "A numeric value to calculate or with."))
 
   val BitwiseAndMethod: SMethod = SMethod(
-    this, "bitwiseAnd", SFunc(Array(tNum, tNum), tNum), 10, BitwiseInverse_CostKind)
+    this, "bitwiseAnd", SFunc(Array(tNum, tNum), tNum), 10, BitwiseOp_CostKind)
     .withIRInfo(MethodCallIrBuilder)
     .withUserDefinedInvoke({ (m: SMethod, obj: Any, other: Array[Any]) =>
       m.objType match {
@@ -324,7 +324,7 @@ object SNumericTypeMethods extends MethodsContainer {
       ArgInfo("that", "A numeric value to calculate and with."))
 
   val BitwiseXorMethod: SMethod = SMethod(
-    this, "bitwiseXor", SFunc(Array(tNum, tNum), tNum), 11, BitwiseInverse_CostKind)
+    this, "bitwiseXor", SFunc(Array(tNum, tNum), tNum), 11, BitwiseOp_CostKind)
     .withIRInfo(MethodCallIrBuilder)
     .withUserDefinedInvoke({ (m: SMethod, obj: Any, other: Array[Any]) =>
       m.objType match {
@@ -340,7 +340,7 @@ object SNumericTypeMethods extends MethodsContainer {
       ArgInfo("that", "A numeric value to calculate xor with."))
 
   val ShiftLeftMethod: SMethod = SMethod(
-    this, "shiftLeft", SFunc(Array(tNum, SInt), tNum), 12, BitwiseInverse_CostKind)
+    this, "shiftLeft", SFunc(Array(tNum, SInt), tNum), 12, BitwiseOp_CostKind)
     .withIRInfo(MethodCallIrBuilder)
     .withUserDefinedInvoke({ (m: SMethod, obj: Any, other: Array[Any]) =>
       m.objType match {
@@ -359,7 +359,7 @@ object SNumericTypeMethods extends MethodsContainer {
                       "the size of the number in bits (e.g. 64 for Long, 256 for BigInt)"))
 
   val ShiftRightMethod: SMethod = SMethod(
-    this, "shiftRight", SFunc(Array(tNum, SInt), tNum), 13, BitwiseInverse_CostKind)
+    this, "shiftRight", SFunc(Array(tNum, SInt), tNum), 13, BitwiseOp_CostKind)
     .withIRInfo(MethodCallIrBuilder)
     .withUserDefinedInvoke({ (m: SMethod, obj: Any, other: Array[Any]) =>
       m.objType match {

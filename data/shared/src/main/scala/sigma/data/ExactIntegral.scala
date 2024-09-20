@@ -61,8 +61,7 @@ object ExactIntegral {
 
   implicit object ShortIsExactIntegral extends ExactIntegral[Short] {
     val n = scala.math.Numeric.ShortIsIntegral
-    override def plus(x: Short, y: Short):
-    Short = x.addExact(y)
+    override def plus(x: Short, y: Short): Short = x.addExact(y)
     override def minus(x: Short, y: Short): Short = x.subtractExact(y)
     override def times(x: Short, y: Short): Short = x.multiplyExact(y)
     override def toBigEndianBytes(x: Short): Coll[Byte] = Colls.fromItems((x >> 8).toByte, x.toByte)
