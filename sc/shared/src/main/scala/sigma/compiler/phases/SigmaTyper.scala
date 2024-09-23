@@ -138,16 +138,6 @@ class SigmaTyper(val builder: SigmaBuilder,
       val newObj = assignType(env, obj)
       val newArgs = args.map(assignType(env, _))
       newObj.tpe match {
-        case SGlobal =>
-          SGlobalMethods.method(n) match {
-            case Some(method) =>
-              val srcCtx = sel.sourceContext
-              val genFunTpe = method.stype
-              val subst = Map(genFunTpe.tpeParams.head.ident -> rangeTpe)
-              processGlobalMethod(srcCtx, method, newArgs, subst)
-            case _ =>
-              error(s"Cannot find Global method: $n", bound.sourceContext)
-          }
         case p: SProduct =>
           MethodsContainer.getMethod(p, n) match {
             case Some(method: SMethod) =>
