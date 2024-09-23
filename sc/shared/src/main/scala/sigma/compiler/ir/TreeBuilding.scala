@@ -107,6 +107,27 @@ trait TreeBuilding extends Base { IR: IRContext =>
   object IsNumericUnOp {
     def unapply(op: UnOp[_,_]): Option[SValue => SValue] = op match {
       case NumericNegate(_) => Some({ v: SValue => builder.mkNegation(v.asNumValue) })
+      case _: NumericToBigEndianBytes[_] =>
+        val mkNode = { v: SValue =>
+          val receiverType = v.tpe.asNumTypeOrElse(error(s"Expected numeric type, got: ${v.tpe}"))
+          val m = SMethod.fromIds(receiverType.typeId, SNumericTypeMethods.ToBytesMethod.methodId)
+          builder.mkMethodCall(v.asNumValue, m, IndexedSeq.empty)
+        }
+        Some(mkNode)
+      case _: NumericToBits[_] =>
+        val mkNode = { v: SValue =>
+          val receiverType = v.tpe.asNumTypeOrElse(error(s"Expected numeric type, got: ${v.tpe}"))
+          val m = SMethod.fromIds(receiverType.typeId, SNumericTypeMethods.ToBitsMethod.methodId)
+          builder.mkMethodCall(v.asNumValue, m, IndexedSeq.empty)
+        }
+        Some(mkNode)
+      case _: NumericBitwiseInverse[_] =>
+        val mkNode = { v: SValue =>
+          val receiverType = v.tpe.asNumTypeOrElse(error(s"Expected numeric type, got: ${v.tpe}"))
+          val m = SMethod.fromIds(receiverType.typeId, SNumericTypeMethods.BitwiseInverseMethod.methodId)
+          builder.mkMethodCall(v.asNumValue, m, IndexedSeq.empty)
+        }
+        Some(mkNode)
       case _ => None
     }
   }
@@ -180,7 +201,11 @@ trait TreeBuilding extends Base { IR: IRContext =>
               .asInstanceOf[ConstantNode[SType]]
             s.put(constant)(builder)
           case None =>
-            mkConstant[tpe.type](x.asInstanceOf[tpe.WrappedType], tpe)
+            if(x.isInstanceOf[CollConst[_, _]]) { // hack used to process NumericToBigEndianBytes only
+              mkConstant[tpe.type](x.asInstanceOf[CollConst[_, _]].constValue.asInstanceOf[tpe.WrappedType], tpe)
+            } else {
+              mkConstant[tpe.type](x.asInstanceOf[tpe.WrappedType], tpe)
+            }
         }
       case Def(IR.ConstantPlaceholder(id, elem)) =>
         val tpe = elemToSType(elem)
@@ -192,6 +217,37 @@ trait TreeBuilding extends Base { IR: IRContext =>
 
       case Def(IsContextProperty(v)) => v
       case s if s == sigmaDslBuilder => Global
+
+      case Def(ApplyBinOp(op, xSym, ySym)) if op.isInstanceOf[NumericBitwiseOr[_]] =>
+        val Seq(x, y) = Seq(xSym, ySym).map(recurse)
+        val receiverType = x.asNumValue.tpe.asNumTypeOrElse(error(s"Expected numeric type, got: ${x.tpe}"))
+        val m = SMethod.fromIds(receiverType.typeId, SNumericTypeMethods.BitwiseOrMethod.methodId)
+        builder.mkMethodCall(x.asNumValue, m, IndexedSeq(y))
+
+      case Def(ApplyBinOp(op, xSym, ySym)) if op.isInstanceOf[NumericBitwiseAnd[_]] =>
+        val Seq(x, y) = Seq(xSym, ySym).map(recurse)
+        val receiverType = x.asNumValue.tpe.asNumTypeOrElse(error(s"Expected numeric type, got: ${x.tpe}"))
+        val m = SMethod.fromIds(receiverType.typeId, SNumericTypeMethods.BitwiseAndMethod.methodId)
+        builder.mkMethodCall(x.asNumValue, m, IndexedSeq(y))
+
+      case Def(ApplyBinOp(op, xSym, ySym)) if op.isInstanceOf[NumericBitwiseXor[_]] =>
+        val Seq(x, y) = Seq(xSym, ySym).map(recurse)
+        val receiverType = x.asNumValue.tpe.asNumTypeOrElse(error(s"Expected numeric type, got: ${x.tpe}"))
+        val m = SMethod.fromIds(receiverType.typeId, SNumericTypeMethods.BitwiseXorMethod.methodId)
+        builder.mkMethodCall(x.asNumValue, m, IndexedSeq(y))
+
+      case Def(ApplyBinOpDiffArgs(op, xSym, ySym)) if op.isInstanceOf[NumericShiftLeft[_]] =>
+        val Seq(x, y) = Seq(xSym, ySym).map(recurse)
+        val receiverType = x.asNumValue.tpe.asNumTypeOrElse(error(s"Expected numeric type, got: ${x.tpe}"))
+        val m = SMethod.fromIds(receiverType.typeId, SNumericTypeMethods.ShiftLeftMethod.methodId)
+        builder.mkMethodCall(x.asNumValue, m, IndexedSeq(y))
+
+      case Def(ApplyBinOpDiffArgs(op, xSym, ySym)) if op.isInstanceOf[NumericShiftRight[_]] =>
+        val Seq(x, y) = Seq(xSym, ySym).map(recurse)
+        val receiverType = x.asNumValue.tpe.asNumTypeOrElse(error(s"Expected numeric type, got: ${x.tpe}"))
+        val m = SMethod.fromIds(receiverType.typeId, SNumericTypeMethods.ShiftRightMethod.methodId)
+        builder.mkMethodCall(x.asNumValue, m, IndexedSeq(y))
+
 
       case Def(ApplyBinOp(IsArithOp(opCode), xSym, ySym)) =>
         val Seq(x, y) = Seq(xSym, ySym).map(recurse)
@@ -223,7 +279,10 @@ trait TreeBuilding extends Base { IR: IRContext =>
 
       case SDBM.deserializeTo(g, bytes, eVar) =>
         val tpe = elemToSType(eVar)
-        builder.mkMethodCall(recurse(g), SGlobalMethods.deserializeToMethod, IndexedSeq(recurse(bytes)), Map(tT -> tpe): STypeSubst)
+        val typeSubst = Map(tT -> tpe): STypeSubst
+        // method specialization done to avoid serialization roundtrip issues
+        val method = SGlobalMethods.deserializeToMethod.withConcreteTypes(typeSubst)
+        builder.mkMethodCall(recurse(g), method, IndexedSeq(recurse(bytes)), typeSubst)
 
       case BIM.subtract(In(x), In(y)) =>
         mkArith(x.asNumValue, y.asNumValue, MinusCode)
@@ -295,13 +354,10 @@ trait TreeBuilding extends Base { IR: IRContext =>
         mkExtractAmount(box.asBox)
       case BoxM.propositionBytes(In(box)) =>
         mkExtractScriptBytes(box.asBox)
-      case BoxM.getReg(In(box), regId, _) =>
+      case BoxM.getReg(In(box), regId, _) if regId.isConst =>
         val tpe = elemToSType(s.elem).asOption
-        if (regId.isConst)
-          mkExtractRegisterAs(box.asBox, ErgoBox.allRegisters(valueFromRep(regId)), tpe)
-        else
-          error(s"Non constant expressions (${regId.node}) are not supported in getReg")
-      case BoxM.creationInfo(In(box)) =>
+        mkExtractRegisterAs(box.asBox, ErgoBox.allRegisters(valueFromRep(regId)), tpe)
+     case BoxM.creationInfo(In(box)) =>
         mkExtractCreationInfo(box.asBox)
       case BoxM.id(In(box)) =>
         mkExtractId(box.asBox)
@@ -404,13 +460,14 @@ trait TreeBuilding extends Base { IR: IRContext =>
         mkMultiplyGroup(obj.asGroupElement, arg.asGroupElement)
 
       // Fallback MethodCall rule: should be the last in this list of cases
-      case Def(MethodCall(objSym, m, argSyms, _)) =>
+      case Def(mc @ MethodCall(objSym, m, argSyms, _)) =>
         val obj = recurse[SType](objSym)
         val args = argSyms.collect { case argSym: Sym => recurse[SType](argSym) }
         MethodsContainer.getMethod(obj.tpe, m.getName) match {
           case Some(method) =>
-            val specMethod = method.specializeFor(obj.tpe, args.map(_.tpe))
-            builder.mkMethodCall(obj, specMethod, args.toIndexedSeq, Map())
+            val typeSubst = mc.typeSubst
+            val specMethod = method.specializeFor(obj.tpe, args.map(_.tpe)).withConcreteTypes(typeSubst)
+            builder.mkMethodCall(obj, specMethod, args.toIndexedSeq, typeSubst)
           case None =>
             error(s"Cannot find method ${m.getName} in object $obj")
         }

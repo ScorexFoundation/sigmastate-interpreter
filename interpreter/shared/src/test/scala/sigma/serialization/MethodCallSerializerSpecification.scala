@@ -1,6 +1,7 @@
 package sigma.serialization
 
 import sigma.VersionContext
+import sigma.ast.SCollection.SByteArray
 import sigma.ast.SType.tT
 import sigma.ast._
 import sigma.validation.ValidationException
@@ -25,12 +26,34 @@ class MethodCallSerializerSpecification extends SerializationSpecification {
     roundTripTest(expr)
   }
 
-  property("MethodCall deserialization round trip for BigInt.nbits") {
+  property("MethodCall deserialization round trip for Header.checkPow") {
     def code = {
-      val bi = BigIntConstant(5)
+      val bi = HeaderConstant(headerGen.sample.get)
       val expr = MethodCall(bi,
-        SBigIntMethods.ToNBits,
+        SHeaderMethods.checkPowMethod,
         Vector(),
+        Map()
+      )
+      roundTripTest(expr)
+    }
+
+    VersionContext.withVersions(VersionContext.V6SoftForkVersion, 1) {
+      code
+    }
+
+    an[Exception] should be thrownBy (
+      VersionContext.withVersions((VersionContext.V6SoftForkVersion - 1).toByte, 1) {
+        code
+      }
+      )
+  }
+
+  property("MethodCall deserialization round trip for Global.serialize") {
+    def code = {
+      val b = ByteArrayConstant(Array(1.toByte, 2.toByte, 3.toByte))
+      val expr = MethodCall(Global,
+        SGlobalMethods.serializeMethod.withConcreteTypes(Map(tT -> SByteArray)),
+        Vector(b),
         Map()
       )
       roundTripTest(expr)
@@ -44,29 +67,6 @@ class MethodCallSerializerSpecification extends SerializationSpecification {
       VersionContext.withVersions((VersionContext.V6SoftForkVersion - 1).toByte, 1) {
         code
       }
-      )
-  }
-
-  property("MethodCall deserialization round trip for Header.checkPow") {
-    def code = {
-      val h = HeaderConstant(headerGen.sample.get)
-      val expr = MethodCall(h,
-        SHeaderMethods.checkPowMethod,
-        Vector(),
-        Map()
-      )
-      roundTripTest(expr)
-    }
-
-    VersionContext.withVersions(VersionContext.V6SoftForkVersion, 1) {
-      code
-    }
-
-    // sigma.serialization.SerializerException: Don't know how to serialize (sigma.data.CHeader@51dbec76, SHeader)
-    an[SerializerException] should be thrownBy (
-      VersionContext.withVersions((VersionContext.V6SoftForkVersion - 1).toByte, 1) {
-        code
-      }
     )
   }
 
@@ -74,8 +74,8 @@ class MethodCallSerializerSpecification extends SerializationSpecification {
     def code = {
       val h = HeaderConstant(headerGen.sample.get)
       val expr = MethodCall(h,
-        SGlobalMethods.deserializeToMethod,
-        Array(h),
+        SGlobalMethods.deserializeToMethod.withConcreteTypes(Map(tT -> SHeader)),
+        Array(ByteArrayConstant(Array(1.toByte, 2.toByte, 3.toByte))), // wrong header bytes but ok for test
         Map(tT -> SHeader)
       )
       roundTripTest(expr)
@@ -87,12 +87,10 @@ class MethodCallSerializerSpecification extends SerializationSpecification {
       code
     }
 
-    // sigma.serialization.SerializerException: Don't know how to serialize (sigma.data.CHeader@51dbec76, SHeader)
-    an[SerializerException] should be thrownBy (
+    an[Exception] should be thrownBy (
       VersionContext.withVersions((VersionContext.V6SoftForkVersion - 1).toByte, 1) {
         code
-      }
-      )
+      })
   }
 
 }

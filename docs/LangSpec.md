@@ -68,7 +68,7 @@ The following sections describe ErgoScript and its operations.
 #### Operations and constructs overview
 
 - Binary operations: `>, <, >=, <=, +, -, &&, ||, ==, !=, |, &, *, /, %, ^, ++`
-- predefined primitives: `deserializeTo`, `blake2b256`, `byteArrayToBigInt`, `proveDlog` etc. 
+- predefined primitives: `deserializeTo`, `serialize`, `blake2b256`, `byteArrayToBigInt`, `proveDlog` etc. 
 - val declarations: `val h = blake2b256(pubkey)`
 - if-then-else clause: `if (x > 0) 1 else 0`
 - collection literals: `Coll(1, 2, 3, 4)`
@@ -249,6 +249,10 @@ class Context {
 
 /** Represents data of the block headers available in scripts. */
 class Header {  
+
+  /** Validate header's proof-of-work */  
+  def checkPow: Boolean
+  
   /** Bytes representation of ModifierId of this Header */
   def id: Coll[Byte]
 

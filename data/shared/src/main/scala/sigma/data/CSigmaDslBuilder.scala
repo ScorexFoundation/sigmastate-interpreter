@@ -12,7 +12,7 @@ import sigma.eval.Extensions.EvalCollOps
 import sigma.serialization.{ConstantStore, DataSerializer, GroupElementSerializer, SigmaByteReader, SigmaSerializer}
 import sigma.util.Extensions.BigIntegerOps
 import sigma.validation.SigmaValidationSettings
-import sigma.{AvlTree, BigInt, Box, Coll, CollBuilder, GroupElement, SigmaDslBuilder, SigmaProp, VersionContext}
+import sigma.{AvlTree, BigInt, Box, Coll, CollBuilder, Evaluation, GroupElement, SigmaDslBuilder, SigmaProp, VersionContext}
 
 import java.math.BigInteger
 import java.nio.ByteBuffer
@@ -201,6 +201,14 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
     val r = SigmaSerializer.startReader(encoded.toArray)
     val p = GroupElementSerializer.parse(r)
     this.GroupElement(p)
+  }
+
+  /** Serializes the given `value` into bytes using the default serialization format. */
+  override def serialize[T](value: T)(implicit cT: RType[T]): Coll[Byte] = {
+    val tpe = Evaluation.rtypeToSType(cT)
+    val w = SigmaSerializer.startWriter()
+    DataSerializer.serialize(value.asInstanceOf[SType#WrappedType], tpe, w)
+    Colls.fromArray(w.toBytes)
   }
 
   def deserializeTo[T](tpe: SType, bytes: Coll[Byte])(implicit cT: RType[T]): T = {

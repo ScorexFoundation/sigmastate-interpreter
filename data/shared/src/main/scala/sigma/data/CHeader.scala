@@ -11,7 +11,7 @@ import sigma.{AvlTree, BigInt, Coll, Colls, GroupElement, Header}
   *
   * @see [[Header]] for detailed descriptions
   */
-case class CHeader(ergoHeader: ErgoHeader) extends Header with WrapperOf[ErgoHeader] {
+class CHeader(val ergoHeader: ErgoHeader) extends Header with WrapperOf[ErgoHeader] {
 
   /** Bytes representation of ModifierId of this Header */
   override lazy val id: Coll[Byte] = ergoHeader.id
@@ -67,10 +67,7 @@ case class CHeader(ergoHeader: ErgoHeader) extends Header with WrapperOf[ErgoHea
   override def wrappedValue: ErgoHeader = ergoHeader
 
   override def serializeWithoutPoW: Coll[Byte] = {
-    val headerWithoutPow = HeaderWithoutPow(version, bytesToId(parentId.toArray), Digest32 @@ ADProofsRoot.toArray,
-      ADDigest @@ stateRoot.digest.toArray, Digest32 @@ transactionsRoot.toArray, timestamp,
-      nBits, height, Digest32 @@ extensionRoot.toArray, votes.toArray, unparsedBytes.toArray)
-    Colls.fromArray(HeaderWithoutPowSerializer.toBytes(headerWithoutPow))
+    Colls.fromArray(HeaderWithoutPowSerializer.toBytes(ergoHeader))
   }
 
   override def checkPow: Boolean = {
@@ -81,15 +78,40 @@ case class CHeader(ergoHeader: ErgoHeader) extends Header with WrapperOf[ErgoHea
     }
   }
 
+  override def toString: String =
+    s"""CHeader(
+       |  id: ${id},
+       |  version: ${version},
+       |  tx proofs hash: ${ADProofsRoot},
+       |  state root: ${stateRoot.digest},
+       |  transactions root: ${transactionsRoot},
+       |  time: $timestamp,
+       |  nbits: $nBits,
+       |  extension root: $extensionRoot,
+       |  miner pubkey: $minerPk,
+       |  pow one time pubkey(from AL 1): $powOnetimePk,
+       |  pow nonce: $powNonce,
+       |  pow distance (from AL 1): $powDistance,
+       |  votes: $votes,
+       |  unparsed bytes: $unparsedBytes
+       |)""".stripMargin
+
+  override def hashCode(): Int = id.hashCode()
+
+  override def equals(other: Any): Boolean = other match {
+    case ch: CHeader => ch.id == this.id
+    case _ => false
+  }
+
+  def copy(): CHeader = new CHeader(ergoHeader.copy()) // used in tests only
 }
 
 object CHeader {
 
-  def apply( id: Coll[Byte], // todo: ignored
-             version: Byte,
+  def apply( version: Byte,
              parentId: Coll[Byte],
              ADProofsRoot: Coll[Byte],
-             stateRoot: AvlTree,
+             stateRootDigest: Coll[Byte],
              transactionsRoot: Coll[Byte],
              timestamp: Long,
              nBits: Long,
@@ -100,17 +122,16 @@ object CHeader {
              powNonce: Coll[Byte],
              powDistance: BigInt,
              votes: Coll[Byte],
-             unparsedBytes: Coll[Byte]
-           ): CHeader = {
+             unparsedBytes: Coll[Byte]): CHeader = {
 
-    val solution = AutolykosSolution(
+    val solution = new AutolykosSolution(
       minerPk.asInstanceOf[CGroupElement].wrappedValue,
       powOnetimePk.asInstanceOf[CGroupElement].wrappedValue,
       powNonce.toArray,
       powDistance.asInstanceOf[CBigInt].wrappedValue)
 
-    val h = new ErgoHeader(version, bytesToId(parentId.toArray), Digest32 @@ ADProofsRoot.toArray,
-      ADDigest @@ stateRoot.digest.toArray, Digest32 @@ transactionsRoot.toArray, timestamp, nBits, height,
+    val h = ErgoHeader(version, bytesToId(parentId.toArray), Digest32 @@ ADProofsRoot.toArray,
+      ADDigest @@ stateRootDigest.toArray, Digest32 @@ transactionsRoot.toArray, timestamp, nBits, height,
       Digest32 @@ extensionRoot.toArray, solution, votes.toArray, unparsedBytes.toArray, null)
 
     new CHeader(h)
@@ -121,6 +142,5 @@ object CHeader {
 
   /** Size of nonce array from Autolykos POW solution in Header.powNonce array. */
   val NonceSize: Int = SigmaConstants.AutolykosPowSolutionNonceArraySize.value
-
 
 }

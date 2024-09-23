@@ -1,26 +1,35 @@
 package sigma.pow
 
 
-import org.bouncycastle.util.BigIntegers
 import scorex.crypto.hash.Blake2b256
 import scorex.utils.{Bytes, Ints, Longs}
 import sigma.Header
-import sigma.crypto.{BcDlogGroup, CryptoConstants}
+import sigma.crypto.{BcDlogGroup, BigIntegers, CryptoConstants}
 import sigma.util.NBitsUtils
 
+/**
+  * Functions used to validate Autolykos2 Proof-of-Work.
+  */
 object Autolykos2PowValidation {
 
   type Height = Int
 
-  val k = 32
+  /**
+    * k value for k-sum problem Autolykos is based on (find k numbers in table on N size)
+    */
+  private val k = 32
 
-  val NStart = 26
+  /**
+    * Initial size of N  value for k-sum problem Autolykos is based on (find k numbers in table on N size).
+    * It grows from it since predefined block height in Autolykos 2.
+    */
+  private val NStart = 26
 
-  val group: BcDlogGroup = CryptoConstants.dlogGroup
-
-  // Group order, used in Autolykos V.1 for non-outsourceability,
-  // and also to obtain target in both Autolykos v1 and v2
-  val q: BigInt = group.order
+  /**
+    * Group order, used in Autolykos V.1 for non-outsourceability,
+    * and also to obtain target in both Autolykos v1 and v2
+    */
+  private val q: BigInt = CryptoConstants.dlogGroup.order
 
   /**
     * Number of elements in a table to find k-sum problem solution on top of

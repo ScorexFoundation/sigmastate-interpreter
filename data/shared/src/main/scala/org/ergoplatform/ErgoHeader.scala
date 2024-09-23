@@ -1,12 +1,15 @@
 package org.ergoplatform
 
-import org.bouncycastle.util.BigIntegers
 import scorex.crypto.authds.ADDigest
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ModifierId
 import sigma.Colls
-import sigma.crypto.{CryptoConstants, EcPointType}
+import sigma.crypto.{BigIntegers, CryptoConstants, EcPointType}
 import sigma.serialization.{GroupElementSerializer, SigmaByteReader, SigmaByteWriter, SigmaSerializer}
+
+import scala.runtime.ScalaRunTime
+import scala.util.hashing.MurmurHash3
+
 
 
 /**
@@ -20,13 +23,32 @@ import sigma.serialization.{GroupElementSerializer, SigmaByteReader, SigmaByteWr
   * @param d  - distance between pseudo-random number, corresponding to nonce `n` and a secret,
   *           corresponding to `pk`. The lower `d` is, the harder it was to find this solution.
   */
-case class AutolykosSolution(pk: EcPointType,
-                             w: EcPointType,
-                             n: Array[Byte],
-                             d: BigInt) {
+class AutolykosSolution(val pk: EcPointType,
+                        val w: EcPointType,
+                        val n: Array[Byte],
+                        val d: BigInt) {
 
     val encodedPk: Array[Byte] = GroupElementSerializer.toBytes(pk)
 
+    override def hashCode(): Int = {
+        var h = pk.hashCode()
+        h = h * 31 + w.hashCode()
+        h = h * 31 + MurmurHash3.arrayHash(n)
+        h = h * 31 + d.hashCode()
+        h
+    }
+
+    override def equals(obj: Any): Boolean = {
+        obj match {
+            case other: AutolykosSolution =>
+                this.pk == other.pk &&
+                  this.n.sameElements(other.n) &&
+                  this.w == other.w &&
+                  this.d == other.d
+
+            case _ => false
+        }
+    }
 }
 
 
@@ -53,7 +75,7 @@ object AutolykosSolution {
             val nonce = r.getBytes(8)
             val dBytesLength = r.getUByte()
             val d = BigInt(BigIntegers.fromUnsignedByteArray(r.getBytes(dBytesLength)))
-            AutolykosSolution(pk, w, nonce, d)
+            new AutolykosSolution(pk, w, nonce, d)
         }
     }
 
@@ -67,7 +89,7 @@ object AutolykosSolution {
         override def parse(r: SigmaByteReader): AutolykosSolution = {
             val pk = GroupElementSerializer.parse(r)
             val nonce = r.getBytes(8)
-            AutolykosSolution(pk, wForV2, nonce, dForV2)
+            new AutolykosSolution(pk, wForV2, nonce, dForV2)
         }
     }
 }
@@ -88,21 +110,22 @@ object AutolykosSolution {
   * @param extensionRoot - Merkle tree digest of the extension section of the block
   * @param powSolution - solution for the proof-of-work puzzle
   * @param votes - votes for changing system parameters
+  * @param unparsedBytes - bytes from future versions of the protocol our version can't parse
   * @param _bytes - serialized bytes of the header when not `null`
   */
-class ErgoHeader(override val version: ErgoHeader.Version,
-                  override val parentId: ModifierId,
-                  override val ADProofsRoot: Digest32,
-                  override val stateRoot: ADDigest, //33 bytes! extra byte with tree height here!
-                  override val transactionsRoot: Digest32,
-                  override val timestamp: ErgoHeader.Timestamp,
-                  override val nBits: Long, //actually it is unsigned int
-                  override val height: Int,
-                  override val extensionRoot: Digest32,
-                  val powSolution: AutolykosSolution,
-                  override val votes: Array[Byte], //3 bytes
-                  override val unparsedBytes: Array[Byte],
-                  _bytes: Array[Byte]) extends
+case class ErgoHeader(override val version: ErgoHeader.Version,
+                      override val parentId: ModifierId,
+                      override val ADProofsRoot: Digest32,
+                      override val stateRoot: ADDigest, //33 bytes! extra byte with tree height here!
+                      override val transactionsRoot: Digest32,
+                      override val timestamp: ErgoHeader.Timestamp,
+                      override val nBits: Long, //actually it is unsigned int
+                      override val height: Int,
+                      override val extensionRoot: Digest32,
+                      powSolution: AutolykosSolution,
+                      override val votes: Array[Byte], //3 bytes
+                      override val unparsedBytes: Array[Byte],
+                      _bytes: Array[Byte]) extends
   HeaderWithoutPow(version, parentId, ADProofsRoot, stateRoot, transactionsRoot, timestamp,
     nBits, height, extensionRoot, votes, unparsedBytes) {
 
