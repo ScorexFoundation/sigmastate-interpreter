@@ -751,7 +751,6 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
-  // todo: failing, needs for Header (de)serialization support from https://github.com/ScorexFoundation/sigmastate-interpreter/pull/972
   property("serialize - collection of collection of headers") {
     val td = new SigmaTestingData {}
     val h1 = td.TestData.h1
@@ -775,9 +774,6 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
-  // todo: roundtrip tests with deserializeTo from https://github.com/ScorexFoundation/sigmastate-interpreter/pull/979
-
-  // todo: move spam tests to dedicated test suite?
   property("serialize - not spam") {
     val customExt = Seq(21.toByte -> ShortArrayConstant((1 to Short.MaxValue).map(_.toShort).toArray),
       22.toByte -> ByteArrayConstant(Array.fill(1)(1.toByte)))
@@ -820,6 +816,26 @@ class BasicOpsSpecification extends CompilerTestingCommons
     } else {
       // we have wrapped CostLimitException here
       an[Exception] should be thrownBy deserTest()
+    }
+  }
+
+  property("serialize - deserialize roundtrip") {
+    val customExt = Seq(21.toByte -> ShortArrayConstant((1 to 10).map(_.toShort).toArray))
+    def deserTest() = test("serialize", env, customExt,
+      s"""{
+            val src = getVar[Coll[Short]](21).get
+            val ba = serialize(src)
+            val restored = deserializeTo[Coll[Short]](ba)
+            src == restored
+          }""",
+      null,
+      true
+    )
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[Exception] should be thrownBy deserTest()
+    } else {
+      deserTest()
     }
   }
 

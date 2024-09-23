@@ -9,6 +9,7 @@ import scorex.util.ModifierId
 import scorex.utils.{Ints, Longs, Shorts}
 import sigma.ast.ErgoTree.ZeroHeader
 import sigma.ast.SCollection.SByteArray
+import sigma.ast.SType.tT
 import sigma.ast.syntax.TrueSigmaProp
 import sigma.ast.{SInt, _}
 import sigma.crypto.SecP256K1Group
@@ -1524,8 +1525,8 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
     )
   }
 
-  property("Global.deserializeTo") {
-    def checkPoW: Feature[GroupElement, Boolean] = {
+  property("Global.deserializeTo - group element") {
+    def deserializeTo: Feature[GroupElement, Boolean] = {
       newFeature(
         { (x: GroupElement) => CSigmaDslBuilder.deserializeTo[GroupElement](SGroupElement, x.getEncoded) == x},
         "{ (x: GroupElement) => Global.deserializeTo[GroupElement](x.getEncoded) == x }",
@@ -1534,7 +1535,7 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
           EQ(
             MethodCall.typed[Value[SGroupElement.type]](
               Global,
-              SGlobalMethods.deserializeToMethod,
+              SGlobalMethods.deserializeToMethod.withConcreteTypes(Map(tT -> SGroupElement)),
               Vector(
                 MethodCall.typed[Value[SCollection[SByte.type]]](
                   ValUse(1, SGroupElement),
@@ -1556,7 +1557,7 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
       Seq(
         CGroupElement(SecP256K1Group.generator) -> new Expected(ExpectedResult(Success(true), None))
       ),
-      checkPoW
+      deserializeTo
     )
   }
 
