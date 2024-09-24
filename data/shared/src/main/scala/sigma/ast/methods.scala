@@ -1687,11 +1687,10 @@ case object SGlobalMethods extends MonoTypeMethods {
   private val deserializeCostKind = PerItemCost(
     baseCost = JitCost(20), perChunkCost = JitCost(7), chunkSize = 128)
 
-  lazy val desJava = ownerType.reprClass.getMethod("deserializeTo", classOf[SType], classOf[Coll[Byte]], classOf[RType[_]])
-
   lazy val deserializeToMethod = SMethod(
     this, "deserializeTo", SFunc(Array(SGlobal, SByteArray), tT, Array(paramT)), 4, deserializeCostKind, Seq(tT))
-    .withIRInfo(MethodCallIrBuilder, desJava)
+    .withIRInfo(MethodCallIrBuilder,
+      javaMethodOf[SigmaDslBuilder, Coll[Byte], RType[_]]("deserializeTo"))
     .withInfo(MethodCall, "Deserialize provided bytes into an object of requested type",
       ArgInfo("first", "Bytes to deserialize"))
 
@@ -1709,7 +1708,7 @@ case object SGlobalMethods extends MonoTypeMethods {
     val tpe = mc.tpe
     val cT = stypeToRType(tpe)
     E.addSeqCost(deserializeCostKind, bytes.length, deserializeToMethod.opDesc) { () =>
-      G.deserializeTo(tpe, bytes)(cT)
+      G.deserializeTo(bytes)(cT)
     }
   }
 

@@ -765,6 +765,6 @@ trait SigmaDslBuilder {
   def xor(l: Coll[Byte], r: Coll[Byte]): Coll[Byte]
 
   /** Deserializes provided `bytes` into a value of type `T`. **/
-  def deserializeTo[T](tpe: SType, bytes: Coll[Byte])(implicit cT: RType[T]): T
+  def deserializeTo[T](bytes: Coll[Byte])(implicit cT: RType[T]): T
 }
 

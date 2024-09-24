@@ -6,6 +6,7 @@ import org.ergoplatform.validation.ValidationRules
 import scorex.crypto.hash.{Blake2b256, Sha256}
 import scorex.util.serialization.VLQByteBufferReader
 import scorex.utils.Longs
+import sigma.Evaluation.rtypeToSType
 import sigma.ast.{AtLeast, SType, SubstConstants}
 import sigma.crypto.{CryptoConstants, EcPointType, Ecp}
 import sigma.eval.Extensions.EvalCollOps
@@ -211,7 +212,8 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
     Colls.fromArray(w.toBytes)
   }
 
-  def deserializeTo[T](tpe: SType, bytes: Coll[Byte])(implicit cT: RType[T]): T = {
+  def deserializeTo[T](bytes: Coll[Byte])(implicit cT: RType[T]): T = {
+    val tpe = rtypeToSType(cT)
     val reader = new SigmaByteReader(new VLQByteBufferReader(ByteBuffer.wrap(bytes.toArray)), new ConstantStore(), false)
     val res = DataSerializer.deserialize(tpe, reader)
     res.asInstanceOf[T]

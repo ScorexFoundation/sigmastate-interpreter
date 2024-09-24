@@ -1525,7 +1525,7 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
   property("Global.deserializeTo - group element") {
     def deserializeTo: Feature[GroupElement, Boolean] = {
       newFeature(
-        { (x: GroupElement) => CSigmaDslBuilder.deserializeTo[GroupElement](SGroupElement, x.getEncoded) == x},
+        { (x: GroupElement) => CSigmaDslBuilder.deserializeTo[GroupElement](x.getEncoded) == x},
         "{ (x: GroupElement) => Global.deserializeTo[GroupElement](x.getEncoded) == x }",
         FuncValue(
           Array((1, SGroupElement)),
@@ -1568,7 +1568,7 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
 
     def deserializeTo: Feature[Header, Boolean] = {
       newFeature(
-        { (x: Header) => CSigmaDslBuilder.deserializeTo[Header](SHeader, CSigmaDslBuilder.serialize(x)) == x},
+        { (x: Header) => CSigmaDslBuilder.deserializeTo[Header](CSigmaDslBuilder.serialize(x)) == x},
         "{ (x: Header) => Global.deserializeTo[Header](serialize(x)) == x }",
         sinceVersion = VersionContext.V6SoftForkVersion
       )
@@ -1588,7 +1588,7 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
 
     def deserializeTo: Feature[BigInt, Boolean] = {
       newFeature(
-        { (x: BigInt) => CSigmaDslBuilder.deserializeTo[BigInt](SBigInt, CSigmaDslBuilder.serialize(x)) == x},
+        { (x: BigInt) => CSigmaDslBuilder.deserializeTo[BigInt](CSigmaDslBuilder.serialize(x)) == x},
         "{ (x: BigInt) => Global.deserializeTo[BigInt](serialize(x)) == x }",
         sinceVersion = VersionContext.V6SoftForkVersion
       )

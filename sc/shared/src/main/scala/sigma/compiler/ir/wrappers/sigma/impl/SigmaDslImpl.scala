@@ -1976,7 +1976,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
       asRep[T](mkMethodCall(self,
         SigmaDslBuilderClass.getMethod("deserializeTo", classOf[Sym], classOf[Elem[T]]),
         Array[AnyRef](l, cT),
-        true, false, element[T]))
+        true, false, element[T](cT), Map(tT -> Evaluation.rtypeToSType(cT.sourceType))))
     }
   }
 
@@ -2147,9 +2147,9 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
 
     def deserializeTo[T](bytes: Ref[Coll[Byte]])(implicit cT: Elem[T]): Ref[T] = {
       asRep[T](mkMethodCall(source,
-        SigmaDslBuilderClass.getMethod("deserializeTo", classOf[Sym], classOf[Elem[T]]),
+        SigmaDslBuilderClass.getMethod("deserializeTo", classOf[Sym], classOf[Elem[_]]),
         Array[AnyRef](bytes, cT),
-        true, true, element[T]))
+        true, true, element[T](cT), Map(tT -> Evaluation.rtypeToSType(cT.sourceType))))
     }
   }
 
