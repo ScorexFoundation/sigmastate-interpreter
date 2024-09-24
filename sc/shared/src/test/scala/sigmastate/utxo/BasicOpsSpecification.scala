@@ -1105,7 +1105,7 @@ class BasicOpsSpecification extends CompilerTestingCommons
   property("deserializeTo - header option") {
     val td = new SigmaTestingData {}
     val h1 = td.TestData.h1.asInstanceOf[CHeader].ergoHeader
-    val headerBytes = Colls.fromArray(Array(1.toByte) ++ h1.bytes.toArray)
+    val headerBytes = Colls.fromArray(Array(1.toByte) ++ h1.bytes)
 
     val customExt = Seq(21.toByte -> ByteArrayConstant(headerBytes))
 

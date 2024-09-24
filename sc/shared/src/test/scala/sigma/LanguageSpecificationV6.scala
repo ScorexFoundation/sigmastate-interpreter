@@ -22,7 +22,6 @@ import sigmastate.utils.Extensions.ByteOpsForSigma
 import sigmastate.utils.Helpers
 
 import java.math.BigInteger
-import scala.collection.immutable.ArraySeq
 import scala.util.{Failure, Success}
 
 /** This suite tests all operations for v6.0 version of the language.
@@ -1540,7 +1539,7 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
                 MethodCall.typed[Value[SCollection[SByte.type]]](
                   ValUse(1, SGroupElement),
                   SGroupElementMethods.getMethodByName("getEncoded"),
-                  ArraySeq(),
+                  IndexedSeq(),
                   Map()
                 )
               ),
