@@ -423,6 +423,9 @@ object GraphIRReflection {
         },
         mkMethod(clazz, "powDistance", Array[Class[_]]()) { (obj, args) =>
           obj.asInstanceOf[ctx.Header].powDistance
+        },
+        mkMethod(clazz, "checkPow", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[ctx.Header].checkPow
         }
       )
     )
@@ -520,6 +523,9 @@ object GraphIRReflection {
         },
         mkMethod(clazz, "decodePoint", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
           obj.asInstanceOf[ctx.SigmaDslBuilder].decodePoint(args(0).asInstanceOf[ctx.Ref[ctx.Coll[Byte]]])
+        },
+        mkMethod(clazz, "serialize", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.SigmaDslBuilder].serialize(args(0).asInstanceOf[ctx.Ref[Any]])
         }
       )
     )
