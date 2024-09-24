@@ -162,6 +162,9 @@ object ReflectionData {
         mkMethod(clazz, "apply", Array[Class[_]](classOf[Int])) { (obj, args) =>
           obj.asInstanceOf[Coll[_]].apply(args(0).asInstanceOf[Int])
         },
+        mkMethod(clazz, "get", Array[Class[_]](classOf[Int])) { (obj, args) =>
+          obj.asInstanceOf[Coll[_]].apply(args(0).asInstanceOf[Int])
+        },
         mkMethod(clazz, "append", Array[Class[_]](classOf[Coll[_]])) { (obj, args) =>
           obj.asInstanceOf[Coll[Any]].append(args(0).asInstanceOf[Coll[Any]])
         },
@@ -170,6 +173,18 @@ object ReflectionData {
         },
         mkMethod(clazz, "map", Array[Class[_]](classOf[Function1[_, _]], classOf[RType[_]])) { (obj, args) =>
           obj.asInstanceOf[Coll[Any]].map(args(0).asInstanceOf[Any => Any])(args(1).asInstanceOf[RType[Any]])
+        },
+        mkMethod(clazz, "reverse", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[Coll[Any]].reverse
+        },
+        mkMethod(clazz, "distinct", Array[Class[_]]()) { (obj, args) =>
+          obj.asInstanceOf[Coll[Any]].distinct
+        },
+        mkMethod(clazz, "startsWith", Array[Class[_]](classOf[Coll[_]])) { (obj, args) =>
+          obj.asInstanceOf[Coll[Any]].startsWith(args(0).asInstanceOf[Coll[Any]])
+        },
+        mkMethod(clazz, "endsWith", Array[Class[_]](classOf[Coll[_]])) { (obj, args) =>
+          obj.asInstanceOf[Coll[Any]].endsWith(args(0).asInstanceOf[Coll[Any]])
         }
       )
     )
