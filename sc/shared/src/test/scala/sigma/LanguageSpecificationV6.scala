@@ -1570,6 +1570,27 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
       newFeature(
         { (x: Header) => CSigmaDslBuilder.deserializeTo[Header](CSigmaDslBuilder.serialize(x)) == x},
         "{ (x: Header) => Global.deserializeTo[Header](serialize(x)) == x }",
+        FuncValue(
+          Array((1, SHeader)),
+          EQ(
+            MethodCall.typed[Value[SHeader.type]](
+              Global,
+              SGlobalMethods.deserializeToMethod.withConcreteTypes(Map(tT -> SHeader)),
+              Vector(
+                MethodCall.typed[Value[SCollection[SByte.type]]](
+                  Global,
+                  SGlobalMethods.serializeMethod.withConcreteTypes(
+                    Map(STypeVar("T") -> SHeader)
+                  ),
+                  Array(ValUse(1, SHeader)),
+                  Map()
+                )
+              ),
+              Map(STypeVar("T") -> SHeader)
+            ),
+            ValUse(1, SHeader)
+          )
+        ),
         sinceVersion = VersionContext.V6SoftForkVersion
       )
     }
@@ -1590,6 +1611,27 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
       newFeature(
         { (x: BigInt) => CSigmaDslBuilder.deserializeTo[BigInt](CSigmaDslBuilder.serialize(x)) == x},
         "{ (x: BigInt) => Global.deserializeTo[BigInt](serialize(x)) == x }",
+        FuncValue(
+          Array((1, SBigInt)),
+          EQ(
+            MethodCall.typed[Value[SBigInt.type]](
+              Global,
+              SGlobalMethods.deserializeToMethod.withConcreteTypes(Map(tT -> SBigInt)),
+              Vector(
+                MethodCall.typed[Value[SCollection[SByte.type]]](
+                  Global,
+                  SGlobalMethods.serializeMethod.withConcreteTypes(
+                    Map(STypeVar("T") -> SBigInt)
+                  ),
+                  Array(ValUse(1, SBigInt)),
+                  Map()
+                )
+              ),
+              Map(STypeVar("T") -> SBigInt)
+            ),
+            ValUse(1, SBigInt)
+          )
+        ),
         sinceVersion = VersionContext.V6SoftForkVersion
       )
     }
