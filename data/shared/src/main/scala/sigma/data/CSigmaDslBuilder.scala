@@ -6,12 +6,15 @@ import org.ergoplatform.validation.ValidationRules
 import scorex.crypto.hash.{Blake2b256, Sha256}
 import scorex.utils.{Ints, Longs}
 import sigma.ast.{AtLeast, SBigInt, SubstConstants}
+import scorex.utils.Longs
+import sigma.ast.{AtLeast, SType, SubstConstants}
 import sigma.crypto.{CryptoConstants, EcPointType, Ecp}
 import sigma.eval.Extensions.EvalCollOps
+import sigma.serialization.{DataSerializer, GroupElementSerializer, SigmaSerializer}
 import sigma.serialization.{GroupElementSerializer, SerializerException, SigmaSerializer}
 import sigma.util.Extensions.BigIntegerOps
 import sigma.validation.SigmaValidationSettings
-import sigma.{AvlTree, BigInt, Box, Coll, CollBuilder, GroupElement, SigmaDslBuilder, SigmaProp, VersionContext}
+import sigma.{AvlTree, BigInt, Box, Coll, CollBuilder, Evaluation, GroupElement, SigmaDslBuilder, SigmaProp, VersionContext}
 
 import java.math.BigInteger
 
@@ -233,6 +236,14 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
       // todo: UnsignedBitInt
       case _ => throw new IllegalArgumentException("Unsupported type provided in fromBigEndianBytes")
     }
+  }
+
+  /** Serializes the given `value` into bytes using the default serialization format. */
+  override def serialize[T](value: T)(implicit cT: RType[T]): Coll[Byte] = {
+    val tpe = Evaluation.rtypeToSType(cT)
+    val w = SigmaSerializer.startWriter()
+    DataSerializer.serialize(value.asInstanceOf[SType#WrappedType], tpe, w)
+    Colls.fromArray(w.toBytes)
   }
 }
 
