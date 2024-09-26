@@ -11,6 +11,7 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.ModifierId
 import sigma.Extensions.{ArrayOps, CollOps}
 import sigma.VersionContext.V6SoftForkVersion
+import sigma.VersionContext.JitActivationVersion
 import sigma.ast.ErgoTree.{HeaderType, ZeroHeader}
 import sigma.ast.SCollection._
 import sigma.ast.syntax._
@@ -956,6 +957,7 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
       swapArgs(LE_cases, cost = 1768, newCostDetails = binaryRelationCostDetails(GE, SByte), expectedV3Costs = Seq.fill(4)(2012)),
       ">=", GE.apply)(_ >= _)
   }
+
   property("Short methods equivalence") {
     SShort.upcast(0.toShort) shouldBe 0.toShort  // boundary test case
     SShort.downcast(0.toShort) shouldBe 0.toShort  // boundary test case
@@ -9818,30 +9820,6 @@ class LanguageSpecificationV5 extends LanguageSpecificationBase { suite =>
         )
       )
     }
-  }
-
-  property("higher order lambdas") {
-    val f = existingFeature(
-      { (xs: Coll[Int]) =>
-        val inc = { (x: Int) => x + 1 }
-
-        def apply(in: (Int => Int, Int)) = in._1(in._2)
-
-        xs.map { (x: Int) => apply((inc, x)) }
-      },
-      """{(xs: Coll[Int]) =>
-       |   val inc = { (x: Int) => x + 1 }
-       |   def apply(in: (Int => Int, Int)) = in._1(in._2)
-       |   xs.map { (x: Int) => apply((inc, x)) }
-       | }
-       |""".stripMargin
-    )
-
-    // TODO v6.0: Add support of SFunc in TypeSerializer (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/847)
-    assertExceptionThrown(
-      f.verifyCase(Coll[Int](), Expected(Success(Coll[Int]()), 0)),
-      exceptionLike[MatchError]("(SInt$) => SInt$ (of class sigma.ast.SFunc)")
-    )
   }
 
   override protected def afterAll(): Unit = {

@@ -8,6 +8,8 @@ import sigma.compiler.ir.wrappers.sigma.impl.SigmaDslDefs
 import scala.collection.compat.immutable.ArraySeq
 
 package impl {
+  import sigma.Evaluation
+  import sigma.ast.SType.tT
   import sigma.compiler.ir.meta.ModuleInfo
   import sigma.compiler.ir.wrappers.sigma.SigmaDsl
   import sigma.compiler.ir.{Base, GraphIRReflection, IRContext}
@@ -620,10 +622,11 @@ object Box extends EntityObject("Box") {
     }
 
     override def getReg[T](i: Ref[Int])(implicit cT: Elem[T]): Ref[WOption[T]] = {
+      val st = Evaluation.rtypeToSType(cT.sourceType)
       asRep[WOption[T]](mkMethodCall(self,
         BoxClass.getMethod("getReg", classOf[Sym], classOf[Elem[_]]),
         Array[AnyRef](i, cT),
-        true, false, element[WOption[T]]))
+        true, false, element[WOption[T]], Map(tT -> st) ))
     }
 
     override def tokens: Ref[Coll[(Coll[Byte], Long)]] = {
@@ -695,10 +698,11 @@ object Box extends EntityObject("Box") {
     }
 
     def getReg[T](i: Ref[Int])(implicit cT: Elem[T]): Ref[WOption[T]] = {
+      val st = Evaluation.rtypeToSType(cT.sourceType)
       asRep[WOption[T]](mkMethodCall(source,
         BoxClass.getMethod("getReg", classOf[Sym], classOf[Elem[_]]),
         Array[AnyRef](i, cT),
-        true, true, element[WOption[T]]))
+        true, true, element[WOption[T]], Map(tT -> st)))
     }
 
     def tokens: Ref[Coll[(Coll[Byte], Long)]] = {
@@ -1960,6 +1964,14 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         true, false, element[Coll[Byte]]))
     }
 
+    def serialize[T](value: Ref[T]): Ref[Coll[Byte]] = {
+      asRep[Coll[Byte]](mkMethodCall(self,
+        SigmaDslBuilderClass.getMethod("serialize", classOf[Sym]),
+        Array[AnyRef](value),
+        true, false, element[Coll[Byte]]))
+    }
+
+
     override def powHit(k: Ref[Int], msg: Ref[Coll[Byte]], nonce: Ref[Coll[Byte]], h: Ref[Coll[Byte]], N: Ref[Int]): Ref[BigInt] = {
       asRep[BigInt](mkMethodCall(self,
         SigmaDslBuilderClass.getMethod("powHit", classOf[Sym], classOf[Sym]),
@@ -2131,6 +2143,13 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         SigmaDslBuilderClass.getMethod("powHit", classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym]),
         Array[AnyRef](k, msg, nonce, h, N),
         true, true, element[BigInt]))
+    }
+
+    def serialize[T](value: Ref[T]): Ref[Coll[Byte]] = {
+      asRep[Coll[Byte]](mkMethodCall(source,
+        SigmaDslBuilderClass.getMethod("serialize", classOf[Sym]),
+        Array[AnyRef](value),
+        true, true, element[Coll[Byte]]))
     }
   }
 

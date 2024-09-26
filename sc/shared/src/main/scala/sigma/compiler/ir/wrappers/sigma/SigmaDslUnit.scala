@@ -116,6 +116,7 @@ import scalan._
       def avlTree(operationFlags: Ref[Byte], digest: Ref[Coll[Byte]], keyLength: Ref[Int], valueLengthOpt: Ref[WOption[Int]]): Ref[AvlTree];
       def xor(l: Ref[Coll[Byte]], r: Ref[Coll[Byte]]): Ref[Coll[Byte]];
       def powHit(k: Ref[Int], msg: Ref[Coll[Byte]], nonce: Ref[Coll[Byte]], h: Ref[Coll[Byte]], N: Ref[Int]): Ref[BigInt];
+      def serialize[T](value: Ref[T]): Ref[Coll[Byte]]
     };
     trait CostModelCompanion;
     trait BigIntCompanion;
