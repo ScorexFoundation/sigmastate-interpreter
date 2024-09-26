@@ -622,6 +622,23 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
+  property("Global.fromBigEndianBytes - Long.toBytes") {
+    def fromTest() = test("fromBigEndianBytes - long", env, ext,
+      s"""{
+         |  val l = 1088800L
+         |  val ba = l.toBytes
+         |  Global.fromBigEndianBytes[Long](ba) == l
+         |}
+         |""".stripMargin,
+      null
+    )
+    if(VersionContext.current.isV6SoftForkActivated) {
+      fromTest()
+    } else {
+      an[Exception] should be thrownBy(fromTest())
+    }
+  }
+
   property("Global.fromBigEndianBytes - bigInt") {
     val bi = new BigInteger("9785856985394593489356430476450674590674598659865986594859056865984690568904")
     def fromTest() = test("fromBigEndianBytes - bigInt", env, ext,
@@ -638,8 +655,6 @@ class BasicOpsSpecification extends CompilerTestingCommons
       an[Exception] should be thrownBy(fromTest())
     }
   }
-
-  // todo: roundtrip with .toBytes
 
   property("Int.toBytes") {
     def toBytesTest() = test("Int.toBytes", env, ext,
