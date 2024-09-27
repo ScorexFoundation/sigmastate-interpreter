@@ -163,7 +163,7 @@ object ReflectionData {
           obj.asInstanceOf[Coll[_]].apply(args(0).asInstanceOf[Int])
         },
         mkMethod(clazz, "get", Array[Class[_]](classOf[Int])) { (obj, args) =>
-          obj.asInstanceOf[Coll[_]].apply(args(0).asInstanceOf[Int])
+          obj.asInstanceOf[Coll[_]].get(args(0).asInstanceOf[Int])
         },
         mkMethod(clazz, "append", Array[Class[_]](classOf[Coll[_]])) { (obj, args) =>
           obj.asInstanceOf[Coll[Any]].append(args(0).asInstanceOf[Coll[Any]])

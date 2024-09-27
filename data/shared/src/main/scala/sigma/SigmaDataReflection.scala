@@ -317,6 +317,22 @@ object SigmaDataReflection {
         mkMethod(clazz, "flatMap_eval", Array[Class[_]](classOf[MethodCall], classOf[Coll[_]], classOf[Function1[_,_]], classOf[ErgoTreeEvaluator])) { (obj, args) =>
           obj.asInstanceOf[SCollectionMethods.type].flatMap_eval(args(0).asInstanceOf[MethodCall],
             args(1).asInstanceOf[Coll[Any]], args(2).asInstanceOf[Any => Coll[Any]])(args(3).asInstanceOf[ErgoTreeEvaluator])
+        },
+        mkMethod(clazz, "reverse_eval", Array[Class[_]](classOf[MethodCall], classOf[Coll[_]], classOf[ErgoTreeEvaluator])) { (obj, args) =>
+          obj.asInstanceOf[SCollectionMethods.type].reverse_eval(args(0).asInstanceOf[MethodCall],
+            args(1).asInstanceOf[Coll[Any]])(args(2).asInstanceOf[ErgoTreeEvaluator])
+        },
+        mkMethod(clazz, "distinct_eval", Array[Class[_]](classOf[MethodCall], classOf[Coll[_]], classOf[ErgoTreeEvaluator])) { (obj, args) =>
+          obj.asInstanceOf[SCollectionMethods.type].distinct_eval(args(0).asInstanceOf[MethodCall],
+            args(1).asInstanceOf[Coll[Any]])(args(2).asInstanceOf[ErgoTreeEvaluator])
+        },
+        mkMethod(clazz, "startsWith_eval", Array[Class[_]](classOf[MethodCall], classOf[Coll[_]], classOf[Coll[_]], classOf[ErgoTreeEvaluator])) { (obj, args) =>
+          obj.asInstanceOf[SCollectionMethods.type].startsWith_eval(args(0).asInstanceOf[MethodCall],
+            args(1).asInstanceOf[Coll[Any]], args(2).asInstanceOf[Coll[Any]])(args(3).asInstanceOf[ErgoTreeEvaluator])
+        },
+        mkMethod(clazz, "endsWith_eval", Array[Class[_]](classOf[MethodCall], classOf[Coll[_]], classOf[Coll[_]], classOf[ErgoTreeEvaluator])) { (obj, args) =>
+          obj.asInstanceOf[SCollectionMethods.type].endsWith_eval(args(0).asInstanceOf[MethodCall],
+            args(1).asInstanceOf[Coll[Any]], args(2).asInstanceOf[Coll[Any]])(args(3).asInstanceOf[ErgoTreeEvaluator])
         }
       )
     )
