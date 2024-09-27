@@ -52,6 +52,8 @@ object SigmaPPrint extends PPrinter {
       s"SOption[${typeName(ot.elemType)}]"
     case _: STuple =>
       "STuple"
+    case _: SFunc =>
+      s"SFunc"
     case _ =>
       sys.error(s"Cannot get typeName($tpe)")
   }
