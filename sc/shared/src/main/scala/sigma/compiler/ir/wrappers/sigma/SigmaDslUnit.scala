@@ -78,6 +78,7 @@ import scalan._
       def powNonce: Ref[Coll[Byte]];
       def powDistance: Ref[BigInt];
       def votes: Ref[Coll[Byte]]
+      def checkPow: Ref[Boolean]
     };
     trait Context extends Def[Context] {
       def OUTPUTS: Ref[Coll[Box]];
@@ -115,6 +116,7 @@ import scalan._
       /** This method will be used in v6.0 to handle CreateAvlTree operation in GraphBuilding */
       def avlTree(operationFlags: Ref[Byte], digest: Ref[Coll[Byte]], keyLength: Ref[Int], valueLengthOpt: Ref[WOption[Int]]): Ref[AvlTree];
       def xor(l: Ref[Coll[Byte]], r: Ref[Coll[Byte]]): Ref[Coll[Byte]]
+      def serialize[T](value: Ref[T]): Ref[Coll[Byte]]
     };
     trait CostModelCompanion;
     trait BigIntCompanion;

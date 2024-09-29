@@ -21,6 +21,7 @@ import sigma.serialization.generators.ObjectGenerators
 import sigma.ast.Select
 import sigma.compiler.phases.{SigmaBinder, SigmaTyper}
 import sigma.exceptions.TyperException
+import sigmastate.exceptions.MethodNotFound
 import sigmastate.helpers.SigmaPPrint
 
 class SigmaTyperTest extends AnyPropSpec
@@ -518,6 +519,48 @@ class SigmaTyperTest extends AnyPropSpec
     typefail(env, "1.toSuperBigInteger", 1, 1)
   }
 
+  property("toBytes method for numeric types") {
+    typecheck(env, "1.toByte.toBytes",
+      expected = MethodCall.typed[Value[SCollection[SByte.type]]](
+        Select(IntConstant(1), "toByte", Some(SByte)),
+        SNumericTypeMethods.ToBytesMethod.withConcreteTypes(Map(STypeVar("TNum") -> SByte)),
+        Vector(),
+        Map()
+      )) shouldBe SByteArray
+
+    typecheck(env, "1.toShort.toBytes",
+      expected = MethodCall.typed[Value[SCollection[SByte.type]]](
+        Select(IntConstant(1), "toShort", Some(SShort)),
+        SNumericTypeMethods.ToBytesMethod.withConcreteTypes(Map(STypeVar("TNum") -> SShort)),
+        Vector(),
+        Map()
+      )) shouldBe SByteArray
+
+    typecheck(env, "1.toBytes",
+      expected = MethodCall.typed[Value[SCollection[SByte.type]]](
+        IntConstant(1),
+        SNumericTypeMethods.ToBytesMethod.withConcreteTypes(Map(STypeVar("TNum") -> SInt)),
+        Vector(),
+        Map()
+      )) shouldBe SByteArray
+
+    typecheck(env, "1.toLong.toBytes",
+      expected = MethodCall.typed[Value[SCollection[SByte.type]]](
+        Select(IntConstant(1), "toLong", Some(SLong)),
+        SNumericTypeMethods.ToBytesMethod.withConcreteTypes(Map(STypeVar("TNum") -> SLong)),
+        Vector(),
+        Map()
+      )) shouldBe SByteArray
+
+    typecheck(env, "1.toBigInt.toBytes",
+      expected = MethodCall.typed[Value[SCollection[SByte.type]]](
+        Select(IntConstant(1), "toBigInt", Some(SBigInt)),
+        SNumericTypeMethods.ToBytesMethod.withConcreteTypes(Map(STypeVar("TNum") -> SBigInt)),
+        Vector(),
+        Map()
+      )) shouldBe SByteArray
+  }
+
   property("string concat") {
     typecheck(env, """ "a" + "b" """) shouldBe SString
   }
@@ -674,4 +717,36 @@ class SigmaTyperTest extends AnyPropSpec
     )
     typecheck(customEnv, "substConstants(scriptBytes, positions, newVals)") shouldBe SByteArray
   }
+
+  property("Global.serialize") {
+    runWithVersion(VersionContext.V6SoftForkVersion) {
+      typecheck(env, "Global.serialize(1)",
+        MethodCall.typed[Value[SCollection[SByte.type]]](
+          Global,
+          SGlobalMethods.getMethodByName("serialize").withConcreteTypes(Map(STypeVar("T") -> SInt)),
+          Array(IntConstant(1)),
+          Map()
+        )) shouldBe SByteArray
+    }
+
+    runWithVersion((VersionContext.V6SoftForkVersion - 1).toByte) {
+      assertExceptionThrown(
+        typecheck(env, "Global.serialize(1)"),
+        exceptionLike[MethodNotFound]("Cannot find method 'serialize' in in the object Global")
+      )
+    }
+  }
+
+  property("predefined serialize") {
+    runWithVersion(VersionContext.V6SoftForkVersion) {
+      typecheck(env, "serialize((1, 2L))",
+        expected = MethodCall.typed[Value[SCollection[SByte.type]]](
+          Global,
+          SGlobalMethods.getMethodByName("serialize").withConcreteTypes(Map(STypeVar("T") -> SPair(SInt, SLong))),
+          Array(Tuple(Vector(IntConstant(1), LongConstant(2L)))),
+          Map()
+        )) shouldBe SByteArray
+    }
+  }
+
 }

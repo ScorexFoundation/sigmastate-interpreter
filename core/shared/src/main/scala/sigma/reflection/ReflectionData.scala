@@ -349,6 +349,9 @@ object ReflectionData {
         },
         mkMethod(clazz, "powDistance", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Header].powDistance
+        },
+        mkMethod(clazz, "checkPow", Array[Class[_]]()) { (obj, _) =>
+          obj.asInstanceOf[Header].checkPow
         }
       )
     )
@@ -443,6 +446,10 @@ object ReflectionData {
         },
         mkMethod(clazz, "sha256", Array[Class[_]](cColl)) { (obj, args) =>
           obj.asInstanceOf[SigmaDslBuilder].sha256(args(0).asInstanceOf[Coll[Byte]])
+        },
+        mkMethod(clazz, "serialize", Array[Class[_]](classOf[Object], classOf[RType[_]])) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].serialize[Any](
+            args(0).asInstanceOf[Any])(args(1).asInstanceOf[RType[Any]])
         },
         mkMethod(clazz, "decodePoint", Array[Class[_]](cColl)) { (obj, args) =>
           obj.asInstanceOf[SigmaDslBuilder].decodePoint(args(0).asInstanceOf[Coll[Byte]])

@@ -261,6 +261,7 @@ class SigmaDslTesting extends AnyPropSpec
             s"""Should succeed with the same value or fail with the same exception, but was:
               |First result: $b1
               |Second result: $b2
+              |Input: $x
               |Root cause: $cause
               |""".stripMargin)
       }
@@ -715,11 +716,17 @@ class SigmaDslTesting extends AnyPropSpec
     override def checkEquality(input: A, logInputOutput: Boolean = false): Try[(B, CostDetails)] = {
       // check the old implementation against Scala semantic function
       var oldRes: Try[(B, CostDetails)] = null
-      if (ergoTreeVersionInTests < VersionContext.JitActivationVersion)
         oldRes = VersionContext.withVersions(activatedVersionInTests, ergoTreeVersionInTests) {
           try checkEq(scalaFunc)(oldF)(input)
           catch {
-            case e: TestFailedException => throw e
+            case e: TestFailedException =>
+              if(activatedVersionInTests < changedInVersion) {
+                throw e
+              } else {
+                // old ergoscript may succeed in new version while old scalafunc may fail,
+                // see e.g. "Option.getOrElse with lazy default" test
+                Failure(e)
+              }
             case t: Throwable =>
               Failure(t)
           }
@@ -872,10 +879,14 @@ class SigmaDslTesting extends AnyPropSpec
     extends Feature[A, B] {
 
     override def isSupportedIn(vc: VersionContext): Boolean =
-      vc.activatedVersion >= sinceVersion && vc.ergoTreeVersion >= sinceVersion
+      vc.activatedVersion >= sinceVersion
 
     override def scalaFunc: A => B = { x =>
-      sys.error(s"Semantic Scala function is not defined for old implementation: $this")
+      if (isSupportedIn(VersionContext.current)) {
+        scalaFuncNew(x)
+      } else {
+        sys.error(s"Semantic Scala function is not defined for old implementation: $this")
+      }
     }
     implicit val cs = compilerSettingsInTests
 
@@ -925,8 +936,19 @@ class SigmaDslTesting extends AnyPropSpec
                             printTestCases: Boolean,
                             failOnTestVectors: Boolean): Unit = {
       val funcRes = checkEquality(input, printTestCases)
-      funcRes.isFailure shouldBe true
-      Try(scalaFunc(input)) shouldBe expected.value
+      if(!isSupportedIn(VersionContext.current)) {
+        funcRes.isFailure shouldBe true
+      }
+      if(isSupportedIn(VersionContext.current)) {
+        val res = Try(scalaFunc(input))
+        if(expected.value.isSuccess) {
+          res shouldBe expected.value
+        } else {
+          res.isFailure shouldBe true
+        }
+      } else {
+        Try(scalaFunc(input)).isFailure shouldBe true
+      }
     }
   }
 
@@ -991,6 +1013,20 @@ class SigmaDslTesting extends AnyPropSpec
       new Expected(ExpectedResult(value, Some(cost))) {
         override val newResults = defaultNewResults.map { case (r, _) =>
           (r, Some(expectedDetails))
+        }
+      }
+
+    /** Used when the old and new value are the same for all versions
+      * and the expected costs are not specified.
+      *
+      * @param value           expected result of tested function
+      * @param expectedDetails expected cost details for all versions
+      */
+    def apply[A](value: Try[A], expectedDetails: CostDetails): Expected[A] =
+      new Expected(ExpectedResult(value, None)) {
+        override val newResults = defaultNewResults.map {
+          case (ExpectedResult(v, _), _) =>
+            (ExpectedResult(v, None), Some(expectedDetails))
         }
       }
 
