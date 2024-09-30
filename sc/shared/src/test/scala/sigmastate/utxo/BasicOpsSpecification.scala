@@ -804,13 +804,6 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
-  property("coll equality") {
-    def collTest() = test("R1", env, ext,
-      "{ SELF.tokens == Coll[(Coll[Byte], Long)]() }",
-      null
-    )
-  }
-
   property("Relation operations") {
     test("R1", env, ext,
       "{ allOf(Coll(getVar[Boolean](trueVar).get, true, true)) }",
