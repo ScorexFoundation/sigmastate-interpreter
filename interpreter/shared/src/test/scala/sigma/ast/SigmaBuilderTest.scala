@@ -244,6 +244,14 @@ class SigmaBuilderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Ma
     testColl[SGroupElement.type](v, c)
   }
 
+  property("liftToConstant Header") {
+    val h = TestData.h1
+    val c = HeaderConstant(h)
+    test[SHeader.type](h, c)
+    testFailure(Array.fill(10)(h))
+    testColl[SHeader.type](h, c)
+  }
+
   property("liftToConstant ErgoBox") {
     val v = TestData.b2.asInstanceOf[CBox].wrappedValue
     val c = BoxConstant(TestData.b2)
