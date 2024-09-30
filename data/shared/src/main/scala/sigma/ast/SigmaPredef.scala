@@ -5,7 +5,6 @@ import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress}
 import scorex.util.encode.{Base16, Base58, Base64}
 import sigma.ast.SCollection.{SByteArray, SIntArray}
 import sigma.ast.SOption.SIntOption
-import sigma.ast.SigmaPropConstant
 import sigma.ast.syntax._
 import sigma.data.Nullable
 import sigma.exceptions.InvalidArguments
@@ -403,6 +402,24 @@ object SigmaPredef {
           ArgInfo("default", "optional default value, if register is not available")))
     )
 
+    val SerializeFunc = PredefinedFunc("serialize",
+      Lambda(Seq(paramT), Array("value" -> tT), SByteArray, None),
+      irInfo = PredefFuncInfo(
+        irBuilder = { case (_, args @ Seq(value)) =>
+          MethodCall.typed[Value[SCollection[SByte.type]]](
+            Global,
+            SGlobalMethods.serializeMethod.withConcreteTypes(Map(tT -> value.tpe)),
+            args.toIndexedSeq,
+            Map()
+          )
+        }),
+      docInfo = OperationInfo(MethodCall,
+        """Serializes the given `value` into bytes using the default serialization format.
+        """.stripMargin,
+        Seq(ArgInfo("value", "value to serialize"))
+      )
+    )
+
     val globalFuncs: Map[String, PredefinedFunc] = Seq(
       AllOfFunc,
       AnyOfFunc,
@@ -430,7 +447,8 @@ object SigmaPredef {
       AvlTreeFunc,
       SubstConstantsFunc,
       ExecuteFromVarFunc,
-      ExecuteFromSelfRegFunc
+      ExecuteFromSelfRegFunc,
+      SerializeFunc
     ).map(f => f.name -> f).toMap
 
     def comparisonOp(symbolName: String, opDesc: ValueCompanion, desc: String, args: Seq[ArgInfo]) = {
@@ -544,7 +562,7 @@ object SigmaPredef {
 
     val funcs: Map[String, PredefinedFunc] = globalFuncs ++ infixFuncs ++ unaryFuncs
 
-    /** WARNING: This operations are not used in frontend, and should be be used.
+    /** WARNING: This operations are not used in frontend, and should not be used.
       * They are used in SpecGen only the source of metadata for the corresponding ErgoTree nodes.
       */
     val specialFuncs: Map[String, PredefinedFunc] = Seq(

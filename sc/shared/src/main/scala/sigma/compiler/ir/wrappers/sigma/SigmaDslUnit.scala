@@ -78,6 +78,7 @@ import scalan._
       def powNonce: Ref[Coll[Byte]];
       def powDistance: Ref[BigInt];
       def votes: Ref[Coll[Byte]]
+      def checkPow: Ref[Boolean]
     };
     trait Context extends Def[Context] {
       def OUTPUTS: Ref[Coll[Box]];
@@ -116,6 +117,7 @@ import scalan._
       def xor(l: Ref[Coll[Byte]], r: Ref[Coll[Byte]]): Ref[Coll[Byte]]
       def encodeNbits(bi: Ref[BigInt]): Ref[Long]
       def decodeNbits(l: Ref[Long]): Ref[BigInt]
+      def serialize[T](value: Ref[T]): Ref[Coll[Byte]]
     };
     trait CostModelCompanion;
     trait BigIntCompanion;

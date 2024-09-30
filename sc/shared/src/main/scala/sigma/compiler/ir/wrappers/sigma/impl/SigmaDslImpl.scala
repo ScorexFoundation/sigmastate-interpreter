@@ -8,6 +8,8 @@ import sigma.compiler.ir.wrappers.sigma.impl.SigmaDslDefs
 import scala.collection.compat.immutable.ArraySeq
 
 package impl {
+  import sigma.Evaluation
+  import sigma.ast.SType.tT
   import sigma.compiler.ir.meta.ModuleInfo
   import sigma.compiler.ir.wrappers.sigma.SigmaDsl
   import sigma.compiler.ir.{Base, GraphIRReflection, IRContext}
@@ -620,10 +622,11 @@ object Box extends EntityObject("Box") {
     }
 
     override def getReg[T](i: Ref[Int])(implicit cT: Elem[T]): Ref[WOption[T]] = {
+      val st = Evaluation.rtypeToSType(cT.sourceType)
       asRep[WOption[T]](mkMethodCall(self,
         BoxClass.getMethod("getReg", classOf[Sym], classOf[Elem[_]]),
         Array[AnyRef](i, cT),
-        true, false, element[WOption[T]]))
+        true, false, element[WOption[T]], Map(tT -> st) ))
     }
 
     override def tokens: Ref[Coll[(Coll[Byte], Long)]] = {
@@ -695,10 +698,11 @@ object Box extends EntityObject("Box") {
     }
 
     def getReg[T](i: Ref[Int])(implicit cT: Elem[T]): Ref[WOption[T]] = {
+      val st = Evaluation.rtypeToSType(cT.sourceType)
       asRep[WOption[T]](mkMethodCall(source,
         BoxClass.getMethod("getReg", classOf[Sym], classOf[Elem[_]]),
         Array[AnyRef](i, cT),
-        true, true, element[WOption[T]]))
+        true, true, element[WOption[T]], Map(tT -> st)))
     }
 
     def tokens: Ref[Coll[(Coll[Byte], Long)]] = {
@@ -1368,6 +1372,13 @@ object Header extends EntityObject("Header") {
         ArraySeq.empty,
         true, false, element[Coll[Byte]]))
     }
+
+    override def checkPow: Ref[Boolean] = {
+      asRep[Boolean](mkMethodCall(self,
+        HeaderClass.getMethod("checkPow"),
+        ArraySeq.empty,
+        true, false, element[Boolean]))
+    }
   }
 
   implicit object LiftableHeader
@@ -1492,6 +1503,13 @@ object Header extends EntityObject("Header") {
         ArraySeq.empty,
         true, true, element[Coll[Byte]]))
     }
+
+    def checkPow: Ref[Boolean] = {
+      asRep[Boolean](mkMethodCall(source,
+        HeaderClass.getMethod("checkPow"),
+        ArraySeq.empty,
+        true, true, element[Boolean]))
+    }
   }
 
   // entityUnref: single unref method for each type family
@@ -1509,7 +1527,7 @@ object Header extends EntityObject("Header") {
     override protected def collectMethods: Map[RMethod, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(RClass(classOf[Header]), RClass(classOf[SHeader]), Set(
-        "id", "version", "parentId", "ADProofsRoot", "stateRoot", "transactionsRoot", "timestamp", "nBits", "height", "extensionRoot", "minerPk", "powOnetimePk", "powNonce", "powDistance", "votes"
+        "id", "version", "parentId", "ADProofsRoot", "stateRoot", "transactionsRoot", "timestamp", "nBits", "height", "extensionRoot", "minerPk", "powOnetimePk", "powNonce", "powDistance", "votes", "checkPow"
         ))
     }
   }
@@ -1946,6 +1964,13 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         true, false, element[Coll[Byte]]))
     }
 
+    def serialize[T](value: Ref[T]): Ref[Coll[Byte]] = {
+      asRep[Coll[Byte]](mkMethodCall(self,
+        SigmaDslBuilderClass.getMethod("serialize", classOf[Sym]),
+        Array[AnyRef](value),
+        true, false, element[Coll[Byte]]))
+    }
+
     override def encodeNbits(bi: Ref[BigInt]): Ref[Long] = {
       asRep[Long](mkMethodCall(self,
         SigmaDslBuilderClass.getMethod("encodeNbits", classOf[Sym]),
@@ -2116,6 +2141,13 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
       asRep[Coll[Byte]](mkMethodCall(source,
         SigmaDslBuilderClass.getMethod("xor", classOf[Sym], classOf[Sym]),
         Array[AnyRef](l, r),
+        true, true, element[Coll[Byte]]))
+    }
+
+    def serialize[T](value: Ref[T]): Ref[Coll[Byte]] = {
+      asRep[Coll[Byte]](mkMethodCall(source,
+        SigmaDslBuilderClass.getMethod("serialize", classOf[Sym]),
+        Array[AnyRef](value),
         true, true, element[Coll[Byte]]))
     }
 
