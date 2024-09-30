@@ -134,6 +134,7 @@ class SigmaTyper(val builder: SigmaBuilder,
       res
 
     case Apply(ApplyTypes(sel @ Select(obj, n, _), Seq(rangeTpe)), args) =>
+      // downcast getVarFromInput arguments to short and byte
       val nArgs = if (n == SContextMethods.getVarFromInputMethod.name &&
           args.length == 2 &&
           args(0).isInstanceOf[Constant[_]] &&

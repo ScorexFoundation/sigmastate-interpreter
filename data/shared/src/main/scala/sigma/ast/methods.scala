@@ -1586,16 +1586,18 @@ case object SContextMethods extends MonoTypeMethods {
       MethodCallIrBuilder,
       javaMethodOf[Context, Byte, RType[_]]("getVar"),
       { mtype => Array(mtype.tRange.asOption[SType].elemType) })
-    .withInfo(MethodCall, "") // todo: desc
+    .withInfo(MethodCall, "Get context variable with given \\lst{varId} and type.")
 
-  // todo: costing, desc
   lazy val getVarFromInputMethod = SMethod(
     this, "getVarFromInput", SFunc(Array(SContext, SShort, SByte), SOption(tT), Array(paramT)), 12, GetVar.costKind, Seq(tT))
     .withIRInfo(
       MethodCallIrBuilder,
       javaMethodOf[Context, Short, Byte, RType[_]]("getVarFromInput"),
       { mtype => Array(mtype.tRange.asOption[SType].elemType) })
-    .withInfo(MethodCall, "Multiply this number with \\lst{other} by module Q.", ArgInfo("other", "Number to multiply with this."))
+    .withInfo(MethodCall, "Get context variable with given \\lst{varId} and type.",
+      ArgInfo("inputIdx", "Index of input to read variable from."),
+      ArgInfo("varId", "Index of variable.")
+    )
 
   private lazy val commonMethods = super.getMethods() ++ Array(
     dataInputsMethod, headersMethod, preHeaderMethod, inputsMethod, outputsMethod, heightMethod, selfMethod,

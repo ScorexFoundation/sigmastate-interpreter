@@ -146,6 +146,18 @@ object SigmaPredef {
         Seq(ArgInfo("varId", "\\lst{Byte} identifier of context variable")))
     )
 
+    val GetVarFromInputFunc = PredefinedFunc("getVarFromInput",
+      Lambda(Array(paramT), Array("inputId" -> SShort, "varId" -> SByte), SOption(tT), None),
+      PredefFuncInfo(
+        { case (Ident(_, SFunc(_, SOption(rtpe), _)), Seq(inputId: Constant[SNumericType]@unchecked, varId: Constant[SNumericType]@unchecked)) =>
+          mkMethodCall(Context, SContextMethods.getVarFromInputMethod, IndexedSeq(SShort.downcast(inputId.value.asInstanceOf[AnyVal]), SByte.downcast(varId.value.asInstanceOf[AnyVal])), Map(tT -> rtpe))
+        }),
+      OperationInfo(MethodCall,
+        "Get context variable with given \\lst{varId} and type.",
+        Seq(ArgInfo("inputId", "\\lst{Byte} index of input to read context variable from"),
+            ArgInfo("varId", "\\lst{Byte} identifier of context variable")))
+    )
+
     def PKFunc(networkPrefix: NetworkPrefix) = PredefinedFunc("PK",
       Lambda(Array("input" -> SString), SSigmaProp, None),
       PredefFuncInfo(
@@ -448,7 +460,8 @@ object SigmaPredef {
       SubstConstantsFunc,
       ExecuteFromVarFunc,
       ExecuteFromSelfRegFunc,
-      SerializeFunc
+      SerializeFunc,
+      GetVarFromInputFunc
     ).map(f => f.name -> f).toMap
 
     def comparisonOp(symbolName: String, opDesc: ValueCompanion, desc: String, args: Seq[ArgInfo]) = {

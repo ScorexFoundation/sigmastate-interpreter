@@ -20,6 +20,10 @@ case class ContextExtension(values: scala.collection.Map[Byte, EvaluatedValue[_ 
     ContextExtension(values ++ bindings)
   }
 
+  /**
+    * @param varId - index of context variable
+    * @return context variable with provided index or None if it is not there
+    */
   def get(varId: Byte): Option[EvaluatedValue[_ <: SType]] = values.get(varId)
 }
 

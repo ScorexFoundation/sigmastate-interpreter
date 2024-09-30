@@ -167,7 +167,28 @@ class BasicOpsSpecification extends CompilerTestingCommons
         1.toByte -> IntConstant(5)
       ).toSeq
       test("R1", env, customExt,
-        "{ sigmaProp(CONTEXT.getVarFromInput[Int](0, 1).get == 5) }",
+        "{ sigmaProp(getVarFromInput[Int](0, 1).get == 5) }",
+        null
+      )
+    }
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      getVarTest()
+    } else {
+      an[Exception] should be thrownBy getVarTest()
+    }
+  }
+
+  property("getVarFromInput - self index") {
+    def getVarTest(): Assertion = {
+      val customExt = Map(
+        1.toByte -> IntConstant(5)
+      ).toSeq
+      test("R1", env, customExt,
+        """{
+          | val idx = CONTEXT.selfBoxIndex
+          | sigmaProp(CONTEXT.getVarFromInput[Int](idx.toShort, 1.toByte).get == 5)
+          | }""".stripMargin,
         null
       )
     }
@@ -185,13 +206,13 @@ class BasicOpsSpecification extends CompilerTestingCommons
         1.toByte -> IntConstant(5)
       ).toSeq
       test("R1", env, customExt,
-        "{ sigmaProp(CONTEXT.getVarFromInput[Int](1, 1).get == 5) }",
+        "{ sigmaProp(CONTEXT.getVarFromInput[Int](1, 1).isDefined == false) }",
         null
       )
     }
 
     if (VersionContext.current.isV6SoftForkActivated) {
-      an[Exception] should be thrownBy getVarTest()
+      getVarTest()
     } else {
       an[Exception] should be thrownBy getVarTest()
     }
@@ -593,13 +614,13 @@ class BasicOpsSpecification extends CompilerTestingCommons
         1.toByte -> IntConstant(5)
       ).toSeq
       test("R1", env, customExt,
-        "{ sigmaProp(CONTEXT.getVarFromInput[Int](0, 2).get == 5) }",
+        "{ sigmaProp(CONTEXT.getVarFromInput[Int](0, 2).isDefined == false) }",
         null
       )
     }
 
     if (VersionContext.current.isV6SoftForkActivated) {
-      an[Exception] should be thrownBy getVarTest()
+      getVarTest()
     } else {
       an[Exception] should be thrownBy getVarTest()
     }
