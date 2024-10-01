@@ -1157,6 +1157,10 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
             case SGlobalMethods.serializeMethod.name =>
               val value = asRep[Any](argsV(0))
               g.serialize(value)
+            case SGlobalMethods.fromBigEndianBytesMethod.name =>
+              val bytes = asRep[Coll[Byte]](argsV(0))
+              val cT = stypeToElem(method.stype.tRange.withSubstTypes(typeSubst))
+              g.fromBigEndianBytes(bytes)(cT)
             case _ => throwError()
           }
           case (x: Ref[tNum], _: SNumericTypeMethods) => method.name match {
