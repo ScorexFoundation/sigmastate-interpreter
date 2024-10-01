@@ -118,6 +118,7 @@ import scalan._
       def encodeNbits(bi: Ref[BigInt]): Ref[Long]
       def decodeNbits(l: Ref[Long]): Ref[BigInt]
       def serialize[T](value: Ref[T]): Ref[Coll[Byte]]
+      def fromBigEndianBytes[T](bytes: Ref[Coll[Byte]])(implicit cT: Elem[T]): Ref[T]
     };
     trait CostModelCompanion;
     trait BigIntCompanion;

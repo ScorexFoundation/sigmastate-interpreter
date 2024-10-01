@@ -1,7 +1,8 @@
 package sigma
 
-import java.math.BigInteger
+import sigma.ast.SType
 
+import java.math.BigInteger
 import sigma.data._
 
 /**
@@ -777,5 +778,8 @@ trait SigmaDslBuilder {
 
   /** Returns a byte-wise XOR of the two collections of bytes. */
   def xor(l: Coll[Byte], r: Coll[Byte]): Coll[Byte]
+
+  /** Returns a number decoded from provided big-endian bytes array. */
+  def fromBigEndianBytes[T](bytes: Coll[Byte])(implicit cT: RType[T]): T
 }
 

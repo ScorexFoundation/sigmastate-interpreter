@@ -1971,6 +1971,13 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         true, false, element[Coll[Byte]]))
     }
 
+    override def fromBigEndianBytes[T](bytes: Ref[Coll[Byte]])(implicit cT: Elem[T]): Ref[T] = {
+      asRep[T](mkMethodCall(self,
+        SigmaDslBuilderClass.getMethod("fromBigEndianBytes", classOf[Sym], classOf[Elem[T]]),
+        Array[AnyRef](bytes, cT, Map(tT -> Evaluation.rtypeToSType(cT.sourceType))),
+        true, false, cT))
+    }
+
     override def encodeNbits(bi: Ref[BigInt]): Ref[Long] = {
       asRep[Long](mkMethodCall(self,
         SigmaDslBuilderClass.getMethod("encodeNbits", classOf[Sym]),
@@ -2151,6 +2158,13 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         true, true, element[Coll[Byte]]))
     }
 
+    def fromBigEndianBytes[T](bytes: Ref[Coll[Byte]])(implicit cT: Elem[T]): Ref[T] = {
+      asRep[T](mkMethodCall(source,
+        SigmaDslBuilderClass.getMethod("fromBigEndianBytes", classOf[Sym], classOf[Elem[T]]),
+        Array[AnyRef](bytes, cT),
+        true, true, cT, Map(tT -> Evaluation.rtypeToSType(cT.sourceType))))
+    }
+
     override def encodeNbits(bi: Ref[BigInt]): Ref[Long] = {
       asRep[Long](mkMethodCall(source,
         SigmaDslBuilderClass.getMethod("encodeNbits", classOf[Sym]),
@@ -2183,7 +2197,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         Elem.declaredMethods(RClass(classOf[SigmaDslBuilder]), RClass(classOf[SSigmaDslBuilder]), Set(
         "Colls", "verifyZK", "atLeast", "allOf", "allZK", "anyOf", "anyZK", "xorOf", "sigmaProp", "blake2b256",
           "sha256", "byteArrayToBigInt", "longToByteArray", "byteArrayToLong", "proveDlog", "proveDHTuple", "groupGenerator",
-          "substConstants", "decodePoint", "avlTree", "xor", "encodeNBits", "decodeNBits"
+          "substConstants", "decodePoint", "avlTree", "xor", "encodeNBits", "decodeNBits", "serialize", "fromBigEndianBytes"
         ))
     }
   }
