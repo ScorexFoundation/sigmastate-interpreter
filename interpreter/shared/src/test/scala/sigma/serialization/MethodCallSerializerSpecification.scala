@@ -112,4 +112,3 @@ class MethodCallSerializerSpecification extends SerializationSpecification {
       )
   }
 }
-}

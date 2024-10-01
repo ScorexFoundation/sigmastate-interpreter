@@ -516,7 +516,7 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit with C
       (SGlobal.typeId, Seq(
         MInfo(1, groupGeneratorMethod), MInfo(2, xorMethod)
       ) ++ (if (isV6Activated) {
-        Seq(MInfo(3, serializeMethod)) // methods added in v6.0
+        Seq(MInfo(3, serializeMethod), MInfo(6, encodeNBitsMethod), MInfo(7, decodeNBitsMethod)) // methods added in v6.0
       } else {
         Seq.empty[MInfo]
       }), true)
