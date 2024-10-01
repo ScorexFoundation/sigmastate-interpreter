@@ -232,7 +232,7 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
         if (bytes.length > SBigInt.MaxSizeInBytes) {
           throw SerializerException(s"BigInt value doesn't not fit into ${SBigInt.MaxSizeInBytes} bytes in fromBigEndianBytes")
         }
-        CBigInt(new BigInteger(bytes.toArray)).asInstanceOf[T]
+        CBigInt(new BigInteger(bytes.toArray).to256BitValueExact).asInstanceOf[T]
       // todo: UnsignedBitInt
       case _ => throw new IllegalArgumentException("Unsupported type provided in fromBigEndianBytes")
     }
