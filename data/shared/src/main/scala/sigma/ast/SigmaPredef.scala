@@ -420,6 +420,25 @@ object SigmaPredef {
       )
     )
 
+    val FromBigEndianBytesFunc = PredefinedFunc("fromBigEndianBytes",
+      Lambda(Seq(paramT), Array("bytes" -> SByteArray), tT, None),
+      irInfo = PredefFuncInfo(
+        irBuilder = { case (u, args) =>
+          val resType = u.opType.tRange.asInstanceOf[SFunc].tRange
+          MethodCall(
+            Global,
+            SGlobalMethods.fromBigEndianBytesMethod.withConcreteTypes(Map(tT -> resType)),
+            args.toIndexedSeq,
+            Map(tT -> resType)
+          )
+        }),
+      docInfo = OperationInfo(MethodCall,
+        """Deserializes provided big endian bytes into a numeric value of given type.
+        """.stripMargin,
+        Seq(ArgInfo("bytes", "bytes to deserialize"))
+      )
+    )
+
     val globalFuncs: Map[String, PredefinedFunc] = Seq(
       AllOfFunc,
       AnyOfFunc,
@@ -448,7 +467,8 @@ object SigmaPredef {
       SubstConstantsFunc,
       ExecuteFromVarFunc,
       ExecuteFromSelfRegFunc,
-      SerializeFunc
+      SerializeFunc,
+      FromBigEndianBytesFunc
     ).map(f => f.name -> f).toMap
 
     def comparisonOp(symbolName: String, opDesc: ValueCompanion, desc: String, args: Seq[ArgInfo]) = {
