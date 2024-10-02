@@ -247,7 +247,11 @@ class SigmaBuilderTest extends AnyPropSpec with ScalaCheckPropertyChecks with Ma
   property("liftToConstant Header") {
     val h = TestData.h1
     val c = HeaderConstant(h)
-    test[SHeader.type](h, c)
+    if (VersionContext.current.isV6SoftForkActivated) {
+      testSuccess(h, c)
+    } else {
+      testFailure(h)
+    }
     testFailure(Array.fill(10)(h))
     testColl[SHeader.type](h, c)
   }
