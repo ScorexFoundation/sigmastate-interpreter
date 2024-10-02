@@ -451,6 +451,9 @@ object ReflectionData {
         mkMethod(clazz, "decodePoint", Array[Class[_]](cColl)) { (obj, args) =>
           obj.asInstanceOf[SigmaDslBuilder].decodePoint(args(0).asInstanceOf[Coll[Byte]])
         },
+        mkMethod(clazz, "fromBigEndianBytes", Array[Class[_]](cColl, classOf[RType[_]])) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].fromBigEndianBytes(args(0).asInstanceOf[Coll[Byte]])(args(1).asInstanceOf[RType[_]])
+        },
         mkMethod(clazz, "powHit", Array[Class[_]](cColl)) { (obj, args) =>
           obj.asInstanceOf[SigmaDslBuilder].powHit(args(0).asInstanceOf[Int], args(1).asInstanceOf[Coll[Byte]],
             args(2).asInstanceOf[Coll[Byte]], args(3).asInstanceOf[Coll[Byte]], args(4).asInstanceOf[Int])

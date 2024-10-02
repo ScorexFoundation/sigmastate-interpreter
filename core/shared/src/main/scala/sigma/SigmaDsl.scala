@@ -1,7 +1,8 @@
 package sigma
 
-import java.math.BigInteger
+import sigma.ast.SType
 
+import java.math.BigInteger
 import sigma.data._
 
 /**
@@ -766,5 +767,8 @@ trait SigmaDslBuilder {
 
   /** Calculates value of a custom Autolykos 2 hash function */
   def powHit(k: Int, msg: Coll[Byte], nonce: Coll[Byte], h: Coll[Byte], N: Int): BigInt
+
+  /** Returns a number decoded from provided big-endian bytes array. */
+  def fromBigEndianBytes[T](bytes: Coll[Byte])(implicit cT: RType[T]): T
 }
 

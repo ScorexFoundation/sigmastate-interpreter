@@ -11,9 +11,10 @@ import sigma.ast.ErgoTree.ZeroHeader
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.syntax.TrueSigmaProp
 import sigma.ast.{SInt, _}
-import sigma.data.{CBigInt, CBox, CHeader, ExactNumeric}
+import sigma.data.{CBigInt, CBox, CHeader, CSigmaDslBuilder, ExactNumeric, RType}
 import sigma.eval.{CostDetails, SigmaDsl, TracedCost}
 import sigma.serialization.ValueCodes.OpCode
+import sigma.util.Extensions.{BooleanOps, IntOps}
 import sigma.data.{RType}
 import sigma.pow.Autolykos2PowValidation
 import sigma.util.Extensions.{BooleanOps, ByteOps, IntOps, LongOps}
@@ -1564,6 +1565,95 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
         Coll(0, 1, 2, 3, 100, 1000)
       ))
     )
+  }
+
+
+  property("Global - fromBigEndianBytes") {
+    import sigma.data.OrderingOps.BigIntOrdering
+
+    def byteFromBigEndianBytes: Feature[Byte, Boolean] = {
+      newFeature(
+        { (x: Byte) => CSigmaDslBuilder.fromBigEndianBytes[Byte](Colls.fromArray(Array(x))) == x},
+        "{ (x: Byte) => fromBigEndianBytes[Byte](x.toBytes) == x }",
+        sinceVersion = VersionContext.V6SoftForkVersion
+      )
+    }
+
+    verifyCases(
+      Seq(
+        5.toByte -> new Expected(ExpectedResult(Success(true), None)),
+        Byte.MaxValue -> new Expected(ExpectedResult(Success(true), None)),
+        Byte.MinValue -> new Expected(ExpectedResult(Success(true), None))
+      ),
+      byteFromBigEndianBytes
+    )
+
+    def shortFromBigEndianBytes: Feature[Short, Boolean] = {
+      newFeature(
+        { (x: Short) => CSigmaDslBuilder.fromBigEndianBytes[Short](Colls.fromArray(Shorts.toByteArray(x))) == x},
+        "{ (x: Short) => fromBigEndianBytes[Short](x.toBytes) == x }",
+        sinceVersion = VersionContext.V6SoftForkVersion
+      )
+    }
+
+    verifyCases(
+      Seq(
+        5.toShort -> new Expected(ExpectedResult(Success(true), None)),
+        Short.MaxValue -> new Expected(ExpectedResult(Success(true), None)),
+        Short.MinValue -> new Expected(ExpectedResult(Success(true), None))
+      ),
+      shortFromBigEndianBytes
+    )
+
+    def intFromBigEndianBytes: Feature[Int, Boolean] = {
+      newFeature(
+        { (x: Int) => CSigmaDslBuilder.fromBigEndianBytes[Int](Colls.fromArray(Ints.toByteArray(x))) == x},
+        "{ (x: Int) => fromBigEndianBytes[Int](x.toBytes) == x }",
+        sinceVersion = VersionContext.V6SoftForkVersion
+      )
+    }
+
+    verifyCases(
+      Seq(
+        5 -> new Expected(ExpectedResult(Success(true), None)),
+        Int.MaxValue -> new Expected(ExpectedResult(Success(true), None))
+      ),
+      intFromBigEndianBytes
+    )
+
+    def longFromBigEndianBytes: Feature[Long, Boolean] = {
+      newFeature(
+        { (x: Long) => CSigmaDslBuilder.fromBigEndianBytes[Long](Colls.fromArray(Longs.toByteArray(x))) == x},
+        "{ (x: Long) => fromBigEndianBytes[Long](x.toBytes) == x }",
+        sinceVersion = VersionContext.V6SoftForkVersion
+      )
+    }
+
+    verifyCases(
+      Seq(
+        5L -> new Expected(ExpectedResult(Success(true), None)),
+        Long.MinValue -> new Expected(ExpectedResult(Success(true), None))
+      ),
+      longFromBigEndianBytes
+    )
+
+    def bigIntFromBigEndianBytes: Feature[BigInt, Boolean] = {
+      newFeature(
+        { (x: BigInt) => CSigmaDslBuilder.fromBigEndianBytes[BigInt](x.toBytes) == x},
+        "{ (x: BigInt) => Global.fromBigEndianBytes[BigInt](x.toBytes) == x }",
+        sinceVersion = VersionContext.V6SoftForkVersion
+      )
+    }
+
+    verifyCases(
+      Seq(
+        CBigInt(BigInteger.valueOf(50)) -> new Expected(ExpectedResult(Success(true), None)),
+        CBigInt(BigInteger.valueOf(-500000000000L)) -> new Expected(ExpectedResult(Success(true), None)),
+        CBigInt(sigma.crypto.CryptoConstants.groupOrder.divide(BigInteger.valueOf(2))) -> new Expected(ExpectedResult(Success(true), None))
+      ),
+      bigIntFromBigEndianBytes
+    )
+
   }
 
 }
