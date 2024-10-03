@@ -48,7 +48,7 @@ object Platform {
           Nullable(mkConstant[SBox.type](b, SBox))
         else
           Nullable.None // return the same result as in v4.x when there was no this case
-      case avl: AvlTreeData => Nullable(mkConstant[SAvlTree.type](CAvlTree(avl), SAvlTree))
+      case avl: AvlTreeData if !VersionContext.current.isV6SoftForkActivated => Nullable(mkConstant[SAvlTree.type](CAvlTree(avl), SAvlTree))
       case avl: AvlTree => Nullable(mkConstant[SAvlTree.type](avl, SAvlTree))
       case sb: SigmaBoolean => Nullable(mkConstant[SSigmaProp.type](CSigmaProp(sb), SSigmaProp))
       case p: SigmaProp => Nullable(mkConstant[SSigmaProp.type](p, SSigmaProp))
