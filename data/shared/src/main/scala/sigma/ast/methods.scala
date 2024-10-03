@@ -2,6 +2,7 @@ package sigma.ast
 
 import org.ergoplatform._
 import org.ergoplatform.validation._
+import sigma.Evaluation.stypeToRType
 import sigma._
 import sigma.ast.SCollection.{SBooleanArray, SBoxArray, SByteArray, SByteArray2, SHeaderArray}
 import sigma.ast.SMethod.{MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
@@ -479,7 +480,6 @@ case object SBigIntMethods extends SNumericTypeMethods {
       super.getMethods()
     }
   }
-
 
 }
 
@@ -1727,6 +1727,18 @@ case object SGlobalMethods extends MonoTypeMethods {
     Xor.xorWithCosting(ls, rs)
   }
 
+  private val BigEndianBytesCostKind = FixedCost(JitCost(10))
+
+  // id = 4 is reserved for deserializeTo ()
+  lazy val fromBigEndianBytesMethod = SMethod(
+    this, "fromBigEndianBytes", SFunc(Array(SGlobal, SByteArray), tT, Array(paramT)), 5, BigEndianBytesCostKind, Seq(tT))
+    .withIRInfo(MethodCallIrBuilder,
+      javaMethodOf[SigmaDslBuilder, Coll[Byte], RType[_]]("fromBigEndianBytes"),
+      { mtype => Array(mtype.tRange) })
+    .withInfo(MethodCall,
+      "Decode a number from big endian bytes.",
+      ArgInfo("first", "Bytes which are big-endian encoded number."))
+
   lazy val serializeMethod = SMethod(this, "serialize",
     SFunc(Array(SGlobal, tT), SByteArray, Array(paramT)), 3, DynamicCost)
       .withIRInfo(MethodCallIrBuilder)
@@ -1761,7 +1773,8 @@ case object SGlobalMethods extends MonoTypeMethods {
       Seq(
         groupGeneratorMethod,
         xorMethod,
-        serializeMethod
+        serializeMethod,
+        fromBigEndianBytesMethod
       )
     } else {
       Seq(

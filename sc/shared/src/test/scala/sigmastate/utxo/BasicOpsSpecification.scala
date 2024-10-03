@@ -5,6 +5,7 @@ import org.ergoplatform._
 import org.scalatest.Assertion
 import scorex.util.encode.Base16
 import org.scalatest.Assertion
+import scorex.utils.Ints
 import sigma.Extensions.ArrayOps
 import sigma.{SigmaTestingData, VersionContext}
 import sigma.VersionContext.V6SoftForkVersion
@@ -623,6 +624,105 @@ class BasicOpsSpecification extends CompilerTestingCommons
       getVarTest()
     } else {
       an[Exception] should be thrownBy getVarTest()
+    }
+  }
+
+  property("Global.fromBigEndianBytes - byte") {
+    def fromTest() = test("fromBigEndianBytes - byte", env, ext,
+      s"""{
+         |  val ba = Coll(5.toByte)
+         |  Global.fromBigEndianBytes[Byte](ba) == 5
+         |}
+         |""".stripMargin,
+      null
+    )
+    if(VersionContext.current.isV6SoftForkActivated) {
+      fromTest()
+    } else {
+      an[Exception] should be thrownBy(fromTest())
+    }
+  }
+
+  property("Global.fromBigEndianBytes - short") {
+    def fromTest() = test("fromBigEndianBytes - short", env, ext,
+      s"""{
+         |  val ba = Coll(5.toByte, 5.toByte)
+         |  Global.fromBigEndianBytes[Short](ba) != 0
+         |}
+         |""".stripMargin,
+      null
+    )
+    if(VersionContext.current.isV6SoftForkActivated) {
+      fromTest()
+    } else {
+      an[Exception] should be thrownBy(fromTest())
+    }
+  }
+
+  property("Global.fromBigEndianBytes - int") {
+    def fromTest() = test("fromBigEndianBytes - int", env, ext,
+      s"""{
+         |  val ba = fromBase16("${Base16.encode(Ints.toByteArray(Int.MaxValue))}")
+         |  Global.fromBigEndianBytes[Int](ba) == ${Int.MaxValue}
+         |}
+         |""".stripMargin,
+      null
+    )
+    if(VersionContext.current.isV6SoftForkActivated) {
+      fromTest()
+    } else {
+      an[Exception] should be thrownBy(fromTest())
+    }
+  }
+
+  property("Global.fromBigEndianBytes - long") {
+    def fromTest() = test("fromBigEndianBytes - long", env, ext,
+      s"""{
+         |  val l = 1088800L
+         |  val ba = longToByteArray(l)
+         |  Global.fromBigEndianBytes[Long](ba) == l
+         |}
+         |""".stripMargin,
+      null
+    )
+    if(VersionContext.current.isV6SoftForkActivated) {
+      fromTest()
+    } else {
+      an[Exception] should be thrownBy(fromTest())
+    }
+  }
+
+  property("Global.fromBigEndianBytes - Long.toBytes") {
+    def fromTest() = test("fromBigEndianBytes - long", env, ext,
+      s"""{
+         |  val l = 1088800L
+         |  val ba = l.toBytes
+         |  Global.fromBigEndianBytes[Long](ba) == l
+         |}
+         |""".stripMargin,
+      null
+    )
+    if(VersionContext.current.isV6SoftForkActivated) {
+      fromTest()
+    } else {
+      an[Exception] should be thrownBy(fromTest())
+    }
+  }
+
+  property("Global.fromBigEndianBytes - bigInt") {
+    val bi = new BigInteger("9785856985394593489356430476450674590674598659865986594859056865984690568904")
+    def fromTest() = test("fromBigEndianBytes - bigInt", env, ext,
+      s"""{
+         |  val ba = fromBase16("${Base16.encode(bi.toByteArray)}")
+         |  Global.fromBigEndianBytes[BigInt](ba) == bigInt("$bi")
+         |}
+         |""".stripMargin,
+      null
+    )
+    if(VersionContext.current.isV6SoftForkActivated) {
+      fromTest()
+    } else {
+      an[Exception] should be thrownBy(fromTest())
     }
   }
 
