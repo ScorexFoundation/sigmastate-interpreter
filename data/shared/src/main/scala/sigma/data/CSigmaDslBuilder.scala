@@ -6,14 +6,12 @@ import org.ergoplatform.validation.ValidationRules
 import scorex.crypto.hash.{Blake2b256, Sha256}
 import scorex.utils.{Ints, Longs}
 import sigma.ast.{AtLeast, SBigInt, SubstConstants}
-import scorex.utils.Longs
-import sigma.ast.{AtLeast, SType, SubstConstants}
+import sigma.ast.SType
 import sigma.crypto.{CryptoConstants, EcPointType, Ecp}
 import sigma.eval.Extensions.EvalCollOps
 import sigma.serialization.{DataSerializer, GroupElementSerializer, SigmaSerializer}
-import sigma.serialization.{GroupElementSerializer, SerializerException, SigmaSerializer}
+import sigma.serialization.SerializerException
 import sigma.pow.Autolykos2PowValidation
-import sigma.serialization.{GroupElementSerializer, SigmaSerializer}
 import sigma.util.Extensions.BigIntegerOps
 import sigma.validation.SigmaValidationSettings
 import sigma.{AvlTree, BigInt, Box, Coll, CollBuilder, Evaluation, GroupElement, SigmaDslBuilder, SigmaProp, VersionContext}

@@ -113,9 +113,9 @@ object Autolykos2PowValidation {
   }
 
   def hitForVersion2ForMessageWithChecks(k: Int, msg: Array[Byte], nonce: Array[Byte], h: Array[Byte], N: Int): BigInt = {
-    require(k > 0)
-    require(k <= 128)
-    require(N > 0)
+    require(k >= 2) // at least 2 elements needed for sum
+    require(k <= 32) // genIndexes function of Autolykos2 not supporting k > 32
+    require(N >= 16) // min table size
     hitForVersion2ForMessage(k, msg, nonce, h, N)
   }
 

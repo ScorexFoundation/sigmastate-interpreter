@@ -15,9 +15,7 @@ import sigma.data.{CBigInt, CBox, CHeader, CSigmaDslBuilder, ExactNumeric, RType
 import sigma.eval.{CostDetails, SigmaDsl, TracedCost}
 import sigma.serialization.ValueCodes.OpCode
 import sigma.util.Extensions.{BooleanOps, IntOps}
-import sigma.data.{RType}
 import sigma.pow.Autolykos2PowValidation
-import sigma.util.Extensions.{BooleanOps, ByteOps, IntOps, LongOps}
 import sigmastate.exceptions.MethodNotFound
 import sigmastate.utils.Extensions.ByteOpsForSigma
 import sigmastate.utils.Helpers

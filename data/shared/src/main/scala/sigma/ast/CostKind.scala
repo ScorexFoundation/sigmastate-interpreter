@@ -80,7 +80,7 @@ object PowHitCostKind extends CostKind {
   def cost(k: Int, msg: Coll[Byte], nonce: Coll[Byte], h: Coll[Byte]): JitCost = {
     val chunkSize = CalcBlake2b256.costKind.chunkSize
     val perChunkCost = CalcBlake2b256.costKind.perChunkCost
-    val baseCost = 100
+    val baseCost = 200
 
     // the heaviest part inside is k + 1 Blake2b256 invocations
     val c = baseCost + (k + 1) * ((msg.length + nonce.length + h.length) / chunkSize + 1) * perChunkCost.value
