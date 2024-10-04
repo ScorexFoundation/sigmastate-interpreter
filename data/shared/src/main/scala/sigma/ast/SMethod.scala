@@ -155,8 +155,8 @@ case class SMethod(
     val methodName = name + "_eval"
     val m = try {
       objType.thisRClass.getMethod(methodName, paramTypes:_*)
-    }
-    catch { case e: NoSuchMethodException =>
+    } catch { case e: NoSuchMethodException =>
+      println("dm: " + objType.thisRClass.getDeclaredMethods().mkString(", "))
       throw new RuntimeException(s"Cannot find eval method def $methodName(${Seq(paramTypes:_*)})", e)
     }
     m

@@ -67,6 +67,32 @@ class BasicOpsTests extends AnyFunSuite with ContractsTestkit with Matchers {
     box.creationInfo._1 shouldBe a [Integer]
   }
 
+  test("xor evaluation") {
+    val es = CErgoTreeEvaluator.DefaultEvalSettings
+    val accumulator = new CostAccumulator(
+      initialCost = JitCost(0),
+      costLimit = Some(JitCost.fromBlockCost(es.scriptCostLimitInEvaluator)))
+
+    val context = new CContext(
+      noInputs.toColl, noHeaders, dummyPreHeader,
+      Array[Box]().toColl, Array[Box]().toColl, 0, null, 0, null,
+      dummyPubkey.toColl, Colls.emptyColl, VersionContext.V6SoftForkVersion, VersionContext.V6SoftForkVersion)
+
+    val evaluator = new CErgoTreeEvaluator(
+      context = context,
+      constants = ErgoTree.EmptyConstants,
+      coster = accumulator, DefaultProfiler, es)
+
+    val msg = Colls.fromArray(Base16.decode("0a101b8c6a4f2e").get)
+    VersionContext.withVersions(VersionContext.V6SoftForkVersion, VersionContext.V6SoftForkVersion) {
+      val res = MethodCall(Global, SGlobalMethods.xorMethod,
+        IndexedSeq(ByteArrayConstant(msg), ByteArrayConstant(msg)), Map.empty)
+        .evalTo[sigma.Coll[Byte]](Map.empty)(evaluator)
+
+      res should be(Colls.fromArray(Base16.decode("00000000000000").get))
+    }
+  }
+
   /**
     * Checks BigInt.nbits evaluation for SigmaDSL as well as AST interpreter (MethodCall) layers
     */
@@ -93,7 +119,6 @@ class BasicOpsTests extends AnyFunSuite with ContractsTestkit with Matchers {
       context = context,
       constants = ErgoTree.EmptyConstants,
       coster = accumulator, DefaultProfiler, es)
-
 
     VersionContext.withVersions(VersionContext.V6SoftForkVersion, VersionContext.V6SoftForkVersion) {
       val res = MethodCall(Global, SGlobalMethods.powHitMethod,
