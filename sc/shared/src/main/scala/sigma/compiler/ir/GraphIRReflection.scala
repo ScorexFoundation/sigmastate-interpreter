@@ -515,8 +515,8 @@ object GraphIRReflection {
         },
         mkMethod(clazz, "powHit", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
           obj.asInstanceOf[ctx.SigmaDslBuilder].powHit(args(0).asInstanceOf[ctx.Ref[Int]],
-            args(1).asInstanceOf[ctx.Ref[Coll[Byte]]], args(2).asInstanceOf[ctx.Ref[Coll[Byte]]],
-            args(3).asInstanceOf[ctx.Ref[Coll[Byte]]], args(4).asInstanceOf[ctx.Ref[Int]])
+            args(1).asInstanceOf[ctx.Ref[ctx.Coll[Byte]]], args(2).asInstanceOf[ctx.Ref[ctx.Coll[Byte]]],
+            args(3).asInstanceOf[ctx.Ref[ctx.Coll[Byte]]], args(4).asInstanceOf[ctx.Ref[Int]])
         },
         mkMethod(clazz, "fromBigEndianBytes", Array[Class[_]](classOf[Base#Ref[_]], classOf[TypeDescs#Elem[_]])) { (obj, args) =>
           obj.asInstanceOf[ctx.SigmaDslBuilder].fromBigEndianBytes(args(0).asInstanceOf[ctx.Ref[ctx.Coll[Byte]]])(args(1).asInstanceOf[ctx.Elem[SType]])
