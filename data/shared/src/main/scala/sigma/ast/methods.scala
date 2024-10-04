@@ -1718,24 +1718,6 @@ case object SGlobalMethods extends MonoTypeMethods {
     .withIRInfo(MethodCallIrBuilder)
     .withInfo(MethodCall, "Decode nbits-encoded big integer number", ArgInfo("nbits", "NBits-encoded argument"))
 
-  /**
-    * encodeNBits evaluation with costing
-    */
-  def encodeNbits_eval(mc: MethodCall, G: SigmaDslBuilder, bigInt: BigInt)(implicit E: ErgoTreeEvaluator): Long = {
-    E.addFixedCost(EnDecodeNBitsCost, encodeNBitsMethod.opDesc) {
-      NBitsUtils.encodeCompactBits(bigInt.asInstanceOf[CBigInt].wrappedValue)
-    }
-  }
-
-  /**
-    * decodeNBits evaluation with costing
-    */
-  def decodeNbits_eval(mc: MethodCall, G: SigmaDslBuilder, l: Long)(implicit E: ErgoTreeEvaluator): BigInt = {
-    E.addFixedCost(EnDecodeNBitsCost, decodeNBitsMethod.opDesc) {
-      CBigInt(NBitsUtils.decodeCompactBits(l).bigInteger)
-    }
-  }
-
   lazy val serializeMethod = SMethod(this, "serialize",
     SFunc(Array(SGlobal, tT), SByteArray, Array(paramT)), 3, DynamicCost)
       .withIRInfo(MethodCallIrBuilder)
