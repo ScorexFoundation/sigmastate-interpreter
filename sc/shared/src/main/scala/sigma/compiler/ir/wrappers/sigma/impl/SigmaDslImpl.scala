@@ -1981,7 +1981,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
 
     override def powHit(k: Ref[Int], msg: Ref[Coll[Byte]], nonce: Ref[Coll[Byte]], h: Ref[Coll[Byte]], N: Ref[Int]): Ref[BigInt] = {
       asRep[BigInt](mkMethodCall(self,
-        SigmaDslBuilderClass.getMethod("powHit", classOf[Sym], classOf[Sym]),
+        SigmaDslBuilderClass.getMethod("powHit", classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym]),
         Array[AnyRef](k, msg, nonce, h, N),
         true, false, element[BigInt]))
     }
@@ -2146,6 +2146,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
     }
 
     def powHit(k: Ref[Int], msg: Ref[Coll[Byte]], nonce: Ref[Coll[Byte]], h: Ref[Coll[Byte]], N: Ref[Int]): Ref[BigInt] = {
+      println(SigmaDslBuilderClass.getDeclaredMethods().mkString(", "))
       asRep[BigInt](mkMethodCall(source,
         SigmaDslBuilderClass.getMethod("powHit", classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym]),
         Array[AnyRef](k, msg, nonce, h, N),
