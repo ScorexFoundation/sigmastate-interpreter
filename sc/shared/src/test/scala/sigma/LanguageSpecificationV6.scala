@@ -11,7 +11,7 @@ import sigma.ast.ErgoTree.ZeroHeader
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.syntax.TrueSigmaProp
 import sigma.ast.{SInt, _}
-import sigma.data.{CBigInt, CBox, CHeader, CSigmaDslBuilder, ExactNumeric, RType}
+import sigma.data.{CBigInt, CBox, CHeader, CSigmaDslBuilder, ExactNumeric, PairOfCols, RType}
 import sigma.eval.{CostDetails, SigmaDsl, TracedCost}
 import sigma.serialization.ValueCodes.OpCode
 import sigma.util.Extensions.{BooleanOps, IntOps}
@@ -1639,6 +1639,8 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
         Coll(1, 2) -> Expected(ExpectedResult(Success(Coll(1, 2)), None)),
         Coll(1, 1, 2) -> Expected(ExpectedResult(Success(Coll(1, 2)), None)),
         Coll(1, 2, 2) -> Expected(ExpectedResult(Success(Coll(1, 2)), None)),
+        Coll(2, 2, 2) -> Expected(ExpectedResult(Success(Coll(2)), None)),
+        Coll(3, 1, 2, 2, 2, 4, 4, 1) -> Expected(ExpectedResult(Success(Coll(3, 1, 2, 4)), None)),
         Coll[Int]() -> Expected(ExpectedResult(Success(Coll[Int]()), None))
       ),
       f
@@ -1656,8 +1658,10 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
       Seq(
         (Coll(1, 2, 3), Coll(1, 2)) -> Expected(ExpectedResult(Success(true), None)),
         (Coll(1, 2, 3), Coll(1, 2, 3)) -> Expected(ExpectedResult(Success(true), None)),
+        (Coll(1, 2, 3), Coll(1, 2, 4)) -> Expected(ExpectedResult(Success(false), None)),
         (Coll(1, 2, 3), Coll(1, 2, 3, 4)) -> Expected(ExpectedResult(Success(false), None)),
-        (Coll[Int](), Coll[Int]()) -> Expected(ExpectedResult(Success(true), None))
+        (Coll[Int](), Coll[Int]()) -> Expected(ExpectedResult(Success(true), None)),
+        (Coll[Int](1, 2), Coll[Int]()) -> Expected(ExpectedResult(Success(true), None))
       ),
       f
     )

@@ -45,13 +45,10 @@ trait Coll[@specialized A] {
     */
   def apply(i: Int): A
 
-  /** The element at given index.
-    *  Indices start at `0`; `xs.apply(0)` is the first element of collection `xs`.
-    *  Note the indexing syntax `xs(i)` is a shorthand for `xs.apply(i)`.
+  /** The element at given index or None if there is no such element. Indices start at `0`.
     *
     *  @param  i       the index
-    *  @return         the element at the given index
-    *  @throws         ArrayIndexOutOfBoundsException if `i < 0` or `length <= i`
+    *  @return         the element at the given index, or None if there is no such element
     */
   def get(i: Int): Option[A] = {
     if (isDefinedAt(i)) {
@@ -92,12 +89,16 @@ trait Coll[@specialized A] {
     * produces a collection ((x0, y0), ..., (xK, yK)) where K = min(N, M) */
   def zip[@specialized B](ys: Coll[B]): Coll[(A, B)]
 
-  /** For this collection (x0, ..., xN) and other collection (y0, ..., yM)
-    * produces a collection ((x0, y0), ..., (xK, yK)) where K = min(N, M) */
+  /**
+    * @return true if first elements of this collection form given `ys` collection, false otherwise.
+    *         E.g. [1,2,3] starts with [1,2]
+    */
   def startsWith(ys: Coll[A]): Boolean
 
-  /** For this collection (x0, ..., xN) and other collection (y0, ..., yM)
-    * produces a collection ((x0, y0), ..., (xK, yK)) where K = min(N, M) */
+  /**
+    * @return true if last elements of this collection form given `ys` collection, false otherwise.
+    *         E.g. [1,2,3] ends with [2,3]
+    */
   def endsWith(ys: Coll[A]): Boolean
 
   /** Tests whether a predicate holds for at least one element of this collection.

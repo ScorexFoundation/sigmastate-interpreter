@@ -354,9 +354,15 @@ class PairOfCols[@specialized L, @specialized R](val ls: Coll[L], val rs: Coll[R
 
   def zip[@specialized B](ys: Coll[B]): PairColl[(L,R), B] = builder.pairColl(this, ys)
 
-  def startsWith(ys: Coll[(L, R)]): Boolean = toArray.startsWith(ys.toArray)
+  def startsWith(ys: Coll[(L, R)]): Boolean = ys match {
+    case yp: PairOfCols[L, R] => ls.startsWith(yp.ls) && rs.startsWith(yp.rs)
+    case _ => toArray.startsWith(ys.toArray)
+  }
 
-  def endsWith(ys: Coll[(L, R)]): Boolean = toArray.endsWith(ys.toArray)
+  def endsWith(ys: Coll[(L, R)]): Boolean = ys match {
+    case yp: PairOfCols[L, R] => ls.endsWith(yp.ls) && rs.endsWith(yp.rs)
+    case _ => toArray.endsWith(ys.toArray)
+  }
 
   override def indices: Coll[Int] = if (ls.length <= rs.length) ls.indices else rs.indices
 

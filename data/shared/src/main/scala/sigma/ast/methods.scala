@@ -1070,8 +1070,10 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
 
   // ======== 6.0 methods below ===========
 
+  private val reverseCostKind = Append.costKind
+
   val ReverseMethod = SMethod(this, "reverse",
-    SFunc(Array(ThisType), ThisType, paramIVSeq), 30, Zip_CostKind) // todo: costing
+    SFunc(Array(ThisType), ThisType, paramIVSeq), 30, reverseCostKind)
     .withIRInfo(MethodCallIrBuilder)
     .withInfo(MethodCall, "")
 
@@ -1087,10 +1089,12 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
     }
   }
 
+  private val distinctCostKind = PerItemCost(baseCost = JitCost(60), perChunkCost = JitCost(5), chunkSize = 100)
+
   val DistinctMethod = SMethod(this, "distinct",
-    SFunc(Array(ThisType), ThisType, paramIVSeq), 31, Zip_CostKind) // todo: costing
+    SFunc(Array(ThisType), ThisType, paramIVSeq), 31, distinctCostKind)
     .withIRInfo(MethodCallIrBuilder)
-    .withInfo(MethodCall, "")
+    .withInfo(MethodCall, "Returns inversed collection.")
 
   /** Implements evaluation of Coll.reverse method call ErgoTree node.
     * Called via reflection based on naming convention.
@@ -1104,10 +1108,13 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
     }
   }
 
+  private val startsWithCostKind = Zip_CostKind
+
   val StartsWithMethod = SMethod(this, "startsWith",
-    SFunc(Array(ThisType, ThisType), SBoolean, paramIVSeq), 32, Zip_CostKind) // todo: costing
+    SFunc(Array(ThisType, ThisType), SBoolean, paramIVSeq), 32, startsWithCostKind)
     .withIRInfo(MethodCallIrBuilder)
-    .withInfo(MethodCall, "")
+    .withInfo(MethodCall, "Returns true if this collection starts with given one, false otherwise.",
+      ArgInfo("prefix", "Collection to be checked for being a prefix of this collection."))
 
   /** Implements evaluation of Coll.zip method call ErgoTree node.
     * Called via reflection based on naming convention.
@@ -1121,10 +1128,13 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
     }
   }
 
+  private val endsWithCostKind = Zip_CostKind
+
   val EndsWithMethod = SMethod(this, "endsWith",
-    SFunc(Array(ThisType, ThisType), SBoolean, paramIVSeq), 33, Zip_CostKind) // todo: costing
+    SFunc(Array(ThisType, ThisType), SBoolean, paramIVSeq), 33, endsWithCostKind)
     .withIRInfo(MethodCallIrBuilder)
-    .withInfo(MethodCall, "")
+    .withInfo(MethodCall, "Returns true if this collection ends with given one, false otherwise.",
+      ArgInfo("suffix", "Collection to be checked for being a suffix of this collection."))
 
   /** Implements evaluation of Coll.zip method call ErgoTree node.
     * Called via reflection based on naming convention.
@@ -1139,9 +1149,12 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
   }
 
   val GetMethod = SMethod(this, "get",
-    SFunc(Array(ThisType, SInt), SOption(tIV), Array[STypeParam](tIV)), 34, ByIndex.costKind) //todo: costing
+    SFunc(Array(ThisType, SInt), SOption(tIV), Array[STypeParam](tIV)), 34, ByIndex.costKind)
     .withIRInfo(MethodCallIrBuilder)
-    .withInfo(MethodCall, "")
+    .withInfo(MethodCall,
+              "Returns Some(element) if there is an element at given index, None otherwise.",
+              ArgInfo("index", "Index of an element (starting from 0).")
+            )
 
   private val v5Methods = super.getMethods() ++ Seq(
     SizeMethod,
