@@ -1734,4 +1734,25 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
+  property("Global.some") {
+    val ext: Seq[VarBinding] = Seq(
+      (intVar1, IntConstant(0))
+    )
+    def someTest(): Assertion = {
+      test("some", env, ext,
+        """{
+          |   val xo = Global.some[Int](5)
+          |   xo.get == 5
+          |}""".stripMargin,
+        null
+      )
+    }
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      someTest()
+    } else {
+      an[Exception] should be thrownBy someTest()
+    }
+  }
+
 }

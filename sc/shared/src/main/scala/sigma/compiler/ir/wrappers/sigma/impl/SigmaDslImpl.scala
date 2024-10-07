@@ -1978,6 +1978,20 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         true, false, cT))
     }
 
+    override def some[T](value: Ref[T])(implicit cT: Elem[T]): Ref[WOption[T]] = {
+      asRep[WOption[T]](mkMethodCall(self,
+        SigmaDslBuilderClass.getMethod("some", classOf[Sym], classOf[Elem[T]]),
+        Array[AnyRef](value, cT, Map(tT -> Evaluation.rtypeToSType(cT.sourceType))),
+        true, false, element[WOption[T]]))
+    }
+
+    override def none[T]()(implicit cT: Elem[T]): Ref[WOption[T]] = {
+      asRep[WOption[T]](mkMethodCall(self,
+        SigmaDslBuilderClass.getMethod("none", classOf[Elem[T]]),
+        Array[AnyRef](cT, Map(tT -> Evaluation.rtypeToSType(cT.sourceType))),
+        true, false, element[WOption[T]]))
+    }
+
   }
 
   implicit object LiftableSigmaDslBuilder
@@ -2151,6 +2165,21 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         Array[AnyRef](bytes, cT),
         true, true, cT, Map(tT -> Evaluation.rtypeToSType(cT.sourceType))))
     }
+
+    def some[T](value: Ref[T])(implicit cT: Elem[T]): Ref[WOption[T]] = {
+      asRep[WOption[T]](mkMethodCall(source,
+        SigmaDslBuilderClass.getMethod("some", classOf[Sym], classOf[Elem[T]]),
+        Array[AnyRef](value, cT),
+        true, true, element[WOption[T]], Map(tT -> Evaluation.rtypeToSType(cT.sourceType))))
+    }
+
+    def none[T]()(implicit cT: Elem[T]): Ref[WOption[T]] = {
+      asRep[WOption[T]](mkMethodCall(source,
+        SigmaDslBuilderClass.getMethod("none", classOf[Elem[T]]),
+        Array[AnyRef](cT),
+        true, true, element[WOption[T]], Map(tT -> Evaluation.rtypeToSType(cT.sourceType))))
+    }
+
   }
 
   // entityUnref: single unref method for each type family
