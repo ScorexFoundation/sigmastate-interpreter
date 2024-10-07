@@ -565,7 +565,9 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit with C
         EndsWithMethod,
         MapReduceMethod,
         */
-      ), true)
+      ) ++ (if (isV6Activated) {
+        Seq(MInfo(30, ReverseMethod), MInfo(31, DistinctMethod), MInfo(32, StartsWithMethod), MInfo(33, EndsWithMethod), MInfo(34, GetMethod))
+      } else Seq.empty), true)
     },
     { import SOptionMethods._
       (SOption.typeId, Seq(

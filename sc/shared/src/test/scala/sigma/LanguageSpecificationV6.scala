@@ -12,7 +12,7 @@ import sigma.ast.SCollection.SByteArray
 import sigma.ast.syntax.TrueSigmaProp
 import sigma.ast.{SInt, _}
 import sigma.data.{AvlTreeData, AvlTreeFlags, CAnyValue, CAvlTree, CBigInt, CBox, CHeader, CSigmaProp, ExactNumeric, ProveDHTuple, RType}
-import sigma.data.{CBigInt, CBox, CHeader, CSigmaDslBuilder, ExactNumeric, RType}
+import sigma.data.{CBigInt, CBox, CHeader, CSigmaDslBuilder, ExactNumeric, PairOfCols, RType}
 import sigma.eval.{CostDetails, SigmaDsl, TracedCost}
 import sigma.serialization.ValueCodes.OpCode
 import sigma.util.Extensions.{BooleanOps, IntOps}
@@ -1756,6 +1756,100 @@ class LanguageSpecificationV6 extends LanguageSpecificationBase { suite =>
       bigIntFromBigEndianBytes
     )
 
+  }
+
+  property("Coll.reverse") {
+    val f = newFeature[Coll[Int], Coll[Int]](
+      { (xs: Coll[Int]) => xs.reverse },
+      """{(xs: Coll[Int]) => xs.reverse }""".stripMargin,
+      sinceVersion = VersionContext.V6SoftForkVersion
+    )
+
+    verifyCases(
+      Seq(
+        Coll(1, 2) -> Expected(ExpectedResult(Success(Coll(2, 1)), None)),
+        Coll[Int]() -> Expected(ExpectedResult(Success(Coll[Int]()), None))
+      ),
+      f
+    )
+  }
+
+  property("Coll.distinct") {
+    val f = newFeature[Coll[Int], Coll[Int]](
+      { (xs: Coll[Int]) => xs.distinct },
+      """{(xs: Coll[Int]) => xs.distinct }""".stripMargin,
+      sinceVersion = VersionContext.V6SoftForkVersion
+    )
+
+    verifyCases(
+      Seq(
+        Coll(1, 2) -> Expected(ExpectedResult(Success(Coll(1, 2)), None)),
+        Coll(1, 1, 2) -> Expected(ExpectedResult(Success(Coll(1, 2)), None)),
+        Coll(1, 2, 2) -> Expected(ExpectedResult(Success(Coll(1, 2)), None)),
+        Coll(2, 2, 2) -> Expected(ExpectedResult(Success(Coll(2)), None)),
+        Coll(3, 1, 2, 2, 2, 4, 4, 1) -> Expected(ExpectedResult(Success(Coll(3, 1, 2, 4)), None)),
+        Coll[Int]() -> Expected(ExpectedResult(Success(Coll[Int]()), None))
+      ),
+      f
+    )
+  }
+
+  property("Coll.startsWith") {
+    val f = newFeature[(Coll[Int], Coll[Int]), Boolean](
+      { (xs: (Coll[Int], Coll[Int])) => xs._1.startsWith(xs._2) },
+      """{(xs: (Coll[Int], Coll[Int])) => xs._1.startsWith(xs._2) }""".stripMargin,
+      sinceVersion = VersionContext.V6SoftForkVersion
+    )
+
+    verifyCases(
+      Seq(
+        (Coll(1, 2, 3), Coll(1, 2)) -> Expected(ExpectedResult(Success(true), None)),
+        (Coll(1, 2, 3), Coll(1, 2, 3)) -> Expected(ExpectedResult(Success(true), None)),
+        (Coll(1, 2, 3), Coll(1, 2, 4)) -> Expected(ExpectedResult(Success(false), None)),
+        (Coll(1, 2, 3), Coll(1, 2, 3, 4)) -> Expected(ExpectedResult(Success(false), None)),
+        (Coll[Int](), Coll[Int]()) -> Expected(ExpectedResult(Success(true), None)),
+        (Coll[Int](1, 2), Coll[Int]()) -> Expected(ExpectedResult(Success(true), None))
+      ),
+      f
+    )
+  }
+
+  property("Coll.endsWith") {
+    val f = newFeature[(Coll[Int], Coll[Int]), Boolean](
+      { (xs: (Coll[Int], Coll[Int])) => xs._1.endsWith(xs._2) },
+      """{(xs: (Coll[Int], Coll[Int])) => xs._1.endsWith(xs._2) }""".stripMargin,
+      sinceVersion = VersionContext.V6SoftForkVersion
+    )
+
+    verifyCases(
+      Seq(
+        (Coll(1, 2, 3), Coll(1, 2)) -> Expected(ExpectedResult(Success(false), None)),
+        (Coll(1, 2, 3), Coll(2, 3)) -> Expected(ExpectedResult(Success(true), None)),
+        (Coll(1, 2, 3), Coll(2, 3, 4)) -> Expected(ExpectedResult(Success(false), None)),
+        (Coll(1, 2, 3), Coll(1, 2, 3)) -> Expected(ExpectedResult(Success(true), None)),
+        (Coll[Int](), Coll[Int]()) -> Expected(ExpectedResult(Success(true), None))
+      ),
+      f
+    )
+  }
+
+  property("Coll.get") {
+    val f = newFeature[(Coll[Int], Int), Option[Int]](
+      { (xs: (Coll[Int], Int)) => xs._1.get(xs._2) },
+      """{(xs: (Coll[Int], Int)) => xs._1.get(xs._2) }""".stripMargin,
+      sinceVersion = VersionContext.V6SoftForkVersion
+    )
+
+    verifyCases(
+      Seq(
+        (Coll(1, 2), 0) -> Expected(ExpectedResult(Success(Some(1)), None)),
+        (Coll(1, 2), 1) -> Expected(ExpectedResult(Success(Some(2)), None)),
+        (Coll(1, 2), -1) -> Expected(ExpectedResult(Success(None), None)),
+        (Coll(1, 2), 2) -> Expected(ExpectedResult(Success(None), None)),
+        (Coll[Int](), 0) -> Expected(ExpectedResult(Success(None), None))
+      ),
+      f
+    )
   }
 
 }
