@@ -1978,6 +1978,13 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         Array[AnyRef](l, cT),
         true, false, element[T](cT), Map(tT -> Evaluation.rtypeToSType(cT.sourceType))))
     }
+    override def fromBigEndianBytes[T](bytes: Ref[Coll[Byte]])(implicit cT: Elem[T]): Ref[T] = {
+      asRep[T](mkMethodCall(self,
+        SigmaDslBuilderClass.getMethod("fromBigEndianBytes", classOf[Sym], classOf[Elem[T]]),
+        Array[AnyRef](bytes, cT, Map(tT -> Evaluation.rtypeToSType(cT.sourceType))),
+        true, false, cT))
+    }
+
   }
 
   implicit object LiftableSigmaDslBuilder
@@ -2151,6 +2158,13 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         Array[AnyRef](bytes, cT),
         true, true, element[T](cT), Map(tT -> Evaluation.rtypeToSType(cT.sourceType))))
     }
+
+    def fromBigEndianBytes[T](bytes: Ref[Coll[Byte]])(implicit cT: Elem[T]): Ref[T] = {
+      asRep[T](mkMethodCall(source,
+        SigmaDslBuilderClass.getMethod("fromBigEndianBytes", classOf[Sym], classOf[Elem[T]]),
+        Array[AnyRef](bytes, cT),
+        true, true, cT, Map(tT -> Evaluation.rtypeToSType(cT.sourceType))))
+    }
   }
 
   // entityUnref: single unref method for each type family
@@ -2170,7 +2184,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         Elem.declaredMethods(RClass(classOf[SigmaDslBuilder]), RClass(classOf[SSigmaDslBuilder]), Set(
         "Colls", "verifyZK", "atLeast", "allOf", "allZK", "anyOf", "anyZK", "xorOf", "sigmaProp", "blake2b256", "sha256",
           "byteArrayToBigInt", "longToByteArray", "byteArrayToLong", "proveDlog", "proveDHTuple", "groupGenerator", "substConstants",
-          "decodePoint", "avlTree", "xor", "serialize", "deserializeTo"
+          "decodePoint", "avlTree", "xor", "serialize", "deserializeTo", "fromBigEndianBytes"
         ))
     }
   }

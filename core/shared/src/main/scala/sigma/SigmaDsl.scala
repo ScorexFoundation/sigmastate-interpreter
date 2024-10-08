@@ -766,5 +766,8 @@ trait SigmaDslBuilder {
 
   /** Deserializes provided `bytes` into a value of type `T`. **/
   def deserializeTo[T](bytes: Coll[Byte])(implicit cT: RType[T]): T
+
+  /** Returns a number decoded from provided big-endian bytes array. */
+  def fromBigEndianBytes[T](bytes: Coll[Byte])(implicit cT: RType[T]): T
 }
 

@@ -1,6 +1,7 @@
 package sigma.compiler.ir
 
 import org.ergoplatform._
+import sigma.Evaluation.{rtypeToSType, stypeToRType}
 import sigma.ast.SType.tT
 import sigma.ast._
 import sigma.ast.syntax.{ValueOps, _}
