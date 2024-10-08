@@ -5,7 +5,10 @@ import org.ergoplatform._
 import org.scalatest.Assertion
 import scorex.util.encode.Base16
 import org.scalatest.Assertion
+import scorex.utils.Ints
 import sigma.Extensions.ArrayOps
+import sigma.{SigmaTestingData, VersionContext}
+import sigma.VersionContext.V6SoftForkVersion
 import sigma.VersionContext
 import sigma.GroupElement
 import sigma.VersionContext.V6SoftForkVersion
@@ -26,6 +29,7 @@ import sigma.ast.Apply
 import sigma.eval.EvalSettings
 import sigma.exceptions.InvalidType
 import sigma.serialization.ErgoTreeSerializer
+import sigmastate.utils.Helpers
 import sigmastate.utils.Helpers._
 
 import java.math.BigInteger
@@ -1042,11 +1046,282 @@ class BasicOpsSpecification extends CompilerTestingCommons
     )
   }
 
+  property("Coll.reverse"){
+    def reverseTest() = test("reverse", env, ext,
+      """{
+        | val c1 = Coll(1, 2, 3)
+        | val c2 = Coll(3, 2, 1)
+        |
+        | val b1 = Coll(INPUTS(0), OUTPUTS(0))
+        | val b2 = Coll(OUTPUTS(0), INPUTS(0))
+        |
+        | c1.reverse == c2 && b1.reverse == b2
+        | }""".stripMargin,
+      null
+    )
+
+    if(VersionContext.current.isV6SoftForkActivated) {
+      reverseTest()
+    } else {
+      an[Exception] shouldBe thrownBy(reverseTest())
+    }
+  }
+
+  property("Coll.distinct"){
+    def reverseTest() = test("distinct", env, ext,
+      """{
+        | val c1 = Coll(1, 2, 3, 3, 2)
+        | val c2 = Coll(3, 2, 1)
+        |
+        | val h1 = Coll(INPUTS(0), INPUTS(0))
+        | val h2 = Coll(INPUTS(0))
+        |
+        | c1.distinct.reverse == c2 && h1.distinct == h2
+        | }""".stripMargin,
+      null
+    )
+
+    if(VersionContext.current.isV6SoftForkActivated) {
+      reverseTest()
+    } else {
+      an[Exception] shouldBe thrownBy(reverseTest())
+    }
+  }
+
+  property("Coll.startsWith"){
+    def reverseTest() = test("distinct", env, ext,
+      """{
+        | val c1 = Coll(1, 2, 3)
+        | val c2 = Coll(1, 2)
+        | val c3 = Coll(1, 3)
+        | val c4 = Coll[Int]()
+        | val c5 = Coll(1, 2, 3, 4)
+        |
+        | val b1 = c1.startsWith(c3)
+        | val b2 = c1.startsWith(c5)
+        |
+        | c1.startsWith(c2) && c1.startsWith(c4) && c1.startsWith(c1) && !b1 && !b2
+        | }""".stripMargin,
+      null
+    )
+
+    if(VersionContext.current.isV6SoftForkActivated) {
+      reverseTest()
+    } else {
+      an[Exception] shouldBe thrownBy(reverseTest())
+    }
+  }
+
+  property("Coll.startsWith - tuples"){
+    def reverseTest() = test("distinct", env, ext,
+      """{
+        | val c1 = Coll((1, 2), (3, 4), (5, 6))
+        | val c2 = Coll((1, 2), (3, 4))
+        | val c3 = Coll((1, 3))
+        | val c4 = Coll[(Int, Int)]()
+        | val c5 = Coll((1, 2), (3, 4), (5, 6), (7, 8))
+        |
+        | val b1 = c1.startsWith(c3)
+        | val b2 = c1.startsWith(c5)
+        |
+        | c1.startsWith(c2) && c1.startsWith(c4) && c1.startsWith(c1) && !b1 && !b2
+        | }""".stripMargin,
+      null
+    )
+
+    if(VersionContext.current.isV6SoftForkActivated) {
+      reverseTest()
+    } else {
+      an[Exception] shouldBe thrownBy(reverseTest())
+    }
+  }
+
+  property("Coll.endsWith"){
+    def reverseTest() = test("distinct", env, ext,
+      """{
+        | val c1 = Coll(1, 2, 3)
+        | val c2 = Coll(2, 3)
+        | val c3 = Coll(2, 2)
+        | val c4 = Coll[Int]()
+        | val c5 = Coll(1, 2, 3, 4)
+        |
+        | val b1 = c1.endsWith(c3)
+        | val b2 = c1.endsWith(c5)
+        |
+        | c1.endsWith(c2) && c1.endsWith(c4) && c1.endsWith(c1) && !b1 && !b2
+        | }""".stripMargin,
+      null
+    )
+
+    if(VersionContext.current.isV6SoftForkActivated) {
+      reverseTest()
+    } else {
+      an[Exception] shouldBe thrownBy(reverseTest())
+    }
+  }
+
+  property("Coll.endsWith - tuples"){
+    def reverseTest() = test("endsWith tuples", env, ext,
+      """{
+        | val c1 = Coll((1, 2), (2, 3))
+        | val c2 = Coll((2, 3))
+        | val c3 = Coll((2, 2))
+        | val c4 = Coll[(Int, Int)]()
+        | val c5 = Coll((0, 2), (2, 3))
+        |
+        | val b1 = c1.endsWith(c3)
+        | val b2 = c1.endsWith(c5)
+        |
+        | c1.endsWith(c2) && c1.endsWith(c4) && c1.endsWith(c1) && !b1 && !b2
+        | }""".stripMargin,
+      null
+    )
+
+    if(VersionContext.current.isV6SoftForkActivated) {
+      reverseTest()
+    } else {
+      an[Exception] shouldBe thrownBy(reverseTest())
+    }
+  }
+
+  property("Coll.get"){
+    def getTest() = test("get", env, ext,
+      """{
+        |   val c1 = Coll(1)
+        |   val c2 = Coll[Int]()
+        |
+        |   c2.get(0).getOrElse(c1.get(0).get) == c1.get(0).get
+        | }""".stripMargin,
+      null
+    )
+
+    if(VersionContext.current.isV6SoftForkActivated) {
+      getTest()
+    } else {
+      an[Exception] shouldBe thrownBy(getTest())
+    }
+  }
+
+  property("Global.fromBigEndianBytes - byte") {
+    def fromTest() = test("fromBigEndianBytes - byte", env, ext,
+      s"""{
+         |  val ba = Coll(5.toByte)
+         |  Global.fromBigEndianBytes[Byte](ba) == 5
+         |}
+         |""".stripMargin,
+      null
+    )
+    if(VersionContext.current.isV6SoftForkActivated) {
+      fromTest()
+    } else {
+      an[Exception] should be thrownBy(fromTest())
+    }
+  }
+
+  property("Global.fromBigEndianBytes - short") {
+    def fromTest() = test("fromBigEndianBytes - short", env, ext,
+      s"""{
+         |  val ba = Coll(5.toByte, 5.toByte)
+         |  Global.fromBigEndianBytes[Short](ba) != 0
+         |}
+         |""".stripMargin,
+      null
+    )
+    if(VersionContext.current.isV6SoftForkActivated) {
+      fromTest()
+    } else {
+      an[Exception] should be thrownBy(fromTest())
+    }
+  }
+
+  property("Global.fromBigEndianBytes - int") {
+    def fromTest() = test("fromBigEndianBytes - int", env, ext,
+      s"""{
+         |  val ba = fromBase16("${Base16.encode(Ints.toByteArray(Int.MaxValue))}")
+         |  Global.fromBigEndianBytes[Int](ba) == ${Int.MaxValue}
+         |}
+         |""".stripMargin,
+      null
+    )
+    if(VersionContext.current.isV6SoftForkActivated) {
+      fromTest()
+    } else {
+      an[Exception] should be thrownBy(fromTest())
+    }
+  }
+
+  property("Global.fromBigEndianBytes - long") {
+    def fromTest() = test("fromBigEndianBytes - long", env, ext,
+      s"""{
+         |  val l = 1088800L
+         |  val ba = longToByteArray(l)
+         |  Global.fromBigEndianBytes[Long](ba) == l
+         |}
+         |""".stripMargin,
+      null
+    )
+    if(VersionContext.current.isV6SoftForkActivated) {
+      fromTest()
+    } else {
+      an[Exception] should be thrownBy(fromTest())
+    }
+  }
+
+  property("Global.fromBigEndianBytes - Long.toBytes") {
+    def fromTest() = test("fromBigEndianBytes - long", env, ext,
+      s"""{
+         |  val l = 1088800L
+         |  val ba = l.toBytes
+         |  Global.fromBigEndianBytes[Long](ba) == l
+         |}
+         |""".stripMargin,
+      null
+    )
+    if(VersionContext.current.isV6SoftForkActivated) {
+      fromTest()
+    } else {
+      an[Exception] should be thrownBy(fromTest())
+    }
+  }
+
+  property("Global.fromBigEndianBytes - bigInt") {
+    val bi = new BigInteger("9785856985394593489356430476450674590674598659865986594859056865984690568904")
+    def fromTest() = test("fromBigEndianBytes - bigInt", env, ext,
+      s"""{
+         |  val ba = fromBase16("${Base16.encode(bi.toByteArray)}")
+         |  Global.fromBigEndianBytes[BigInt](ba) == bigInt("$bi")
+         |}
+         |""".stripMargin,
+      null
+    )
+    if(VersionContext.current.isV6SoftForkActivated) {
+      fromTest()
+    } else {
+      an[Exception] should be thrownBy(fromTest())
+    }
+  }
+
   property("Int.toBytes") {
     def toBytesTest() = test("Int.toBytes", env, ext,
       """{
         |   val l = 1
         |   l.toBytes == Coll(0.toByte, 0.toByte, 0.toByte, 1.toByte)
+        | }""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      toBytesTest()
+    } else {
+      an[Exception] shouldBe thrownBy(toBytesTest())
+    }
+  }
+
+  property("Int.toBits") {
+    def toBytesTest() = test("Int.toBytes", env, ext,
+      """{
+        |   val l = 1477959696
+        |   l.toBits == Coll(false, true, false, true, true, false, false, false, false, false, false, true, false, true, true ,true, true, true, true, false, false, false, false, false, false, false, false, true, false, false, false, false)
         | }""".stripMargin,
       null
     )
@@ -1088,6 +1363,190 @@ class BasicOpsSpecification extends CompilerTestingCommons
       toBytesTest()
     } else {
       an[Exception] shouldBe thrownBy(toBytesTest())
+    }
+  }
+
+  property("serialize - byte array") {
+    def deserTest() = test("serialize", env, ext,
+      s"""{
+            val ba = fromBase16("c0ffee");
+            Global.serialize(ba).size > ba.size
+          }""",
+      null,
+      true
+    )
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an [sigma.exceptions.TyperException] should be thrownBy deserTest()
+    } else {
+      deserTest()
+    }
+  }
+
+  property("serialize - collection of boxes") {
+    def deserTest() = test("serialize", env, ext,
+      s"""{
+            val boxes = INPUTS;
+            Global.serialize(boxes).size > 0
+          }""",
+      null,
+      true
+    )
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an [sigma.exceptions.TyperException] should be thrownBy deserTest()
+    } else {
+      deserTest()
+    }
+  }
+
+  property("serialize - optional collection") {
+    def deserTest() = test("serialize", env, ext,
+      s"""{
+            val opt = SELF.R1[Coll[Byte]];
+            Global.serialize(opt).size > SELF.R1[Coll[Byte]].get.size
+          }""",
+      null,
+      true
+    )
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an [sigma.exceptions.TyperException] should be thrownBy deserTest()
+    } else {
+      deserTest()
+    }
+  }
+
+  property("serialize(long) is producing different result from longToByteArray()") {
+    def deserTest() = test("serialize", env, ext,
+      s"""{
+            val l = -1000L
+            val ba1 = Global.serialize(l);
+            val ba2 = longToByteArray(l)
+            ba1 != ba2
+          }""",
+      null,
+      true
+    )
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an [sigma.exceptions.TyperException] should be thrownBy deserTest()
+    } else {
+      deserTest()
+    }
+  }
+
+  // the test shows that serialize(groupElement) is the same as groupElement.getEncoded
+  property("serialize - group element - equivalence with .getEncoded") {
+    val ge = Helpers.decodeGroupElement("026930cb9972e01534918a6f6d6b8e35bc398f57140d13eb3623ea31fbd069939b")
+  //  val ba = Base16.encode(ge.getEncoded.toArray)
+    def deserTest() = test("serialize", env, Seq(21.toByte -> GroupElementConstant(ge)),
+      s"""{
+            val ge = getVar[GroupElement](21).get
+            val ba = serialize(ge);
+            ba == ge.getEncoded
+          }""",
+      null,
+      true
+    )
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an [Exception] should be thrownBy deserTest()
+    } else {
+      deserTest()
+    }
+  }
+
+  // the test shows that serialize(sigmaProp) is the same as sigmaProp.propBytes without first 2 bytes
+  property("serialize and .propBytes correspondence") {
+    def deserTest() = test("deserializeTo", env, ext,
+      s"""{
+            val p1 = getVar[SigmaProp]($propVar1).get
+            val bytes = p1.propBytes
+            val ba = bytes.slice(2, bytes.size)
+            val ba2 = serialize(p1)
+            ba == ba2
+          }""",
+      null,
+      true
+    )
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an [Exception] should be thrownBy deserTest()
+    } else {
+      deserTest()
+    }
+  }
+
+  // todo: failing, needs for Header (de)serialization support from https://github.com/ScorexFoundation/sigmastate-interpreter/pull/972
+  property("serialize - collection of collection of headers") {
+    val td = new SigmaTestingData {}
+    val h1 = td.TestData.h1
+
+    val customExt = Seq(21.toByte -> HeaderConstant(h1))
+
+    def deserTest() = test("serialize", env, customExt,
+      s"""{
+            val h1 = getVar[Header](21).get;
+            val c = Coll(Coll(h1))
+            Global.serialize(c).size > 0
+          }""",
+      null,
+      true
+    )
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an [sigma.exceptions.TyperException] should be thrownBy deserTest()
+    } else {
+      deserTest()
+    }
+  }
+
+  // todo: roundtrip tests with deserializeTo from https://github.com/ScorexFoundation/sigmastate-interpreter/pull/979
+
+  // todo: move spam tests to dedicated test suite?
+  property("serialize - not spam") {
+    val customExt = Seq(21.toByte -> ShortArrayConstant((1 to Short.MaxValue).map(_.toShort).toArray),
+      22.toByte -> ByteArrayConstant(Array.fill(1)(1.toByte)))
+    def deserTest() = test("serialize", env, customExt,
+      s"""{
+            val indices = getVar[Coll[Short]](21).get
+            val base = getVar[Coll[Byte]](22).get
+
+             def check(index:Short): Boolean = { serialize(base) != base }
+            indices.forall(check)
+          }""",
+      null,
+      true
+    )
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[Exception] should be thrownBy deserTest()
+    } else {
+      deserTest()
+    }
+  }
+
+  property("serialize - spam attempt") {
+    val customExt = Seq(21.toByte -> ShortArrayConstant((1 to Short.MaxValue).map(_.toShort).toArray),
+      22.toByte -> ByteArrayConstant(Array.fill(16000)(1.toByte)))
+    def deserTest() = test("serialize", env, customExt,
+      s"""{
+            val indices = getVar[Coll[Short]](21).get
+            val base = getVar[Coll[Byte]](22).get
+
+             def check(index:Short): Boolean = { serialize(base) != base }
+            indices.forall(check)
+          }""",
+      null,
+      true
+    )
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[Exception] should be thrownBy deserTest()
+    } else {
+      // we have wrapped CostLimitException here
+      an[Exception] should be thrownBy deserTest()
     }
   }
 

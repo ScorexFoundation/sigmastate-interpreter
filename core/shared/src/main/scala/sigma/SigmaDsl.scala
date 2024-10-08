@@ -1,7 +1,8 @@
 package sigma
 
-import java.math.BigInteger
+import sigma.ast.SType
 
+import java.math.BigInteger
 import sigma.data._
 
 /**
@@ -154,19 +155,18 @@ trait BigInt {
   def |(that: BigInt): BigInt = or(that)
 
   /**
-    * @return a big integer whose value is `this xor that`
+    * @return a big integer whose value is `this xor that`.
+    *         This method returns a negative BigInteger if and only if exactly one of this and val are negative.
     */
   def xor(that: BigInt): BigInt
 
   /**
-    * @return a 256-bit signed integer whose value is (this << n). The shift distance, n, may be negative,
-    *         in which case this method performs a right shift. (Computes floor(this * 2n).)
+    * @return a 256-bit signed integer whose value is (this << n). `n` should be in 0..255 range (inclusive).
     */
   def shiftLeft(n: Int): BigInt
 
   /**
-    * @return a 256-bit signed integer whose value is (this >> n). Sign extension is performed. The shift distance, n,
-    *         may be negative, in which case this method performs a left shift. (Computes floor(this / 2n).)
+    * @return a 256-bit signed integer whose value is (this >> n). `n` should be in 0..255 range (inclusive).
     */
   def shiftRight(n: Int): BigInt
 
@@ -918,7 +918,13 @@ trait SigmaDslBuilder {
   /** Construct a new authenticated dictionary with given parameters and tree root digest. */
   def avlTree(operationFlags: Byte, digest: Coll[Byte], keyLength: Int, valueLengthOpt: Option[Int]): AvlTree
 
+  /** Serializes the given `value` into bytes using the default serialization format. */
+  def serialize[T](value: T)(implicit cT: RType[T]): Coll[Byte]
+
   /** Returns a byte-wise XOR of the two collections of bytes. */
   def xor(l: Coll[Byte], r: Coll[Byte]): Coll[Byte]
+
+  /** Returns a number decoded from provided big-endian bytes array. */
+  def fromBigEndianBytes[T](bytes: Coll[Byte])(implicit cT: RType[T]): T
 }
 

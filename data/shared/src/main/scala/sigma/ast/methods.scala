@@ -2,11 +2,13 @@ package sigma.ast
 
 import org.ergoplatform._
 import org.ergoplatform.validation._
+import sigma.Evaluation.stypeToRType
 import sigma._
 import sigma.ast.SCollection.{SBooleanArray, SBoxArray, SByteArray, SByteArray2, SHeaderArray}
 import sigma.ast.SMethod.{MethodCallIrBuilder, MethodCostFunc, javaMethodOf}
 import sigma.ast.SType.TypeCode
 import sigma.ast.SUnsignedBigIntMethods.ModInverseCostInfo
+import sigma.ast.SType.{TypeCode, paramT, tT}
 import sigma.ast.syntax.{SValue, ValueOps}
 import sigma.data.ExactIntegral.{ByteIsExactIntegral, IntIsExactIntegral, LongIsExactIntegral, ShortIsExactIntegral}
 import sigma.data.NumericOps.BigIntIsExactIntegral
@@ -15,6 +17,7 @@ import sigma.data.{DataValueComparer, KeyValueColl, Nullable, RType, SigmaConsta
 import sigma.eval.{CostDetails, ErgoTreeEvaluator, TracedCost}
 import sigma.reflection.RClass
 import sigma.serialization.CoreByteWriter.ArgInfo
+import sigma.serialization.{DataSerializer, SigmaByteWriter, SigmaSerializer}
 import sigma.utils.SparseArrayContainer
 
 import scala.annotation.unused
@@ -300,10 +303,10 @@ object SNumericTypeMethods extends MethodsContainer {
           """.stripMargin)
 
   /** Cost of inverting bits of a number. */
-  val BitwiseInverse_CostKind = FixedCost(JitCost(5))
+  val BitwiseOp_CostKind = FixedCost(JitCost(5))
 
   val BitwiseInverseMethod: SMethod = SMethod(
-    this, "bitwiseInverse", SFunc(tNum, tNum), 8, BitwiseInverse_CostKind)
+    this, "bitwiseInverse", SFunc(tNum, tNum), 8, BitwiseOp_CostKind)
     .withIRInfo(MethodCallIrBuilder)
     .withUserDefinedInvoke({ (m: SMethod, obj: Any, _: Array[Any]) =>
       m.objType match {
@@ -317,7 +320,7 @@ object SNumericTypeMethods extends MethodsContainer {
     .withInfo(PropertyCall, desc = "Returns bitwise inverse of this numeric. ")
 
   val BitwiseOrMethod: SMethod = SMethod(
-    this, "bitwiseOr", SFunc(Array(tNum, tNum), tNum), 9, BitwiseInverse_CostKind)
+    this, "bitwiseOr", SFunc(Array(tNum, tNum), tNum), 9, BitwiseOp_CostKind)
     .withIRInfo(MethodCallIrBuilder)
     .withUserDefinedInvoke({ (m: SMethod, obj: Any, other: Array[Any]) =>
       m.objType match {
@@ -333,7 +336,7 @@ object SNumericTypeMethods extends MethodsContainer {
       ArgInfo("that", "A numeric value to calculate or with."))
 
   val BitwiseAndMethod: SMethod = SMethod(
-    this, "bitwiseAnd", SFunc(Array(tNum, tNum), tNum), 10, BitwiseInverse_CostKind)
+    this, "bitwiseAnd", SFunc(Array(tNum, tNum), tNum), 10, BitwiseOp_CostKind)
     .withIRInfo(MethodCallIrBuilder)
     .withUserDefinedInvoke({ (m: SMethod, obj: Any, other: Array[Any]) =>
       m.objType match {
@@ -349,7 +352,7 @@ object SNumericTypeMethods extends MethodsContainer {
       ArgInfo("that", "A numeric value to calculate and with."))
 
   val BitwiseXorMethod: SMethod = SMethod(
-    this, "bitwiseXor", SFunc(Array(tNum, tNum), tNum), 11, BitwiseInverse_CostKind)
+    this, "bitwiseXor", SFunc(Array(tNum, tNum), tNum), 11, BitwiseOp_CostKind)
     .withIRInfo(MethodCallIrBuilder)
     .withUserDefinedInvoke({ (m: SMethod, obj: Any, other: Array[Any]) =>
       m.objType match {
@@ -365,7 +368,7 @@ object SNumericTypeMethods extends MethodsContainer {
       ArgInfo("that", "A numeric value to calculate xor with."))
 
   val ShiftLeftMethod: SMethod = SMethod(
-    this, "shiftLeft", SFunc(Array(tNum, SInt), tNum), 12, BitwiseInverse_CostKind)
+    this, "shiftLeft", SFunc(Array(tNum, SInt), tNum), 12, BitwiseOp_CostKind)
     .withIRInfo(MethodCallIrBuilder)
     .withUserDefinedInvoke({ (m: SMethod, obj: Any, other: Array[Any]) =>
       m.objType match {
@@ -384,7 +387,7 @@ object SNumericTypeMethods extends MethodsContainer {
                       "the size of the number in bits (e.g. 64 for Long, 256 for BigInt)"))
 
   val ShiftRightMethod: SMethod = SMethod(
-    this, "shiftRight", SFunc(Array(tNum, SInt), tNum), 13, BitwiseInverse_CostKind)
+    this, "shiftRight", SFunc(Array(tNum, SInt), tNum), 13, BitwiseOp_CostKind)
     .withIRInfo(MethodCallIrBuilder)
     .withUserDefinedInvoke({ (m: SMethod, obj: Any, other: Array[Any]) =>
       m.objType match {
@@ -521,13 +524,6 @@ case object SBigIntMethods extends SNumericTypeMethods {
     } else {
       super.getMethods()
     }
-  }
-
-  /**
-    *
-    */
-  def nbits_eval(mc: MethodCall, bi: sigma.BigInt)(implicit E: ErgoTreeEvaluator): Long = {
-    ???
   }
 
 }
@@ -1174,7 +1170,7 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
     SFunc(Array(ThisType, tIV, SInt), SInt, paramIVSeq),
       26, PerItemCost(baseCost = JitCost(20), perChunkCost = JitCost(10), chunkSize = 2))
       .withIRInfo(MethodCallIrBuilder, javaMethodOf[Coll[_], Any, Int]("indexOf"))
-      .withInfo(MethodCall, "")
+      .withInfo(MethodCall, "Returns index of a collection element, or -1 if not found")
 
   /** Implements evaluation of Coll.indexOf method call ErgoTree node.
     * Called via reflection based on naming convention.
@@ -1206,8 +1202,7 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
     baseCost = JitCost(10), perChunkCost = JitCost(1), chunkSize = 10)
 
   val ZipMethod = SMethod(this, "zip",
-    SFunc(Array(ThisType, tOVColl), SCollection(STuple(tIV, tOV)), Array[STypeParam](tIV, tOV)),
-    29, Zip_CostKind)
+    SFunc(Array(ThisType, tOVColl), SCollection(STuple(tIV, tOV)), Array[STypeParam](tIV, tOV)), 29, Zip_CostKind)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall, "")
 
@@ -1223,29 +1218,133 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
     }
   }
 
+  // ======== 6.0 methods below ===========
+
+  private val reverseCostKind = Append.costKind
+
+  val ReverseMethod = SMethod(this, "reverse",
+    SFunc(Array(ThisType), ThisType, paramIVSeq), 30, reverseCostKind)
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall, "")
+
+  /** Implements evaluation of Coll.reverse method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod
+    */
+  def reverse_eval[A](mc: MethodCall, xs: Coll[A])
+                    (implicit E: ErgoTreeEvaluator): Coll[A] = {
+    val m = mc.method
+    E.addSeqCost(m.costKind.asInstanceOf[PerItemCost], xs.length, m.opDesc) { () =>
+      xs.reverse
+    }
+  }
+
+  private val distinctCostKind = PerItemCost(baseCost = JitCost(60), perChunkCost = JitCost(5), chunkSize = 100)
+
+  val DistinctMethod = SMethod(this, "distinct",
+    SFunc(Array(ThisType), ThisType, paramIVSeq), 31, distinctCostKind)
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall, "Returns inversed collection.")
+
+  /** Implements evaluation of Coll.reverse method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod
+    */
+  def distinct_eval[A](mc: MethodCall, xs: Coll[A])
+                     (implicit E: ErgoTreeEvaluator): Coll[A] = {
+    val m = mc.method
+    E.addSeqCost(m.costKind.asInstanceOf[PerItemCost], xs.length, m.opDesc) { () =>
+      xs.distinct
+    }
+  }
+
+  private val startsWithCostKind = Zip_CostKind
+
+  val StartsWithMethod = SMethod(this, "startsWith",
+    SFunc(Array(ThisType, ThisType), SBoolean, paramIVSeq), 32, startsWithCostKind)
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall, "Returns true if this collection starts with given one, false otherwise.",
+      ArgInfo("prefix", "Collection to be checked for being a prefix of this collection."))
+
+  /** Implements evaluation of Coll.zip method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod
+    */
+  def startsWith_eval[A](mc: MethodCall, xs: Coll[A], ys: Coll[A])
+                    (implicit E: ErgoTreeEvaluator): Boolean = {
+    val m = mc.method
+    E.addSeqCost(m.costKind.asInstanceOf[PerItemCost], xs.length, m.opDesc) { () =>
+      xs.startsWith(ys)
+    }
+  }
+
+  private val endsWithCostKind = Zip_CostKind
+
+  val EndsWithMethod = SMethod(this, "endsWith",
+    SFunc(Array(ThisType, ThisType), SBoolean, paramIVSeq), 33, endsWithCostKind)
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall, "Returns true if this collection ends with given one, false otherwise.",
+      ArgInfo("suffix", "Collection to be checked for being a suffix of this collection."))
+
+  /** Implements evaluation of Coll.zip method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod
+    */
+  def endsWith_eval[A](mc: MethodCall, xs: Coll[A], ys: Coll[A])
+                        (implicit E: ErgoTreeEvaluator): Boolean = {
+    val m = mc.method
+    E.addSeqCost(m.costKind.asInstanceOf[PerItemCost], xs.length, m.opDesc) { () =>
+      xs.endsWith(ys)
+    }
+  }
+
+  val GetMethod = SMethod(this, "get",
+    SFunc(Array(ThisType, SInt), SOption(tIV), Array[STypeParam](tIV)), 34, ByIndex.costKind)
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall,
+              "Returns Some(element) if there is an element at given index, None otherwise.",
+              ArgInfo("index", "Index of an element (starting from 0).")
+            )
+
+  private val v5Methods = super.getMethods() ++ Seq(
+    SizeMethod,
+    GetOrElseMethod,
+    MapMethod,
+    ExistsMethod,
+    FoldMethod,
+    ForallMethod,
+    SliceMethod,
+    FilterMethod,
+    AppendMethod,
+    ApplyMethod,
+    IndicesMethod,
+    FlatMapMethod,
+    PatchMethod,
+    UpdatedMethod,
+    UpdateManyMethod,
+    IndexOfMethod,
+    ZipMethod
+  )
+
+  private val v6Methods = v5Methods ++ Seq(
+    ReverseMethod,
+    DistinctMethod,
+    StartsWithMethod,
+    EndsWithMethod,
+    GetMethod
+  )
+
   /** This method should be overriden in derived classes to add new methods in addition to inherited.
     * Typical override: `super.getMethods() ++ Seq(m1, m2, m3)`
     */
-  override protected def getMethods(): Seq[SMethod] = super.getMethods() ++
-      Seq(
-        SizeMethod,
-        GetOrElseMethod,
-        MapMethod,
-        ExistsMethod,
-        FoldMethod,
-        ForallMethod,
-        SliceMethod,
-        FilterMethod,
-        AppendMethod,
-        ApplyMethod,
-        IndicesMethod,
-        FlatMapMethod,
-        PatchMethod,
-        UpdatedMethod,
-        UpdateManyMethod,
-        IndexOfMethod,
-        ZipMethod
-      )
+  override protected def getMethods(): Seq[SMethod] = {
+    if (VersionContext.current.isV6SoftForkActivated) {
+      v6Methods
+    } else {
+      v5Methods
+    }
+  }
+
 }
 
 object STupleMethods extends MethodsContainer {
@@ -1845,9 +1944,61 @@ case object SGlobalMethods extends MonoTypeMethods {
     Xor.xorWithCosting(ls, rs)
   }
 
-  protected override def getMethods() = super.getMethods() ++ Seq(
-    groupGeneratorMethod,
-    xorMethod
-  )
+  private val BigEndianBytesCostKind = FixedCost(JitCost(10))
+
+  // id = 4 is reserved for deserializeTo ()
+  lazy val fromBigEndianBytesMethod = SMethod(
+    this, "fromBigEndianBytes", SFunc(Array(SGlobal, SByteArray), tT, Array(paramT)), 5, BigEndianBytesCostKind, Seq(tT))
+    .withIRInfo(MethodCallIrBuilder,
+      javaMethodOf[SigmaDslBuilder, Coll[Byte], RType[_]]("fromBigEndianBytes"),
+      { mtype => Array(mtype.tRange) })
+    .withInfo(MethodCall,
+      "Decode a number from big endian bytes.",
+      ArgInfo("first", "Bytes which are big-endian encoded number."))
+
+  lazy val serializeMethod = SMethod(this, "serialize",
+    SFunc(Array(SGlobal, tT), SByteArray, Array(paramT)), 3, DynamicCost)
+      .withIRInfo(MethodCallIrBuilder)
+      .withInfo(MethodCall, "Serializes the given `value` into bytes using the default serialization format.",
+        ArgInfo("value", "value to be serialized"))
+
+
+  /** Implements evaluation of Global.serialize method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod
+    */
+  def serialize_eval(mc: MethodCall, G: SigmaDslBuilder, value: SType#WrappedType)
+      (implicit E: ErgoTreeEvaluator): Coll[Byte] = {
+
+    E.addCost(SigmaByteWriter.StartWriterCost)
+
+    val addFixedCostCallback = { (costInfo: OperationCostInfo[FixedCost]) =>
+      E.addCost(costInfo)
+    }
+    val addPerItemCostCallback = { (info: OperationCostInfo[PerItemCost], nItems: Int) =>
+      E.addSeqCostNoOp(info.costKind, nItems, info.opDesc)
+    }
+    val w = SigmaSerializer.startWriter(None,
+      Some(addFixedCostCallback), Some(addPerItemCostCallback))
+
+    DataSerializer.serialize(value, mc.args(0).tpe, w)
+    Colls.fromArray(w.toBytes)
+  }
+
+  protected override def getMethods() = super.getMethods() ++ {
+    if (VersionContext.current.isV6SoftForkActivated) {
+      Seq(
+        groupGeneratorMethod,
+        xorMethod,
+        serializeMethod,
+        fromBigEndianBytesMethod
+      )
+    } else {
+      Seq(
+        groupGeneratorMethod,
+        xorMethod
+      )
+    }
+  }
 }
 

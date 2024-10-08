@@ -1002,6 +1002,19 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
               val i = asRep[Int](argsV(0))
               val d = asRep[t](argsV(1))
               xs.getOrElse(i, d)
+            case SCollectionMethods.ReverseMethod.name =>
+              xs.reverse
+            case SCollectionMethods.DistinctMethod.name =>
+              xs.distinct
+            case SCollectionMethods.StartsWithMethod.name =>
+              val ys = asRep[Coll[t]](argsV(0))
+              xs.startsWith(ys)
+            case SCollectionMethods.EndsWithMethod.name =>
+              val ys = asRep[Coll[t]](argsV(0))
+              xs.endsWith(ys)
+            case SCollectionMethods.GetMethod.name =>
+              val idx = asRep[Int](argsV(0))
+              xs.get(idx)
             case _ => throwError()
           }
           case (opt: ROption[t]@unchecked, SOptionMethods) => method.name match {
@@ -1194,6 +1207,13 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
               val c1 = asRep[Coll[Byte]](argsV(0))
               val c2 = asRep[Coll[Byte]](argsV(1))
               g.xor(c1, c2)
+            case SGlobalMethods.serializeMethod.name =>
+              val value = asRep[Any](argsV(0))
+              g.serialize(value)
+            case SGlobalMethods.fromBigEndianBytesMethod.name =>
+              val bytes = asRep[Coll[Byte]](argsV(0))
+              val cT = stypeToElem(method.stype.tRange.withSubstTypes(typeSubst))
+              g.fromBigEndianBytes(bytes)(cT)
             case _ => throwError()
           }
           case (x: Ref[tNum], _: SNumericTypeMethods) => method.name match {
