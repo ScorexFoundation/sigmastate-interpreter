@@ -5,6 +5,7 @@ import org.ergoplatform._
 import org.scalatest.Assertion
 import scorex.util.encode.Base16
 import org.scalatest.Assertion
+import scorex.utils.Ints
 import sigma.Extensions.ArrayOps
 import sigma.{SigmaTestingData, VersionContext}
 import sigma.VersionContext.V6SoftForkVersion
@@ -554,6 +555,261 @@ class BasicOpsSpecification extends CompilerTestingCommons
         reg1 -> UnitConstant.instance
       ))
     )
+  }
+
+  property("Coll.reverse"){
+    def reverseTest() = test("reverse", env, ext,
+      """{
+        | val c1 = Coll(1, 2, 3)
+        | val c2 = Coll(3, 2, 1)
+        |
+        | val b1 = Coll(INPUTS(0), OUTPUTS(0))
+        | val b2 = Coll(OUTPUTS(0), INPUTS(0))
+        |
+        | c1.reverse == c2 && b1.reverse == b2
+        | }""".stripMargin,
+      null
+    )
+
+    if(VersionContext.current.isV6SoftForkActivated) {
+      reverseTest()
+    } else {
+      an[Exception] shouldBe thrownBy(reverseTest())
+    }
+  }
+
+  property("Coll.distinct"){
+    def reverseTest() = test("distinct", env, ext,
+      """{
+        | val c1 = Coll(1, 2, 3, 3, 2)
+        | val c2 = Coll(3, 2, 1)
+        |
+        | val h1 = Coll(INPUTS(0), INPUTS(0))
+        | val h2 = Coll(INPUTS(0))
+        |
+        | c1.distinct.reverse == c2 && h1.distinct == h2
+        | }""".stripMargin,
+      null
+    )
+
+    if(VersionContext.current.isV6SoftForkActivated) {
+      reverseTest()
+    } else {
+      an[Exception] shouldBe thrownBy(reverseTest())
+    }
+  }
+
+  property("Coll.startsWith"){
+    def reverseTest() = test("distinct", env, ext,
+      """{
+        | val c1 = Coll(1, 2, 3)
+        | val c2 = Coll(1, 2)
+        | val c3 = Coll(1, 3)
+        | val c4 = Coll[Int]()
+        | val c5 = Coll(1, 2, 3, 4)
+        |
+        | val b1 = c1.startsWith(c3)
+        | val b2 = c1.startsWith(c5)
+        |
+        | c1.startsWith(c2) && c1.startsWith(c4) && c1.startsWith(c1) && !b1 && !b2
+        | }""".stripMargin,
+      null
+    )
+
+    if(VersionContext.current.isV6SoftForkActivated) {
+      reverseTest()
+    } else {
+      an[Exception] shouldBe thrownBy(reverseTest())
+    }
+  }
+
+  property("Coll.startsWith - tuples"){
+    def reverseTest() = test("distinct", env, ext,
+      """{
+        | val c1 = Coll((1, 2), (3, 4), (5, 6))
+        | val c2 = Coll((1, 2), (3, 4))
+        | val c3 = Coll((1, 3))
+        | val c4 = Coll[(Int, Int)]()
+        | val c5 = Coll((1, 2), (3, 4), (5, 6), (7, 8))
+        |
+        | val b1 = c1.startsWith(c3)
+        | val b2 = c1.startsWith(c5)
+        |
+        | c1.startsWith(c2) && c1.startsWith(c4) && c1.startsWith(c1) && !b1 && !b2
+        | }""".stripMargin,
+      null
+    )
+
+    if(VersionContext.current.isV6SoftForkActivated) {
+      reverseTest()
+    } else {
+      an[Exception] shouldBe thrownBy(reverseTest())
+    }
+  }
+
+  property("Coll.endsWith"){
+    def reverseTest() = test("distinct", env, ext,
+      """{
+        | val c1 = Coll(1, 2, 3)
+        | val c2 = Coll(2, 3)
+        | val c3 = Coll(2, 2)
+        | val c4 = Coll[Int]()
+        | val c5 = Coll(1, 2, 3, 4)
+        |
+        | val b1 = c1.endsWith(c3)
+        | val b2 = c1.endsWith(c5)
+        |
+        | c1.endsWith(c2) && c1.endsWith(c4) && c1.endsWith(c1) && !b1 && !b2
+        | }""".stripMargin,
+      null
+    )
+
+    if(VersionContext.current.isV6SoftForkActivated) {
+      reverseTest()
+    } else {
+      an[Exception] shouldBe thrownBy(reverseTest())
+    }
+  }
+
+  property("Coll.endsWith - tuples"){
+    def reverseTest() = test("endsWith tuples", env, ext,
+      """{
+        | val c1 = Coll((1, 2), (2, 3))
+        | val c2 = Coll((2, 3))
+        | val c3 = Coll((2, 2))
+        | val c4 = Coll[(Int, Int)]()
+        | val c5 = Coll((0, 2), (2, 3))
+        |
+        | val b1 = c1.endsWith(c3)
+        | val b2 = c1.endsWith(c5)
+        |
+        | c1.endsWith(c2) && c1.endsWith(c4) && c1.endsWith(c1) && !b1 && !b2
+        | }""".stripMargin,
+      null
+    )
+
+    if(VersionContext.current.isV6SoftForkActivated) {
+      reverseTest()
+    } else {
+      an[Exception] shouldBe thrownBy(reverseTest())
+    }
+  }
+
+  property("Coll.get"){
+    def getTest() = test("get", env, ext,
+      """{
+        |   val c1 = Coll(1)
+        |   val c2 = Coll[Int]()
+        |
+        |   c2.get(0).getOrElse(c1.get(0).get) == c1.get(0).get
+        | }""".stripMargin,
+      null
+    )
+
+    if(VersionContext.current.isV6SoftForkActivated) {
+      getTest()
+    } else {
+      an[Exception] shouldBe thrownBy(getTest())
+    }
+  }
+
+  property("Global.fromBigEndianBytes - byte") {
+    def fromTest() = test("fromBigEndianBytes - byte", env, ext,
+      s"""{
+         |  val ba = Coll(5.toByte)
+         |  Global.fromBigEndianBytes[Byte](ba) == 5
+         |}
+         |""".stripMargin,
+      null
+    )
+    if(VersionContext.current.isV6SoftForkActivated) {
+      fromTest()
+    } else {
+      an[Exception] should be thrownBy(fromTest())
+    }
+  }
+
+  property("Global.fromBigEndianBytes - short") {
+    def fromTest() = test("fromBigEndianBytes - short", env, ext,
+      s"""{
+         |  val ba = Coll(5.toByte, 5.toByte)
+         |  Global.fromBigEndianBytes[Short](ba) != 0
+         |}
+         |""".stripMargin,
+      null
+    )
+    if(VersionContext.current.isV6SoftForkActivated) {
+      fromTest()
+    } else {
+      an[Exception] should be thrownBy(fromTest())
+    }
+  }
+
+  property("Global.fromBigEndianBytes - int") {
+    def fromTest() = test("fromBigEndianBytes - int", env, ext,
+      s"""{
+         |  val ba = fromBase16("${Base16.encode(Ints.toByteArray(Int.MaxValue))}")
+         |  Global.fromBigEndianBytes[Int](ba) == ${Int.MaxValue}
+         |}
+         |""".stripMargin,
+      null
+    )
+    if(VersionContext.current.isV6SoftForkActivated) {
+      fromTest()
+    } else {
+      an[Exception] should be thrownBy(fromTest())
+    }
+  }
+
+  property("Global.fromBigEndianBytes - long") {
+    def fromTest() = test("fromBigEndianBytes - long", env, ext,
+      s"""{
+         |  val l = 1088800L
+         |  val ba = longToByteArray(l)
+         |  Global.fromBigEndianBytes[Long](ba) == l
+         |}
+         |""".stripMargin,
+      null
+    )
+    if(VersionContext.current.isV6SoftForkActivated) {
+      fromTest()
+    } else {
+      an[Exception] should be thrownBy(fromTest())
+    }
+  }
+
+  property("Global.fromBigEndianBytes - Long.toBytes") {
+    def fromTest() = test("fromBigEndianBytes - long", env, ext,
+      s"""{
+         |  val l = 1088800L
+         |  val ba = l.toBytes
+         |  Global.fromBigEndianBytes[Long](ba) == l
+         |}
+         |""".stripMargin,
+      null
+    )
+    if(VersionContext.current.isV6SoftForkActivated) {
+      fromTest()
+    } else {
+      an[Exception] should be thrownBy(fromTest())
+    }
+  }
+
+  property("Global.fromBigEndianBytes - bigInt") {
+    val bi = new BigInteger("9785856985394593489356430476450674590674598659865986594859056865984690568904")
+    def fromTest() = test("fromBigEndianBytes - bigInt", env, ext,
+      s"""{
+         |  val ba = fromBase16("${Base16.encode(bi.toByteArray)}")
+         |  Global.fromBigEndianBytes[BigInt](ba) == bigInt("$bi")
+         |}
+         |""".stripMargin,
+      null
+    )
+    if(VersionContext.current.isV6SoftForkActivated) {
+      fromTest()
+    } else {
+      an[Exception] should be thrownBy(fromTest())
+    }
   }
 
   property("Int.toBytes") {

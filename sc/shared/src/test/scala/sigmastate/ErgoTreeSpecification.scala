@@ -516,7 +516,8 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit with C
       (SGlobal.typeId, Seq(
         MInfo(1, groupGeneratorMethod), MInfo(2, xorMethod)
       ) ++ (if (isV6Activated) {
-        Seq(MInfo(3, serializeMethod)) // methods added in v6.0
+        // id = 4 reserved for deserializeTo method
+        Seq(MInfo(3, serializeMethod), MInfo(5, fromBigEndianBytesMethod)) // methods added in v6.0
       } else {
         Seq.empty[MInfo]
       }), true)
@@ -561,7 +562,9 @@ class ErgoTreeSpecification extends SigmaDslTesting with ContractsTestkit with C
         EndsWithMethod,
         MapReduceMethod,
         */
-      ), true)
+      ) ++ (if (isV6Activated) {
+        Seq(MInfo(30, ReverseMethod), MInfo(31, DistinctMethod), MInfo(32, StartsWithMethod), MInfo(33, EndsWithMethod), MInfo(34, GetMethod))
+      } else Seq.empty), true)
     },
     { import SOptionMethods._
       (SOption.typeId, Seq(

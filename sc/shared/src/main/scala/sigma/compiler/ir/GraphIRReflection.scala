@@ -1,5 +1,6 @@
 package sigma.compiler.ir
 
+import sigma.ast.SType
 import sigma.compiler.ir.primitives.Thunks
 import sigma.data.RType
 import sigma.reflection.ReflectionData.registerClassEntry
@@ -202,6 +203,22 @@ object GraphIRReflection {
         },
         mkMethod(clazz, "exists", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
           obj.asInstanceOf[ctx.Coll[Any]].exists(args(0).asInstanceOf[ctx.Ref[Any => Boolean]])
+        },
+        // V6 methods
+        mkMethod(clazz, "reverse", Array[Class[_]]()) { (obj, _) =>
+          obj.asInstanceOf[ctx.Coll[Any]].reverse
+        },
+        mkMethod(clazz, "distinct", Array[Class[_]]()) { (obj, _) =>
+          obj.asInstanceOf[ctx.Coll[Any]].distinct
+        },
+        mkMethod(clazz, "startsWith", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.Coll[Any]].startsWith(args(0).asInstanceOf[ctx.Ref[ctx.Coll[Any]]])
+        },
+        mkMethod(clazz, "endsWith", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.Coll[Any]].endsWith(args(0).asInstanceOf[ctx.Ref[ctx.Coll[Any]]])
+        },
+        mkMethod(clazz, "get", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.Coll[_]].apply(args(0).asInstanceOf[ctx.Ref[Int]])
         }
       )
     )
@@ -510,6 +527,9 @@ object GraphIRReflection {
         },
         mkMethod(clazz, "serialize", Array[Class[_]](classOf[Base#Ref[_]])) { (obj, args) =>
           obj.asInstanceOf[ctx.SigmaDslBuilder].serialize(args(0).asInstanceOf[ctx.Ref[Any]])
+        },
+        mkMethod(clazz, "fromBigEndianBytes", Array[Class[_]](classOf[Base#Ref[_]], classOf[TypeDescs#Elem[_]])) { (obj, args) =>
+          obj.asInstanceOf[ctx.SigmaDslBuilder].fromBigEndianBytes(args(0).asInstanceOf[ctx.Ref[ctx.Coll[Byte]]])(args(1).asInstanceOf[ctx.Elem[SType]])
         }
       )
     )
