@@ -139,7 +139,13 @@ class CollOverArray[@specialized A](val toArray: Array[A], val builder: CollBuil
 
   override def equals(obj: scala.Any): Boolean = (this eq obj.asInstanceOf[AnyRef]) || (obj match {
     case obj: CollOverArray[_] if obj.tItem == this.tItem =>
-      java.util.Objects.deepEquals(obj.toArray, toArray)
+      java.util.Objects.deepEquals(obj.toArray, this.toArray)
+    case obj: PairColl[_, _] if obj.tItem == this.tItem =>
+      if(VersionContext.current.isV6SoftForkActivated) {
+        java.util.Objects.deepEquals(obj.toArray, this.toArray)
+      } else {
+        false
+      }
     case _ => false
   })
 
@@ -241,8 +247,15 @@ private[sigma] class CollOverArrayBuilder extends CollBuilder { builder =>
 
 class PairOfCols[@specialized L, @specialized R](val ls: Coll[L], val rs: Coll[R]) extends PairColl[L,R] {
 
-  override def equals(that: scala.Any) = (this eq that.asInstanceOf[AnyRef]) || (that match {
-    case that: PairColl[_,_] if that.tItem == this.tItem => ls == that.ls && rs == that.rs
+  override def equals(that: scala.Any): Boolean = (this eq that.asInstanceOf[AnyRef]) || (that match {
+    case that: PairColl[_,_] if that.tItem == this.tItem =>
+      ls == that.ls && rs == that.rs
+    case that: CollOverArray[_] if that.tItem == this.tItem =>
+      if (VersionContext.current.isV6SoftForkActivated) {
+        java.util.Objects.deepEquals(that.toArray, this.toArray)
+      } else {
+        false
+      }
     case _ => false
   })
 
