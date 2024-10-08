@@ -1844,8 +1844,10 @@ case object SGlobalMethods extends MonoTypeMethods {
       ArgInfo("value", "value to be serialized"))
 
   lazy val noneMethod = SMethod(this, "none",
-    SFunc(Array(SGlobal, tT), SOption(tT), Array(paramT)), 9, FixedCost(JitCost(5))) // todo: cost
-    .withIRInfo(MethodCallIrBuilder)
+    SFunc(Array(SGlobal), SOption(tT), Array(paramT)), 9, FixedCost(JitCost(5)), Seq(tT)) // todo: cost
+    .withIRInfo(MethodCallIrBuilder,
+      javaMethodOf[SigmaDslBuilder, RType[_]]("none"),
+      { mtype => Array(mtype.tRange) })
     .withInfo(MethodCall, "")
 
   protected override def getMethods() = super.getMethods() ++ {
