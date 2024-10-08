@@ -6,12 +6,12 @@ import org.ergoplatform.validation.ValidationRules
 import scorex.crypto.hash.{Blake2b256, Sha256}
 import scorex.utils.{Ints, Longs}
 import sigma.ast.{AtLeast, SBigInt, SubstConstants}
-import scorex.utils.Longs
-import sigma.ast.{AtLeast, SType, SubstConstants}
+import sigma.ast.SType
 import sigma.crypto.{CryptoConstants, EcPointType, Ecp}
 import sigma.eval.Extensions.EvalCollOps
 import sigma.serialization.{DataSerializer, GroupElementSerializer, SigmaSerializer}
-import sigma.serialization.{GroupElementSerializer, SerializerException, SigmaSerializer}
+import sigma.serialization.SerializerException
+import sigma.pow.Autolykos2PowValidation
 import sigma.util.Extensions.BigIntegerOps
 import sigma.validation.SigmaValidationSettings
 import sigma.{AvlTree, BigInt, Box, Coll, CollBuilder, Evaluation, GroupElement, SigmaDslBuilder, SigmaProp, VersionContext}
@@ -245,6 +245,12 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
     DataSerializer.serialize(value.asInstanceOf[SType#WrappedType], tpe, w)
     Colls.fromArray(w.toBytes)
   }
+
+  override def powHit(k: Int, msg: Coll[Byte], nonce: Coll[Byte], h: Coll[Byte], N: Int): BigInt = {
+    val bi = Autolykos2PowValidation.hitForVersion2ForMessageWithChecks(k, msg.toArray, nonce.toArray, h.toArray, N)
+    this.BigInt(bi.bigInteger)
+  }
+
 }
 
 /** Default singleton instance of Global object, which implements global ErgoTree functions. */

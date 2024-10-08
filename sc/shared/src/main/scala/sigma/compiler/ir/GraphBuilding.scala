@@ -3,6 +3,7 @@ package sigma.compiler.ir
 import org.ergoplatform._
 import sigma.Evaluation.stypeToRType
 import sigma.ast.SType.tT
+import sigma.{SigmaException, VersionContext, ast}
 import sigma.ast.TypeCodes.LastConstantCode
 import sigma.ast.Value.Typed
 import sigma.ast.syntax.{SValue, ValueOps}
@@ -1167,6 +1168,13 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
               val c1 = asRep[Coll[Byte]](argsV(0))
               val c2 = asRep[Coll[Byte]](argsV(1))
               g.xor(c1, c2)
+            case SGlobalMethods.powHitMethod.name if VersionContext.current.isV6SoftForkActivated =>
+              val k = asRep[Int](argsV(0))
+              val msg = asRep[Coll[Byte]](argsV(1))
+              val nonce = asRep[Coll[Byte]](argsV(2))
+              val h = asRep[Coll[Byte]](argsV(3))
+              val N = asRep[Int](argsV(4))
+              g.powHit(k, msg, nonce, h, N)
             case SGlobalMethods.serializeMethod.name =>
               val value = asRep[Any](argsV(0))
               g.serialize(value)

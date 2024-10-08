@@ -2,6 +2,7 @@ package sigma.ast
 
 import org.ergoplatform._
 import org.ergoplatform.validation._
+import sigma.{Coll, VersionContext, _}
 import sigma.Evaluation.stypeToRType
 import sigma._
 import sigma.ast.SCollection.{SBooleanArray, SBoxArray, SByteArray, SByteArray2, SHeaderArray}
@@ -11,8 +12,9 @@ import sigma.ast.syntax.{SValue, ValueOps}
 import sigma.data.ExactIntegral.{ByteIsExactIntegral, IntIsExactIntegral, LongIsExactIntegral, ShortIsExactIntegral}
 import sigma.data.NumericOps.BigIntIsExactIntegral
 import sigma.data.OverloadHack.Overloaded1
-import sigma.data.{DataValueComparer, KeyValueColl, Nullable, RType, SigmaConstants}
+import sigma.data.{CBigInt, DataValueComparer, KeyValueColl, Nullable, RType, SigmaConstants}
 import sigma.eval.{CostDetails, ErgoTreeEvaluator, TracedCost}
+import sigma.pow.Autolykos2PowValidation
 import sigma.reflection.RClass
 import sigma.serialization.CoreByteWriter.ArgInfo
 import sigma.serialization.{DataSerializer, SigmaByteWriter, SigmaSerializer}
@@ -1785,6 +1787,26 @@ case object SGlobalMethods extends MonoTypeMethods {
     .withInfo(Xor, "Byte-wise XOR of two collections of bytes",
       ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))
 
+  lazy val powHitMethod = SMethod(
+    this, "powHit", SFunc(Array(SGlobal, SInt, SByteArray, SByteArray, SByteArray, SInt), SBigInt), methodId = 8,
+    PowHitCostKind)
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall,
+      "Calculating Proof-of-Work hit (Autolykos 2 hash value) for custom Autolykos 2 function",
+      ArgInfo("k", "k parameter of Autolykos 2 (number of inputs in k-sum problem)"),
+      ArgInfo("msg", "Message to calculate Autolykos hash 2 for"),
+      ArgInfo("nonce", "Nonce used to pad the message to get Proof-of-Work hash function output with desirable properties"),
+      ArgInfo("h", "PoW protocol specific padding for table uniqueness (e.g. block height in Ergo)"),
+      ArgInfo("N", "Size of table filled with pseudo-random data to find k elements in")
+    )
+
+  def powHit_eval(mc: MethodCall, G: SigmaDslBuilder, k: Int, msg: Coll[Byte], nonce: Coll[Byte], h: Coll[Byte], N: Int)
+                 (implicit E: ErgoTreeEvaluator): BigInt = {
+    val cost = PowHitCostKind.cost(k, msg, nonce, h)
+    E.addCost(FixedCost(cost), powHitMethod.opDesc)
+    CBigInt(Autolykos2PowValidation.hitForVersion2ForMessageWithChecks(k, msg.toArray, nonce.toArray, h.toArray, N).bigInteger)
+  }
+
   /** Implements evaluation of Global.xor method call ErgoTree node.
     * Called via reflection based on naming convention.
     * @see SMethod.evalMethod, Xor.eval, Xor.xorWithCosting
@@ -1841,7 +1863,8 @@ case object SGlobalMethods extends MonoTypeMethods {
         groupGeneratorMethod,
         xorMethod,
         serializeMethod,
-        fromBigEndianBytesMethod
+        fromBigEndianBytesMethod,
+        powHitMethod
       )
     } else {
       Seq(

@@ -155,8 +155,8 @@ case class SMethod(
     val methodName = name + "_eval"
     val m = try {
       objType.thisRClass.getMethod(methodName, paramTypes:_*)
-    }
-    catch { case e: NoSuchMethodException =>
+    } catch { case e: NoSuchMethodException =>
+      println("dm: " + objType.thisRClass.getDeclaredMethods().mkString(", "))
       throw new RuntimeException(s"Cannot find eval method def $methodName(${Seq(paramTypes:_*)})", e)
     }
     m
@@ -327,7 +327,7 @@ object SMethod {
     * @return an instance of [[SMethod]] which may contain generic type variables in the
     *         signature (see SMethod.stype). As a result `specializeFor` is called by
     *         deserializer to obtain monomorphic method descriptor.
-    * @consensus this is method is used in [[sigmastate.serialization.MethodCallSerializer]]
+    * @consensus this is method is used in [[sigma.serialization.MethodCallSerializer]]
     *            `parse` method and hence it is part of consensus protocol
     */
   def fromIds(typeId: Byte, methodId: Byte): SMethod = {
