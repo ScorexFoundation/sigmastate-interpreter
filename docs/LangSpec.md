@@ -68,7 +68,7 @@ The following sections describe ErgoScript and its operations.
 #### Operations and constructs overview
 
 - Binary operations: `>, <, >=, <=, +, -, &&, ||, ==, !=, |, &, *, /, %, ^, ++`
-- predefined primitives: `blake2b256`, `byteArrayToBigInt`, `proveDlog` etc. 
+- predefined primitives: `serialize`, `blake2b256`, `byteArrayToBigInt`, `proveDlog` etc. 
 - val declarations: `val h = blake2b256(pubkey)`
 - if-then-else clause: `if (x > 0) 1 else 0`
 - collection literals: `Coll(1, 2, 3, 4)`
