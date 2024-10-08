@@ -1022,7 +1022,7 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
     SFunc(Array(ThisType, tIV, SInt), SInt, paramIVSeq),
       26, PerItemCost(baseCost = JitCost(20), perChunkCost = JitCost(10), chunkSize = 2))
       .withIRInfo(MethodCallIrBuilder, javaMethodOf[Coll[_], Any, Int]("indexOf"))
-      .withInfo(MethodCall, "")
+      .withInfo(MethodCall, "Returns index of a collection element, or -1 if not found")
 
   /** Implements evaluation of Coll.indexOf method call ErgoTree node.
     * Called via reflection based on naming convention.
@@ -1054,8 +1054,7 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
     baseCost = JitCost(10), perChunkCost = JitCost(1), chunkSize = 10)
 
   val ZipMethod = SMethod(this, "zip",
-    SFunc(Array(ThisType, tOVColl), SCollection(STuple(tIV, tOV)), Array[STypeParam](tIV, tOV)),
-    29, Zip_CostKind)
+    SFunc(Array(ThisType, tOVColl), SCollection(STuple(tIV, tOV)), Array[STypeParam](tIV, tOV)), 29, Zip_CostKind)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall, "")
 
@@ -1071,29 +1070,133 @@ object SCollectionMethods extends MethodsContainer with MethodByNameUnapply {
     }
   }
 
+  // ======== 6.0 methods below ===========
+
+  private val reverseCostKind = Append.costKind
+
+  val ReverseMethod = SMethod(this, "reverse",
+    SFunc(Array(ThisType), ThisType, paramIVSeq), 30, reverseCostKind)
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall, "")
+
+  /** Implements evaluation of Coll.reverse method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod
+    */
+  def reverse_eval[A](mc: MethodCall, xs: Coll[A])
+                    (implicit E: ErgoTreeEvaluator): Coll[A] = {
+    val m = mc.method
+    E.addSeqCost(m.costKind.asInstanceOf[PerItemCost], xs.length, m.opDesc) { () =>
+      xs.reverse
+    }
+  }
+
+  private val distinctCostKind = PerItemCost(baseCost = JitCost(60), perChunkCost = JitCost(5), chunkSize = 100)
+
+  val DistinctMethod = SMethod(this, "distinct",
+    SFunc(Array(ThisType), ThisType, paramIVSeq), 31, distinctCostKind)
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall, "Returns inversed collection.")
+
+  /** Implements evaluation of Coll.reverse method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod
+    */
+  def distinct_eval[A](mc: MethodCall, xs: Coll[A])
+                     (implicit E: ErgoTreeEvaluator): Coll[A] = {
+    val m = mc.method
+    E.addSeqCost(m.costKind.asInstanceOf[PerItemCost], xs.length, m.opDesc) { () =>
+      xs.distinct
+    }
+  }
+
+  private val startsWithCostKind = Zip_CostKind
+
+  val StartsWithMethod = SMethod(this, "startsWith",
+    SFunc(Array(ThisType, ThisType), SBoolean, paramIVSeq), 32, startsWithCostKind)
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall, "Returns true if this collection starts with given one, false otherwise.",
+      ArgInfo("prefix", "Collection to be checked for being a prefix of this collection."))
+
+  /** Implements evaluation of Coll.zip method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod
+    */
+  def startsWith_eval[A](mc: MethodCall, xs: Coll[A], ys: Coll[A])
+                    (implicit E: ErgoTreeEvaluator): Boolean = {
+    val m = mc.method
+    E.addSeqCost(m.costKind.asInstanceOf[PerItemCost], xs.length, m.opDesc) { () =>
+      xs.startsWith(ys)
+    }
+  }
+
+  private val endsWithCostKind = Zip_CostKind
+
+  val EndsWithMethod = SMethod(this, "endsWith",
+    SFunc(Array(ThisType, ThisType), SBoolean, paramIVSeq), 33, endsWithCostKind)
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall, "Returns true if this collection ends with given one, false otherwise.",
+      ArgInfo("suffix", "Collection to be checked for being a suffix of this collection."))
+
+  /** Implements evaluation of Coll.zip method call ErgoTree node.
+    * Called via reflection based on naming convention.
+    * @see SMethod.evalMethod
+    */
+  def endsWith_eval[A](mc: MethodCall, xs: Coll[A], ys: Coll[A])
+                        (implicit E: ErgoTreeEvaluator): Boolean = {
+    val m = mc.method
+    E.addSeqCost(m.costKind.asInstanceOf[PerItemCost], xs.length, m.opDesc) { () =>
+      xs.endsWith(ys)
+    }
+  }
+
+  val GetMethod = SMethod(this, "get",
+    SFunc(Array(ThisType, SInt), SOption(tIV), Array[STypeParam](tIV)), 34, ByIndex.costKind)
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(MethodCall,
+              "Returns Some(element) if there is an element at given index, None otherwise.",
+              ArgInfo("index", "Index of an element (starting from 0).")
+            )
+
+  private val v5Methods = super.getMethods() ++ Seq(
+    SizeMethod,
+    GetOrElseMethod,
+    MapMethod,
+    ExistsMethod,
+    FoldMethod,
+    ForallMethod,
+    SliceMethod,
+    FilterMethod,
+    AppendMethod,
+    ApplyMethod,
+    IndicesMethod,
+    FlatMapMethod,
+    PatchMethod,
+    UpdatedMethod,
+    UpdateManyMethod,
+    IndexOfMethod,
+    ZipMethod
+  )
+
+  private val v6Methods = v5Methods ++ Seq(
+    ReverseMethod,
+    DistinctMethod,
+    StartsWithMethod,
+    EndsWithMethod,
+    GetMethod
+  )
+
   /** This method should be overriden in derived classes to add new methods in addition to inherited.
     * Typical override: `super.getMethods() ++ Seq(m1, m2, m3)`
     */
-  override protected def getMethods(): Seq[SMethod] = super.getMethods() ++
-      Seq(
-        SizeMethod,
-        GetOrElseMethod,
-        MapMethod,
-        ExistsMethod,
-        FoldMethod,
-        ForallMethod,
-        SliceMethod,
-        FilterMethod,
-        AppendMethod,
-        ApplyMethod,
-        IndicesMethod,
-        FlatMapMethod,
-        PatchMethod,
-        UpdatedMethod,
-        UpdateManyMethod,
-        IndexOfMethod,
-        ZipMethod
-      )
+  override protected def getMethods(): Seq[SMethod] = {
+    if (VersionContext.current.isV6SoftForkActivated) {
+      v6Methods
+    } else {
+      v5Methods
+    }
+  }
+
 }
 
 object STupleMethods extends MethodsContainer {
