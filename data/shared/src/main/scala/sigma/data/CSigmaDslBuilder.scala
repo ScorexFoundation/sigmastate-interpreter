@@ -15,6 +15,7 @@ import sigma.serialization.{GroupElementSerializer, SerializerException, SigmaSe
 import sigma.util.Extensions.BigIntegerOps
 import sigma.validation.SigmaValidationSettings
 import sigma.{AvlTree, BigInt, Box, Coll, CollBuilder, Evaluation, GroupElement, SigmaDslBuilder, SigmaProp, VersionContext}
+import sigma.{AvlTree, BigInt, Box, Coll, CollBuilder, GroupElement, SigmaDslBuilder, SigmaProp, UnsignedBigInt, VersionContext}
 
 import java.math.BigInteger
 
@@ -23,11 +24,12 @@ import java.math.BigInteger
   * @see [[SigmaDslBuilder]] for detailed descriptions
   */
 class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
-  implicit val validationSettings: SigmaValidationSettings = ValidationRules.currentSettings
 
   override val Colls: CollBuilder = sigma.Colls
 
   override def BigInt(n: BigInteger): BigInt = CBigInt(n)
+
+  override def UnsignedBigInt(n: BigInteger): UnsignedBigInt = CUnsignedBigInt(n)
 
   override def toBigInteger(n: BigInt): BigInteger = n.asInstanceOf[CBigInt].wrappedValue
 
@@ -152,7 +154,7 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
   }
 
   override def byteArrayToBigInt(bytes: Coll[Byte]): BigInt = {
-    val bi = new BigInteger(bytes.toArray).to256BitValueExact
+    val bi = new BigInteger(bytes.toArray).toSignedBigIntValueExact
     this.BigInt(bi)
   }
 
@@ -194,7 +196,7 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
       case e: Throwable =>
         throw new RuntimeException(s"Cannot evaluate substConstants($scriptBytes, $positions, $newValues)", e)
     }
-    val (res, _)  = SubstConstants.eval(scriptBytes.toArray, positions.toArray, constants)(validationSettings)
+    val (res, _)  = SubstConstants.eval(scriptBytes.toArray, positions.toArray, constants)
     Colls.fromArray(res)
   }
 
@@ -232,7 +234,7 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
         if (bytes.length > SBigInt.MaxSizeInBytes) {
           throw SerializerException(s"BigInt value doesn't not fit into ${SBigInt.MaxSizeInBytes} bytes in fromBigEndianBytes")
         }
-        CBigInt(new BigInteger(bytes.toArray).to256BitValueExact).asInstanceOf[T]
+        CBigInt(new BigInteger(bytes.toArray).toSignedBigIntValueExact).asInstanceOf[T]
       // todo: UnsignedBitInt
       case _ => throw new IllegalArgumentException("Unsupported type provided in fromBigEndianBytes")
     }

@@ -129,6 +129,35 @@ object ReflectionData {
     )
   }
   {
+    val clazz      = classOf[sigma.UnsignedBigInt]
+    val paramTypes = Array[Class[_]](clazz)
+    registerClassEntry(clazz,
+      methods = Map(
+        mkMethod(clazz, "add", paramTypes) { (obj, args) =>
+          obj.asInstanceOf[UnsignedBigInt].add(args(0).asInstanceOf[UnsignedBigInt])
+        },
+        mkMethod(clazz, "max", paramTypes) { (obj, args) =>
+          obj.asInstanceOf[UnsignedBigInt].max(args(0).asInstanceOf[UnsignedBigInt])
+        },
+        mkMethod(clazz, "min", paramTypes) { (obj, args) =>
+          obj.asInstanceOf[UnsignedBigInt].min(args(0).asInstanceOf[UnsignedBigInt])
+        },
+        mkMethod(clazz, "subtract", paramTypes) { (obj, args) =>
+          obj.asInstanceOf[UnsignedBigInt].subtract(args(0).asInstanceOf[UnsignedBigInt])
+        },
+        mkMethod(clazz, "multiply", paramTypes) { (obj, args) =>
+          obj.asInstanceOf[UnsignedBigInt].multiply(args(0).asInstanceOf[UnsignedBigInt])
+        },
+        mkMethod(clazz, "mod", paramTypes) { (obj, args) =>
+          obj.asInstanceOf[UnsignedBigInt].mod(args(0).asInstanceOf[UnsignedBigInt])
+        },
+        mkMethod(clazz, "divide", paramTypes) { (obj, args) =>
+          obj.asInstanceOf[UnsignedBigInt].divide(args(0).asInstanceOf[UnsignedBigInt])
+        }
+      )
+    )
+  }
+  {
     val clazz = classOf[CollBuilder]
     registerClassEntry(clazz,
       methods = Map(
@@ -303,6 +332,9 @@ object ReflectionData {
       methods = Map(
         mkMethod(clazz, "exp", Array[Class[_]](classOf[BigInt])) { (obj, args) =>
           obj.asInstanceOf[GroupElement].exp(args(0).asInstanceOf[BigInt])
+        },
+        mkMethod(clazz, "expUnsigned", Array[Class[_]](classOf[UnsignedBigInt])) { (obj, args) =>
+          obj.asInstanceOf[GroupElement].expUnsigned(args(0).asInstanceOf[UnsignedBigInt])
         },
         mkMethod(clazz, "multiply", Array[Class[_]](classOf[GroupElement])) { (obj, args) =>
           obj.asInstanceOf[GroupElement].multiply(args(0).asInstanceOf[GroupElement])
