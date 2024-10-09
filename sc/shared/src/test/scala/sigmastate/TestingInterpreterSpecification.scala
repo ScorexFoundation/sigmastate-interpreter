@@ -14,6 +14,7 @@ import sigma.VersionContext.V6SoftForkVersion
 import sigma.VersionContext
 import sigma.data.{CAND, CAvlTree, CBox, CHeader, ProveDlog, SigmaBoolean, TrivialProp}
 import sigma.interpreter.ContextExtension
+import sigma.VersionContext
 import sigma.util.Extensions.IntOps
 import sigmastate.helpers.{CompilerTestingCommons, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
 import sigmastate.helpers.TestingHelpers._

@@ -448,6 +448,25 @@ object SigmaPredef {
       )
     )
 
+    val DeserializeToFunc = PredefinedFunc("deserializeTo",
+      Lambda(Seq(paramT), Array("bytes" -> SByteArray), tT, None),
+      irInfo = PredefFuncInfo(
+        irBuilder = { case (u, args) =>
+          val resType = u.opType.tRange.asInstanceOf[SFunc].tRange
+          MethodCall(
+            Global,
+            SGlobalMethods.deserializeToMethod.withConcreteTypes(Map(tT -> resType)),
+            args.toIndexedSeq,
+            Map(tT -> resType)
+          )
+        }),
+      docInfo = OperationInfo(MethodCall,
+        """Deserializes provided bytes into a value of given type using the default serialization format.
+        """.stripMargin,
+        Seq(ArgInfo("bytes", "bytes to deserialize"))
+      )
+    )
+
     val FromBigEndianBytesFunc = PredefinedFunc("fromBigEndianBytes",
       Lambda(Seq(paramT), Array("bytes" -> SByteArray), tT, None),
       irInfo = PredefFuncInfo(
@@ -498,7 +517,8 @@ object SigmaPredef {
       ExecuteFromSelfRegFunc,
       SerializeFunc,
       GetVarFromInputFunc,
-      FromBigEndianBytesFunc
+      FromBigEndianBytesFunc,
+      DeserializeToFunc
     ).map(f => f.name -> f).toMap
 
     def comparisonOp(symbolName: String, opDesc: ValueCompanion, desc: String, args: Seq[ArgInfo]) = {

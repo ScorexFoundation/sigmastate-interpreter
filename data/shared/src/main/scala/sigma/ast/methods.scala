@@ -1901,6 +1901,7 @@ case object SHeaderMethods extends MonoTypeMethods {
   lazy val powDistanceMethod      = propertyCall("powDistance", SBigInt, 14, FixedCost(JitCost(10)))
   lazy val votesMethod            = propertyCall("votes", SByteArray, 15, FixedCost(JitCost(10)))
 
+  // methods added in 6.0 below
   // cost of checkPoW is 700 as about 2*32 hashes required, and 1 hash (id) over short data costs 10
   lazy val checkPowMethod = SMethod(
     this, "checkPow", SFunc(Array(SHeader), SBoolean), 16, FixedCost(JitCost(700)))
@@ -1971,6 +1972,16 @@ case object SGlobalMethods extends MonoTypeMethods {
     .withInfo(Xor, "Byte-wise XOR of two collections of bytes",
       ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))
 
+  private val deserializeCostKind = PerItemCost(
+    baseCost = JitCost(20), perChunkCost = JitCost(7), chunkSize = 128)
+
+  lazy val deserializeToMethod = SMethod(
+    this, "deserializeTo", SFunc(Array(SGlobal, SByteArray), tT, Array(paramT)), 4, deserializeCostKind, Seq(tT))
+    .withIRInfo(MethodCallIrBuilder,
+      javaMethodOf[SigmaDslBuilder, Coll[Byte], RType[_]]("deserializeTo"))
+    .withInfo(MethodCall, "Deserialize provided bytes into an object of requested type",
+      ArgInfo("first", "Bytes to deserialize"))
+
   /** Implements evaluation of Global.xor method call ErgoTree node.
     * Called via reflection based on naming convention.
     * @see SMethod.evalMethod, Xor.eval, Xor.xorWithCosting
@@ -1991,6 +2002,15 @@ case object SGlobalMethods extends MonoTypeMethods {
     .withInfo(MethodCall,
       "Decode a number from big endian bytes.",
       ArgInfo("first", "Bytes which are big-endian encoded number."))
+
+  def deserializeTo_eval(mc: MethodCall, G: SigmaDslBuilder, bytes: Coll[Byte])
+                        (implicit E: ErgoTreeEvaluator): Any = {
+    val tpe = mc.tpe
+    val cT = stypeToRType(tpe)
+    E.addSeqCost(deserializeCostKind, bytes.length, deserializeToMethod.opDesc) { () =>
+      G.deserializeTo(bytes)(cT)
+    }
+  }
 
   lazy val serializeMethod = SMethod(this, "serialize",
     SFunc(Array(SGlobal, tT), SByteArray, Array(paramT)), 3, DynamicCost)
@@ -2042,6 +2062,7 @@ case object SGlobalMethods extends MonoTypeMethods {
         groupGeneratorMethod,
         xorMethod,
         serializeMethod,
+        deserializeToMethod,
         fromBigEndianBytesMethod,
         someMethod,
         noneMethod

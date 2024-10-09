@@ -2,6 +2,7 @@ package sigma.compiler.ir
 
 import org.ergoplatform._
 import sigma.ast.SType.tT
+import sigma.{SigmaException, VersionContext, ast}
 import sigma.Evaluation.stypeToRType
 import sigma.ast.SType.tT
 import sigma.ast.TypeCodes.LastConstantCode
@@ -21,10 +22,10 @@ import sigma.exceptions.GraphBuildingException
 import sigma.serialization.OpCodes
 import sigma.{SigmaException, ast}
 import sigma.util.Extensions.ByteOps
-import sigma.{SigmaException, VersionContext, ast}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 
 import scala.collection.mutable.ArrayBuffer
+
 
 /** Perform translation of typed expression given by [[Value]] to a graph in IRContext.
   * Which be than be translated to [[ErgoTree]] by using [[TreeBuilding]].
@@ -1217,6 +1218,10 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
               val c1 = asRep[Coll[Byte]](argsV(0))
               val c2 = asRep[Coll[Byte]](argsV(1))
               g.xor(c1, c2)
+            case SGlobalMethods.deserializeToMethod.name if VersionContext.current.isV6SoftForkActivated =>
+              val c1 = asRep[Coll[Byte]](argsV(0))
+              val c2 = stypeToElem(method.stype.tRange.withSubstTypes(typeSubst))
+              g.deserializeTo(c1)(c2)
             case SGlobalMethods.serializeMethod.name =>
               val value = asRep[Any](argsV(0))
               g.serialize(value)
