@@ -68,7 +68,7 @@ The following sections describe ErgoScript and its operations.
 #### Operations and constructs overview
 
 - Binary operations: `>, <, >=, <=, +, -, &&, ||, ==, !=, |, &, *, /, %, ^, ++`
-- predefined primitives: `serialize`, `blake2b256`, `byteArrayToBigInt`, `proveDlog` etc. 
+- predefined primitives: `deserializeTo`, `serialize`, `blake2b256`, `byteArrayToBigInt`, `proveDlog` etc. 
 - val declarations: `val h = blake2b256(pubkey)`
 - if-then-else clause: `if (x > 0) 1 else 0`
 - collection literals: `Coll(1, 2, 3, 4)`
@@ -903,6 +903,10 @@ def blake2b256(input: Coll[Byte]): Coll[Byte]
 /** Cryptographic hash function Sha256 (See scorex.crypto.hash.Sha256) */
 def sha256(input: Coll[Byte]): Coll[Byte]
 
+/** Create an instance of type T from bytes of its wrapped type. 
+See https://github.com/ScorexFoundation/sigmastate-interpreter/pull/979 for more details */
+def deserializeTo[T](input: Coll[Byte]): T
+
 /** Create BigInt from a collection of bytes. */
 def byteArrayToBigInt(input: Coll[Byte]): BigInt
 
@@ -919,7 +923,7 @@ def longToByteArray(input: Long): Coll[Byte]
 def decodePoint(bytes: Coll[Byte]): GroupElement 
 
 
-/** Extracts Context variable by id and type.
+/** Extracts Context variable from self input by id and type.
   * ErgoScript is typed, so accessing a the variables is an operation which involves
   * some expected type given in brackets. Thus `getVar[Int](id)` expression should
   * evaluate to a valid value of the `Option[Int]` type.
@@ -975,6 +979,18 @@ def decodePoint(bytes: Coll[Byte]): GroupElement
   *                                   different from cT.
   */
 def getVar[T](tag: Int): Option[T]
+
+/** Extracts Context variable from any input by input id, variable id and variable type.
+  * Unlike getVar, it is not throwing exception when expected type does not match real type of the variable.
+  * Thus it can be used to get context variable from self without exception, using selfBoxIndex, e.g. 
+  * <pre class="stHighlight">
+  *   {
+  *       val idx = CONTEXT.selfBoxIndex
+  *       sigmaProp(CONTEXT.getVarFromInput[Int](idx.toShort, 1.toByte).get == 5)
+  *   }
+  * </pre>
+  */
+def getVarFromInput[T](inputId: Short, varId: Byte): Option[T]
 
 /** Construct a new SigmaProp value representing public key of Diffie Hellman
   * signature protocol. When executed as part of Sigma protocol allow to provide

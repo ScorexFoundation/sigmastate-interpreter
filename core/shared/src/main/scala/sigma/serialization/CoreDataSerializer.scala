@@ -33,6 +33,10 @@ class CoreDataSerializer {
       val data = v.asInstanceOf[BigInt].toBigInteger.toByteArray
       w.putUShort(data.length)
       w.putBytes(data)
+    case SUnsignedBigInt =>  // todo: versioning
+      val data = v.asInstanceOf[CUnsignedBigInt].wrappedValue.toByteArray
+      w.putUShort(data.length)
+      w.putBytes(data)
     case SGroupElement =>
       GroupElementSerializer.serialize(v.asInstanceOf[GroupElement].toECPoint, w)
     case SSigmaProp =>
@@ -108,6 +112,13 @@ class CoreDataSerializer {
         }
         val valueBytes = r.getBytes(size)
         CBigInt(new BigInteger(valueBytes))
+      case SUnsignedBigInt =>  // todo: versioning
+        val size: Short = r.getUShort().toShort
+        if (size > SBigInt.MaxSizeInBytes + 1) { //todo: use encoding with no sign bit
+          throw new SerializerException(s"BigInt value doesn't not fit into ${SBigInt.MaxSizeInBytes} bytes: $size")
+        }
+        val valueBytes = r.getBytes(size)
+        CUnsignedBigInt(new BigInteger(valueBytes))
       case SGroupElement =>
         CGroupElement(GroupElementSerializer.parse(r))
       case SSigmaProp =>
@@ -135,7 +146,7 @@ class CoreDataSerializer {
     res
   }
 
-  def deserializeColl[T <: SType](len: Int, tpeElem: T, r: CoreByteReader): Coll[T#WrappedType] =
+  private def deserializeColl[T <: SType](len: Int, tpeElem: T, r: CoreByteReader): Coll[T#WrappedType] =
     tpeElem match {
       case SBoolean =>
         Colls.fromArray(r.getBits(len)).asInstanceOf[Coll[T#WrappedType]]

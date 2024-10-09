@@ -3,20 +3,31 @@ package sigmastate.utxo
 import org.ergoplatform.ErgoBox.{AdditionalRegisters, R6, R8}
 import org.ergoplatform._
 import org.scalatest.Assertion
+import scorex.crypto.authds.{ADKey, ADValue}
+import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert}
+import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.util.ByteArrayBuilder
 import scorex.util.encode.Base16
 import org.scalatest.Assertion
+import scorex.util.encode.Base16
 import scorex.utils.Ints
+import scorex.util.serialization.VLQByteBufferWriter
+import scorex.utils.Longs
+import sigma.{Colls, SigmaTestingData}
 import sigma.Extensions.ArrayOps
 import sigma.{SigmaTestingData, VersionContext}
 import sigma.VersionContext.V6SoftForkVersion
 import sigma.VersionContext
+import sigma.GroupElement
+import sigma.VersionContext.V6SoftForkVersion
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.SType.AnyOps
-import sigma.data.{AvlTreeData, CAnyValue, CSigmaDslBuilder}
+import sigma.data.{AvlTreeData, CAnyValue, CBigInt, CGroupElement, CSigmaDslBuilder}
+import sigma.data.{AvlTreeData, AvlTreeFlags, CAND, CAnyValue, CHeader, CSigmaDslBuilder, CSigmaProp}
 import sigma.util.StringUtil._
 import sigma.ast._
 import sigma.ast.syntax._
-import sigma.crypto.CryptoConstants
+import sigma.crypto.{CryptoConstants, SecP256K1Group}
 import sigmastate._
 import sigmastate.helpers.TestingHelpers._
 import sigmastate.helpers.{CompilerTestingCommons, ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter}
@@ -27,10 +38,16 @@ import sigma.ast.Apply
 import sigma.eval.EvalSettings
 import sigma.exceptions.InvalidType
 import sigma.serialization.ErgoTreeSerializer
+import sigma.interpreter.{ContextExtension, ProverResult}
+import sigma.serialization.{DataSerializer, ErgoTreeSerializer, SigmaByteWriter}
+import sigma.util.Extensions
 import sigmastate.utils.Helpers
 import sigmastate.utils.Helpers._
 
 import java.math.BigInteger
+import scala.collection.compat.immutable.ArraySeq
+import java.security.SecureRandom
+import scala.annotation.tailrec
 
 class BasicOpsSpecification extends CompilerTestingCommons
   with CompilerCrossVersionProps {
@@ -51,7 +68,9 @@ class BasicOpsSpecification extends CompilerTestingCommons
   val booleanVar = 9.toByte
   val propVar1 = 10.toByte
   val propVar2 = 11.toByte
-  val lastExtVar = propVar2
+  val propVar3 = 12.toByte
+  val propBytesVar1 = 13.toByte
+  val lastExtVar = propBytesVar1
 
   val ext: Seq[VarBinding] = Seq(
     (intVar1, IntConstant(1)), (intVar2, IntConstant(2)),
@@ -68,7 +87,8 @@ class BasicOpsSpecification extends CompilerTestingCommons
     "proofVar2" -> CAnyValue(propVar2)
     )
 
-  def test(name: String, env: ScriptEnv,
+  def test(name: String,
+           env: ScriptEnv,
            ext: Seq[VarBinding],
            script: String,
            propExp: SValue,
@@ -79,7 +99,14 @@ class BasicOpsSpecification extends CompilerTestingCommons
       override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = {
         val p1 = dlogSecrets(0).publicImage
         val p2 = dlogSecrets(1).publicImage
-        (ext ++ Seq(propVar1 -> SigmaPropConstant(p1), propVar2 -> SigmaPropConstant(p2))).toMap
+        val d1 = dhSecrets(0).publicImage
+
+        (ext ++ Seq(
+          propVar1 -> SigmaPropConstant(p1),
+          propVar2 -> SigmaPropConstant(p2),
+          propVar3 -> SigmaPropConstant(CSigmaProp(CAND(Seq(p1, d1)))),
+          propBytesVar1 -> ByteArrayConstant(CSigmaProp(CAND(Seq(p1, d1))).propBytes)
+        )).toMap
       }
       override val evalSettings: EvalSettings = DefaultEvalSettings.copy(
         isMeasureOperationTime = true,
@@ -92,8 +119,9 @@ class BasicOpsSpecification extends CompilerTestingCommons
       // is not supported by ErgoScript Compiler)
       // In such cases we use expected property as the property to test
       propExp.asSigmaProp
-    } else
+    } else {
       compile(env, script).asBoolValue.toSigmaProp
+    }
 
     if (propExp != null)
       prop shouldBe propExp
@@ -110,7 +138,8 @@ class BasicOpsSpecification extends CompilerTestingCommons
     val newBox1 = testBox(10, tree, creationHeight = 0, boxIndex = 0, additionalRegisters = Map(
       reg1 -> IntConstant(1),
       reg2 -> IntConstant(10)))
-    val tx = createTransaction(newBox1)
+    val ce = ContextExtension(prover.contextExtenders)
+    val tx = new ErgoLikeTransaction(IndexedSeq(Input(boxToSpend.id, ProverResult(Array.empty, ce))), ArraySeq.empty, IndexedSeq(newBox1))
 
     val ctx = ErgoLikeContextTesting(currentHeight = 0,
       lastBlockUtxoRoot = AvlTreeData.dummy, ErgoLikeContextTesting.dummyPubkey, boxesToSpend = IndexedSeq(boxToSpend),
@@ -144,6 +173,562 @@ class BasicOpsSpecification extends CompilerTestingCommons
     flexVerifier.verify(verifyEnv, tree, ctxExt, pr.proof, fakeMessage).get._1 shouldBe true
   }
 
+
+  property("group order deserialization") {
+    val b = SecP256K1Group.q
+
+    val customExt: Seq[(Byte, EvaluatedValue[_ <: SType])] = Map(
+      0.toByte -> UnsignedBigIntConstant(b)
+    ).toSeq
+
+    def deserTest() = {test("restoring q", env, customExt,
+      s"""{
+         |  val b1 = unsignedBigInt(\"${b.toString}\")
+         |  val b2 = getVar[UnsignedBigInt](0).get
+         |  b1 == b2
+         |}
+         | """.stripMargin,
+      null,
+      true
+    )}
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[Exception] should be thrownBy deserTest()
+    } else {
+      deserTest()
+    }
+  }
+
+  property("signed -> unsigned bigint conversion - positive bigint") {
+    val b = new BigInteger("9280562930080889354892980449861222646750586663683904599823322027983929189860")
+    val ub = new BigInteger(1, b.toByteArray)
+
+    def conversionTest() = {test("conversion", env, ext,
+      s"""{
+         |  val b = bigInt(\"${ub.toString}\")
+         |  val ub = b.toUnsigned
+         |  ub > 1
+         | } """.stripMargin,
+      null,
+      true
+    )}
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[Exception] should be thrownBy conversionTest()
+    } else {
+      conversionTest()
+    }
+  }
+
+  property("signed -> unsigned bigint conversion - negative bigint") {
+    def conversionTest() = {test("conversion", env, ext,
+      s"""{
+         |  val b = bigInt("-1")
+         |  val ub = b.toUnsigned
+         |  ub > 0
+         | } """.stripMargin,
+      null,
+      true
+    )}
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[Exception] should be thrownBy conversionTest()
+    } else {
+      an[Exception] should be thrownBy conversionTest()
+    }
+  }
+
+  property("signed -> unsigned bigint conversion - negative bigint - mod") {
+    def conversionTest() = {test("conversion", env, ext,
+      s"""{
+         |  val b = bigInt("-1")
+         |  val m = unsignedBigInt("5")
+         |  val ub = b.toUnsignedMod(m)
+         |  ub >= 0
+         | } """.stripMargin,
+      null,
+      true
+    )}
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[Exception] should be thrownBy conversionTest()
+    } else {
+      conversionTest()
+    }
+  }
+
+  property("unsigned bigint - add") {
+    def conversionTest() = {test("add", env, ext,
+      s"""{
+         |  val a = unsignedBigInt("5")
+         |  val b = unsignedBigInt("10")
+         |  val res = a + b
+         |  res == 15
+         | } """.stripMargin,
+      null,
+      true
+    )}
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[Exception] should be thrownBy conversionTest()
+    } else {
+      conversionTest()
+    }
+  }
+
+  property("unsigned bigint - subtract with neg result") {
+    def conversionTest() = {test("subtract", env, ext,
+      s"""{
+         |  val a = unsignedBigInt("5")
+         |  val b = unsignedBigInt("10")
+         |  val res = a - b
+         |  res >= 0
+         | } """.stripMargin,
+      null,
+      true
+    )}
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[Exception] should be thrownBy conversionTest()
+    } else {
+      an[Exception] should be thrownBy conversionTest()
+    }
+  }
+
+  property("unsigned -> signed bigint conversion") {
+    def conversionTest() = {test("conversion", env, ext,
+      s"""{
+         |  val ub = unsignedBigInt("10")
+         |  val b = ub.toSigned
+         |  b - 11 == bigInt("-1")
+         | } """.stripMargin,
+      null,
+      true
+    )}
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[Exception] should be thrownBy conversionTest()
+    } else {
+      conversionTest()
+    }
+  }
+
+  property("schnorr sig check") {
+
+    val g = CGroupElement(SecP256K1Group.generator)
+
+    def randBigInt: BigInt = {
+      val random = new SecureRandom()
+      val values = new Array[Byte](32)
+      random.nextBytes(values)
+      BigInt(values).mod(SecP256K1Group.q)
+    }
+
+    @tailrec
+    def sign(msg: Array[Byte], secretKey: BigInt): (GroupElement, BigInt) = {
+      val r = randBigInt
+
+      val a: GroupElement = g.exp(CBigInt(r.bigInteger))
+      val z = (r + secretKey * BigInt(scorex.crypto.hash.Blake2b256(msg))) % CryptoConstants.groupOrder
+
+      if(z.bitLength > 255) {
+        (a, z)
+      } else {
+        sign(msg,secretKey)
+      }
+    }
+
+    val holderSecret = randBigInt
+    val holderPk = g.exp(CBigInt(holderSecret.bigInteger))
+
+    val message = Array.fill(5)(1.toByte)
+
+    val (a,z) = sign(message, holderSecret)
+
+    val customExt: Seq[(Byte, EvaluatedValue[_ <: SType])] = Map(
+      0.toByte -> GroupElementConstant(holderPk),
+      1.toByte -> GroupElementConstant(a),
+      2.toByte -> UnsignedBigIntConstant(z.bigInteger)
+    ).toSeq
+
+    def schnorrTest() = {
+      test("schnorr", env, customExt,
+        s"""{
+           |
+           |      val g: GroupElement = groupGenerator
+           |      val holder = getVar[GroupElement](0).get
+           |
+           |      val message = fromBase16("${Base16.encode(message)}")
+           |      val e: Coll[Byte] = blake2b256(message) // weak Fiat-Shamir
+           |      val eInt = byteArrayToBigInt(e) // challenge as big integer
+           |
+           |      // a of signature in (a, z)
+           |      val a = getVar[GroupElement](1).get
+           |      val aBytes = a.getEncoded
+           |
+           |      // z of signature in (a, z)
+           |      val z = getVar[UnsignedBigInt](2).get
+           |
+           |      // Signature is valid if g^z = a * x^e
+           |      val properSignature = g.exp(z) == a.multiply(holder.exp(eInt))
+           |      sigmaProp(properSignature)
+           |}""".stripMargin,
+        null,
+        true
+      )
+    }
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[Exception] should be thrownBy schnorrTest()
+    } else {
+      schnorrTest()
+    }
+  }
+
+  property("mod") {
+    def miTest() = {
+      test("mod", env, ext,
+        s"""{
+           |   val bi = unsignedBigInt("248486720836984554860790790898080606")
+           |   val m = unsignedBigInt("575879797")
+           |   bi.mod(m) < bi
+           |}""".stripMargin,
+        null,
+        true
+      )
+    }
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[Exception] should be thrownBy miTest()
+    } else {
+      miTest()
+    }
+  }
+
+  property("modInverse") {
+    def miTest() = {
+      test("modInverse", env, ext,
+        s"""{
+           |   val bi = unsignedBigInt("248486720836984554860790790898080606")
+           |   val m = unsignedBigInt("575879797")
+           |   bi.modInverse(m) > 0
+           |}""".stripMargin,
+        null,
+        true
+      )
+    }
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[Exception] should be thrownBy miTest()
+    } else {
+      miTest()
+    }
+  }
+
+  property("mod ops - plus") {
+    def miTest() = {
+      test("modInverse", env, ext,
+        s"""{
+           |   val bi1 = unsignedBigInt("248486720836984554860790790898080606")
+           |   val bi2 = unsignedBigInt("2484867208369845548607907908980997780606")
+           |   val m = unsignedBigInt("575879797")
+           |   bi1.plusMod(bi2, m) > 0
+           |}""".stripMargin,
+        null,
+        true
+      )
+    }
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[Exception] should be thrownBy miTest()
+    } else {
+      miTest()
+    }
+  }
+
+  property("mod ops - subtract") {
+    def miTest() = {
+      test("subtractMod", env, ext,
+        s"""{
+           |   val bi1 = unsignedBigInt("2")
+           |   val bi2 = unsignedBigInt("4")
+           |   val m = unsignedBigInt("575879797")
+           |   bi1.subtractMod(bi2, m) > 0
+           |}""".stripMargin,
+        null,
+        true
+      )
+    }
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[Exception] should be thrownBy miTest()
+    } else {
+      miTest()
+    }
+  }
+
+  property("mod ops - multiply") {
+    def miTest() = {
+      test("modInverse", env, ext,
+        s"""{
+           |   val bi1 = unsignedBigInt("248486720836984554860790790898080606")
+           |   val bi2 = unsignedBigInt("2484867208369845548607907908980997780606")
+           |   val m = unsignedBigInt("575879797")
+           |   bi1.multiplyMod(bi2, m) > 0
+           |}""".stripMargin,
+        null,
+        true
+      )
+    }
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[Exception] should be thrownBy miTest()
+    } else {
+      miTest()
+    }
+  }
+
+  property("Bulletproof verification for a range proof") {
+    /*
+     * Original range proof verifier code by Benedikt Bunz:
+     *
+        VectorBase<T> vectorBase = params.getVectorBase();
+        PeddersenBase<T> base = params.getBase();
+        int n = vectorBase.getGs().size();
+        T a = proof.getaI();
+        T s = proof.getS();
+
+        BigInteger q = params.getGroup().groupOrder();
+        BigInteger y = ProofUtils.computeChallenge(q, input, a, s);
+
+        FieldVector ys = FieldVector.from(VectorX.iterate(n, BigInteger.ONE, y::multiply), q);
+
+        BigInteger z = ProofUtils.challengeFromints(q, y);
+
+        BigInteger zSquared = z.pow(2).mod(q);
+        BigInteger zCubed = z.pow(3).mod(q);
+
+        FieldVector twos = FieldVector.from(VectorX.iterate(n, BigInteger.ONE, bi -> bi.shiftLeft(1)), q);
+        FieldVector twoTimesZSquared = twos.times(zSquared);
+        GeneratorVector<T> tCommits = proof.gettCommits();
+
+         BigInteger x = ProofUtils.computeChallenge(q,z, tCommits);
+
+        BigInteger tauX = proof.getTauX();
+        BigInteger mu = proof.getMu();
+        BigInteger t = proof.getT();
+        BigInteger k = ys.sum().multiply(z.subtract(zSquared)).subtract(zCubed.shiftLeft(n).subtract(zCubed));
+        T lhs = base.commit(t.subtract(k), tauX);
+        T rhs = tCommits.commit(Arrays.asList(x, x.pow(2))).add(input.multiply(zSquared));
+        System.out.println("y " + y);
+        System.out.println("z " + z);
+
+        System.out.println("x " + x);pow
+        equal(lhs, rhs, "Polynomial identity check failed, LHS: %s, RHS %s");
+        BigInteger uChallenge = ProofUtils.challengeFromints(q, x, tauX, mu, t);
+        System.out.println("u " + uChallenge);
+        T u = base.g.multiply(uChallenge);
+        GeneratorVector<T> hs = vectorBase.getHs();
+        GeneratorVector<T> gs = vectorBase.getGs();
+        GeneratorVector<T> hPrimes = hs.haddamard(ys.invert());
+        FieldVector hExp = ys.times(z).add(twoTimesZSquared);
+        T P = a.add(s.multiply(x)).add(gs.sum().multiply(z.negate())).add(hPrimes.commit(hExp)).subtract(base.h.multiply(mu)).add(u.multiply(t));
+        VectorBase<T> primeBase = new VectorBase<>(gs, hPrimes, u);
+        // System.out.println("PVerify "+P.normalize());
+        // System.out.println("XVerify" +x);
+        // System.out.println("YVerify" +y);
+        // System.out.println("ZVerify" +z);
+        // System.out.println("uVerify" +u);
+
+        EfficientInnerProductVerifier<T> verifier = new EfficientInnerProductVerifier<>();
+        verifier.verify(primeBase, P, proof.getProductProof(), uChallenge);
+     */
+
+    val g = CGroupElement(SecP256K1Group.generator)
+
+    def rangeTest() = {
+      test("range proof", env, ext,
+        s"""{
+           |   // range proof input data
+           |   val input: GroupElement = getVar[GroupElement](0).get
+           |
+           |   // proof data
+           |   val ai: GroupElement = getVar[GroupElement](1).get
+           |   val s: GroupElement = getVar[GroupElement](2).get
+           |   val tCommits: Coll[GroupElement] = getVar[Coll[GroupElement]](3).get
+           |   val tauX: UnsignedBigInt = getVar[UnsignedBigInt](4).get
+           |   val mu: UnsignedBigInt = getVar[UnsignedBigInt](5).get
+           |   val t: UnsignedBigInt = getVar[UnsignedBigInt](6).get
+           |
+           |   // inner product proof
+           |   val L: Coll[GroupElement] = getVar[Coll[GroupElement]](7).get
+           |   val R: Coll[GroupElement] = getVar[Coll[GroupElement]](8)).get
+           |   val a: UnsignedBigInt = getVar[UnsignedBigInt](9).get
+           |   val b: UnsignedBigInt = getVar[UnsignedBigInt](10).get
+           |
+           |   // proof verification:
+           |   val Q = lWeights.size
+           |
+           |   val q // group order = getVar[UnsignedBigInt](11).get
+           |
+           |   val yBytes = sha256(q.toBytes ++ input.getEncoded ++ aI.getEncoded ++ s.getEncoded)
+           |
+           |   val y = byteArrayToBigInt(yBytes).toUnsignedMod(q)
+           |
+           |   val ys =
+           |
+           |   val z = byteArrayToBigInt(sha256(q.toBytes ++ yBytes)).toUnsignedMod(q)
+           |   val zSquared = z.multiplyMod(z, q)
+           |   val zCubed = zSquared.multiplyMod(z, q)
+           |
+           |   // def times() : // todo: implement
+           |
+           |   // ops needed: modInverse, mod ops
+           |
+           |   sigmaProp(zCubed > 0)
+           |}""".stripMargin,
+        null,
+        true
+      )
+    }
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[Exception] should be thrownBy rangeTest()
+    } else {
+      rangeTest()
+    }
+  }
+
+  // todo: complete
+  ignore("Bulletproof verification for a circuit proof") {
+
+    val g = CGroupElement(SecP256K1Group.generator)
+
+    def circuitTest() = {
+      test("schnorr", env, ext,
+        s"""{
+           |   // circuit data - should be provided via data input likely
+           |   val lWeights =  Coll[UnsignedBigInt]
+           |   val rWeights: Coll[UnsignedBigInt]
+           |   val oWeights: Coll[UnsignedBigInt]
+           |   val commitmentWeights: Coll[UnsignedBigInt]
+           |
+           |   val cs: Coll[UnsignedBigInt]
+           |   val commitments: Coll[GroupElement]
+           |
+           |   // proof data
+           |   val ai: GroupElement
+           |   val ao: GroupElement
+           |   val s: GroupElement
+           |   val tCommits: Coll[GroupElement]
+           |   val tauX: UnsignedBigInt
+           |   val mu: UnsignedBigInt
+           |   val t: UnsignedBigInt
+           |
+           |   // inner product proof
+           |   val L: Coll[GroupElement]
+           |   val R: Coll[GroupElement]
+           |   val a: UnsignedBigInt
+           |   val b: UnsignedBigInt
+           |
+           |   // proof verification:
+           |   val Q = lWeights.size
+           |
+           |   val q // group order
+           |
+           |   val yBytes = sha256(q.toBytes ++ aI.getEncoded ++ aO.getEncoded ++ s.getEncoded)
+           |
+           |   val y = byteArrayToBigInt(yBytes) // should be to unsigned bigint
+           |
+           |   val z = byteArrayToBigInt(sha256(y ++ q.toBytes))
+           |
+           |
+           |
+           |   sigmaProp(properSignature)
+           |}""".stripMargin,
+        null,
+        true
+      )
+    }
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[Exception] should be thrownBy circuitTest()
+    } else {
+      circuitTest()
+    }
+  }
+
+  property("Context.getVar") {
+    def varTest() = {
+      test("GetVar1", env, ext,
+        "{ CONTEXT.getVar[Int](intVar2.toByte).get == 2 }",
+        null
+      )
+    }
+
+    if(VersionContext.current.isV6SoftForkActivated) {
+      varTest()
+    } else {
+      an[Exception] should be thrownBy(varTest())
+    }
+  }
+
+  property("getVarFromInput") {
+    def getVarTest(): Assertion = {
+      val customExt = Map(
+        1.toByte -> IntConstant(5)
+      ).toSeq
+      test("R1", env, customExt,
+        "{ sigmaProp(getVarFromInput[Int](0, 1).get == 5) }",
+        null
+      )
+    }
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      getVarTest()
+    } else {
+      an[Exception] should be thrownBy getVarTest()
+    }
+  }
+
+  property("getVarFromInput - self index") {
+    def getVarTest(): Assertion = {
+      val customExt = Map(
+        1.toByte -> IntConstant(5)
+      ).toSeq
+      test("R1", env, customExt,
+        """{
+          | val idx = CONTEXT.selfBoxIndex
+          | sigmaProp(CONTEXT.getVarFromInput[Int](idx.toShort, 1.toByte).get == 5)
+          | }""".stripMargin,
+        null
+      )
+    }
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      getVarTest()
+    } else {
+      an[Exception] should be thrownBy getVarTest()
+    }
+  }
+
+  property("getVarFromInput - invalid input") {
+    def getVarTest(): Assertion = {
+      val customExt = Map(
+        1.toByte -> IntConstant(5)
+      ).toSeq
+      test("R1", env, customExt,
+        "{ sigmaProp(CONTEXT.getVarFromInput[Int](1, 1).isDefined == false) }",
+        null
+      )
+    }
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      getVarTest()
+    } else {
+      an[Exception] should be thrownBy getVarTest()
+    }
+  }
   property("Byte.toBits") {
     def toBitsTest() = test("Byte.toBits", env, ext,
       """{
@@ -535,26 +1120,22 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
-  property("Unit register") {
-    // TODO frontend: implement missing Unit support in compiler
-    //  https://github.com/ScorexFoundation/sigmastate-interpreter/issues/820
-    test("R1", env, ext,
-      script = "", /* means cannot be compiled
-                     the corresponding script is { SELF.R4[Unit].isDefined } */
-      ExtractRegisterAs[SUnit.type](Self, reg1)(SUnit).isDefined.toSigmaProp,
-      additionalRegistersOpt = Some(Map(
-        reg1 -> UnitConstant.instance
-      ))
-    )
+  property("getVarFromInput - invalid var") {
+    def getVarTest(): Assertion = {
+      val customExt = Map(
+        1.toByte -> IntConstant(5)
+      ).toSeq
+      test("R1", env, customExt,
+        "{ sigmaProp(CONTEXT.getVarFromInput[Int](0, 2).isDefined == false) }",
+        null
+      )
+    }
 
-    test("R2", env, ext,
-      script = "", /* means cannot be compiled
-                   the corresponding script is "{ SELF.R4[Unit].get == () }" */
-      EQ(ExtractRegisterAs[SUnit.type](Self, reg1)(SUnit).get, UnitConstant.instance).toSigmaProp,
-      additionalRegistersOpt = Some(Map(
-        reg1 -> UnitConstant.instance
-      ))
-    )
+    if (VersionContext.current.isV6SoftForkActivated) {
+      getVarTest()
+    } else {
+      an[Exception] should be thrownBy getVarTest()
+    }
   }
 
   property("Coll.reverse"){
@@ -989,7 +1570,6 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
-  // todo: failing, needs for Header (de)serialization support from https://github.com/ScorexFoundation/sigmastate-interpreter/pull/972
   property("serialize - collection of collection of headers") {
     val td = new SigmaTestingData {}
     val h1 = td.TestData.h1
@@ -1013,9 +1593,6 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
-  // todo: roundtrip tests with deserializeTo from https://github.com/ScorexFoundation/sigmastate-interpreter/pull/979
-
-  // todo: move spam tests to dedicated test suite?
   property("serialize - not spam") {
     val customExt = Seq(21.toByte -> ShortArrayConstant((1 to Short.MaxValue).map(_.toShort).toArray),
       22.toByte -> ByteArrayConstant(Array.fill(1)(1.toByte)))
@@ -1058,6 +1635,399 @@ class BasicOpsSpecification extends CompilerTestingCommons
     } else {
       // we have wrapped CostLimitException here
       an[Exception] should be thrownBy deserTest()
+    }
+  }
+
+  property("serialize - deserialize roundtrip") {
+    val customExt = Seq(21.toByte -> ShortArrayConstant((1 to 10).map(_.toShort).toArray))
+    def deserTest() = test("serialize", env, customExt,
+      s"""{
+            val src = getVar[Coll[Short]](21).get
+            val ba = serialize(src)
+            val restored = deserializeTo[Coll[Short]](ba)
+            src == restored
+          }""",
+      null,
+      true
+    )
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[Exception] should be thrownBy deserTest()
+    } else {
+      deserTest()
+    }
+  }
+
+  property("deserializeTo - int") {
+    val value = -109253
+    val w = new VLQByteBufferWriter(new ByteArrayBuilder()).putInt(value)
+    val bytes = Base16.encode(w.toBytes)
+    def deserTest() = {test("deserializeTo", env, ext,
+      s"""{ val ba = fromBase16("$bytes"); Global.deserializeTo[Int](ba) == $value }""",
+      null,
+      true
+    )}
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an [sigma.exceptions.TyperException] should be thrownBy deserTest()
+    } else {
+      deserTest()
+    }
+  }
+
+  property("deserializeTo - coll[int]") {
+    val writer = new SigmaByteWriter(new VLQByteBufferWriter(new ByteArrayBuilder()), None, None, None)
+    DataSerializer.serialize[SCollection[SInt.type]](Colls.fromArray(Array(IntConstant(5).value)), SCollection(SInt), writer)
+    val bytes = Base16.encode(writer.toBytes)
+
+    def deserTest() = {
+      test("deserializeTo", env, ext,
+        s"""{val ba = fromBase16("$bytes"); val coll = Global.deserializeTo[Coll[Int]](ba); coll(0) == 5 }""",
+        null,
+        true
+      )
+    }
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an [sigma.exceptions.TyperException] should be thrownBy deserTest()
+    } else {
+      deserTest()
+    }
+  }
+
+  property("deserializeTo - long") {
+    val value = -10009253L
+
+    val w = new VLQByteBufferWriter(new ByteArrayBuilder()).putLong(value)
+    val bytes = Base16.encode(w.toBytes)
+
+    def deserTest() = test("deserializeTo", env, ext,
+      s"""{
+            val ba = fromBase16("$bytes");
+            Global.deserializeTo[Long](ba) == ${value}L
+          }""",
+      null,
+      true
+    )
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an [sigma.exceptions.TyperException] should be thrownBy deserTest()
+    } else {
+      deserTest()
+    }
+  }
+
+  property("deserializeTo - box rountrip") {
+    def deserTest() = test("deserializeTo", env, ext,
+      s"""{
+            val b = INPUTS(0);
+            val ba = b.bytes;
+            Global.deserializeTo[Box](ba) == b
+          }""",
+      null,
+      true
+    )
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an [sigma.exceptions.TyperException] should be thrownBy deserTest()
+    } else {
+      deserTest()
+    }
+  }
+
+  property("deserializeTo - bigint") {
+
+    val bigInt = SecP256K1Group.q.divide(new BigInteger("512"))
+    val biBytes = bigInt.toByteArray
+
+    val w = new VLQByteBufferWriter(new ByteArrayBuilder()).putUShort(biBytes.length)
+    val lengthBytes = w.toBytes
+
+    val bytes = Base16.encode(lengthBytes ++ biBytes)
+
+    def deserTest() = test("deserializeTo", env, ext,
+      s"""{
+            val ba = fromBase16("$bytes");
+            val b = Global.deserializeTo[BigInt](ba)
+            b == bigInt("${bigInt.toString}")
+          }""",
+      null,
+      true
+    )
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an [sigma.exceptions.TyperException] should be thrownBy deserTest()
+    } else {
+      deserTest()
+    }
+  }
+
+  property("deserializeTo - short") {
+    val s = (-1925).toShort
+    val w = new VLQByteBufferWriter(new ByteArrayBuilder()).putShort(s)
+    val bytes = Base16.encode(w.toBytes)
+    def deserTest() = test("deserializeTo", env, ext,
+      s"""{
+            val ba = fromBase16("$bytes");
+            Global.deserializeTo[Short](ba) == -1925
+          }""",
+      null,
+      true
+    )
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an [sigma.exceptions.TyperException] should be thrownBy deserTest()
+    } else {
+      deserTest()
+    }
+  }
+
+  property("deserializeTo - group element") {
+    val ge = Helpers.decodeGroupElement("026930cb9972e01534918a6f6d6b8e35bc398f57140d13eb3623ea31fbd069939b")
+    val ba = Base16.encode(ge.getEncoded.toArray)
+    def deserTest() = test("deserializeTo", env, Seq(21.toByte -> GroupElementConstant(ge)),
+      s"""{
+            val ge = getVar[GroupElement](21).get
+            val ba = fromBase16("$ba");
+            val ge2 = Global.deserializeTo[GroupElement](ba)
+            ba == ge2.getEncoded && ge == ge2
+          }""",
+      null,
+      true
+    )
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+       an [sigma.exceptions.TyperException] should be thrownBy deserTest()
+    } else {
+      deserTest()
+    }
+  }
+
+  property("deserializeTo - sigmaprop roundtrip") {
+
+    def deserTest() = test("deserializeTo", env, ext,
+      s"""{
+            val bytes = getVar[Coll[Byte]]($propBytesVar1).get
+            val ba = bytes.slice(2, bytes.size)
+            val prop = Global.deserializeTo[SigmaProp](ba)
+            prop == getVar[SigmaProp]($propVar3).get && prop
+          }""",
+      null,
+      true
+    )
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an [sigma.exceptions.TyperException] should be thrownBy deserTest()
+    } else {
+      deserTest()
+    }
+  }
+
+  property("deserializeTo - .propBytes") {
+    def deserTest() = test("deserializeTo", env, ext,
+      s"""{
+            val p1 = getVar[SigmaProp]($propVar1).get
+            val bytes = p1.propBytes
+            val ba = bytes.slice(2, bytes.size)
+            val prop = Global.deserializeTo[SigmaProp](ba)
+            prop == p1 && prop
+          }""",
+      null,
+      true
+    )
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an [sigma.exceptions.TyperException] should be thrownBy deserTest()
+    } else {
+      deserTest()
+    }
+  }
+
+  property("deserializeTo - sigmaprop roundtrip - non evaluated") {
+
+    val script = GT(Height, IntConstant(-1)).toSigmaProp
+    val scriptBytes = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(ErgoTree.fromProposition(script))
+    val customExt = Seq(21.toByte -> ByteArrayConstant(scriptBytes))
+
+    def deserTest() = test("deserializeTo", env, customExt,
+      s"""{
+            val ba = getVar[Coll[Byte]](21).get
+            val prop = Global.deserializeTo[SigmaProp](ba)
+            prop
+          }""",
+      null,
+      true
+    )
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an [sigma.exceptions.TyperException] should be thrownBy deserTest()
+    } else {
+      an [Exception] should be thrownBy deserTest()
+    }
+  }
+
+  property("deserializeTo - avltree") {
+    val elements = Seq(123, 22)
+    val treeElements = elements.map(i => Longs.toByteArray(i)).map(s => (ADKey @@@ Blake2b256(s), ADValue @@ s))
+    val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
+    treeElements.foreach(s => avlProver.performOneOperation(Insert(s._1, s._2)))
+    avlProver.generateProof()
+    val treeData = new AvlTreeData(avlProver.digest.toColl, AvlTreeFlags.ReadOnly, 32, None)
+    val treeBytes = AvlTreeData.serializer.toBytes(treeData)
+
+    val customExt = Seq(21.toByte -> ByteArrayConstant(treeBytes))
+
+    def deserTest() = test("deserializeTo", env, customExt,
+      s"""{
+            val ba = getVar[Coll[Byte]](21).get
+            val tree = Global.deserializeTo[AvlTree](ba)
+            tree.digest == fromBase16(${Base16.encode(treeData.digest.toArray)})
+              && tree.enabledOperations == 0
+              && tree.keyLength == 32
+              && tree.valueLengthOpt.isEmpty
+          }""",
+      null,
+      true
+    )
+
+    an [Exception] should be thrownBy deserTest()
+  }
+
+  property("deserializeTo - header") {
+    val td = new SigmaTestingData {}
+    val h1 = td.TestData.h1
+    val headerBytes = h1.asInstanceOf[CHeader].ergoHeader.bytes
+
+    val headerStateBytes = AvlTreeData.serializer.toBytes(Extensions.CoreAvlTreeOps(h1.stateRoot).toAvlTreeData)
+    val customExt = Seq(21.toByte -> ByteArrayConstant(headerBytes), 22.toByte -> ByteArrayConstant(headerStateBytes))
+
+    def deserTest() = test("deserializeTo", env, customExt,
+      s"""{
+            val ba = getVar[Coll[Byte]](21).get
+            val header = Global.deserializeTo[Header](ba)
+            val ba2 = getVar[Coll[Byte]](22).get
+            val tree = Global.deserializeTo[AvlTree](ba2)
+            val id = fromBase16("${Base16.encode(h1.id.toArray)}")
+            header.height == ${h1.height} && header.stateRoot == tree && header.id == id
+          }""",
+      null,
+      true
+    )
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[sigma.exceptions.TyperException] should be thrownBy deserTest()
+    } else {
+      deserTest()
+    }
+  }
+
+  property("deserializeTo - header option") {
+    val td = new SigmaTestingData {}
+    val h1 = td.TestData.h1.asInstanceOf[CHeader].ergoHeader
+    val headerBytes = Colls.fromArray(Array(1.toByte) ++ h1.bytes)
+
+    val customExt = Seq(21.toByte -> ByteArrayConstant(headerBytes))
+
+    def deserTest() = test("deserializeTo", env, customExt,
+      s"""{
+            val ba = getVar[Coll[Byte]](21).get
+            val headerOpt = Global.deserializeTo[Option[Header]](ba)
+            val header = headerOpt.get
+            val id = fromBase16("${Base16.encode(h1.id.toArray)}")
+            header.height == ${h1.height} && header.id == id
+          }""",
+      null,
+      true
+    )
+
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[sigma.exceptions.TyperException] should be thrownBy deserTest()
+    } else {
+      deserTest()
+    }
+  }
+
+  property("Lazy evaluation of default in Option.getOrElse") {
+    val customExt = Map (
+      1.toByte -> IntConstant(5)
+    ).toSeq
+    def optTest() = test("getOrElse", env, customExt,
+      """{
+        |  getVar[Int](1).getOrElse(getVar[Int](44).get) > 0
+        |}
+        |""".stripMargin,
+      null
+    )
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      optTest()
+    } else {
+      assertExceptionThrown(optTest(), _.isInstanceOf[NoSuchElementException])
+    }
+  }
+
+  property("Lazy evaluation of default in Coll.getOrElse") {
+    def optTest() = test("getOrElse", env, ext,
+      """{
+        |  val c = Coll[Int](1)
+        |  c.getOrElse(0, getVar[Int](44).get) > 0 &&
+        |   c.getOrElse(1, c.getOrElse(0, getVar[Int](44).get)) > 0
+        |}
+        |""".stripMargin,
+      null
+    )
+
+    if(VersionContext.current.isV6SoftForkActivated) {
+      optTest()
+    } else {
+      an[Exception] shouldBe thrownBy(optTest())
+    }
+  }
+
+  property("checking Bitcoin PoW") {
+    val h = "00000020a82ff9c62e69a6cbed277b7f2a9ac9da3c7133a59a6305000000000000000000f6cd5708a6ba38d8501502b5b4e5b93627e8dcc9bd13991894c6e04ade262aa99582815c505b2e17479a751b"
+    val customExt = Map(
+      1.toByte -> ByteArrayConstant(Base16.decode(h).get)
+    ).toSeq
+
+    def powTest() = {
+      test("Prop1", env, customExt,
+        """{
+          |    def reverse4(bytes: Coll[Byte]): Coll[Byte] = {
+          |        Coll(bytes(3), bytes(2), bytes(1), bytes(0))
+          |    }
+          |
+          |    def reverse32(bytes: Coll[Byte]): Coll[Byte] = {
+          |        Coll(bytes(31), bytes(30), bytes(29), bytes(28), bytes(27), bytes(26), bytes(25), bytes(24),
+          |             bytes(23), bytes(22), bytes(21), bytes(20), bytes(19), bytes(18), bytes(17), bytes(16),
+          |             bytes(15), bytes(14), bytes(13), bytes(12), bytes(11), bytes(10), bytes(9), bytes(8),
+          |             bytes(7), bytes(6), bytes(5), bytes(4), bytes(3), bytes(2), bytes(1), bytes(0))
+          |    }
+          |
+          |   val bitcoinHeader = getVar[Coll[Byte]](1).get
+          |   val id = reverse32(sha256(sha256(bitcoinHeader)))
+          |   val hit = byteArrayToBigInt(id)
+          |
+          |   val nBitsBytes = reverse4(bitcoinHeader.slice(72, 76))
+          |
+          |   val pad = Coll[Byte](0.toByte, 0.toByte, 0.toByte, 0.toByte)
+          |
+          |   val nbits = byteArrayToLong(pad ++ nBitsBytes)
+          |
+          |   val difficulty = Global.decodeNbits(nbits)
+          |
+          |   // <= according to https://bitcoin.stackexchange.com/a/105224
+          |   hit <= difficulty
+          |}
+          |""".stripMargin,
+        propExp = null,
+        testExceededCost = false
+      )
+    }
+    if (activatedVersionInTests < V6SoftForkVersion) {
+      an[sigma.exceptions.TyperException] should be thrownBy powTest()
+    } else {
+      powTest()
     }
   }
 
@@ -1731,6 +2701,93 @@ class BasicOpsSpecification extends CompilerTestingCommons
       getRegTest()
     } else {
       an[Exception] should be thrownBy getRegTest()
+    }
+  }
+
+  property("Unit register") {
+    // TODO frontend: implement missing Unit support in compiler
+    //  https://github.com/ScorexFoundation/sigmastate-interpreter/issues/820
+    test("R1", env, ext,
+      script = "", /* means cannot be compiled
+                     the corresponding script is { SELF.R4[Unit].isDefined } */
+      ExtractRegisterAs[SUnit.type](Self, reg1)(SUnit).isDefined.toSigmaProp,
+      additionalRegistersOpt = Some(Map(
+        reg1 -> UnitConstant.instance
+      ))
+    )
+
+    test("R2", env, ext,
+      script = "", /* means cannot be compiled
+                   the corresponding script is "{ SELF.R4[Unit].get == () }" */
+      EQ(ExtractRegisterAs[SUnit.type](Self, reg1)(SUnit).get, UnitConstant.instance).toSigmaProp,
+      additionalRegistersOpt = Some(Map(
+        reg1 -> UnitConstant.instance
+      ))
+    )
+  }
+
+  property("Global.some") {
+    val ext: Seq[VarBinding] = Seq(
+      (intVar1, IntConstant(0))
+    )
+    def someTest(): Assertion = {
+      test("some", env, ext,
+        """{
+          |   val xo = Global.some[Int](5)
+          |   xo.get == 5
+          |}""".stripMargin,
+        null
+      )
+    }
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      someTest()
+    } else {
+      an[Exception] should be thrownBy someTest()
+    }
+  }
+
+  property("Global.some - computable value") {
+    val ext: Seq[VarBinding] = Seq(
+      (intVar1, IntConstant(0))
+    )
+    def someTest(): Assertion = {
+      test("some", env, ext,
+        """{
+          |   val i = getVar[Int](1)
+          |   val xo = Global.some[Int](i.get)
+          |   xo == i
+          |}""".stripMargin,
+        null
+      )
+    }
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      someTest()
+    } else {
+      an[Exception] should be thrownBy someTest()
+    }
+  }
+
+  property("Global.none") {
+    val ext: Seq[VarBinding] = Seq(
+      (intVar1, IntConstant(0))
+    )
+    def someTest(): Assertion = {
+      test("some", env, ext,
+        """{
+          |   val xo = Global.some[Long](5L)
+          |   val xn = Global.none[Long]()
+          |   xn.isDefined == false && xn != xo
+          |}""".stripMargin,
+        null
+      )
+    }
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      someTest()
+    } else {
+      an[Exception] should be thrownBy someTest()
     }
   }
 

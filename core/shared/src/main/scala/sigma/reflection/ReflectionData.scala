@@ -129,6 +129,35 @@ object ReflectionData {
     )
   }
   {
+    val clazz      = classOf[sigma.UnsignedBigInt]
+    val paramTypes = Array[Class[_]](clazz)
+    registerClassEntry(clazz,
+      methods = Map(
+        mkMethod(clazz, "add", paramTypes) { (obj, args) =>
+          obj.asInstanceOf[UnsignedBigInt].add(args(0).asInstanceOf[UnsignedBigInt])
+        },
+        mkMethod(clazz, "max", paramTypes) { (obj, args) =>
+          obj.asInstanceOf[UnsignedBigInt].max(args(0).asInstanceOf[UnsignedBigInt])
+        },
+        mkMethod(clazz, "min", paramTypes) { (obj, args) =>
+          obj.asInstanceOf[UnsignedBigInt].min(args(0).asInstanceOf[UnsignedBigInt])
+        },
+        mkMethod(clazz, "subtract", paramTypes) { (obj, args) =>
+          obj.asInstanceOf[UnsignedBigInt].subtract(args(0).asInstanceOf[UnsignedBigInt])
+        },
+        mkMethod(clazz, "multiply", paramTypes) { (obj, args) =>
+          obj.asInstanceOf[UnsignedBigInt].multiply(args(0).asInstanceOf[UnsignedBigInt])
+        },
+        mkMethod(clazz, "mod", paramTypes) { (obj, args) =>
+          obj.asInstanceOf[UnsignedBigInt].mod(args(0).asInstanceOf[UnsignedBigInt])
+        },
+        mkMethod(clazz, "divide", paramTypes) { (obj, args) =>
+          obj.asInstanceOf[UnsignedBigInt].divide(args(0).asInstanceOf[UnsignedBigInt])
+        }
+      )
+    )
+  }
+  {
     val clazz = classOf[CollBuilder]
     registerClassEntry(clazz,
       methods = Map(
@@ -288,6 +317,9 @@ object ReflectionData {
         mkMethod(clazz, "getVar", Array[Class[_]](classOf[Byte], classOf[RType[_]])) { (obj, args) =>
           obj.asInstanceOf[Context].getVar(args(0).asInstanceOf[Byte])(args(1).asInstanceOf[RType[_]])
         },
+        mkMethod(clazz, "getVarFromInput", Array[Class[_]](classOf[Short], classOf[Byte], classOf[RType[_]])) { (obj, args) =>
+          obj.asInstanceOf[Context].getVarFromInput(args(0).asInstanceOf[Short], args(1).asInstanceOf[Byte])(args(2).asInstanceOf[RType[_]])
+        },
         mkMethod(clazz, "headers", Array[Class[_]]()) { (obj, _) =>
           obj.asInstanceOf[Context].headers
         }
@@ -300,6 +332,9 @@ object ReflectionData {
       methods = Map(
         mkMethod(clazz, "exp", Array[Class[_]](classOf[BigInt])) { (obj, args) =>
           obj.asInstanceOf[GroupElement].exp(args(0).asInstanceOf[BigInt])
+        },
+        mkMethod(clazz, "expUnsigned", Array[Class[_]](classOf[UnsignedBigInt])) { (obj, args) =>
+          obj.asInstanceOf[GroupElement].expUnsigned(args(0).asInstanceOf[UnsignedBigInt])
         },
         mkMethod(clazz, "multiply", Array[Class[_]](classOf[GroupElement])) { (obj, args) =>
           obj.asInstanceOf[GroupElement].multiply(args(0).asInstanceOf[GroupElement])
@@ -466,8 +501,27 @@ object ReflectionData {
         mkMethod(clazz, "decodePoint", Array[Class[_]](cColl)) { (obj, args) =>
           obj.asInstanceOf[SigmaDslBuilder].decodePoint(args(0).asInstanceOf[Coll[Byte]])
         },
+        mkMethod(clazz, "deserializeTo", Array[Class[_]](cColl, classOf[RType[_]])) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].deserializeTo(args(0).asInstanceOf[Coll[Byte]])(args(1).asInstanceOf[RType[_]])
+        },
         mkMethod(clazz, "fromBigEndianBytes", Array[Class[_]](cColl, classOf[RType[_]])) { (obj, args) =>
           obj.asInstanceOf[SigmaDslBuilder].fromBigEndianBytes(args(0).asInstanceOf[Coll[Byte]])(args(1).asInstanceOf[RType[_]])
+        },
+        mkMethod(clazz, "encodeNbits", Array[Class[_]](classOf[BigInt])) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].encodeNbits(args(0).asInstanceOf[BigInt])
+        },
+        mkMethod(clazz, "decodeNbits", Array[Class[_]](classOf[Long])) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].decodeNbits(args(0).asInstanceOf[Long])
+        },
+        mkMethod(clazz, "some", Array[Class[_]](classOf[Object], classOf[RType[_]])) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].some(args(0).asInstanceOf[Any])(args(1).asInstanceOf[RType[Any]])
+        },
+        mkMethod(clazz, "none", Array[Class[_]](classOf[RType[_]])) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].none()(args(0).asInstanceOf[RType[_]])
+        },
+        mkMethod(clazz, "powHit", Array[Class[_]](classOf[Int], cColl, cColl, cColl, classOf[Int])) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].powHit(args(0).asInstanceOf[Int], args(1).asInstanceOf[Coll[Byte]],
+            args(2).asInstanceOf[Coll[Byte]], args(3).asInstanceOf[Coll[Byte]], args(4).asInstanceOf[Int])
         }
       )
     )
