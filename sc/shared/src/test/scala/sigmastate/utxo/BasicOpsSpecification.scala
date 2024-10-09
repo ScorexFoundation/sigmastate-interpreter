@@ -989,7 +989,6 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
-  // todo: failing, needs for Header (de)serialization support from https://github.com/ScorexFoundation/sigmastate-interpreter/pull/972
   property("serialize - collection of collection of headers") {
     val td = new SigmaTestingData {}
     val h1 = td.TestData.h1
@@ -1731,6 +1730,71 @@ class BasicOpsSpecification extends CompilerTestingCommons
       getRegTest()
     } else {
       an[Exception] should be thrownBy getRegTest()
+    }
+  }
+
+  property("Global.some") {
+    val ext: Seq[VarBinding] = Seq(
+      (intVar1, IntConstant(0))
+    )
+    def someTest(): Assertion = {
+      test("some", env, ext,
+        """{
+          |   val xo = Global.some[Int](5)
+          |   xo.get == 5
+          |}""".stripMargin,
+        null
+      )
+    }
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      someTest()
+    } else {
+      an[Exception] should be thrownBy someTest()
+    }
+  }
+
+  property("Global.some - computable value") {
+    val ext: Seq[VarBinding] = Seq(
+      (intVar1, IntConstant(0))
+    )
+    def someTest(): Assertion = {
+      test("some", env, ext,
+        """{
+          |   val i = getVar[Int](1)
+          |   val xo = Global.some[Int](i.get)
+          |   xo == i
+          |}""".stripMargin,
+        null
+      )
+    }
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      someTest()
+    } else {
+      an[Exception] should be thrownBy someTest()
+    }
+  }
+
+  property("Global.none") {
+    val ext: Seq[VarBinding] = Seq(
+      (intVar1, IntConstant(0))
+    )
+    def someTest(): Assertion = {
+      test("some", env, ext,
+        """{
+          |   val xo = Global.some[Long](5L)
+          |   val xn = Global.none[Long]()
+          |   xn.isDefined == false && xn != xo
+          |}""".stripMargin,
+        null
+      )
+    }
+
+    if (VersionContext.current.isV6SoftForkActivated) {
+      someTest()
+    } else {
+      an[Exception] should be thrownBy someTest()
     }
   }
 

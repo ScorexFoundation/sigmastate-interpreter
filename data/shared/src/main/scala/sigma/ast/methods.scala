@@ -1835,13 +1835,30 @@ case object SGlobalMethods extends MonoTypeMethods {
     Colls.fromArray(w.toBytes)
   }
 
+  lazy val someMethod = SMethod(this, "some",
+    SFunc(Array(SGlobal, tT), SOption(tT), Array(paramT)), 8, FixedCost(JitCost(5)), Seq(tT)) // todo: cost
+    .withIRInfo(MethodCallIrBuilder,
+      javaMethodOf[SigmaDslBuilder, Any, RType[_]]("some"),
+      { mtype => Array(mtype.tRange) })
+    .withInfo(MethodCall, "",
+      ArgInfo("value", "value to be serialized"))
+
+  lazy val noneMethod = SMethod(this, "none",
+    SFunc(Array(SGlobal), SOption(tT), Array(paramT)), 9, FixedCost(JitCost(5)), Seq(tT)) // todo: cost
+    .withIRInfo(MethodCallIrBuilder,
+      javaMethodOf[SigmaDslBuilder, RType[_]]("none"),
+      { mtype => Array(mtype.tRange) })
+    .withInfo(MethodCall, "")
+
   protected override def getMethods() = super.getMethods() ++ {
     if (VersionContext.current.isV6SoftForkActivated) {
       Seq(
         groupGeneratorMethod,
         xorMethod,
         serializeMethod,
-        fromBigEndianBytesMethod
+        fromBigEndianBytesMethod,
+        someMethod,
+        noneMethod
       )
     } else {
       Seq(
