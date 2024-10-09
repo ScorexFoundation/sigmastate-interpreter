@@ -10,11 +10,13 @@ import sigma.ast.{AtLeast, SBigInt, SubstConstants}
 import scorex.utils.Longs
 import sigma.Evaluation.rtypeToSType
 import sigma.ast.{AtLeast, SType, SubstConstants}
+import sigma.ast.SType
 import sigma.crypto.{CryptoConstants, EcPointType, Ecp}
 import sigma.eval.Extensions.EvalCollOps
 import sigma.serialization.{ConstantStore, DataSerializer, GroupElementSerializer, SigmaByteReader, SigmaSerializer}
 import sigma.serialization.{DataSerializer, GroupElementSerializer, SigmaSerializer}
-import sigma.serialization.{GroupElementSerializer, SerializerException, SigmaSerializer}
+import sigma.serialization.SerializerException
+import sigma.pow.Autolykos2PowValidation
 import sigma.util.Extensions.BigIntegerOps
 import sigma.validation.SigmaValidationSettings
 import sigma.{AvlTree, BigInt, Box, Coll, CollBuilder, Evaluation, GroupElement, SigmaDslBuilder, SigmaProp, VersionContext}
@@ -266,6 +268,12 @@ class CSigmaDslBuilder extends SigmaDslBuilder { dsl =>
   override def none[T]()(implicit cT: RType[T]): Option[T] = {
     None
   }
+
+  override def powHit(k: Int, msg: Coll[Byte], nonce: Coll[Byte], h: Coll[Byte], N: Int): BigInt = {
+    val bi = Autolykos2PowValidation.hitForVersion2ForMessageWithChecks(k, msg.toArray, nonce.toArray, h.toArray, N)
+    this.BigInt(bi.bigInteger)
+  }
+
 }
 
 /** Default singleton instance of Global object, which implements global ErgoTree functions. */

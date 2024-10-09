@@ -512,6 +512,10 @@ object ReflectionData {
         },
         mkMethod(clazz, "none", Array[Class[_]](classOf[RType[_]])) { (obj, args) =>
           obj.asInstanceOf[SigmaDslBuilder].none()(args(0).asInstanceOf[RType[_]])
+        },
+        mkMethod(clazz, "powHit", Array[Class[_]](classOf[Int], cColl, cColl, cColl, classOf[Int])) { (obj, args) =>
+          obj.asInstanceOf[SigmaDslBuilder].powHit(args(0).asInstanceOf[Int], args(1).asInstanceOf[Coll[Byte]],
+            args(2).asInstanceOf[Coll[Byte]], args(3).asInstanceOf[Coll[Byte]], args(4).asInstanceOf[Int])
         }
       )
     )
