@@ -5,13 +5,18 @@ import org.scalatest.matchers.should.Matchers
 import scorex.util.encode.Base16
 import sigma.Extensions.ArrayOps
 import sigma.ast.{ByteArrayConstant, ErgoTree, Global, IntConstant, JitCost, MethodCall, SGlobalMethods}
+import sigma.ast.{BigIntConstant, ErgoTree, Global, JitCost, MethodCall, SBigIntMethods, SGlobalMethods}
 import sigma.crypto.SecP256K1Group
-import sigma.data.{CBigInt, TrivialProp, CSigmaDslBuilder => SigmaDsl}
+import sigma.data.{CBigInt, TrivialProp}
+import sigma.data.{CSigmaDslBuilder => SigmaDsl}
 import sigma.util.Extensions.SigmaBooleanOps
+import sigma.util.NBitsUtils
+
 import java.math.BigInteger
-import sigma.{Box, ContractsTestkit, SigmaProp, VersionContext}
-import sigmastate.interpreter.CErgoTreeEvaluator.DefaultProfiler
+import sigma.{ContractsTestkit, SigmaProp}
 import sigmastate.interpreter.{CErgoTreeEvaluator, CostAccumulator}
+import sigmastate.interpreter.CErgoTreeEvaluator.DefaultProfiler
+import sigma.{Box, VersionContext}
 
 import scala.language.implicitConversions
 
@@ -76,7 +81,7 @@ class BasicOpsTests extends AnyFunSuite with ContractsTestkit with Matchers {
     val context = new CContext(
       noInputs.toColl, noHeaders, dummyPreHeader,
       Array[Box]().toColl, Array[Box]().toColl, 0, null, 0, null,
-      dummyPubkey.toColl, Colls.emptyColl, VersionContext.V6SoftForkVersion, VersionContext.V6SoftForkVersion)
+      dummyPubkey.toColl, Colls.emptyColl, null, VersionContext.V6SoftForkVersion, VersionContext.V6SoftForkVersion)
 
     val evaluator = new CErgoTreeEvaluator(
       context = context,
@@ -113,7 +118,7 @@ class BasicOpsTests extends AnyFunSuite with ContractsTestkit with Matchers {
     val context = new CContext(
       noInputs.toColl, noHeaders, dummyPreHeader,
       Array[Box]().toColl, Array[Box]().toColl, 0, null, 0, null,
-      dummyPubkey.toColl, Colls.emptyColl, VersionContext.V6SoftForkVersion, VersionContext.V6SoftForkVersion)
+      dummyPubkey.toColl, Colls.emptyColl, null, VersionContext.V6SoftForkVersion, VersionContext.V6SoftForkVersion)
 
     val evaluator = new CErgoTreeEvaluator(
       context = context,
@@ -128,6 +133,29 @@ class BasicOpsTests extends AnyFunSuite with ContractsTestkit with Matchers {
 
       res should be(CBigInt(new BigInteger("326674862673836209462483453386286740270338859283019276168539876024851191344")))
     }
+  }
+
+  /**
+    * Checks BigInt.nbits evaluation for SigmaDSL as well as AST interpreter (MethodCall) layers
+    */
+  test("nbits evaluation") {
+    SigmaDsl.encodeNbits(CBigInt(BigInteger.valueOf(0))) should be
+      (NBitsUtils.encodeCompactBits(0))
+
+    val es = CErgoTreeEvaluator.DefaultEvalSettings
+    val accumulator = new CostAccumulator(
+      initialCost = JitCost(0),
+      costLimit = Some(JitCost.fromBlockCost(es.scriptCostLimitInEvaluator)))
+    val evaluator = new CErgoTreeEvaluator(
+      context = null,
+      constants = ErgoTree.EmptyConstants,
+      coster = accumulator, DefaultProfiler, es)
+
+    val res = MethodCall(Global, SGlobalMethods.encodeNBitsMethod, IndexedSeq(BigIntConstant(BigInteger.valueOf(0))), Map.empty)
+        .evalTo[Long](Map.empty)(evaluator)
+
+    res should be (NBitsUtils.encodeCompactBits(0))
+
   }
 
 }

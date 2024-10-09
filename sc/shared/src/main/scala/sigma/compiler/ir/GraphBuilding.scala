@@ -12,6 +12,7 @@ import sigma.ast.syntax.{SValue, ValueOps}
 import sigma.ast._
 import sigma.compiler.ir.core.MutableLazy
 import sigma.crypto.EcPointType
+import sigma.VersionContext
 import sigma.data.ExactIntegral.{ByteIsExactIntegral, IntIsExactIntegral, LongIsExactIntegral, ShortIsExactIntegral}
 import sigma.data.ExactOrdering.{ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering, ShortIsExactOrdering}
 import sigma.data.{CSigmaDslBuilder, ExactIntegral, ExactNumeric, ExactOrdering, Lazy, Nullable}
@@ -1219,6 +1220,12 @@ trait GraphBuilding extends Base with DefRewriting { IR: IRContext =>
               val c1 = asRep[Coll[Byte]](argsV(0))
               val c2 = asRep[Coll[Byte]](argsV(1))
               g.xor(c1, c2)
+            case SGlobalMethods.encodeNBitsMethod.name if VersionContext.current.isV6SoftForkActivated =>
+              val c1 = asRep[BigInt](argsV(0))
+              g.encodeNbits(c1)
+            case SGlobalMethods.decodeNBitsMethod.name if VersionContext.current.isV6SoftForkActivated =>
+              val c1 = asRep[Long](argsV(0))
+              g.decodeNbits(c1)
             case SGlobalMethods.powHitMethod.name if VersionContext.current.isV6SoftForkActivated =>
               val k = asRep[Int](argsV(0))
               val msg = asRep[Coll[Byte]](argsV(1))

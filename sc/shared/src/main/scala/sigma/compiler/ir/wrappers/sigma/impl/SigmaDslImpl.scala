@@ -2293,6 +2293,19 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         true, false, element[WOption[T]], Map(tT -> Evaluation.rtypeToSType(cT.sourceType))))
     }
 
+    override def encodeNbits(bi: Ref[BigInt]): Ref[Long] = {
+      asRep[Long](mkMethodCall(self,
+        SigmaDslBuilderClass.getMethod("encodeNbits", classOf[Sym]),
+        Array[AnyRef](bi),
+        true, false, element[Long]))
+    }
+
+    override def decodeNbits(l: Ref[Long]): Ref[BigInt] = {
+      asRep[BigInt](mkMethodCall(self,
+        SigmaDslBuilderClass.getMethod("decodeNbits", classOf[Sym]),
+        Array[AnyRef](l),
+        true, false, element[BigInt]))
+    }
 
     override def powHit(k: Ref[Int], msg: Ref[Coll[Byte]], nonce: Ref[Coll[Byte]], h: Ref[Coll[Byte]], N: Ref[Int]): Ref[BigInt] = {
       asRep[BigInt](mkMethodCall(self,
@@ -2489,6 +2502,20 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         true, true, cT, Map(tT -> Evaluation.rtypeToSType(cT.sourceType))))
     }
 
+    override def encodeNbits(bi: Ref[BigInt]): Ref[Long] = {
+      asRep[Long](mkMethodCall(source,
+        SigmaDslBuilderClass.getMethod("encodeNbits", classOf[Sym]),
+        Array[AnyRef](bi),
+        true, true, element[Long]))
+    }
+
+    override def decodeNbits(l: Ref[Long]): Ref[BigInt] = {
+      asRep[BigInt](mkMethodCall(source,
+        SigmaDslBuilderClass.getMethod("decodeNbits", classOf[Sym]),
+        Array[AnyRef](l),
+        true, true, element[BigInt]))
+    }
+
     def some[T](value: Ref[T])(implicit cT: Elem[T]): Ref[WOption[T]] = {
       asRep[WOption[T]](mkMethodCall(source,
         SigmaDslBuilderClass.getMethod("some", classOf[Sym], classOf[Elem[T]]),
@@ -2522,7 +2549,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         Elem.declaredMethods(RClass(classOf[SigmaDslBuilder]), RClass(classOf[SSigmaDslBuilder]), Set(
         "Colls", "verifyZK", "atLeast", "allOf", "allZK", "anyOf", "anyZK", "xorOf", "sigmaProp", "blake2b256", "sha256",
           "byteArrayToBigInt", "longToByteArray", "byteArrayToLong", "proveDlog", "proveDHTuple", "groupGenerator", "substConstants",
-          "decodePoint", "avlTree", "xor", "serialize", "deserializeTo", "fromBigEndianBytes", "powHit"
+          "decodePoint", "avlTree", "xor", "serialize", "deserializeTo", "fromBigEndianBytes", "powHit", "encodeNBits", "decodeNBits"
         ))
     }
   }
