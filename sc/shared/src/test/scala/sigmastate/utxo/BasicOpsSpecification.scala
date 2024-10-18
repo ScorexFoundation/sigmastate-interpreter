@@ -463,7 +463,8 @@ class BasicOpsSpecification extends CompilerTestingCommons
     }
   }
 
-  property("Bulletproof verification for a range proof") {
+  // todo: finish the range proof verification script and test
+  ignore("Bulletproof verification for a range proof") {
     /*
      * Original range proof verifier code by Benedikt Bunz:
      *

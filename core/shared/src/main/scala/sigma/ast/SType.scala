@@ -102,13 +102,14 @@ object SType {
   /** Immutable empty IndexedSeq, can be used to avoid repeated allocations. */
   val EmptySeq: IndexedSeq[SType] = EmptyArray
 
+  // <= V5 types, see `allPredefTypes` scaladoc below
   private val v5PredefTypes = Array[SType](
       SBoolean, SByte, SShort, SInt, SLong, SBigInt, SContext,
       SGlobal, SHeader, SPreHeader, SAvlTree, SGroupElement, SSigmaProp, SString, SBox,
       SUnit, SAny)
 
+  // V6 types, see `allPredefTypes` scaladoc below
   private val v6PredefTypes = v5PredefTypes ++ Array(SUnsignedBigInt)
-
 
   /** All pre-defined types should be listed here. Note, NoType is not listed.
     * Should be in sync with sigmastate.lang.Types.predefTypes. */
@@ -146,6 +147,8 @@ object SType {
     * 2) all methods from SNumericTypeMethods are copied to all the concrete numeric types
     * (SByte, SShort, SInt, SLong, SBigInt) and the generic tNum type parameter is
     * specialized accordingly.
+    *
+    * Also, SUnsignedBigInt type is added in v6.0.
     *
     * This difference in behaviour is tested by `property("MethodCall on numerics")`.
     *
@@ -487,7 +490,7 @@ case object SLong extends SPrimType with SEmbeddable with SNumericType with SMon
   }
 }
 
-/** Type of 256-bit  signed integer values. Implemented using [[java.math.BigInteger]]. */
+/** Type of 256-bit signed integer values. Implemented using [[java.math.BigInteger]]. */
 case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SMonoType {
   override type WrappedType = BigInt
   override val typeCode: TypeCode = 6: Byte

@@ -218,7 +218,6 @@ object Extensions {
     }
 
     @inline final def toUnsignedBigIntValueExact: BigInteger = {
-      // todo: make the check soft-forkable
       if (x.compareTo(BigInteger.ZERO) >= 0 && x.bitLength() <= 256) {
         x
       } else {
