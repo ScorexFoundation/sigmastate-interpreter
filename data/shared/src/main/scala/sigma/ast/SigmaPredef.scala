@@ -191,6 +191,22 @@ object SigmaPredef {
         Seq(ArgInfo("", "")))
     )
 
+    val UBigIntFromStringFunc = PredefinedFunc("unsignedBigInt",
+      Lambda(Array("input" -> SString), SUnsignedBigInt, None),
+      PredefFuncInfo(
+        { case (_, Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
+          val bi = new BigInteger(arg.value)
+          if (bi.compareTo(BigInteger.ZERO) >= 0) {
+            UnsignedBigIntConstant(bi)
+          } else {
+            throw new InvalidArguments(s"Negative argument for unsignedBigInt()")
+          }
+        }),
+      OperationInfo(Constant,
+        """Parsing string literal argument as a 256-bit unsigned big integer.""".stripMargin,
+        Seq(ArgInfo("", "")))
+    )
+
     val FromBase16Func = PredefinedFunc("fromBase16",
       Lambda(Array("input" -> SString), SByteArray, None),
       PredefFuncInfo(
@@ -402,6 +418,43 @@ object SigmaPredef {
           ArgInfo("default", "optional default value, if register is not available")))
     )
 
+    val SerializeFunc = PredefinedFunc("serialize",
+      Lambda(Seq(paramT), Array("value" -> tT), SByteArray, None),
+      irInfo = PredefFuncInfo(
+        irBuilder = { case (_, args @ Seq(value)) =>
+          MethodCall.typed[Value[SCollection[SByte.type]]](
+            Global,
+            SGlobalMethods.serializeMethod.withConcreteTypes(Map(tT -> value.tpe)),
+            args.toIndexedSeq,
+            Map()
+          )
+        }),
+      docInfo = OperationInfo(MethodCall,
+        """Serializes the given `value` into bytes using the default serialization format.
+        """.stripMargin,
+        Seq(ArgInfo("value", "value to serialize"))
+      )
+    )
+
+    val FromBigEndianBytesFunc = PredefinedFunc("fromBigEndianBytes",
+      Lambda(Seq(paramT), Array("bytes" -> SByteArray), tT, None),
+      irInfo = PredefFuncInfo(
+        irBuilder = { case (u, args) =>
+          val resType = u.opType.tRange.asInstanceOf[SFunc].tRange
+          MethodCall(
+            Global,
+            SGlobalMethods.fromBigEndianBytesMethod.withConcreteTypes(Map(tT -> resType)),
+            args.toIndexedSeq,
+            Map(tT -> resType)
+          )
+        }),
+      docInfo = OperationInfo(MethodCall,
+        """Deserializes provided big endian bytes into a numeric value of given type.
+        """.stripMargin,
+        Seq(ArgInfo("bytes", "bytes to deserialize"))
+      )
+    )
+
     val globalFuncs: Map[String, PredefinedFunc] = Seq(
       AllOfFunc,
       AnyOfFunc,
@@ -415,6 +468,7 @@ object SigmaPredef {
       GetVarFunc,
       DeserializeFunc,
       BigIntFromStringFunc,
+      UBigIntFromStringFunc,
       FromBase16Func,
       FromBase64Func,
       FromBase58Func,
@@ -429,7 +483,9 @@ object SigmaPredef {
       AvlTreeFunc,
       SubstConstantsFunc,
       ExecuteFromVarFunc,
-      ExecuteFromSelfRegFunc
+      ExecuteFromSelfRegFunc,
+      SerializeFunc,
+      FromBigEndianBytesFunc
     ).map(f => f.name -> f).toMap
 
     def comparisonOp(symbolName: String, opDesc: ValueCompanion, desc: String, args: Seq[ArgInfo]) = {
