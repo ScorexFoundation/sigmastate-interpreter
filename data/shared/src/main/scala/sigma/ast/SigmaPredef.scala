@@ -319,6 +319,33 @@ object SigmaPredef {
         Seq(ArgInfo("input", "value to convert")))
     )
 
+
+    val DebugFunc = PredefinedFunc("debug",
+      Lambda(Seq(paramT), Array("value" -> tT, "label" -> SString), tT, None),
+      PredefFuncInfo(
+        { case (Ident(_, SFunc(_, tpe, _)), args) =>
+          val value = args.head
+          val label = if (args.length > 1) args(1) match {
+            case StringConstant(s) => s
+            case _ => ""
+          } else ""
+          val output = if (label.nonEmpty) {
+            s"DEBUG [$label]: ${value.toString} (type: ${value.tpe})"
+          } else {
+            s"DEBUG: ${value.toString} (type: ${value.tpe})"
+          }
+          println(output)
+          value
+        }),
+      OperationInfo(MethodCall,
+        """Debug utility function that outputs the value and optional label during script compilation/evaluation.
+          |The function returns the input value unchanged, allowing it to be used inline.
+        """.stripMargin,
+        Seq(
+          ArgInfo("value", "value of any type to output for debugging"),
+          ArgInfo("label", "optional string label to identify the debug output")))
+    )
+
     val ProveDHTupleFunc = PredefinedFunc("proveDHTuple",
       Lambda(Array("g" -> SGroupElement, "h" -> SGroupElement, "u" -> SGroupElement, "v" -> SGroupElement), SSigmaProp, None),
       PredefFuncInfo(
@@ -552,6 +579,7 @@ object SigmaPredef {
       ByteArrayToLongFunc,
       DecodePointFunc,
       LongToByteArrayFunc,
+      DebugFunc,
       ProveDHTupleFunc,
       ProveDlogFunc,
       AvlTreeFunc,
