@@ -1331,6 +1331,19 @@ def executeFromSelfRegWithDefault[T](id: Int, default: T): T
   *         replaced and all other bytes remain exactly the same
   */
 def substConstants[T](scriptBytes: Coll[Byte], positions: Coll[Int], newValues: Coll[T]): Coll[Byte]
+
+/** Returns the serialized ErgoTree bytes with the first (header) byte removed,
+ * equivalent to `treeBytes.slice(1, treeBytes.size)`.
+ * Compiler-level utility: expanded at compile time into existing ErgoTree operations.
+ */
+def stripErgoTreeHeader(treeBytes: Coll[Byte]): Coll[Byte]
+
+/** Returns true if two serialized ErgoTree byte collections have equal bytes
+ * after skipping the first (header) byte of each, i.e.
+ * `tree1.slice(1, tree1.size) == tree2.slice(1, tree2.size)`.
+ * Compiler-level utility: expanded at compile time into existing ErgoTree operations.
+ */
+def ergoTreeEqualNoHeader(tree1: Coll[Byte], tree2: Coll[Byte]): Boolean
 ```
 
 ## Known Limitations

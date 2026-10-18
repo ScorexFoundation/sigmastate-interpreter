@@ -31,7 +31,7 @@ import sigmastate.interpreter.CErgoTreeEvaluator.DefaultEvalSettings
 import sigmastate.interpreter.Interpreter._
 import sigma.ast.Apply
 import sigma.eval.{EvalSettings, SigmaDsl}
-import sigma.exceptions.InvalidType
+import sigma.exceptions.{InvalidType, TyperException}
 import sigma.serialization.ErgoTreeSerializer
 import sigma.serialization.{DataSerializer, SigmaByteWriter, ValueSerializer}
 import sigma.interpreter.{ContextExtension, ProverResult}
@@ -4590,6 +4590,62 @@ $lrFoldScript
       EQ(byteArrayVar1Value, ConcreteCollection(Array(ByteConstant(1), ByteConstant(2)), SByte)).toSigmaProp,
       true
     )
+  }
+
+  property("stripErgoTreeHeader and ergoTreeEqualNoHeader") {
+    val treeBytes1 = ByteArrayConstant(Array[Byte](0.toByte, 10.toByte, 20.toByte))
+    val treeBytes2 = ByteArrayConstant(Array[Byte](16.toByte, 10.toByte, 20.toByte)) // same body, different header byte
+    val treeBytes3 = ByteArrayConstant(Array[Byte](0.toByte, 10.toByte, 21.toByte))  // different body
+    val treeEnv = env + ("tree1" -> treeBytes1, "tree2" -> treeBytes2, "tree3" -> treeBytes3)
+
+    def expectedCompiled(script: String): SValue =
+      withVersions(VersionContext.MaxSupportedScriptVersion, VersionContext.MaxSupportedScriptVersion) {
+        compile(treeEnv, script).asBoolValue.toSigmaProp
+      }
+
+    test("stripErgoTreeHeader_receiptHash",
+      treeEnv, ext,
+      "blake2b256(stripErgoTreeHeader(tree1)) == blake2b256(tree2.slice(1, tree2.size))",
+      expectedCompiled("blake2b256(tree1.slice(1, tree1.size)) == blake2b256(tree2.slice(1, tree2.size))"),
+      true
+    )
+
+    test("stripErgoTreeHeader_equality",
+      treeEnv, ext,
+      "stripErgoTreeHeader(tree1) == stripErgoTreeHeader(tree2)",
+      expectedCompiled("tree1.slice(1, tree1.size) == tree2.slice(1, tree2.size)"),
+      true
+    )
+
+    test("ergoTreeEqualNoHeader_sameBody",
+      treeEnv, ext,
+      "ergoTreeEqualNoHeader(tree1, tree2)",
+      expectedCompiled("tree1.slice(1, tree1.size) == tree2.slice(1, tree2.size)"),
+      true
+    )
+
+    test("ergoTreeEqualNoHeader_differentBody",
+      treeEnv, ext,
+      "ergoTreeEqualNoHeader(tree1, tree3) == false",
+      null,
+      true
+    )
+
+    test("ergoTreeEqualNoHeader_matchesReceiptTreeHashPattern",
+      treeEnv, ext,
+      """ergoTreeEqualNoHeader(tree1, tree2) ==
+        |  (blake2b256(stripErgoTreeHeader(tree1)) == blake2b256(stripErgoTreeHeader(tree2)))""".stripMargin,
+      null,
+      true
+    )
+
+    // Predefined function names are reserved and cannot be redefined by user scripts
+    Seq("stripErgoTreeHeader", "ergoTreeEqualNoHeader").foreach { name =>
+      assertExceptionThrown(
+        compile(treeEnv, s"{ def $name(x: Int): Int = x; sigmaProp($name(1) == 1) }"),
+        exceptionLike[TyperException](s"Variable $name already defined")
+      )
+    }
   }
 
   property("user defined function") {

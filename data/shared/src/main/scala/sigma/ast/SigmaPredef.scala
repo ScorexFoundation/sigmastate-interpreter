@@ -529,6 +529,43 @@ object SigmaPredef {
         Seq(ArgInfo("id", "identifier of the register")))
     )
 
+    /** Skips the 1-byte header of a serialized ErgoTree (`treeBytes.slice(1, treeBytes.size)`). */
+    val StripErgoTreeHeaderFunc = PredefinedFunc("stripErgoTreeHeader",
+      Lambda(Array("treeBytes" -> SByteArray), SByteArray, None),
+      PredefFuncInfo(
+        { case (_, Seq(treeBytes: Value[SByteArray]@unchecked))
+            if treeBytes.tpe == SByteArray =>
+          mkSlice(treeBytes, IntConstant(1), mkSizeOf(treeBytes))
+        }),
+      OperationInfo(MethodCall,
+        """Returns the serialized ErgoTree bytes with the first (header) byte removed,
+          | equivalent to \lst{treeBytes.slice(1, treeBytes.size)}.
+          | Empty or single-byte inputs return an empty byte collection.
+        """.stripMargin,
+        Seq(ArgInfo("treeBytes", "serialized ErgoTree bytes (\\lst{Coll[Byte]})")))
+    )
+
+    /** Compares two serialized ErgoTree byte arrays for equality without their 1-byte headers. */
+    val ErgoTreeEqualNoHeaderFunc = PredefinedFunc("ergoTreeEqualNoHeader",
+      Lambda(Array("tree1" -> SByteArray, "tree2" -> SByteArray), SBoolean, None),
+      PredefFuncInfo(
+        { case (_, Seq(tree1: Value[SByteArray]@unchecked, tree2: Value[SByteArray]@unchecked))
+            if tree1.tpe == SByteArray && tree2.tpe == SByteArray =>
+          mkEQ(
+            mkSlice(tree1, IntConstant(1), mkSizeOf(tree1)),
+            mkSlice(tree2, IntConstant(1), mkSizeOf(tree2))
+          )
+        }),
+      OperationInfo(MethodCall,
+        """Returns \lst{true} if two serialized ErgoTree byte collections have equal bytes
+          | after skipping the first (header) byte of each, i.e.
+          | \lst{tree1.slice(1, tree1.size) == tree2.slice(1, tree2.size)}.
+        """.stripMargin,
+        Seq(
+          ArgInfo("tree1", "first serialized ErgoTree bytes (\\lst{Coll[Byte]})"),
+          ArgInfo("tree2", "second serialized ErgoTree bytes (\\lst{Coll[Byte]})")))
+    )
+
     val globalFuncs: Map[String, PredefinedFunc] = Seq(
       AllOfFunc,
       AnyOfFunc,
@@ -562,7 +599,9 @@ object SigmaPredef {
       SerializeFunc,
       DeserializeToFunc,
       GetVarFromInputFunc,
-      FromBigEndianBytesFunc
+      FromBigEndianBytesFunc,
+      StripErgoTreeHeaderFunc,
+      ErgoTreeEqualNoHeaderFunc
     ).map(f => f.name -> f).toMap
 
     def comparisonOp(symbolName: String, opDesc: ValueCompanion, desc: String, args: Seq[ArgInfo]) = {
