@@ -102,10 +102,18 @@ class SigmaCompiler private(settings: CompilerSettings) {
     *       the provided [[IRContext]] may be in a partially-built state and should not be
     *       reused; callers should create a fresh IR context before compiling again.
     */
-  def compileTyped(env: ScriptEnv, typedExpr: SValue)(implicit IR: IRContext): CompilerResult[IR.type] = {
+  def compileTyped(env: ScriptEnv, typedExpr: SValue)(implicit IR: IRContext): CompilerResult[IR.type] =
+    compileTyped(env, typedExpr, env.collect { case (name, t: SType) => name -> t }.toSeq)
+
+  /** Compiles the given typed expression using `placeholderTypes` to assign
+    * [[ConstantPlaceholder]] indices in the given sequence order.
+    */
+  def compileTyped(
+      env: ScriptEnv,
+      typedExpr: SValue,
+      placeholderTypes: Seq[(String, SType)])(implicit IR: IRContext): CompilerResult[IR.type] = {
     SigmaCompiler.checkStackOverflow(typedExpr.sourceContext.toOption) {
-      val placeholdersEnv = env
-          .collect { case (name, t: SType) => name -> t }
+      val placeholdersEnv = placeholderTypes
           .zipWithIndex
           .map { case ((name, t), index) => name -> ConstantPlaceholder(index, t) }
           .toMap
@@ -119,6 +127,17 @@ class SigmaCompiler private(settings: CompilerSettings) {
   def compileParsed(env: ScriptEnv, parsedExpr: SValue)(implicit IR: IRContext): CompilerResult[IR.type] = {
     val typed = typecheck(env, parsedExpr)
     compileTyped(env, typed)
+  }
+
+  /** Compiles the given parsed contract source using `placeholderTypes` to assign
+    * [[ConstantPlaceholder]] indices in the given sequence order.
+    */
+  def compileParsed(
+      env: ScriptEnv,
+      parsedExpr: SValue,
+      placeholderTypes: Seq[(String, SType)])(implicit IR: IRContext): CompilerResult[IR.type] = {
+    val typed = typecheck(env, parsedExpr)
+    compileTyped(env, typed, placeholderTypes)
   }
 
   /** Unlowering transformation, which replaces some operations with equivalent MethodCall
