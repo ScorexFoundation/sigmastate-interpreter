@@ -8,8 +8,9 @@ import sigma.VersionContext
 import sigma.ast.ErgoTree.HeaderType
 import java.math.BigInteger
 import org.scalacheck.Gen
-import sigma.ast.{AtLeast, BinAnd, BoolToSigmaProp, ByteArrayConstant, ConcreteCollection, Constant, ConstantPlaceholder, EQ, ErgoTree, ExtractAmount, FalseLeaf, GE, GT, Height, IntConstant, LT, LongConstant, SBoolean, SByteArray, SInt, SLong, SSigmaProp, SString, SType, Self, SigmaAnd, SigmaOr, SigmaPropConstant, SigmaPropValue, SizeOf, TrueLeaf}
-import sigma.ast.syntax.SValue
+import sigma.ast.{AtLeast, BinAnd, BoolToSigmaProp, ByteArrayConstant, ConcreteCollection, Constant, ConstantPlaceholder, EQ, ErgoTree, ExtractAmount, FalseLeaf, GE, GT, Height, IntConstant, LT, LongConstant, SBoolean, SInt, SLong, SSigmaProp, SString, SType, Self, SigmaAnd, SigmaOr, SigmaPropConstant, SizeOf, TrueLeaf}
+import sigma.ast.SCollection.SByteArray
+import sigma.ast.syntax.{SValue, SigmaPropValue}
 import sigma.crypto.CryptoConstants
 import sigma.data.ProveDlog
 import sigma.serialization.ErgoTreeSerializer
@@ -381,14 +382,7 @@ class SigmaTemplateCompilerTest extends AnyPropSpec with ScalaCheckPropertyCheck
       """/** defaults with 6 parameters
         |* @return
         |*/
-        |@contract def t(
-        |  bob: Int = 10,
-        |  dave: Long,
-        |  alice: Int = 20,
-        |  carol: Boolean = true,
-        |  erin: Int,
-        |  frank: Long = 99L
-        |) = {
+        |@contract def t(bob: Int = 10, dave: Long, alice: Int = 20, carol: Boolean = true, erin: Int, frank: Long = 99L) = {
         |  sigmaProp(bob < erin && alice > 0 && dave < frank && carol)
         |}""".stripMargin
     val ct = templateCompiler.compile(source)
