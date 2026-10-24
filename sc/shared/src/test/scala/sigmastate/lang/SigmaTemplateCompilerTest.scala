@@ -11,12 +11,11 @@ import org.scalacheck.Gen
 import sigma.ast.{AtLeast, BinAnd, BoolToSigmaProp, ByteArrayConstant, ConcreteCollection, Constant, ConstantPlaceholder, EQ, ErgoTree, ExtractAmount, FalseLeaf, GE, GT, Height, IntConstant, LT, LongConstant, SBoolean, SInt, SLong, SSigmaProp, SString, SType, Self, SigmaAnd, SigmaOr, SigmaPropConstant, SizeOf, TrueLeaf}
 import sigma.ast.SCollection.SByteArray
 import sigma.ast.syntax.{SValue, SigmaPropValue}
-import sigma.crypto.CryptoConstants
-import sigma.data.ProveDlog
 import sigma.serialization.ErgoTreeSerializer
 import sigma.compiler.SigmaTemplateCompiler
 import sigma.exceptions.TyperException
 import sigmastate.CompilerTestsBase
+import sigmastate.crypto.DLogProtocol.DLogProverInput
 import sigmastate.interpreter.Interpreter.ScriptEnv
 
 class SigmaTemplateCompilerTest extends AnyPropSpec with ScalaCheckPropertyChecks with CompilerTestsBase {
@@ -211,11 +210,8 @@ class SigmaTemplateCompilerTest extends AnyPropSpec with ScalaCheckPropertyCheck
     )
   }
 
-  private def pkConst(x: Int): Constant[SType] = {
-    val g = CryptoConstants.dlogGroup.generator
-    SigmaPropConstant(ProveDlog(CryptoConstants.dlogGroup.exponentiate(g, BigInteger.valueOf(x.toLong))))
-      .asInstanceOf[Constant[SType]]
-  }
+  private def pkConst(x: Int): Constant[SSigmaProp.type] =
+    SigmaPropConstant(DLogProverInput(BigInteger.valueOf(x.toLong)).publicImage)
 
   private def collectPlaceholders(node: Any): Seq[ConstantPlaceholder[SType]] = node match {
     case ph: ConstantPlaceholder[_] =>
@@ -267,16 +263,16 @@ class SigmaTemplateCompilerTest extends AnyPropSpec with ScalaCheckPropertyCheck
           IntConstant(2),
           ConcreteCollection(
             Array[SigmaPropValue](
-              bob.asInstanceOf[SigmaPropValue],
-              dave.asInstanceOf[SigmaPropValue],
-              alice.asInstanceOf[SigmaPropValue]
+              bob,
+              dave,
+              alice
             ),
             SSigmaProp
           )
         ),
-        carol.asInstanceOf[SigmaPropValue]
+        carol
       ),
-      erin.asInstanceOf[SigmaPropValue]
+      erin
     )
     checkEquals(applied.toProposition(replaceConstants = true), expectedProp)
   }
@@ -298,14 +294,14 @@ class SigmaTemplateCompilerTest extends AnyPropSpec with ScalaCheckPropertyCheck
       Some(0.toByte),
       Map(
         "pk" -> pk,
-        "deadline" -> IntConstant(1000).asInstanceOf[Constant[SType]],
-        "hash" -> ByteArrayConstant(hashBytes).asInstanceOf[Constant[SType]],
-        "amount" -> LongConstant(1000000L).asInstanceOf[Constant[SType]],
-        "flag" -> TrueLeaf.asInstanceOf[Constant[SType]]
+        "deadline" -> IntConstant(1000),
+        "hash" -> ByteArrayConstant(hashBytes),
+        "amount" -> LongConstant(1000000L),
+        "flag" -> TrueLeaf
       )
     )
     val deserialized = ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(applied.bytes)
-    deserialized.root.isRight shouldBe true
+    deserialized.root shouldBe a[Right[_, _]]
     checkEquals(deserialized, applied)
 
     val expectedProp = SigmaAnd(
@@ -321,7 +317,7 @@ class SigmaTemplateCompilerTest extends AnyPropSpec with ScalaCheckPropertyCheck
           TrueLeaf
         )
       ),
-      pk.asInstanceOf[SigmaPropValue]
+      pk
     )
     checkEquals(deserialized.toProposition(replaceConstants = true), expectedProp)
   }
@@ -391,8 +387,8 @@ class SigmaTemplateCompilerTest extends AnyPropSpec with ScalaCheckPropertyCheck
     val applied = ct.applyTemplate(
       version = Some(VersionContext.JitActivationVersion),
       paramValues = Map(
-        "dave" -> LongConstant(50L).asInstanceOf[Constant[SType]],
-        "erin" -> IntConstant(30).asInstanceOf[Constant[SType]]
+        "dave" -> LongConstant(50L),
+        "erin" -> IntConstant(30)
       )
     )
     applied.constants should contain theSameElementsInOrderAs IndexedSeq(

@@ -108,7 +108,7 @@ class SigmaCompiler private(settings: CompilerSettings) {
   /** Compiles the given typed expression using `placeholderTypes` to assign
     * [[ConstantPlaceholder]] indices in the given sequence order.
     */
-  def compileTyped(
+  private[compiler] def compileTyped(
       env: ScriptEnv,
       typedExpr: SValue,
       placeholderTypes: Seq[(String, SType)])(implicit IR: IRContext): CompilerResult[IR.type] = {
@@ -127,17 +127,6 @@ class SigmaCompiler private(settings: CompilerSettings) {
   def compileParsed(env: ScriptEnv, parsedExpr: SValue)(implicit IR: IRContext): CompilerResult[IR.type] = {
     val typed = typecheck(env, parsedExpr)
     compileTyped(env, typed)
-  }
-
-  /** Compiles the given parsed contract source using `placeholderTypes` to assign
-    * [[ConstantPlaceholder]] indices in the given sequence order.
-    */
-  def compileParsed(
-      env: ScriptEnv,
-      parsedExpr: SValue,
-      placeholderTypes: Seq[(String, SType)])(implicit IR: IRContext): CompilerResult[IR.type] = {
-    val typed = typecheck(env, parsedExpr)
-    compileTyped(env, typed, placeholderTypes)
   }
 
   /** Unlowering transformation, which replaces some operations with equivalent MethodCall
